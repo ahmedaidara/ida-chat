@@ -71,6 +71,122 @@
         .message-bubble { max-width: 70%; padding: 10px 16px; border-radius: 22px; font-size: 0.95rem; line-height: 1.4; position: relative; cursor: pointer; user-select: none; transition: transform 0.1s; animation: fadeIn 0.2s ease-out; display: flex; flex-direction: column; gap: 4px; }
         .sent .message-bubble { background: var(--bubble-sent); color: var(--bubble-sent-text); border-bottom-right-radius: 4px; }
         .received .message-bubble { background: var(--bubble-received); color: var(--text-main); border-bottom-left-radius: 4px; }
+      
+/* ========== STYLES DE BULLES PERSONNALISÉS ========== */
+
+/* Style 1: Bicolore (dégradé vertical) */
+.message-bubble.bicolor {
+    background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%) !important;
+    color: white !important;
+}
+
+/* Style 2: Rouge et Noir (thème Dark Passion) */
+.message-bubble.dark-passion {
+    background: linear-gradient(45deg, #1a0000, #8b0000, #1a0000) !important;
+    background-size: 200% 200% !important;
+    color: #ff4444 !important;
+    border: 1px solid #ff0000 !important;
+    animation: shimmer 3s ease infinite !important;
+}
+
+@keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Style 3: Style Tableau (grille) */
+.message-bubble.grid-style {
+    background: linear-gradient(45deg, #2c3e50, #3498db) !important;
+    background-image: 
+        linear-gradient(#ffffff20 1px, transparent 1px),
+        linear-gradient(90deg, #ffffff20 1px, transparent 1px) !important;
+    background-size: 20px 20px !important;
+    color: white !important;
+    border: 2px solid #ecf0f1 !important;
+}
+
+/* Style 4: Arc-en-ciel (multicolore) */
+.message-bubble.rainbow {
+    background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet) !important;
+    background-size: 400% 100% !important;
+    animation: rainbowMove 3s ease infinite !important;
+    color: white !important;
+    font-weight: bold !important;
+    text-shadow: 1px 1px 0 black !important;
+}
+
+@keyframes rainbowMove {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+/* Style 5: Néon Glow */
+.message-bubble.neon {
+    background: #0a0a0a !important;
+    color: #00ffcc !important;
+    border: 1px solid #00ffcc !important;
+    box-shadow: 0 0 10px #00ffcc, inset 0 0 5px #00ffcc !important;
+    font-family: monospace !important;
+}
+
+/* Style 6: Wood Texture (bois) */
+.message-bubble.wood {
+    background: linear-gradient(45deg, #8B5A2B, #A0522D, #6B3E1B) !important;
+    color: #FFDEAD !important;
+    border-radius: 15px 15px 15px 5px !important;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 2px 2px 5px rgba(0,0,0,0.3) !important;
+}
+
+/* Style 7: Style Code (développeur) */
+.message-bubble.code-style {
+    background: #1e1e1e !important;
+    color: #d4d4d4 !important;
+    font-family: 'Courier New', monospace !important;
+    border-left: 4px solid #007acc !important;
+    border-radius: 8px !important;
+}
+
+/* Style 8: Style Bulle Comics */
+.message-bubble.comics {
+    background: #fffde7 !important;
+    color: #000 !important;
+    border: 2px solid #000 !important;
+    border-radius: 20px 20px 20px 5px !important;
+    font-family: 'Comic Sans MS', cursive !important;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.2) !important;
+}
+
+/* Style 9: Style Aquarelle */
+.message-bubble.watercolor {
+    background: linear-gradient(135deg, #667eea, #764ba2, #f093fb) !important;
+    filter: blur(0.3px) !important;
+    color: white !important;
+    border-radius: 25px 8px 25px 8px !important;
+}
+
+/* Style 10: Style Retro (pixelisé) */
+.message-bubble.retro {
+    background: #2d2d2d !important;
+    color: #00ff00 !important;
+    font-family: 'Courier New', monospace !important;
+    border: 2px solid #00ff00 !important;
+    box-shadow: 3px 3px 0px #00ff00 !important;
+}
+
+/* Indicateur de style appliqué */
+.bubble-style-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #a800ff;
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 12px;
+    cursor: pointer;
+    z-index: 2;
+}
         
         .msg-meta { font-size: 0.7rem; opacity: 0.7; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
         .sent .msg-meta { color: #fff; }
@@ -92,6 +208,54 @@
         .input-actions { display: flex; align-items: center; gap: 14px; color: var(--text-main); font-size: 1.15rem; }
         .input-actions i { cursor: pointer; transition: color 0.2s; }
         .input-actions i:hover { color: #a800ff; }
+      
+/* BOUTON 3 POINTS POUR LA TRADUCTION */
+.translate-menu-btn {
+    cursor: pointer;
+    padding: 0 5px;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+      display: flex;
+}
+.translate-menu-btn:hover { color: #0095f6; transform: scale(1.1); }
+      
+      .translate-menu-btn.hidden {
+    display: none !important;
+}
+
+/* MENU DEROULANT DES TRADUCTIONS */
+.translate-dropdown {
+    display: none;
+    position: absolute;
+    bottom: 70px;
+    right: 15px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 8px 0;
+    z-index: 20;
+    min-width: 160px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.translate-dropdown.show { display: block; }
+.translate-option {
+    padding: 10px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    transition: background 0.2s;
+}
+.translate-option:hover { background: #0095f620; }
+.translate-option .flag { font-size: 1.2rem; }
+.translate-option .lang-name { flex: 1; }
         #send-btn { color: #0095f6; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: none; margin-left: 8px; }
 
         /* FLOATING PANELS (EMOJIS, CONFIG) */
@@ -149,9 +313,11 @@
         .bg-thumb.active { border-color: #a800ff; }
 
         /* CONTEXT MENU & REACTION DOCK */
-        .context-menu { display: none; position: absolute; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.2); overflow: hidden; }
-        .context-item { padding: 10px 20px; cursor: pointer; font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+.context-menu { display: none; position: absolute; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); overflow: hidden; }
+.context-menu#style-submenu { z-index: 1001; background: var(--panel-bg); min-width: 180px; }
+      .context-item { padding: 10px 20px; cursor: pointer; font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
         .context-item:hover { background: rgba(168, 0, 255, 0.1); }
+      
        .reaction-dock { 
     display: none; /* ← C'est cette ligne qui va le cacher au démarrage */
     gap: 10px; 
@@ -194,6 +360,113 @@
 
         audio { max-width: 180px; height: 32px; margin-top: 5px; }
         .img-msg { max-width: 200px; border-radius: 12px; margin-top: 5px; cursor: pointer; }
+      
+      /* Style spécifique pour le sous-menu des styles */
+#style-submenu {
+    max-height: 400px;
+    overflow-y: auto;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+#style-submenu .context-item {
+    padding: 10px 20px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+#style-submenu .context-item:hover {
+    background: #a800ff20;
+}
+      /* STYLE POUR MESSAGES CODÉS */
+.message-bubble.coded {
+    background: repeating-linear-gradient(45deg, #2a2a2a, #2a2a2a 10px, #1a1a1a 10px, #1a1a1a 20px) !important;
+    font-family: monospace !important;
+    letter-spacing: 2px;
+}
+.coded-mask {
+    font-family: monospace;
+    font-size: 1.1rem;
+    word-break: break-all;
+    cursor: pointer;
+}
+.coded-mask:hover {
+    opacity: 0.8;
+}
+.locked-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4444;
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 12px;
+    cursor: pointer;
+    z-index: 2;
+}
+.unlocked-badge {
+    background: #00cc44;
+}
+
+/* MODAL POUR CODE PIN */
+.pin-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+.pin-box {
+    background: var(--bg-main);
+    color: var(--text-main);
+    padding: 25px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 300px;
+    width: 90%;
+    border: 1px solid var(--border-color);
+}
+.pin-box h3 {
+    margin-bottom: 15px;
+}
+.pin-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.5rem;
+    text-align: center;
+    letter-spacing: 5px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    margin: 15px 0;
+}
+.pin-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.pin-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.pin-btn.confirm {
+    background: #0095f6;
+    color: white;
+}
+.pin-btn.cancel {
+    background: #ed4956;
+    color: white;
+}
     </style>
 </head>
 <body>
@@ -237,7 +510,7 @@
 
         <div class="messages-area" id="msg-area" onscroll="handleSwipeDetect(this)">
             </div>
-
+ 
         <div class="ephemeral-overlay" id="eph-overlay">
             <span>MODE ÉPHÉMÈRE ACTIF</span>
         </div>
@@ -283,10 +556,36 @@
                     </select>
                 </div>
                 <div class="input-actions" id="in-actions">
-                    <i class="fa-solid fa-microphone" id="mic-btn" onclick="toggleRecording()"></i>
-                    <i class="fa-regular fa-image" onclick="triggerImageUpload()"></i>
+    <i class="fa-solid fa-microphone" id="mic-btn" onclick="toggleRecording()"></i>
+    <i class="fa-regular fa-image" onclick="triggerImageUpload()"></i>
+    <div class="translate-menu-btn" id="translate-menu-btn" onclick="toggleTranslateMenu(event)">
+        <i class="fa-solid fa-ellipsis-vertical"></i>
+    </div>
+</div>
+<span id="send-btn" onclick="sendTextMessage()">Envoyer</span>
+                              <!-- Menu de traduction déroulant -->
+                <div class="translate-dropdown" id="translate-dropdown">
+                    <div class="translate-option" onclick="translateInputText('en')">
+                        <span class="flag">🇬🇧</span>
+                        <span class="lang-name">Anglais</span>
+                    </div>
+                    <div class="translate-option" onclick="translateInputText('ar')">
+                        <span class="flag">🇸🇦</span>
+                        <span class="lang-name">Arabe</span>
+                    </div>
+                    <div class="translate-option" onclick="translateInputText('es')">
+                        <span class="flag">🇪🇸</span>
+                        <span class="lang-name">Espagnol</span>
+                    </div>
+                    <div class="translate-option" onclick="translateInputText('ja')">
+                        <span class="flag">🇯🇵</span>
+                        <span class="lang-name">Japonais</span>
+                    </div>
                 </div>
-                <span id="send-btn" onclick="sendTextMessage()">Envoyer</span>
+                                  <div class="translate-option" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="toggleCodeMode()">
+                        <span class="flag">🔒</span>
+                        <span class="lang-name"></span>
+                    </div>
             </div>
             <input type="file" id="img-file" accept="image/*" style="display:none;" onchange="uploadImage(this)">
         </div>
@@ -341,10 +640,42 @@
             </div>
         </div>
 
-        <div class="context-menu" id="ctx-menu">
+                <div class="context-menu" id="ctx-menu">
             <div class="context-item" onclick="initiateReply()"><i class="fa-solid fa-reply"></i> Répondre</div>
+            <div class="context-item translate-btn" onclick="translateSelectedMessage()"><i class="fa-solid fa-language"></i> Traduire</div>
+            <div class="context-item" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="showStyleMenu()"><i class="fa-solid fa-palette"></i> Changer le style de bulle ▶</div>
             <div class="context-item" style="color:#ed4956;" onclick="deleteSelectedMessage()"><i class="fa-solid fa-trash"></i> Supprimer</div>
         </div>
+
+        <!-- Sous-menu des styles de bulle (en dehors du menu principal) -->
+        <div class="context-menu" id="style-submenu">
+            <div class="context-item" onclick="applyStyleToMessage('bicolor')"><i class="fa-solid fa-fill-drip"></i> Bicolore</div>
+            <div class="context-item" onclick="applyStyleToMessage('dark-passion')"><i class="fa-solid fa-fire-flame-curved"></i> Rouge et Noir</div>
+            <div class="context-item" onclick="applyStyleToMessage('grid-style')"><i class="fa-solid fa-table"></i> Style Tableau</div>
+            <div class="context-item" onclick="applyStyleToMessage('rainbow')"><i class="fa-solid fa-rainbow"></i> Arc-en-ciel</div>
+            <div class="context-item" onclick="applyStyleToMessage('neon')"><i class="fa-regular fa-lightbulb"></i> Néon Glow</div>
+            <div class="context-item" onclick="applyStyleToMessage('wood')"><i class="fa-solid fa-tree"></i> Style Bois</div>
+            <div class="context-item" onclick="applyStyleToMessage('code-style')"><i class="fa-solid fa-code"></i> Style Code</div>
+            <div class="context-item" onclick="applyStyleToMessage('comics')"><i class="fa-solid fa-face-laugh-beam"></i> Style Comics</div>
+            <div class="context-item" onclick="applyStyleToMessage('watercolor')"><i class="fa-solid fa-droplet"></i> Aquarelle</div>
+            <div class="context-item" onclick="applyStyleToMessage('retro')"><i class="fa-solid fa-gamepad"></i> Style Retro</div>
+            <div class="context-item" style="border-top: 1px solid var(--border-color);" onclick="removeStyleFromMessage()"><i class="fa-solid fa-trash-can"></i> Supprimer le style</div>
+        </div>
+
+<!-- Sous-menu des styles de bulle -->
+<div class="context-menu" id="style-submenu" style="left: 150px;">
+    <div class="context-item" onclick="applyStyleToMessage('bicolor')"><i class="fa-solid fa-fill-drip"></i> Bicolore</div>
+    <div class="context-item" onclick="applyStyleToMessage('dark-passion')"><i class="fa-solid fa-fire-flame-curved"></i> Rouge et Noir</div>
+    <div class="context-item" onclick="applyStyleToMessage('grid-style')"><i class="fa-solid fa-table"></i> Style Tableau</div>
+    <div class="context-item" onclick="applyStyleToMessage('rainbow')"><i class="fa-solid fa-rainbow"></i> Arc-en-ciel</div>
+    <div class="context-item" onclick="applyStyleToMessage('neon')"><i class="fa-regular fa-lightbulb"></i> Néon Glow</div>
+    <div class="context-item" onclick="applyStyleToMessage('wood')"><i class="fa-solid fa-tree"></i> Style Bois</div>
+    <div class="context-item" onclick="applyStyleToMessage('code-style')"><i class="fa-solid fa-code"></i> Style Code</div>
+    <div class="context-item" onclick="applyStyleToMessage('comics')"><i class="fa-solid fa-face-laugh-beam"></i> Style Comics</div>
+    <div class="context-item" onclick="applyStyleToMessage('watercolor')"><i class="fa-solid fa-droplet"></i> Aquarelle</div>
+    <div class="context-item" onclick="applyStyleToMessage('retro')"><i class="fa-solid fa-gamepad"></i> Style Retro</div>
+    <div class="context-item" style="border-top: 1px solid var(--border-color);" onclick="removeStyleFromMessage()"><i class="fa-solid fa-trash-can"></i> Supprimer le style</div>
+</div>
 
         <div class="reaction-dock" id="react-dock">
             <span onclick="applyReaction('❤️')">❤️</span>
@@ -383,6 +714,9 @@
         let isEphemeral = false;
         let mediaRecorder = null;
         let audioChunks = [];
+              let codeModeActive = false;  // Mode codé activé pour le prochain message
+        let pendingMessageId = null;  // Message en attente de déverrouillage
+        const SECRET_PIN = "0507";  // Code PIN secret
 
         // INITIALISATION DU THÈME ET DES PRÉFÉRENCES
         if(localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
@@ -398,7 +732,11 @@
             document.getElementById('header-av').style.background = userKey === 'ida' ? 'linear-gradient(45deg, #0076ff, #00ffaa)' : 'linear-gradient(45deg, #ff007f, #ff7300)';
             document.getElementById('header-display-name').innerText = targetUser.full;
 
-            listenToMessages();
+                      // S'assurer que les 3 points sont visibles au départ (champ vide)
+            const translateBtn = document.getElementById('translate-menu-btn');
+            if (translateBtn) translateBtn.style.display = 'flex';
+          
+          listenToMessages();
             listenToTyping();
         }
 
@@ -457,29 +795,45 @@ function cleanHTML(str) {
                 row.className = `message-row ${data.senderId === currentUser.id ? 'sent' : 'received'}`;
                 row.setAttribute('data-id', msgId);
 
-                const isGiant = isOnlyEmojis(data.text);
-                let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''}" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">`;
+                                const isGiant = isOnlyEmojis(data.text);
+                // Appliquer le style personnalisé UNIQUEMENT pour les messages envoyés
+                let customStyle = '';
+                if (data.senderId === currentUser.id && data.bubbleStyle) {
+                    customStyle = data.bubbleStyle;
+                }
+                
+                // Ajouter la classe 'coded' et le badge cadenas si le message est codé
+                let codedClass = '';
+                let lockBadge = '';
+                if (data.isCoded === true) {
+                    codedClass = 'coded';
+                    lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
+                }
+                
+                let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">${lockBadge}`;
 
                 if (data.replyToText) {
                     bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${data.replyToText}</div>`;
                 }
 
                 if (data.type === 'text') {
-                    // On affiche le texte en interprétant le HTML (pour la mise en forme)
-// Affiche le texte en conservant les balises HTML de mise en forme
-let displayText = data.text;
-
-// Convertit le markdown en HTML (pour ceux qui écrivent **gras** manuellement)
-displayText = displayText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-displayText = displayText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-displayText = displayText.replace(/~~(.*?)~~/g, '<del>$1</del>');
-
-// Supprime les balises dangereuses (script, onclick, etc.) mais garde <span>, <strong>, etc.
-displayText = displayText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-displayText = displayText.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
-
-// AFFICHAGE DIRECT SANS escapeHTML() qui tue les balises
-bubbleHtml += `<span>${displayText}</span>`;
+                    let displayText = data.text;
+                    
+                    // Vérifier si le message est codé
+                    if (data.isCoded === true) {
+                        // Message codé : afficher le masque et stocker le vrai texte
+                        const originalMessage = data.originalText || data.text;
+                        displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+                        bubbleHtml += displayText;
+                    } else {
+                        // Message normal : appliquer le formatage
+                        displayText = displayText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        displayText = displayText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                        displayText = displayText.replace(/~~(.*?)~~/g, '<del>$1</del>');
+                        displayText = displayText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+                        displayText = displayText.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+                        bubbleHtml += `<span>${displayText}</span>`;
+                    }
                 } else if (data.type === 'image') {
                     bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" onclick="window.open('${data.mediaUrl}')"/>`;
                 } else if (data.type === 'audio') {
@@ -550,8 +904,19 @@ bubbleHtml += `<span>${displayText}</span>`;
     const text = input.value.trim();
     if(!text) return;
 
-        const msgData = {
-        text: text,  // On garde le texte avec les balises HTML
+           let finalText = text;
+    let isCoded = codeModeActive;
+    
+    if (codeModeActive) {
+        // Le message est codé - on sauvegarde le vrai texte mais on envoie un masque
+        finalText = generateMask(text.length);
+        codeModeActive = false; // Désactiver après envoi
+    }
+    
+    const msgData = {
+        text: finalText,
+        originalText: isCoded ? text : null,  // Sauvegarder le vrai texte
+        isCoded: isCoded,
         senderId: currentUser.id,
         senderName: currentUser.name,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -724,10 +1089,11 @@ function triggerMixedBombardment(emojiList) {
             document.addEventListener('click', hideContextMenus);
         }
 
-        function hideContextMenus() {
-            document.getElementById('ctx-menu').style.display = 'none';
-            document.removeEventListener('click', hideContextMenus);
-        }
+       function hideContextMenus() {
+    document.getElementById('ctx-menu').style.display = 'none';
+    closeStyleMenu();  // Ferme aussi le sous-menu des styles
+    document.removeEventListener('click', hideContextMenus);
+}
 
         // GESTION DU SYSTÈME DE RÉPONSE
         function initiateReply() {
@@ -769,13 +1135,27 @@ function insertEmoji(emoji) {
 }
         // DETECTION DE FRAISSEMENT (TYPING INDICATOR VIA FIRESTORE)
         function handleTyping() {
-            const input = document.getElementById('chat-in');
-            toggleSendBtn(input.value.trim().length > 0);
+    const input = document.getElementById('chat-in');
+    const hasText = input.value.trim().length > 0;
+    toggleSendBtn(hasText);
+    
+    // Gérer l'affichage des 3 points
+    const translateBtn = document.getElementById('translate-menu-btn');
+    if (hasText) {
+        // Si on écrit, les 3 points disparaissent
+        translateBtn.style.display = 'none';
+        // Fermer le menu déroulant si ouvert
+        const dropdown = document.getElementById('translate-dropdown');
+        dropdown.classList.remove('show');
+    } else {
+        // Si champ vide, les 3 points réapparaissent
+        translateBtn.style.display = 'flex';
+    }
 
-            db.collection('chats').doc(chatId).collection('typing').doc(currentUser.id).set({ isTyping: true });
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(stopTypingNotify, 2000);
-        }
+    db.collection('chats').doc(chatId).collection('typing').doc(currentUser.id).set({ isTyping: true });
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(stopTypingNotify, 2000);
+}  
 
         function stopTypingNotify() {
             if(currentUser) db.collection('chats').doc(chatId).collection('typing').doc(currentUser.id).set({ isTyping: false });
@@ -981,6 +1361,462 @@ function insertEmoji(emoji) {
                 selectedTextRange = null;
             }
         });
+      
+      // ========== TRADUCTION DU TEXTE SAISI ==========
+
+// Fonction pour traduire un texte vers une langue cible (API MyMemory)
+async function translateTextToLanguage(text, targetLang) {
+    if (!text || text.trim() === '') {
+        alert("Écris d'abord un message à traduire !");
+        return null;
+    }
+    
+    // Mapping des codes de langue pour l'API
+    const langMap = {
+        'en': 'en|fr',      // anglais
+        'ar': 'ar|fr',      // arabe
+        'es': 'es|fr',      // espagnol
+        'ja': 'ja|fr'       // japonais
+    };
+    
+    const langPair = langMap[targetLang] || 'en|fr';
+    
+    try {
+        // Afficher une indication dans le champ
+        const input = document.getElementById('chat-in');
+        const originalPlaceholder = input.placeholder;
+        input.placeholder = "🔄 Traduction en cours...";
+        
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        input.placeholder = originalPlaceholder;
+        
+        if (data && data.responseData && data.responseData.translatedText) {
+            let translated = data.responseData.translatedText;
+            translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+            return translated;
+        }
+        return null;
+    } catch (error) {
+        console.error("Erreur de traduction:", error);
+        alert("Erreur lors de la traduction. Vérifie ta connexion internet.");
+        return null;
+    }
+}
+
+// Ouvrir/Fermer le menu de traduction
+function toggleTranslateMenu(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('translate-dropdown');
+    dropdown.classList.toggle('show');
+}
+
+// Traduire le texte du champ de saisie et le remplacer
+async function translateInputText(targetLang) {
+    const input = document.getElementById('chat-in');
+    const originalText = input.value.trim();
+    
+    if (!originalText) {
+        alert("📝 Écris d'abord un message dans le champ !");
+        closeTranslateMenu();
+        return;
+    }
+    
+    // Langues pour l'affichage du message de confirmation
+    const langNames = {
+        'en': 'Anglais 🇬🇧',
+        'ar': 'Arabe 🇸🇦',
+        'es': 'Espagnol 🇪🇸',
+        'ja': 'Japonais 🇯🇵'
+    };
+    
+    // Traduire le texte
+    const translatedText = await translateTextToLanguage(originalText, targetLang);
+    
+    if (translatedText && translatedText !== originalText) {
+        input.value = translatedText;
+        closeTranslateMenu();
+        
+        // Afficher une petite notification
+        showTempNotification(`✅ Traduit en ${langNames[targetLang]}`);
+        
+        // Déclencher l'événement typing pour la barre d'envoi
+        handleTyping();
+    } else if (translatedText === originalText) {
+        showTempNotification(`⚠️ Le texte est déjà en ${langNames[targetLang]} ou n'a pas pu être traduit`);
+    } else {
+        showTempNotification("❌ Erreur de traduction, réessaie");
+    }
+}
+
+// Fermer le menu de traduction
+function closeTranslateMenu() {
+    const dropdown = document.getElementById('translate-dropdown');
+    dropdown.classList.remove('show');
+}
+
+// Afficher une notification temporaire
+function showTempNotification(message) {
+    // Créer une notification flottante
+    const notif = document.createElement('div');
+    notif.textContent = message;
+    notif.style.position = 'fixed';
+    notif.style.bottom = '100px';
+    notif.style.right = '20px';
+    notif.style.background = '#0095f6';
+    notif.style.color = 'white';
+    notif.style.padding = '8px 16px';
+    notif.style.borderRadius = '20px';
+    notif.style.fontSize = '0.85rem';
+    notif.style.zIndex = '1000';
+    notif.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+    notif.style.animation = 'fadeIn 0.2s ease-out';
+    
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+        notif.style.opacity = '0';
+        setTimeout(() => notif.remove(), 300);
+    }, 2000);
+}
+
+// Fermer le menu quand on clique ailleurs
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('translate-dropdown');
+    const btn = document.getElementById('translate-menu-btn');
+    if (dropdown && !dropdown.contains(e.target) && e.target !== btn && !btn?.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+      
+      // ========== GESTION DES STYLES DE BULLES ==========
+// ========== GESTION DES STYLES DE BULLES ==========
+
+let styleMenuOpen = false;
+
+function showStyleMenu() {
+    // Vérifier que le message sélectionné appartient à l'utilisateur
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    const isSentMessage = messageRow && messageRow.classList.contains('sent');
+    
+    if (!isSentMessage) {
+        showTempNotification("⚠️ Tu ne peux changer que le style de TES messages !");
+        document.getElementById('ctx-menu').style.display = 'none';
+        return;
+    }
+    
+    // Si le sous-menu est déjà ouvert, on le ferme d'abord
+    if (styleMenuOpen) {
+        closeStyleMenu();
+        return;
+    }
+    
+    const mainMenu = document.getElementById('ctx-menu');
+    const styleMenu = document.getElementById('style-submenu');
+    
+    // Récupérer la position du menu principal
+    const rect = mainMenu.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Largeur approximative du sous-menu
+    const submenuWidth = 200;
+    const submenuHeight = 400;
+    
+    // Position horizontale
+    let leftPos = rect.right + 5;
+    if (leftPos + submenuWidth > windowWidth) {
+        leftPos = rect.left - submenuWidth - 5;
+    }
+    
+    // Position verticale
+    let topPos = rect.top;
+    if (topPos + submenuHeight > windowHeight) {
+        topPos = windowHeight - submenuHeight - 10;
+    }
+    if (topPos < 10) {
+        topPos = 10;
+    }
+    
+    // Appliquer les positions
+    styleMenu.style.position = 'fixed';
+    styleMenu.style.top = topPos + 'px';
+    styleMenu.style.left = leftPos + 'px';
+    styleMenu.style.display = 'block';
+    styleMenuOpen = true;
+    
+    // Cacher le menu principal
+    mainMenu.style.display = 'none';
+    
+    // Fermer le sous-menu quand on clique ailleurs
+    setTimeout(() => {
+        document.addEventListener('click', function closeSubmenu(e) {
+            if (styleMenuOpen && !styleMenu.contains(e.target)) {
+                closeStyleMenu();
+                document.removeEventListener('click', closeSubmenu);
+            }
+        });
+    }, 100);
+}
+
+function closeStyleMenu() {
+    const styleMenu = document.getElementById('style-submenu');
+    styleMenu.style.display = 'none';
+    styleMenuOpen = false;
+}
+
+// Appliquer un style à un message spécifique
+async function applyStyleToMessage(styleName) {
+    if (!selectedMessageId) return;
+    
+    const styleNames = {
+        'bicolor': 'Bicolore',
+        'dark-passion': 'Rouge et Noir',
+        'grid-style': 'Style Tableau',
+        'rainbow': 'Arc-en-ciel',
+        'neon': 'Néon Glow',
+        'wood': 'Style Bois',
+        'code-style': 'Style Code',
+        'comics': 'Style Comics',
+        'watercolor': 'Aquarelle',
+        'retro': 'Style Retro'
+    };
+    
+    // Vérifier que le message appartient bien à l'utilisateur actuel
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    const isSentMessage = messageRow && messageRow.classList.contains('sent');
+    
+    if (!isSentMessage) {
+        showTempNotification("❌ Tu ne peux changer que le style de TES propres messages !");
+        closeStyleMenu();
+        return;
+    }
+    
+    // Sauvegarder le style dans Firestore
+    const msgRef = db.collection('chats').doc(chatId).collection('messages').doc(selectedMessageId);
+    await msgRef.update({
+        bubbleStyle: styleName,
+        bubbleStyleName: styleNames[styleName]
+    });
+    
+    // Appliquer le style visuellement immédiatement
+    if (messageRow) {
+        const bubble = messageRow.querySelector('.message-bubble');
+        if (bubble) {
+            // Liste de tous les styles possibles
+            const allStyles = ['bicolor', 'dark-passion', 'grid-style', 'rainbow', 'neon', 'wood', 'code-style', 'comics', 'watercolor', 'retro'];
+            // Enlever tous les styles précédents
+            allStyles.forEach(style => bubble.classList.remove(style));
+            // Ajouter le nouveau style
+            bubble.classList.add(styleName);
+        }
+    }
+    
+    // Fermer les menus
+    closeStyleMenu();
+    document.getElementById('ctx-menu').style.display = 'none';
+    
+    // Afficher une confirmation
+    showTempNotification(`✨ Style "${styleNames[styleName]}" appliqué à ton message !`);
+}
+
+// Supprimer le style d'un message
+async function removeStyleFromMessage() {
+    if (!selectedMessageId) return;
+    
+    // Vérifier que le message appartient bien à l'utilisateur
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    const isSentMessage = messageRow && messageRow.classList.contains('sent');
+    
+    if (!isSentMessage) {
+        showTempNotification("❌ Tu ne peux supprimer le style que de TES propres messages !");
+        closeStyleMenu();
+        return;
+    }
+    
+    const msgRef = db.collection('chats').doc(chatId).collection('messages').doc(selectedMessageId);
+    await msgRef.update({
+        bubbleStyle: null,
+        bubbleStyleName: null
+    });
+    
+    // Enlever le style visuellement
+    if (messageRow) {
+        const bubble = messageRow.querySelector('.message-bubble');
+        if (bubble) {
+            const allStyles = ['bicolor', 'dark-passion', 'grid-style', 'rainbow', 'neon', 'wood', 'code-style', 'comics', 'watercolor', 'retro'];
+            allStyles.forEach(style => bubble.classList.remove(style));
+        }
+    }
+    
+    // Fermer les menus
+    closeStyleMenu();
+    document.getElementById('ctx-menu').style.display = 'none';
+    showTempNotification(`🗑️ Style supprimé de ton message`);
+}
+
+// Traduire le message sélectionné (menu contextuel)
+async function translateSelectedMessage() {
+    if (!selectedMessageId) return;
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow) return;
+    
+    const messageBubble = messageRow.querySelector('.message-bubble span');
+    if (!messageBubble) return;
+    
+    const originalText = messageBubble.innerText;
+    
+    // Détecter la langue source
+    function detectLang(text) {
+        if (/[éèêëàâçîïôûùüÿ]/i.test(text)) return 'fr';
+        if (/[áéíóúñ¿¡]/i.test(text)) return 'es';
+        if (/[äöüß]/i.test(text)) return 'de';
+        return 'en';
+    }
+    
+    const sourceLang = detectLang(originalText);
+    const targetLang = sourceLang === 'fr' ? 'en' : 'fr';
+    const langPair = `${sourceLang}|${targetLang}`;
+    
+    // Afficher une indication
+    const originalHTML = messageBubble.innerHTML;
+    messageBubble.innerHTML = '<span style="opacity:0.6;">🔄 Traduction...</span>';
+    
+    try {
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=${langPair}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data && data.responseData && data.responseData.translatedText) {
+            let translated = data.responseData.translatedText;
+            translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+            messageBubble.setAttribute('data-original', originalText);
+            messageBubble.innerHTML = `${translated} <span style="font-size:0.65rem; opacity:0.5;" onclick="event.stopPropagation(); restoreOriginalMessage(this.parentElement)">[Original]</span>`;
+        } else {
+            messageBubble.innerHTML = originalHTML;
+            showTempNotification("❌ Traduction échouée");
+        }
+    } catch (error) {
+        messageBubble.innerHTML = originalHTML;
+        showTempNotification("❌ Erreur de traduction");
+    }
+    
+    hideContextMenus();
+}
+
+// Restaurer le message original après traduction
+function restoreOriginalMessage(element) {
+    const original = element.getAttribute('data-original');
+    if (original) {
+        element.innerHTML = original;
+        element.removeAttribute('data-original');
+    }
+}
+      
+              // ========== MODE MESSAGE CODÉ ==========
+        
+        function toggleCodeMode() {
+            codeModeActive = !codeModeActive;
+            closeTranslateMenu();
+            
+            if (codeModeActive) {
+                showTempNotification("🔒 ACTIVÉ");
+                // Changer l'apparence du bouton pour indiquer que c'est activé
+                const codeOption = document.querySelector('#translate-dropdown .translate-option:last-child');
+                if (codeOption) {
+                    codeOption.style.background = "#a800ff20";
+                }
+            } else {
+                showTempNotification("🔓 DÉSACTIVÉ");
+                const codeOption = document.querySelector('#translate-dropdown .translate-option:last-child');
+                if (codeOption) {
+                    codeOption.style.background = "";
+                }
+            }
+        }
+        
+        // Générer un masque aléatoire de caractères spéciaux
+        function generateMask(length) {
+            const chars = ['#', '@', '×', '/', '+', '-', '•', '★', '◆', '▪', '▫', '●', '○', '◊', '♠', '♣', '♥', '♦'];
+            let mask = '';
+            for (let i = 0; i < length; i++) {
+                mask += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return mask;
+        }
+        
+        // Afficher le modal PIN
+        function showPinModal(messageId) {
+            pendingMessageId = messageId;
+            const modal = document.getElementById('pin-modal');
+            const input = document.getElementById('pin-input');
+            modal.style.display = 'flex';
+            input.value = '';
+            input.focus();
+        }
+        
+        function closePinModal() {
+            document.getElementById('pin-modal').style.display = 'none';
+            pendingMessageId = null;
+        }
+        
+        function verifyPin() {
+            const input = document.getElementById('pin-input');
+            const enteredPin = input.value;
+            
+            if (enteredPin === SECRET_PIN) {
+                // Code correct - déverrouiller le message
+                unlockMessage(pendingMessageId);
+                closePinModal();
+            } else {
+                showTempNotification("❌ Code PIN incorrect !");
+                input.value = '';
+                input.focus();
+            }
+        }
+        
+        function unlockMessage(messageId) {
+            if (!messageId) return;
+            
+            const messageRow = document.querySelector(`[data-id="${messageId}"]`);
+            if (!messageRow) return;
+            
+            const bubble = messageRow.querySelector('.message-bubble');
+            const messageSpan = bubble.querySelector('span');
+            const originalText = messageSpan.getAttribute('data-original-text');
+            
+            if (originalText) {
+                // Remplacer le masque par le vrai texte
+                messageSpan.innerHTML = originalText;
+                bubble.classList.remove('coded');
+                
+                // Changer le badge
+                const badge = bubble.querySelector('.locked-badge');
+                if (badge) {
+                    badge.textContent = '🔓';
+                    badge.classList.add('unlocked-badge');
+                }
+                
+                // Marquer comme déverrouillé (mais pas en base de données)
+                messageRow.setAttribute('data-unlocked', 'true');
+            }
+        }
     </script>
+  
+          <!-- Modal pour saisir le code PIN -->
+        <div class="pin-modal" id="pin-modal">
+            <div class="pin-box">
+                <h3>🔒</h3>
+                <p> </p>
+                <input type="password" class="pin-input" id="pin-input" maxlength="4" placeholder="****" inputmode="numeric">
+                <div class="pin-buttons">
+                    <button class="pin-btn confirm" onclick="verifyPin()">Déverrouiller</button>
+                    <button class="pin-btn cancel" onclick="closePinModal()">Annuler</button>
+                </div>
+            </div>
+        </div>
 </body>
 </html>
