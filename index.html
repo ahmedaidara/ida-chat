@@ -512,6 +512,149 @@
     border-radius: 12px;
     white-space: nowrap;
 }
+      
+      /* ========== STATUT D'HUMEUR ÉMOJI ANIMÉ ========== */
+.mood-status {
+    position: absolute;
+    bottom: -5px;
+    right: -8px;
+    background: var(--bg-main);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: transform 0.2s;
+    z-index: 5;
+}
+.mood-status:hover {
+    transform: scale(1.2);
+}
+.mood-status.animated {
+    animation: moodPulse 1s ease infinite;
+}
+@keyframes moodPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168,0,255,0.4); }
+    50% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(168,0,255,0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168,0,255,0); }
+}
+
+/* Panneau de sélection des statuts */
+.mood-panel {
+    display: none;
+    position: absolute;
+    top: 60px;
+    left: 15px;
+    right: 15px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 15px;
+    z-index: 15;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.mood-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    text-align: center;
+}
+.mood-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+}
+.mood-item:hover {
+    transform: scale(1.05);
+    background: #a800ff20;
+    border-color: #a800ff;
+}
+.mood-emoji {
+    font-size: 2rem;
+}
+.mood-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+.mood-item.active {
+    background: #a800ff;
+    border-color: #a800ff;
+}
+.mood-item.active .mood-label {
+    color: white;
+}
+.clear-mood {
+    grid-column: span 4;
+    margin-top: 10px;
+    padding: 10px;
+    background: #ed4956;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.clear-mood:hover {
+    opacity: 0.9;
+}
+      
+      /* Animation pour l'emoji de statut */
+#other-mood-emoji {
+    display: inline-block;
+    transition: transform 0.2s;
+}
+#other-mood-emoji:hover {
+    transform: scale(1.2);
+}
+      
+      /* ========== INDICATEUR DE BATTERIE ========== */
+.battery-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    font-size: 0.7rem;
+    background: var(--input-bg);
+    padding: 2px 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+.battery-icon {
+    font-size: 0.75rem;
+}
+.battery-percent {
+    font-weight: 600;
+}
+.battery-low {
+    color: #ff4444;
+    animation: batteryBlink 1s ease infinite;
+}
+.battery-medium {
+    color: #ffaa00;
+}
+.battery-high {
+    color: #00cc44;
+}
+.battery-charging {
+    color: #0095f6;
+}
+@keyframes batteryBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
     </style>
 </head>
 <body>
@@ -538,13 +681,81 @@
         </div>
 
         <div class="chat-header">
-            <div class="header-left" onclick="logout()">
+                       <div class="header-left" onclick="logout()">
                 <i class="fa-solid fa-arrow-left"></i>
-                <div class="header-avatar" id="header-av">--</div>
-                <div class="header-info">
-                    <div class="h-name" id="header-display-name">Correspondant</div>
-                    <div class="h-status" id="header-status-text">En ligne</div>
+                <div style="position: relative;">
+                    <div class="header-avatar" id="header-av">--</div>
+                    <div class="mood-status" id="mood-status" onclick="event.stopPropagation(); toggleMoodPanel()">
+                        <span id="mood-emoji">😊</span>
+                    </div>
                 </div>
+                                              <div class="header-info">
+                    <div class="h-name" id="header-display-name">
+                        Correspondant
+                        <span id="other-mood-emoji" style="margin-left: 8px; font-size: 1rem; display: inline-block;">😊</span>
+                    </div>
+                    <div class="h-status" id="header-status-text">
+                        En ligne
+                        <span class="battery-indicator" id="battery-indicator">
+                            <span class="battery-icon" id="battery-icon">🔋</span>
+                            <span class="battery-percent" id="battery-percent">--%</span>
+                        </span>
+                    </div>
+                </div>
+                                 <!-- Panneau de sélection du statut d'humeur -->
+        <div class="mood-panel" id="mood-panel">
+            <div class="mood-grid">
+                <div class="mood-item" onclick="setMood('😊', 'Heureux')">
+                    <span class="mood-emoji">😊</span>
+                    <span class="mood-label">Heureux</span>
+                </div>
+                <div class="mood-item" onclick="setMood('🚿', 'Au douche')">
+                    <span class="mood-emoji">🚿</span>
+                    <span class="mood-label">Au douche</span>
+                </div>
+                <div class="mood-item" onclick="setMood('🍕', 'Manger')">
+                    <span class="mood-emoji">🍕</span>
+                    <span class="mood-label">Manger</span>
+                </div>
+                <div class="mood-item" onclick="setMood('🚶', 'Sorti')">
+                    <span class="mood-emoji">🚶</span>
+                    <span class="mood-label">Sorti</span>
+                </div>
+                <div class="mood-item" onclick="setMood('💼', 'Travail')">
+                    <span class="mood-emoji">💼</span>
+                    <span class="mood-label">Travail</span>
+                </div>
+                <div class="mood-item" onclick="setMood('📚', 'Étude')">
+                    <span class="mood-emoji">📚</span>
+                    <span class="mood-label">Étude</span>
+                </div>
+                <div class="mood-item" onclick="setMood('🎮', 'Jeux')">
+                    <span class="mood-emoji">🎮</span>
+                    <span class="mood-label">Jeux</span>
+                </div>
+                <div class="mood-item" onclick="setMood('😴', 'Dodo')">
+                    <span class="mood-emoji">😴</span>
+                    <span class="mood-label">Dodo</span>
+                </div>
+                <div class="mood-item" onclick="setMood('🏃', 'Sport')">
+                    <span class="mood-emoji">🏃</span>
+                    <span class="mood-label">Sport</span>
+                </div>
+                <div class="mood-item" onclick="setMood('🎵', 'Musique')">
+                    <span class="mood-emoji">🎵</span>
+                    <span class="mood-label">Musique</span>
+                </div>
+                <div class="mood-item" onclick="setMood('📺', 'Netflix')">
+                    <span class="mood-emoji">📺</span>
+                    <span class="mood-label">Netflix</span>
+                </div>
+                <div class="mood-item" onclick="setMood('☕', 'Café')">
+                    <span class="mood-emoji">☕</span>
+                    <span class="mood-label">Café</span>
+                </div>
+                <div class="clear-mood" onclick="clearMood()">❌ Effacer mon statut</div>
+            </div>
+        </div>
             </div>
             <div class="header-actions">
                 <i class="fa-solid fa-folder-plus" title="Importer WhatsApp" onclick="toggleModal('import-modal', true)"></i>
@@ -609,7 +820,7 @@
 </div>
 <span id="send-btn" onclick="sendTextMessage()">Envoyer</span>
                               <!-- Menu de traduction déroulant -->
-                <div class="translate-dropdown" id="translate-dropdown">
+                                <div class="translate-dropdown" id="translate-dropdown">
                     <div class="translate-option" onclick="translateInputText('en')">
                         <span class="flag">🇬🇧</span>
                         <span class="lang-name">Anglais</span>
@@ -626,15 +837,15 @@
                         <span class="flag">🇯🇵</span>
                         <span class="lang-name">Japonais</span>
                     </div>
-                </div>
-                                  <div class="translate-option" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="toggleCodeMode()">
+                    <div class="translate-option" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="toggleCodeMode()">
                         <span class="flag">🔒</span>
-                        <span class="lang-name"></span>
+                        <span class="lang-name">Coder le message</span>
                     </div>
-                                  <div class="translate-option" onclick="toggleEphemeralAudioMode()">
+                    <div class="translate-option" onclick="toggleEphemeralAudioMode()">
                         <span class="flag">🎙️</span>
                         <span class="lang-name">Audio Éphémère</span>
                     </div>
+                </div>
             </div>
             <input type="file" id="img-file" accept="image/*" style="display:none;" onchange="uploadImage(this)">
         </div>
@@ -763,6 +974,11 @@
         let isEphemeral = false;
         let mediaRecorder = null;
         let audioChunks = [];
+              let batteryInterval = null;
+        let currentBatteryLevel = null;
+        let isCharging = false;
+              let currentMood = { emoji: '😊', label: 'Heureux' };  // Statut par défaut
+        let moodUpdateTimeout = null;
               let ephemeralAudioMode = false;  // Mode audio éphémère activé
               let codeModeActive = false;  // Mode codé activé pour le prochain message
         let pendingMessageId = null;  // Message en attente de déverrouillage
@@ -773,7 +989,7 @@
         if(localStorage.getItem('bubbleColor')) document.documentElement.style.setProperty('--bubble-sent', localStorage.getItem('bubbleColor'));
 
         // SÉLECTION DU COMPTE UTILISATEUR
-        function selectUser(userKey) {
+               function selectUser(userKey) {
             currentUser = userKey === 'ida' ? { id: 'ida', name: 'IDA', full: 'Ida Diallo' } : { id: 'aidara', name: 'AIDARA', full: 'Aidara Kane' };
             targetUser = userKey === 'ida' ? { id: 'aidara', name: 'AIDARA', full: 'Aidara Kane' } : { id: 'ida', name: 'IDA', full: 'Ida Diallo' };
 
@@ -782,19 +998,22 @@
             document.getElementById('header-av').style.background = userKey === 'ida' ? 'linear-gradient(45deg, #0076ff, #00ffaa)' : 'linear-gradient(45deg, #ff007f, #ff7300)';
             document.getElementById('header-display-name').innerText = targetUser.full;
 
-                      // S'assurer que les 3 points sont visibles au départ (champ vide)
+            // S'assurer que les 3 points sont visibles au départ (champ vide)
             const translateBtn = document.getElementById('translate-menu-btn');
             if (translateBtn) translateBtn.style.display = 'flex';
           
-          listenToMessages();
+                        listenToMessages();
             listenToTyping();
-                      // Nettoyer les vieux audios éphémères
-            setTimeout(cleanupEphemeralAudios, 2000);
+            listenToUserMood();  // Écouter le statut de l'autre utilisateur
+            listenToOtherUserBattery();  // Écouter la batterie de l'autre
+            saveDefaultMood();   // Sauvegarder son propre statut
+            getBatteryLevel();    // Démarrer la surveillance de sa propre batterie  // Sauvegarder son propre statut
         }
 
-        function logout() {
+                function logout() {
             if(unsubscribeMessages) unsubscribeMessages();
             if(unsubscribeTyping) unsubscribeTyping();
+            stopBatteryMonitoring();
             document.getElementById('login-screen').style.display = 'flex';
         }
 
@@ -1260,6 +1479,7 @@ function insertEmoji(emoji) {
                         document.getElementById('typing-ind').style.display = 'none';
                     }
                 });
+       
         }
 
         function toggleSendBtn(show) {
@@ -1443,13 +1663,19 @@ function insertEmoji(emoji) {
         
         // Cacher la barre quand on clique ailleurs
         document.addEventListener('click', function(e) {
-            const toolbar = document.getElementById('format-toolbar');
-            const input = document.getElementById('chat-in');
-            if (toolbar && !toolbar.contains(e.target) && e.target !== input) {
-                toolbar.style.display = 'none';
-                selectedTextRange = null;
-            }
-        });
+    const dropdown = document.getElementById('translate-dropdown');
+    const btn = document.getElementById('translate-menu-btn');
+    if (dropdown && !dropdown.contains(e.target) && e.target !== btn && !btn?.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+    
+    // Fermer le panneau des statuts si on clique ailleurs
+    const moodPanel = document.getElementById('mood-panel');
+    const moodBtn = document.getElementById('mood-status');
+    if (moodPanel && moodPanel.style.display === 'flex' && !moodPanel.contains(e.target) && e.target !== moodBtn && !moodBtn?.contains(e.target)) {
+        moodPanel.style.display = 'none';
+    }
+});
       
       // ========== TRADUCTION DU TEXTE SAISI ==========
 
@@ -2037,6 +2263,254 @@ function restoreOriginalMessage(element) {
                     }
                 }
             });
+        }
+      
+              // ========== STATUT D'HUMEUR ÉMOJI ANIMÉ ==========
+        
+        // Afficher/cacher le panneau des statuts
+        function toggleMoodPanel() {
+            const panel = document.getElementById('mood-panel');
+            if (panel.style.display === 'flex') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'flex';
+            }
+        }
+        
+        // Définir un nouveau statut
+        async function setMood(emoji, label) {
+            currentMood = { emoji: emoji, label: label };
+            
+            // Mettre à jour l'affichage local
+            const moodSpan = document.getElementById('mood-emoji');
+            moodSpan.textContent = emoji;
+            
+            // Ajouter l'animation
+            const moodDiv = document.getElementById('mood-status');
+            moodDiv.classList.add('animated');
+            
+            // Enlever l'animation après 2 secondes
+            setTimeout(() => {
+                moodDiv.classList.remove('animated');
+            }, 2000);
+            
+            // Sauvegarder dans Firestore (collection users)
+            await db.collection('users').doc(currentUser.id).set({
+                mood: currentMood,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            // Cacher le panneau
+            document.getElementById('mood-panel').style.display = 'none';
+            
+            showTempNotification(`🎭 Statut: ${emoji} ${label}`);
+        }
+        
+        // Effacer le statut
+        async function clearMood() {
+            currentMood = { emoji: '😊', label: 'Heureux' };
+            
+            const moodSpan = document.getElementById('mood-emoji');
+            moodSpan.textContent = '😊';
+            
+            await db.collection('users').doc(currentUser.id).set({
+                mood: currentMood,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            document.getElementById('mood-panel').style.display = 'none';
+            showTempNotification("🗑️ Statut effacé (retour à Heureux)");
+        }
+        
+        // Écouter le statut de l'autre utilisateur
+      
+              // Afficher le statut de l'autre utilisateur à côté de son nom
+        function displayOtherUserMood(emoji, label) {
+            // Afficher l'emoji à côté du nom du correspondant
+            const otherMoodSpan = document.getElementById('other-mood-emoji');
+            if (otherMoodSpan) {
+                otherMoodSpan.innerHTML = emoji;
+                otherMoodSpan.title = label;
+                // Ajouter une animation
+                otherMoodSpan.style.animation = 'none';
+                setTimeout(() => {
+                    otherMoodSpan.style.animation = 'moodPulse 0.5s ease';
+                }, 10);
+                setTimeout(() => {
+                    otherMoodSpan.style.animation = '';
+                }, 500);
+            }
+            
+            // Afficher aussi une notification discrète
+            if (targetUser) {
+                showTempNotification(`🎭 ${targetUser.full} est ${label} ${emoji}`);
+            }
+        }
+               // Écouter le statut de l'autre utilisateur
+               // Écouter le statut de l'autre utilisateur
+        function listenToUserMood() {
+            if (!targetUser) return;
+            
+            db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+                if (doc.exists && doc.data().mood) {
+                    const userMood = doc.data().mood;
+                    displayOtherUserMood(userMood.emoji, userMood.label);
+                }
+            });
+        }
+        
+        // Sauvegarder son propre statut au démarrage
+ 
+        
+        // Sauvegarder le statut par défaut au démarrage
+        async function saveDefaultMood() {
+            if (currentUser) {
+                await db.collection('users').doc(currentUser.id).set({
+                    mood: currentMood,
+                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+        }
+      
+              // ========== INDICATEUR DE BATTERIE EN TEMPS RÉEL ==========
+        
+        // Récupérer le niveau de batterie de l'utilisateur
+        async function getBatteryLevel() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    
+                    const level = Math.floor(battery.level * 100);
+                    currentBatteryLevel = level;
+                    isCharging = battery.charging;
+                    
+                    // Sauvegarder dans Firestore
+                    await db.collection('users').doc(currentUser.id).set({
+                        battery: {
+                            level: level,
+                            charging: battery.charging,
+                            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                        }
+                    }, { merge: true });
+                    
+                    // Mettre à jour l'affichage local
+                    updateBatteryDisplay(level, battery.charging);
+                    
+                    // Écouter les changements de batterie
+                    battery.addEventListener('levelchange', () => updateBatteryAndSync());
+                    battery.addEventListener('chargingchange', () => updateBatteryAndSync());
+                    
+                } catch (error) {
+                    console.log("Battery API non disponible:", error);
+                    setDefaultBatteryStatus();
+                }
+            } else {
+                console.log("Battery API non supportée par ce navigateur");
+                setDefaultBatteryStatus();
+            }
+        }
+        
+        async function updateBatteryAndSync() {
+            if ('getBattery' in navigator) {
+                const battery = await navigator.getBattery();
+                const level = Math.floor(battery.level * 100);
+                currentBatteryLevel = level;
+                isCharging = battery.charging;
+                
+                await db.collection('users').doc(currentUser.id).set({
+                    battery: {
+                        level: level,
+                        charging: battery.charging,
+                        lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                    }
+                }, { merge: true });
+                
+                updateBatteryDisplay(level, battery.charging);
+            }
+        }
+        
+        function updateBatteryDisplay(level, charging) {
+            const percentSpan = document.getElementById('battery-percent');
+            const iconSpan = document.getElementById('battery-icon');
+            
+            if (!percentSpan) return;
+            
+            percentSpan.textContent = level + '%';
+            
+            // Changer l'icône et la couleur selon le niveau
+            if (charging) {
+                iconSpan.innerHTML = '⚡';
+                percentSpan.className = 'battery-percent battery-charging';
+            } else if (level <= 15) {
+                iconSpan.innerHTML = '🪫';
+                percentSpan.className = 'battery-percent battery-low';
+            } else if (level <= 30) {
+                iconSpan.innerHTML = '🔋';
+                percentSpan.className = 'battery-percent battery-medium';
+            } else {
+                iconSpan.innerHTML = '🔋';
+                percentSpan.className = 'battery-percent battery-high';
+            }
+        }
+        
+        function setDefaultBatteryStatus() {
+            const percentSpan = document.getElementById('battery-percent');
+            if (percentSpan) {
+                percentSpan.textContent = 'N/A';
+                percentSpan.className = 'battery-percent';
+            }
+        }
+        
+        // Écouter la batterie de l'autre utilisateur
+        function listenToOtherUserBattery() {
+            if (!targetUser) return;
+            
+            db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+                if (doc.exists && doc.data().battery) {
+                    const batteryData = doc.data().battery;
+                    displayOtherUserBattery(batteryData.level, batteryData.charging);
+                }
+            });
+        }
+        
+        // Afficher la batterie de l'autre utilisateur
+        function displayOtherUserBattery(level, charging) {
+            const batteryIndicator = document.getElementById('battery-indicator');
+            const percentSpan = document.getElementById('battery-percent');
+            const iconSpan = document.getElementById('battery-icon');
+            
+            if (!batteryIndicator) return;
+            
+            percentSpan.textContent = level + '%';
+            
+            if (charging) {
+                iconSpan.innerHTML = '⚡';
+                percentSpan.className = 'battery-percent battery-charging';
+            } else if (level <= 15) {
+                iconSpan.innerHTML = '🪫';
+                percentSpan.className = 'battery-percent battery-low';
+                // Notification si batterie très faible
+                if (level <= 10) {
+                    showTempNotification(`⚠️ ${targetUser.full} a seulement ${level}% de batterie !`);
+                }
+            } else if (level <= 30) {
+                iconSpan.innerHTML = '🔋';
+                percentSpan.className = 'battery-percent battery-medium';
+            } else {
+                iconSpan.innerHTML = '🔋';
+                percentSpan.className = 'battery-percent battery-high';
+            }
+            
+            // Ajouter un tooltip
+            batteryIndicator.title = charging ? `${level}% (en charge)` : `${level}% restant`;
+        }
+        
+        // Arrêter la surveillance de la batterie
+        function stopBatteryMonitoring() {
+            if (batteryInterval) {
+                clearInterval(batteryInterval);
+                batteryInterval = null;
+            }
         }
     </script>
   
