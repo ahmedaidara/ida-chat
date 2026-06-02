@@ -96,6 +96,40 @@
 
         /* FLOATING PANELS (EMOJIS, CONFIG) */
         .floating-panel { display: none; position: absolute; bottom: 70px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; z-index: 5; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+      
+/* BARRE D'OUTILS MISE EN FORME */
+.format-toolbar {
+    display: none;
+    position: absolute;
+    bottom: 75px;
+    left: 15px;
+    right: 15px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 12px;
+    z-index: 6;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+.format-btn {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    transition: all 0.2s;
+}
+.format-btn:hover { background: #a800ff20; transform: scale(1.05); }
+.format-btn.active { background: #a800ff; color: white; border-color: #a800ff; }
+.format-color-picker { width: 35px; padding: 6px; cursor: pointer; }
+.format-font-select { font-size: 0.8rem; padding: 6px 8px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); cursor: pointer; }
+.format-size-select { font-size: 0.8rem; padding: 6px 8px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); cursor: pointer; }
 .emoji-grid { 
     display: grid; 
     grid-template-columns: repeat(4, 1fr); /* Aligne les émojis proprement en 4 colonnes */
@@ -222,6 +256,32 @@
             <div class="input-box-container">
                 <i class="fa-regular fa-face-smile" style="cursor:pointer; margin-right:8px;" onclick="togglePanel('emoji-panel')"></i>
                 <input type="text" class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping()">
+                              <div class="format-toolbar" id="format-toolbar">
+                    <button class="format-btn" onclick="applyFormat('bold')" id="btn-bold"><b>B</b></button>
+                    <button class="format-btn" onclick="applyFormat('italic')" id="btn-italic"><i>I</i></button>
+                    <button class="format-btn" onclick="applyFormat('strike')" id="btn-strike"><s>S</s></button>
+                    <select class="format-color-picker" id="color-picker" onchange="applyFormat('color', this.value)">
+                        <option value="black">⚫ Noir</option>
+                        <option value="red">🔴 Rouge</option>
+                        <option value="blue">🔵 Bleu</option>
+                        <option value="green">🟢 Vert</option>
+                        <option value="purple">🟣 Violet</option>
+                        <option value="orange">🟠 Orange</option>
+                    </select>
+                    <select class="format-font-select" id="font-picker" onchange="applyFormat('font', this.value)">
+                        <option value="'Inter', sans-serif">Par défaut</option>
+                        <option value="'Arial', sans-serif">Arial</option>
+                        <option value="'Courier New', monospace">Courier</option>
+                        <option value="'Georgia', serif">Georgia</option>
+                        <option value="'Comic Sans MS', cursive">Comic</option>
+                    </select>
+                    <select class="format-size-select" id="size-picker" onchange="applyFormat('size', this.value)">
+                        <option value="14px">Petit</option>
+                        <option value="16px" selected>Normal</option>
+                        <option value="20px">Grand</option>
+                        <option value="24px">Très grand</option>
+                    </select>
+                </div>
                 <div class="input-actions" id="in-actions">
                     <i class="fa-solid fa-microphone" id="mic-btn" onclick="toggleRecording()"></i>
                     <i class="fa-regular fa-image" onclick="triggerImageUpload()"></i>
@@ -348,6 +408,14 @@
             document.getElementById('login-screen').style.display = 'flex';
         }
 
+      // Nettoie le HTML pour éviter les scripts malveillants mais garde le formatage
+function cleanHTML(str) {
+    // Supprime les balises script
+    str = str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    // Supprime les attributs onclick, onerror, etc.
+    str = str.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+    return str;
+}
         // ÉCOUTE DES MESSAGES EN TEMPS RÉEL (FIRESTORE)
       function listenToMessages() {
     unsubscribeMessages = db.collection('chats').doc(chatId).collection('messages')
@@ -397,7 +465,21 @@
                 }
 
                 if (data.type === 'text') {
-                    bubbleHtml += `<span>${escapeHTML(data.text)}</span>`;
+                    // On affiche le texte en interprétant le HTML (pour la mise en forme)
+// Affiche le texte en conservant les balises HTML de mise en forme
+let displayText = data.text;
+
+// Convertit le markdown en HTML (pour ceux qui écrivent **gras** manuellement)
+displayText = displayText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+displayText = displayText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+displayText = displayText.replace(/~~(.*?)~~/g, '<del>$1</del>');
+
+// Supprime les balises dangereuses (script, onclick, etc.) mais garde <span>, <strong>, etc.
+displayText = displayText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+displayText = displayText.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+
+// AFFICHAGE DIRECT SANS escapeHTML() qui tue les balises
+bubbleHtml += `<span>${displayText}</span>`;
                 } else if (data.type === 'image') {
                     bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" onclick="window.open('${data.mediaUrl}')"/>`;
                 } else if (data.type === 'audio') {
@@ -468,8 +550,8 @@
     const text = input.value.trim();
     if(!text) return;
 
-    const msgData = {
-        text: text,
+        const msgData = {
+        text: text,  // On garde le texte avec les balises HTML
         senderId: currentUser.id,
         senderName: currentUser.name,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -797,6 +879,107 @@ function insertEmoji(emoji) {
         // Ecoute de la touche Entrée pour l'envoi rapide
         document.getElementById('chat-in').addEventListener('keydown', (e) => {
             if(e.key === 'Enter') sendTextMessage();
+        });
+      
+        // VARIABLES POUR LA MISE EN FORME
+        let selectedTextRange = null;
+        let currentFormat = { bold: false, italic: false, strike: false, color: 'black', font: "'Inter', sans-serif", size: '16px' };
+
+        // Détecter la sélection de texte dans le champ
+        document.getElementById('chat-in').addEventListener('mouseup', showToolbarOnSelection);
+        document.getElementById('chat-in').addEventListener('keyup', showToolbarOnSelection);
+        document.getElementById('chat-in').addEventListener('select', showToolbarOnSelection);
+
+        function showToolbarOnSelection() {
+            const input = document.getElementById('chat-in');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            
+            if (start !== end) {
+                // Il y a du texte sélectionné
+                selectedTextRange = { start: start, end: end };
+                const toolbar = document.getElementById('format-toolbar');
+                toolbar.style.display = 'flex';
+                
+                // Positionner la barre au-dessus du champ
+                const inputRect = input.getBoundingClientRect();
+                toolbar.style.bottom = 'auto';
+                toolbar.style.top = (inputRect.top - 60) + 'px';
+                toolbar.style.left = '15px';
+                toolbar.style.right = '15px';
+            } else {
+                // Pas de sélection, cacher la barre après 1 seconde
+                setTimeout(() => {
+                    if (document.getElementById('chat-in').selectionStart === document.getElementById('chat-in').selectionEnd) {
+                        document.getElementById('format-toolbar').style.display = 'none';
+                        selectedTextRange = null;
+                    }
+                }, 500);
+            }
+        }
+
+        function applyFormat(type, value = null) {
+            if (!selectedTextRange) return;
+            
+            const input = document.getElementById('chat-in');
+            const text = input.value;
+            const start = selectedTextRange.start;
+            const end = selectedTextRange.end;
+            const selectedText = text.substring(start, end);
+            
+            if (!selectedText) return;
+            
+            let wrappedText = selectedText;
+            let formatTag = '';
+            
+            switch(type) {
+                case 'bold':
+                    formatTag = '**';
+                    wrappedText = `**${selectedText}**`;
+                    document.getElementById('btn-bold').classList.toggle('active');
+                    break;
+                case 'italic':
+                    formatTag = '*';
+                    wrappedText = `*${selectedText}*`;
+                    document.getElementById('btn-italic').classList.toggle('active');
+                    break;
+                case 'strike':
+                    formatTag = '~~';
+                    wrappedText = `~~${selectedText}~~`;
+                    document.getElementById('btn-strike').classList.toggle('active');
+                    break;
+                case 'color':
+                    wrappedText = `<span style="color: ${value};">${selectedText}</span>`;
+                    break;
+                case 'font':
+                    wrappedText = `<span style="font-family: ${value};">${selectedText}</span>`;
+                    break;
+                case 'size':
+                    wrappedText = `<span style="font-size: ${value};">${selectedText}</span>`;
+                    break;
+            }
+            
+            // Remplacer le texte sélectionné
+            const newText = text.substring(0, start) + wrappedText + text.substring(end);
+            input.value = newText;
+            
+            // Re-sélectionner le texte formaté
+            const newEnd = start + wrappedText.length;
+            input.setSelectionRange(start, newEnd);
+            selectedTextRange = { start: start, end: newEnd };
+            
+            input.focus();
+            handleTyping();
+        }
+        
+        // Cacher la barre quand on clique ailleurs
+        document.addEventListener('click', function(e) {
+            const toolbar = document.getElementById('format-toolbar');
+            const input = document.getElementById('chat-in');
+            if (toolbar && !toolbar.contains(e.target) && e.target !== input) {
+                toolbar.style.display = 'none';
+                selectedTextRange = null;
+            }
         });
     </script>
 </body>
