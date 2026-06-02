@@ -349,124 +349,155 @@
         }
 
         // ÉCOUTE DES MESSAGES EN TEMPS RÉEL (FIRESTORE)
-        function listenToMessages() {
-            unsubscribeMessages = db.collection('chats').doc(chatId).collection('messages')
-                .orderBy('timestamp', 'asc')
-                .limitToLast(60)
-                .onSnapshot(snapshot => {
-                    const msgArea = document.getElementById('msg-area');
-                    msgArea.innerHTML = '';
-                    let lastDateStr = "";
+      function listenToMessages() {
+    unsubscribeMessages = db.collection('chats').doc(chatId).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .limitToLast(60)
+        .onSnapshot(snapshot => {
+            const msgArea = document.getElementById('msg-area');
+            msgArea.innerHTML = '';
+            let lastDateStr = "";
 
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const msgId = doc.id;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const msgId = doc.id;
 
-                        // Gestion du mode éphémère à la volée côté client
-                        if (data.isEphemeral && data.readBy && data.readBy.includes(targetUser.id) && data.readBy.includes(currentUser.id)) {
-                            return; 
-                        }
+                if (data.isEphemeral && data.readBy && data.readBy.includes(targetUser.id) && data.readBy.includes(currentUser.id)) {
+                    return; 
+                }
 
-                        // Ajout automatique aux lus si reçu
-                        if (data.senderId !== currentUser.id && (!data.readBy || !data.readBy.includes(currentUser.id))) {
-                            db.collection('chats').doc(chatId).collection('messages').doc(msgId).update({
-                                readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.id),
-                                status: "read"
-                            });
-                        }
-
-                        // Séparateur de date logique
-                        if(data.timestamp) {
-                            const dateObj = data.timestamp.toDate();
-                            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                            if(dateStr !== lastDateStr) {
-                                const sep = document.createElement('div');
-                                sep.className = 'date-separator';
-                                sep.innerText = dateStr;
-                                msgArea.appendChild(sep);
-                                lastDateStr = dateStr;
-                            }
-                        }
-
-                        const row = document.createElement('div');
-                        row.className = `message-row ${data.senderId === currentUser.id ? 'sent' : 'received'}`;
-                        row.setAttribute('data-id', msgId);
-
-                        const isGiant = isOnlyEmojis(data.text);
-                        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''}" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">`;
-
-                        // Citation de réponse s'il y a lieu
-                        if (data.replyToText) {
-                            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${data.replyToText}</div>`;
-                        }
-
-                        // Type de contenu
-                        if (data.type === 'text') {
-                            bubbleHtml += `<span>${escapeHTML(data.text)}</span>`;
-                        } else if (data.type === 'image') {
-                            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" onclick="window.open('${data.mediaUrl}')"/>`;
-                        } else if (data.type === 'audio') {
-                            bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
-                        }
-
-                        // Métadonnées & Statuts de lecture
-                        const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-                        const checkMark = data.status === 'read' ? '<span class="status-tick">✓✓</span>' : '<span>✓</span>';
-                        bubbleHtml += `<div class="msg-meta">${timeStr} ${data.senderId === currentUser.id ? checkMark : ''}</div>`;
-
-                        // Réactions collées
-                        if(data.reactions && Object.keys(data.reactions).length > 0) {
-                            bubbleHtml += `<div class="applied-reactions">`;
-                            Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
-                            bubbleHtml += `</div>`;
-                        }
-
-                        bubbleHtml += `</div>`;
-                        row.innerHTML = bubbleHtml;
-                        msgArea.appendChild(row);
+                if (data.senderId !== currentUser.id && (!data.readBy || !data.readBy.includes(currentUser.id))) {
+                    db.collection('chats').doc(chatId).collection('messages').doc(msgId).update({
+                        readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.id),
+                        status: "read"
                     });
+                }
 
-                    msgArea.scrollTop = msgArea.scrollHeight;
-                });
-        }
+                if(data.timestamp) {
+                    const dateObj = data.timestamp.toDate();
+                    const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                    if(dateStr !== lastDateStr) {
+                        const sep = document.createElement('div');
+                        sep.className = 'date-separator';
+                        sep.innerText = dateStr;
+                        msgArea.appendChild(sep);
+                        lastDateStr = dateStr;
+                    }
+                }
 
-        // ENVOI DE MESSAGES TEXTES
-        function sendTextMessage() {
-            const input = document.getElementById('chat-in');
-            const text = input.value.trim();
-            if(!text) return;
+                const row = document.createElement('div');
+                row.className = `message-row ${data.senderId === currentUser.id ? 'sent' : 'received'}`;
+                row.setAttribute('data-id', msgId);
 
-            const msgData = {
-                text: text,
-                senderId: currentUser.id,
-                senderName: currentUser.name,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: "sent",
-                readBy: [currentUser.id],
-                type: "text",
-                isEphemeral: isEphemeral,
-                mediaUrl: null
-            };
+                const isGiant = isOnlyEmojis(data.text);
+                let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''}" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">`;
 
-            if(replyToId) {
-                const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
-                if(parentRow) {
-                    msgData.replyToId = replyToId;
-                    msgData.replyToText = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
-                    msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
+                if (data.replyToText) {
+                    bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${data.replyToText}</div>`;
+                }
+
+                if (data.type === 'text') {
+                    bubbleHtml += `<span>${escapeHTML(data.text)}</span>`;
+                } else if (data.type === 'image') {
+                    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" onclick="window.open('${data.mediaUrl}')"/>`;
+                } else if (data.type === 'audio') {
+                    bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
+                }
+
+                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+                const checkMark = data.status === 'read' ? '<span class="status-tick">✓✓</span>' : '<span>✓</span>';
+                bubbleHtml += `<div class="msg-meta">${timeStr} ${data.senderId === currentUser.id ? checkMark : ''}</div>`;
+
+                if(data.reactions && Object.keys(data.reactions).length > 0) {
+                    bubbleHtml += `<div class="applied-reactions">`;
+                    Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+                    bubbleHtml += `</div>`;
+                }
+
+                bubbleHtml += `</div>`;
+                row.innerHTML = bubbleHtml;
+                msgArea.appendChild(row);
+            }); // ← Fin du snapshot.forEach
+
+            // =========================================================================
+            // LE BLOC DES CODES SECRETS EST SÉCURISÉ ICI, JUSTE APRÈS LA BOUCLE DES MESSAGES
+            // =========================================================================
+            if (!snapshot.metadata.hasPendingWrites && snapshot.docs.length > 0) {
+                const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+                const lastMsgData = lastDoc.data();
+                
+                if (lastMsgData.type === 'text' && lastMsgData.text) {
+                    const text = lastMsgData.text.trim();
+                    
+                    if (!lastDoc.metadata.fromCache && !window[`played_${lastDoc.id}`]) {
+                        window[`played_${lastDoc.id}`] = true;
+
+                        // Code 520 : Pluie de cœurs et fleurs massives
+                        if (text.includes('520')) {
+                            const heartsAndFlowers = ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💞','💓','❤️‍🔥','❤️‍🩹','❣️','💕','💖','💘','💝','💟','🌹','🌷','💐','🌺','😍','🥰','😘','🤩'];
+                            triggerMixedBombardment(heartsAndFlowers);
+                        } 
+                        // Code 88 : Bisous et bisous baveux / sensuels
+                        else if (text.includes('88')) {
+                            const kisses = ['😘','😙','💋','🤤','🫦'];
+                            triggerMixedBombardment(kisses);
+                        } 
+                        // Code 99 : Amour et complicité
+                        else if (text.includes('99')) {
+                            const love = ['🥰','😇','😍'];
+                            triggerMixedBombardment(love);
+                        } 
+                        // Reste sur l'ancien comportement si c'est un triple émoji classique (ex: 🔥🔥🔥)
+                        else if (text.length >= 3 && [...new Set(text)].length === 1 && isOnlyEmojis(text)) {
+                            triggerBombardment([...text][0]);
+                        }
+                    }
                 }
             }
+            // =========================================================================
 
-            db.collection('chats').doc(chatId).collection('messages').add(msgData);
-            
-            // Animation combo de bombardement d'émojis (ex: 🔥🔥🔥)
-            checkEmojiBombardment(text);
+            // Fait défiler le chat vers le bas pour voir le dernier message
+            msgArea.scrollTop = msgArea.scrollHeight;
+        });
+}
+        
 
-            input.value = '';
-            cancelReply();
-            toggleSendBtn(false);
-            stopTypingNotify();
+        // ENVOI DE MESSAGES TEXTES
+     function sendTextMessage() {
+    const input = document.getElementById('chat-in');
+    const text = input.value.trim();
+    if(!text) return;
+
+    const msgData = {
+        text: text,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: "text",
+        isEphemeral: isEphemeral,
+        mediaUrl: null
+    };
+
+    if(replyToId) {
+        const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
+        if(parentRow) {
+            msgData.replyToId = replyToId;
+            msgData.replyToText = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+            msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
         }
+    }
+
+    // On nettoie l'input immédiatement pour le confort visuel
+    input.value = '';
+    cancelReply();
+    toggleSendBtn(false);
+    stopTypingNotify();
+
+    // Envoi à Firebase
+    db.collection('chats').doc(chatId).collection('messages').add(msgData);
+}
 
         // SUPPRESSION DE MESSAGE
         function deleteSelectedMessage() {
@@ -506,7 +537,27 @@
                 }, i * 50);
             }
         }
-
+function triggerMixedBombardment(emojiList) {
+    for (let i = 0; i < 70; i++) { // 70 émojis pour un effet bien dense
+        setTimeout(() => {
+            const e = document.createElement('div');
+            e.className = 'falling-emoji';
+            
+            // Choisit un émoji au hasard dans la liste reçue
+            const randomEmoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+            e.innerText = randomEmoji;
+            
+            // Dispersion aléatoire sur tout l'écran
+            e.style.left = Math.random() * 100 + 'vw';
+            e.style.top = '-50px';
+            e.style.fontSize = Math.random() * 35 + 20 + 'px'; // Tailles variées (de 20px à 55px)
+            e.style.animationDuration = Math.random() * 2 + 1.5 + 's'; // Vitesses différentes
+            
+            document.body.appendChild(e);
+            setTimeout(() => e.remove(), 3500); // Nettoie l'écran après 3.5 secondes
+        }, i * 40); // Décale légèrement l'apparition pour un effet fluide
+    }
+}
         // ENREGISTREMENT AUDIO (BLOB)
         async function toggleRecording() {
             const micIcon = document.getElementById('mic-btn');
@@ -631,8 +682,8 @@ function insertEmoji(emoji) {
     document.getElementById('chat-in').value += emoji; 
     handleTyping(); 
     
-    // Ferme automatiquement le panneau après la sélection
-    document.getElementById('emoji-panel').style.display = 'none';
+    // On a supprimé la ligne qui fermait le panneau !
+    // Maintenant, le dock reste ouvert tant que tu ne recliques pas sur le smiley.
 }
         // DETECTION DE FRAISSEMENT (TYPING INDICATOR VIA FIRESTORE)
         function handleTyping() {
