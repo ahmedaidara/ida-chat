@@ -868,6 +868,77 @@
     85% { opacity: 1; transform: translateX(-50%) translateY(0); }
     100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
 }
+      
+      /* ========== MODE LIVE ========== */
+.live-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #a800ff, #0076ff, #a800ff);
+    background-size: 200% 100%;
+    animation: liveProgress 2s ease infinite;
+    width: 0%;
+    transition: width 0.1s ease;
+}
+@keyframes liveProgress {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+.live-container {
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    padding: 5px 15px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.live-container.active {
+    display: flex;
+}
+.live-badge {
+    background: #ff4444;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    animation: livePulse 1s ease infinite;
+}
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.05); }
+}
+.live-text-preview {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: monospace;
+    background: var(--input-bg);
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+.live-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: #0095f6;
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+    vertical-align: middle;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+.live-toggle-btn {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.live-toggle-btn.active {
+    color: #ff4444;
+    text-shadow: 0 0 3px #ff4444;
+}
     </style>
 </head>
 <body>
@@ -970,15 +1041,25 @@
             </div>
         </div>
             </div>
-                                   <div class="header-actions">
+                                              <div class="header-actions">
                 <i class="fa-solid fa-bolt flash-btn" id="flash-btn" title="Faire vibrer le téléphone de l'autre" onclick="triggerFlashVibration()"></i>
-                <i class="fa-solid fa-eye-slash blur-toggle-btn" id="blur-toggle-btn" title="Mode Flou : cliquer sur un message pour le lire" onclick="toggleBlurMode()"></i>
+                <i class="fa-solid fa-eye-slash blur-toggle-btn" id="blur-toggle-btn" title="Mode Flou" onclick="toggleBlurMode()"></i>
+                <i class="fa-solid fa-eye live-toggle-btn" id="live-toggle-btn" title="Mode Live : voir ce que l'autre tape en temps réel" onclick="toggleLiveMode()"></i>
                 <i class="fa-solid fa-folder-plus" title="Importer WhatsApp" onclick="toggleModal('import-modal', true)"></i>
                 <i class="fa-solid fa-moon" title="Thème" onclick="toggleTheme()"></i>
                 <i class="fa-solid fa-sliders" title="Paramètres" onclick="togglePanel('settings-panel')"></i>
             </div>
         </div>
-
+        <!-- Barre Mode Live -->
+        <div class="live-container" id="live-container">
+            <div class="live-badge"></div>
+            <div class="live-text-preview" id="live-text-preview">
+                <span id="live-sender-name">...</span> : 
+                <span id="live-message-preview"></span>
+                <span class="live-cursor"></span>
+            </div>
+        </div>
+        <div class="live-bar" id="live-bar"></div>
         <div class="messages-area" id="msg-area" onscroll="handleSwipeDetect(this)">
             </div>
  
@@ -1193,6 +1274,11 @@
               let blurModeActive = false;
         let pressTimer = null;
         let currentBlurMessage = null;
+      
+              let liveModeActive = false;
+        let liveTypingTimeout = null;
+        let currentLiveText = "";
+        let liveUpdateTimeout = null;
               // ========== TABLEAU DE DESSIN CANVAS ==========
         let canvas = null;
         let ctx = null;
@@ -1491,7 +1577,11 @@ function cleanHTML(str) {
     stopTypingNotify();
 
     // Envoi à Firebase
+      // Envoi à Firebase
     db.collection('chats').doc(chatId).collection('messages').add(msgData);
+    
+    // Nettoyer le live typing après envoi
+    clearLiveTyping();
 }
 
         // SUPPRESSION DE MESSAGE
@@ -1686,28 +1776,30 @@ function insertEmoji(emoji) {
     // Maintenant, le dock reste ouvert tant que tu ne recliques pas sur le smiley.
 }
         // DETECTION DE FRAISSEMENT (TYPING INDICATOR VIA FIRESTORE)
+               // DETECTION DE FRAISSEMENT (TYPING INDICATOR VIA FIRESTORE)
         function handleTyping() {
-    const input = document.getElementById('chat-in');
-    const hasText = input.value.trim().length > 0;
-    toggleSendBtn(hasText);
-    
-    // Gérer l'affichage des 3 points
-    const translateBtn = document.getElementById('translate-menu-btn');
-    if (hasText) {
-        // Si on écrit, les 3 points disparaissent
-        translateBtn.style.display = 'none';
-        // Fermer le menu déroulant si ouvert
-        const dropdown = document.getElementById('translate-dropdown');
-        dropdown.classList.remove('show');
-    } else {
-        // Si champ vide, les 3 points réapparaissent
-        translateBtn.style.display = 'flex';
-    }
+            const input = document.getElementById('chat-in');
+            const hasText = input.value.trim().length > 0;
+            toggleSendBtn(hasText);
+            
+            // Gérer l'affichage des 3 points
+            const translateBtn = document.getElementById('translate-menu-btn');
+            if (hasText) {
+                translateBtn.style.display = 'none';
+                const dropdown = document.getElementById('translate-dropdown');
+                dropdown.classList.remove('show');
+            } else {
+                translateBtn.style.display = 'flex';
+            }
 
-    db.collection('chats').doc(chatId).collection('typing').doc(currentUser.id).set({ isTyping: true });
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(stopTypingNotify, 2000);
-}  
+            // Typing indicator classique
+            db.collection('chats').doc(chatId).collection('typing').doc(currentUser.id).set({ isTyping: true });
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(stopTypingNotify, 2000);
+            
+            // Envoyer la mise à jour live (TOUJOURS, même si personne n'a activé le mode live)
+            sendLiveTypingUpdate();
+        }
 
         function stopTypingNotify() {
             if(currentUser) db.collection('chats').doc(chatId).collection('typing').doc(currentUser.id).set({ isTyping: false });
@@ -3315,6 +3407,164 @@ function restoreOriginalMessage(element) {
                 bubble.classList.add('blur-active');
                 attachBlurEvents(bubble);
             }
+        }
+      
+              // ========== MODE LIVE ==========
+        
+               function toggleLiveMode() {
+            liveModeActive = !liveModeActive;
+            const liveBtn = document.getElementById('live-toggle-btn');
+            const liveContainer = document.getElementById('live-container');
+            
+            if (liveModeActive) {
+                liveBtn.classList.add('active');
+                liveBtn.style.color = '#ff4444';
+                liveContainer.classList.add('active');
+                showTempNotification("🔴 Mode Live ACTIVÉ - Vous verrez ce que l'autre tape en temps réel");
+                
+                // Démarrer l'écoute du texte en direct (peu importe si l'autre a activé ou non)
+                startLiveTypingListener();
+            } else {
+                liveBtn.classList.remove('active');
+                liveBtn.style.color = '';
+                liveContainer.classList.remove('active');
+                showTempNotification("⚫ Mode Live DÉSACTIVÉ");
+                
+                // Arrêter l'écoute
+                stopLiveTypingListener();
+            }
+            
+            // Sauvegarder la préférence (uniquement pour cet utilisateur)
+            localStorage.setItem('liveModeActive', liveModeActive);
+        }
+        
+               function startLiveTypingListener() {
+            if (!targetUser) return;
+            
+            // On écoute ce que l'UTILISATEUR CIBLE (targetUser) tape
+            // Peu importe que targetUser ait activé le mode live ou non
+            // On écoute son document live_typing qui est toujours mis à jour quand il tape
+            
+            const liveDocRef = db.collection('live_typing').doc(chatId);
+            
+            liveDocRef.onSnapshot((doc) => {
+                // Même si l'autre n'a PAS activé le mode live,
+                // on reçoit ses mises à jour car on les envoie TOUJOURS (voir modification suivante)
+                if (doc.exists && liveModeActive) {
+                    const data = doc.data();
+                    const currentText = data.text || "";
+                    const senderId = data.senderId;
+                    const senderName = data.senderName;
+                    
+                    // Vérifier que c'est bien l'autre qui tape
+                    if (senderId === targetUser.id && currentText !== currentLiveText) {
+                        currentLiveText = currentText;
+                        
+                        // Mettre à jour l'affichage
+                        updateLivePreview(senderName, currentText);
+                        
+                        // Animer la barre de progression
+                        animateLiveBar(currentText.length);
+                    }
+                }
+            });
+        }
+        
+        function stopLiveTypingListener() {
+            // Nettoyer l'affichage
+            const previewSpan = document.getElementById('live-message-preview');
+            if (previewSpan) {
+                previewSpan.textContent = "";
+            }
+            const bar = document.getElementById('live-bar');
+            if (bar) {
+                bar.style.width = '0%';
+            }
+            currentLiveText = "";
+        }
+        
+        function updateLivePreview(senderName, text) {
+            const senderSpan = document.getElementById('live-sender-name');
+            const previewSpan = document.getElementById('live-message-preview');
+            
+            if (senderSpan) {
+                senderSpan.textContent = senderName;
+            }
+            
+            if (previewSpan) {
+                if (text && text.length > 0) {
+                    previewSpan.textContent = text;
+                    previewSpan.style.opacity = '1';
+                } else {
+                    previewSpan.textContent = "en train d'écrire...";
+                    previewSpan.style.opacity = '0.6';
+                }
+            }
+        }
+        
+        function animateLiveBar(textLength) {
+            const bar = document.getElementById('live-bar');
+            if (!bar) return;
+            
+            // Plus le texte est long, plus la barre avance (max 100%)
+            let percentage = Math.min(textLength * 2, 100);
+            bar.style.width = percentage + '%';
+            
+            // Reset après 2 secondes d'inactivité
+            if (liveUpdateTimeout) clearTimeout(liveUpdateTimeout);
+            liveUpdateTimeout = setTimeout(() => {
+                if (bar) bar.style.width = '0%';
+            }, 2000);
+        }
+        
+        // Envoyer le texte en temps réel pendant que l'utilisateur tape
+               // Envoyer le texte en temps réel pendant que l'utilisateur tape
+        // Cette fonction s'exécute TOUJOURS, que le mode live soit activé ou non
+        function sendLiveTypingUpdate() {
+            if (!currentUser) return;
+            
+            const input = document.getElementById('chat-in');
+            const text = input.value;
+            
+            // Mettre à jour Firestore en temps réel (avec debounce pour éviter trop d'écritures)
+            if (liveUpdateTimeout) clearTimeout(liveUpdateTimeout);
+            
+            liveUpdateTimeout = setTimeout(() => {
+                // On envoie TOUJOURS la mise à jour, même si personne n'a activé le mode live
+                // Comme ça, si quelqu'un l'active plus tard, il verra l'historique
+                db.collection('live_typing').doc(chatId).set({
+                    text: text,
+                    senderId: currentUser.id,
+                    senderName: currentUser.name,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }, 50);
+        }
+        
+        // Modifier handleTyping pour envoyer aussi les mises à jour live
+        const originalHandleTyping = handleTyping;
+        window.handleTyping = function() {
+            // Appeler la fonction originale
+            originalHandleTyping();
+            
+            // Envoyer la mise à jour live si le mode est activé
+            if (liveModeActive) {
+                sendLiveTypingUpdate();
+            }
+        };
+        
+        // Nettoyer le live quand le message est envoyé
+        function clearLiveTyping() {
+            db.collection('live_typing').doc(chatId).set({
+                text: "",
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Réinitialiser l'affichage local
+            const bar = document.getElementById('live-bar');
+            if (bar) bar.style.width = '0%';
         }
     </script>
   
