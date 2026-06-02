@@ -467,6 +467,51 @@
     background: #ed4956;
     color: white;
 }
+      /* STYLE POUR AUDIO ÉPHÉMÈRE */
+.ephemeral-audio {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important;
+    border-radius: 20px !important;
+    padding: 8px 12px !important;
+}
+.ephemeral-audio audio {
+    max-width: 180px;
+    height: 32px;
+}
+.ephemeral-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4444;
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    z-index: 2;
+    animation: pulse 1s infinite;
+}
+@keyframes pulse {
+    0% { opacity: 0.7; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 0.7; transform: scale(1); }
+}
+.ephemeral-played {
+    opacity: 0.5;
+    filter: blur(2px);
+}
+.ephemeral-played::after {
+    content: "🔇 ÉCOUTÉ";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: black;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
     </style>
 </head>
 <body>
@@ -585,6 +630,10 @@
                                   <div class="translate-option" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="toggleCodeMode()">
                         <span class="flag">🔒</span>
                         <span class="lang-name"></span>
+                    </div>
+                                  <div class="translate-option" onclick="toggleEphemeralAudioMode()">
+                        <span class="flag">🎙️</span>
+                        <span class="lang-name">Audio Éphémère</span>
                     </div>
             </div>
             <input type="file" id="img-file" accept="image/*" style="display:none;" onchange="uploadImage(this)">
@@ -714,6 +763,7 @@
         let isEphemeral = false;
         let mediaRecorder = null;
         let audioChunks = [];
+              let ephemeralAudioMode = false;  // Mode audio éphémère activé
               let codeModeActive = false;  // Mode codé activé pour le prochain message
         let pendingMessageId = null;  // Message en attente de déverrouillage
         const SECRET_PIN = "0507";  // Code PIN secret
@@ -738,6 +788,8 @@
           
           listenToMessages();
             listenToTyping();
+                      // Nettoyer les vieux audios éphémères
+            setTimeout(cleanupEphemeralAudios, 2000);
         }
 
         function logout() {
@@ -836,8 +888,41 @@ function cleanHTML(str) {
                     }
                 } else if (data.type === 'image') {
                     bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" onclick="window.open('${data.mediaUrl}')"/>`;
-                } else if (data.type === 'audio') {
-                    bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
+                                } else if (data.type === 'audio') {
+                    // Vérifier si c'est un audio éphémère
+                    if (data.isEphemeralAudio) {
+                        // Ajouter un badge spécial
+                        bubbleHtml = bubbleHtml.replace('</div>', '');
+                        
+                        // Vérifier si l'audio a déjà été écouté par cet utilisateur
+                        const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
+                        const isDestroyed = data.destroyed;
+                        
+                        if (isDestroyed) {
+                            bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
+                        } else {
+                            // Ajouter le badge éphémère
+                            bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
+                            
+                            if (alreadyPlayed) {
+                                // Audio déjà écouté par cet utilisateur
+                                bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;">
+                                    <i class="fa-solid fa-head-side-headphones"></i>
+                                    <span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span>
+                                </div>`;
+                            } else {
+                                // Audio pas encore écouté
+                                bubbleHtml += `<div style="padding:5px;">
+                                    <audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio>
+                                    <small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique - disparaîtra après</small>
+                                </div>`;
+                            }
+                        }
+                        bubbleHtml += `</div>`;
+                    } else {
+                        // Audio normal
+                        bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
+                    }
                 }
 
                 const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
@@ -1015,12 +1100,16 @@ function triggerMixedBombardment(emojiList) {
                     audioChunks = [];
                     
                     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
+                                        mediaRecorder.onstop = () => {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
                         const reader = new FileReader();
                         reader.readAsDataURL(audioBlob);
                         reader.onloadend = () => {
-                            sendMediaMessage('audio', reader.result);
+                            if (ephemeralAudioMode) {
+                                sendEphemeralAudio(reader.result);
+                            } else {
+                                sendMediaMessage('audio', reader.result);
+                            }
                         };
                     };
 
@@ -1803,6 +1892,151 @@ function restoreOriginalMessage(element) {
                 // Marquer comme déverrouillé (mais pas en base de données)
                 messageRow.setAttribute('data-unlocked', 'true');
             }
+        }
+      
+              // ========== AUDIO ÉPHÉMÈRE ==========
+        
+        function toggleEphemeralAudioMode() {
+            ephemeralAudioMode = !ephemeralAudioMode;
+            closeTranslateMenu();
+            
+            if (ephemeralAudioMode) {
+                showTempNotification("🎙️ Mode Audio Éphémère ACTIVÉ - Enregistrement à écoute unique");
+                // Indiquer visuellement que le mode est activé
+                const micBtn = document.getElementById('mic-btn');
+                micBtn.style.background = "#ff4444";
+                micBtn.style.borderRadius = "50%";
+                micBtn.style.padding = "5px";
+            } else {
+                showTempNotification("🎙️ Mode Audio Éphémère DÉSACTIVÉ");
+                const micBtn = document.getElementById('mic-btn');
+                micBtn.style.background = "";
+                micBtn.style.borderRadius = "";
+                micBtn.style.padding = "";
+            }
+        }
+        
+        // Envoyer un audio éphémère
+        function sendEphemeralAudio(base64Data) {
+            const msgData = {
+                text: null,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "sent",
+                readBy: [currentUser.id],
+                type: "audio",
+                isEphemeral: isEphemeral,
+                isEphemeralAudio: true,  // Marquer comme audio éphémère
+                mediaUrl: base64Data,
+                playedBy: [],  // Liste des utilisateurs qui ont écouté
+                destroyed: false
+            };
+            
+            db.collection('chats').doc(chatId).collection('messages').add(msgData);
+            
+            // Désactiver le mode après envoi
+            ephemeralAudioMode = false;
+            const micBtn = document.getElementById('mic-btn');
+            micBtn.style.background = "";
+            micBtn.style.borderRadius = "";
+            micBtn.style.padding = "";
+            showTempNotification("🎙️ Audio éphémère envoyé ! Il disparaîtra après écoute");
+        }
+        
+        // Marquer un audio comme écouté et le détruire
+        async function markEphemeralAudioAsPlayed(messageId, audioElement) {
+            const msgRef = db.collection('chats').doc(chatId).collection('messages').doc(messageId);
+            const doc = await msgRef.get();
+            const data = doc.data();
+            
+            if (!data || !data.isEphemeralAudio) return;
+            if (data.destroyed) return;
+            
+            // Vérifier si l'utilisateur actuel a déjà écouté
+            if (data.playedBy && data.playedBy.includes(currentUser.id)) {
+                return;
+            }
+            
+            // Marquer comme écouté par cet utilisateur
+            await msgRef.update({
+                playedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.id)
+            });
+            
+            // Récupérer le document mis à jour
+            const updatedDoc = await msgRef.get();
+            const updatedData = updatedDoc.data();
+            
+            // Si les deux utilisateurs ont écouté, détruire le message
+            if (updatedData.playedBy && updatedData.playedBy.length >= 2) {
+                await msgRef.delete();
+                showTempNotification("🗑️ Audio éphémère supprimé (écouté par les deux)");
+            } else {
+                // Désactiver l'audio pour cet utilisateur
+                if (audioElement) {
+                    audioElement.style.opacity = "0.5";
+                    audioElement.style.filter = "blur(2px)";
+                    audioElement.disabled = true;
+                    const parent = audioElement.closest('.message-bubble');
+                    if (parent) {
+                        parent.classList.add('ephemeral-played');
+                    }
+                }
+                showTempNotification("🔇 Audio éphémère écouté - disparaîtra quand l'autre l'aura écouté");
+            }
+        }
+      
+              // Gérer la lecture d'un audio éphémère
+        async function handleEphemeralAudioPlay(messageId, audioElement) {
+            // Vérifier si déjà écouté
+            const msgRef = db.collection('chats').doc(chatId).collection('messages').doc(messageId);
+            const doc = await msgRef.get();
+            const data = doc.data();
+            
+            if (!data || !data.isEphemeralAudio) return;
+            if (data.destroyed) {
+                audioElement.remove();
+                showTempNotification("🔇 Cet audio a déjà été supprimé");
+                return;
+            }
+            
+            if (data.playedBy && data.playedBy.includes(currentUser.id)) {
+                showTempNotification("🔇 Tu as déjà écouté cet audio éphémère");
+                audioElement.pause();
+                return;
+            }
+            
+            // Écouter la fin de la lecture
+            audioElement.addEventListener('ended', async () => {
+                await markEphemeralAudioAsPlayed(messageId, audioElement);
+                
+                // Mettre à jour l'affichage
+                const messageRow = document.querySelector(`[data-id="${messageId}"]`);
+                if (messageRow) {
+                    const audioDiv = messageRow.querySelector('.message-bubble > div');
+                    if (audioDiv) {
+                        audioDiv.innerHTML = '<div style="padding:8px; text-align:center;"><i class="fa-solid fa-check-double"></i> <span>🔇 Audio écouté (disparaîtra bientôt)</span></div>';
+                        audioDiv.classList.add('ephemeral-played');
+                    }
+                }
+            });
+        }
+        
+        // Nettoyer les audios éphémères au chargement (réécouter impossible)
+        async function cleanupEphemeralAudios() {
+            const messagesRef = db.collection('chats').doc(chatId).collection('messages');
+            const snapshot = await messagesRef.where('isEphemeralAudio', '==', true).get();
+            
+            snapshot.forEach(async (doc) => {
+                const data = doc.data();
+                // Si l'audio a été écouté par l'utilisateur actuel et qu'il a plus de 5 minutes
+                if (data.playedBy && data.playedBy.includes(currentUser.id)) {
+                    const timestamp = data.timestamp?.toDate();
+                    if (timestamp && (Date.now() - timestamp.getTime() > 300000)) { // 5 minutes
+                        await doc.ref.delete();
+                    }
+                }
+            });
         }
     </script>
   
