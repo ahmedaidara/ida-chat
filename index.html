@@ -9,7 +9,8 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         :root {
             --bg-main: #ffffff;
@@ -655,6 +656,47 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
+      /* ========== MODULE FLASH (VIBRATION) ========== */
+.flash-btn {
+    cursor: pointer;
+    transition: all 0.2s;
+    animation: flashPulse 2s ease infinite;
+}
+.flash-btn:hover {
+    transform: scale(1.2);
+    color: #ffaa00;
+}
+.flash-active {
+    animation: flashIntense 0.3s ease infinite;
+    color: #ffaa00 !important;
+}
+@keyframes flashPulse {
+    0%, 100% { opacity: 0.7; text-shadow: 0 0 0px #ffaa00; }
+    50% { opacity: 1; text-shadow: 0 0 3px #ffaa00; }
+}
+@keyframes flashIntense {
+    0%, 100% { transform: scale(1); text-shadow: 0 0 5px #ffaa00; }
+    50% { transform: scale(1.1); text-shadow: 0 0 15px #ffaa00; color: #ff6600; }
+}
+.flash-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: #ffaa00;
+    font-size: 3rem;
+    padding: 20px;
+    border-radius: 50%;
+    z-index: 2000;
+    animation: flashZoom 0.5s ease-out;
+    pointer-events: none;
+}
+@keyframes flashZoom {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
     </style>
 </head>
 <body>
@@ -757,7 +799,8 @@
             </div>
         </div>
             </div>
-            <div class="header-actions">
+                        <div class="header-actions">
+                <i class="fa-solid fa-bolt flash-btn" id="flash-btn" title="Faire vibrer le téléphone de l'autre" onclick="triggerFlashVibration()"></i>
                 <i class="fa-solid fa-folder-plus" title="Importer WhatsApp" onclick="toggleModal('import-modal', true)"></i>
                 <i class="fa-solid fa-moon" title="Thème" onclick="toggleTheme()"></i>
                 <i class="fa-solid fa-sliders" title="Paramètres" onclick="togglePanel('settings-panel')"></i>
@@ -974,6 +1017,8 @@
         let isEphemeral = false;
         let mediaRecorder = null;
         let audioChunks = [];
+              let flashInterval = null;
+        let isVibrating = false;
               let batteryInterval = null;
         let currentBatteryLevel = null;
         let isCharging = false;
@@ -1006,14 +1051,16 @@
             listenToTyping();
             listenToUserMood();  // Écouter le statut de l'autre utilisateur
             listenToOtherUserBattery();  // Écouter la batterie de l'autre
+                 listenForFlashSignals(); 
             saveDefaultMood();   // Sauvegarder son propre statut
             getBatteryLevel();    // Démarrer la surveillance de sa propre batterie  // Sauvegarder son propre statut
         }
 
-                function logout() {
+                       function logout() {
             if(unsubscribeMessages) unsubscribeMessages();
             if(unsubscribeTyping) unsubscribeTyping();
             stopBatteryMonitoring();
+            stopFlashVibration();
             document.getElementById('login-screen').style.display = 'flex';
         }
 
@@ -2511,6 +2558,184 @@ function restoreOriginalMessage(element) {
                 clearInterval(batteryInterval);
                 batteryInterval = null;
             }
+        }
+      
+              // ========== MODULE FLASH (VIBRATION SYNCHRONE) ==========
+        
+        // Déclencher la vibration chez l'autre utilisateur
+        async function triggerFlashVibration() {
+            if (!targetUser) return;
+            
+            const flashBtn = document.getElementById('flash-btn');
+            
+            // Animation du bouton
+            flashBtn.classList.add('flash-active');
+            setTimeout(() => {
+                flashBtn.classList.remove('flash-active');
+            }, 300);
+            
+            // Récupérer le token de l'autre utilisateur (Firestore)
+            const userDoc = await db.collection('users').doc(targetUser.id).get();
+            const userData = userDoc.data();
+            
+            // Envoyer un signal de vibration
+            await db.collection('flash_signals').add({
+                targetUserId: targetUser.id,
+                sourceUserId: currentUser.id,
+                sourceUserName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                pattern: getVibrationPattern()
+            });
+            
+            showTempNotification(`⚡ Vibration envoyée à ${targetUser.full} !`);
+            
+            // Vibrer localement aussi pour confirmation
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+        }
+        
+        // Générer un motif de vibration basé sur des clics répétés
+        let lastFlashTime = 0;
+        let flashCount = 0;
+        
+        function getVibrationPattern() {
+            const now = Date.now();
+            const timeSinceLast = now - lastFlashTime;
+            
+            if (timeSinceLast < 1000) {
+                flashCount++;
+                if (flashCount > 10) flashCount = 10;
+            } else {
+                flashCount = 1;
+            }
+            
+            lastFlashTime = now;
+            
+            // Créer un motif basé sur le nombre de clics
+            const pattern = [];
+            for (let i = 0; i < Math.min(flashCount, 5); i++) {
+                pattern.push(200); // vibrer 200ms
+                if (i < flashCount - 1) pattern.push(100); // pause 100ms
+            }
+            
+            return pattern;
+        }
+        
+        // Écouter les signaux de flash pour l'utilisateur actuel
+        function listenForFlashSignals() {
+            if (!currentUser) return;
+            
+            db.collection('flash_signals')
+                .where('targetUserId', '==', currentUser.id)
+                .orderBy('timestamp', 'desc')
+                .limitToLast(10)
+                .onSnapshot((snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const signalData = change.doc.data();
+                            executeFlashVibration(signalData);
+                            
+                            // Supprimer le signal après traitement (optionnel)
+                            setTimeout(() => {
+                                change.doc.ref.delete();
+                            }, 5000);
+                        }
+                    });
+                });
+        }
+        
+        // Exécuter la vibration sur le téléphone de l'utilisateur
+        function executeFlashVibration(signalData) {
+            const pattern = signalData.pattern || [200];
+            
+            console.log(`⚡ Vibration reçue de ${signalData.sourceUserName}`, pattern);
+            
+            // Vibration même en arrière-plan (si l'API le permet)
+            if (navigator.vibrate) {
+                navigator.vibrate(pattern);
+            }
+            
+            // Afficher une notification visuelle
+            showFlashNotification(signalData.sourceUserName);
+            
+            // Jouer un son de flash (optionnel)
+            playFlashSound();
+            
+            // Vibration répétée si nécessaire
+            if (pattern.length > 2) {
+                if (navigator.vibrate) {
+                    navigator.vibrate(pattern);
+                }
+            }
+        }
+        
+        // Afficher une notification visuelle éphémère
+        function showFlashNotification(senderName) {
+            const notif = document.createElement('div');
+            notif.className = 'flash-notification';
+            notif.innerHTML = `⚡<br><span style="font-size:0.8rem;">${senderName} vous a flashé !</span>`;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.remove();
+            }, 1000);
+        }
+        
+        // Jouer un son court (si l'utilisateur a interagi avec la page)
+        let audioContext = null;
+        
+        function playFlashSound() {
+            try {
+                // Utiliser l'API Web Audio pour un "beep" simple
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 880; // La note A5
+                gainNode.gain.value = 0.3;
+                
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
+                // Reprendre l'audio context si suspendu
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            } catch (error) {
+                console.log("Audio non disponible:", error);
+            }
+        }
+        
+        // Arrêter la vibration en cours
+        function stopFlashVibration() {
+            if (navigator.vibrate) {
+                navigator.vibrate(0);
+            }
+            isVibrating = false;
+        }
+        
+        // Simuler une vibration (pour les navigateurs qui ne supportent pas)
+        function simulateVibration() {
+            // Créer une petite animation pour simuler la vibration
+            const body = document.body;
+            let count = 0;
+            const interval = setInterval(() => {
+                if (count > 10) {
+                    clearInterval(interval);
+                    body.style.transform = '';
+                    return;
+                }
+                body.style.transform = count % 2 === 0 ? 'translateX(2px)' : 'translateX(-2px)';
+                count++;
+            }, 50);
         }
     </script>
   
