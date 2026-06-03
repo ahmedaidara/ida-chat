@@ -939,6 +939,16 @@
     color: #ff4444;
     text-shadow: 0 0 3px #ff4444;
 }
+      
+      /* Cacher le bouton Mode Live */
+.live-toggle-btn {
+    display: none !important;
+}
+      
+      /* Cacher tous les éléments de statut d'humeur */
+.mood-status, #other-mood-emoji, .mood-panel, [class*="mood"] {
+    display: none !important;
+}
     </style>
 </head>
 <body>
@@ -950,15 +960,15 @@
                 <button class="user-btn btn-ida" onclick="selectUser('ida')">
                     <div class="avatar">IDA</div>
                     <div class="user-info-btn">
-                        <span class="name">Ida Diallo</span>
-                        <span class="tag">@ida_diallo</span>
+                        <span class="name">Ida Wuruss</span>
+                        <span class="tag">IMJM</span>
                     </div>
                 </button>
                 <button class="user-btn btn-aidara" onclick="selectUser('aidara')">
                     <div class="avatar">AID</div>
                     <div class="user-info-btn">
-                        <span class="name">Aidara Kane</span>
-                        <span class="tag">@aidara_kane</span>
+                        <span class="name">Aidara</span>
+                        <span class="tag">ASIA</span>
                     </div>
                 </button>
             </div>
@@ -1292,7 +1302,7 @@
               let batteryInterval = null;
         let currentBatteryLevel = null;
         let isCharging = false;
-              let currentMood = { emoji: '😊', label: 'Heureux' };  // Statut par défaut
+              let currentMood = { emoji: '😊', label: ' ' };  // Statut par défaut
         let moodUpdateTimeout = null;
               let ephemeralAudioMode = false;  // Mode audio éphémère activé
               let codeModeActive = false;  // Mode codé activé pour le prochain message
@@ -1305,8 +1315,8 @@
 
         // SÉLECTION DU COMPTE UTILISATEUR
                function selectUser(userKey) {
-            currentUser = userKey === 'ida' ? { id: 'ida', name: 'IDA', full: 'Ida Diallo' } : { id: 'aidara', name: 'AIDARA', full: 'Aidara Kane' };
-            targetUser = userKey === 'ida' ? { id: 'aidara', name: 'AIDARA', full: 'Aidara Kane' } : { id: 'ida', name: 'IDA', full: 'Ida Diallo' };
+            currentUser = userKey === 'ida' ? { id: 'ida', name: 'IDA', full: 'Ida' } : { id: 'aidara', name: 'AIDARA', full: 'Aidara' };
+            targetUser = userKey === 'ida' ? { id: 'aidara', name: 'AIDARA', full: 'Aidara' } : { id: 'ida', name: 'IDA', full: 'Ida' };
 
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('header-av').innerText = targetUser.name.substring(0,3);
@@ -1319,7 +1329,7 @@
           
                         listenToMessages();
             listenToTyping();
-            listenToUserMood();  // Écouter le statut de l'autre utilisateur
+           // listenToUserMood();  // Écouter le statut de l'autre utilisateur
             listenToOtherUserBattery();  // Écouter la batterie de l'autre
                  listenForFlashSignals(); 
             saveDefaultMood();   // Sauvegarder son propre statut
@@ -2644,7 +2654,7 @@ function restoreOriginalMessage(element) {
         
         // Effacer le statut
         async function clearMood() {
-            currentMood = { emoji: '😊', label: 'Heureux' };
+            currentMood = { emoji: '😊', label: 'H ' };
             
             const moodSpan = document.getElementById('mood-emoji');
             moodSpan.textContent = '😊';
@@ -2699,14 +2709,16 @@ function restoreOriginalMessage(element) {
  
         
         // Sauvegarder le statut par défaut au démarrage
-        async function saveDefaultMood() {
-            if (currentUser) {
-                await db.collection('users').doc(currentUser.id).set({
-                    mood: currentMood,
-                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            }
-        }
+       async function saveDefaultMood() {
+    if (currentUser) {
+        await db.collection('users').doc(currentUser.id).set({
+            mood: currentMood,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        // SUPPRIME ou COMMENTE cette ligne si elle existe :
+        // showTempNotification(`😊 ${currentUser.name} est heureux`);
+    }
+}
       
               // ========== INDICATEUR DE BATTERIE EN TEMPS RÉEL ==========
         
@@ -3254,7 +3266,7 @@ function restoreOriginalMessage(element) {
                 blurBtn.classList.add('active');
                 blurBtn.classList.remove('fa-eye-slash');
                 blurBtn.classList.add('fa-eye');
-                showBlurNotification("🔒 Mode Flou activé - Cliquez et maintenez sur un message pour le lire");
+                showBlurNotification("🔒 Mode Flou activé");
                 
                 // Appliquer le flou à tous les messages existants
                 applyBlurToAllMessages();
@@ -3568,7 +3580,7 @@ function restoreOriginalMessage(element) {
         }
     </script>
   
-          <!-- Modal pour saisir le code PIN -->
+          <!-- Modal pour saisir le code PIN --> 
         <div class="pin-modal" id="pin-modal">
             <div class="pin-box">
                 <h3>🔒</h3>
@@ -3581,7 +3593,7 @@ function restoreOriginalMessage(element) {
             </div>
         </div>
   
-          <!-- MODAL TABLEAU DE DESSIN -->
+          <!-- MODAL TABLEAU DE DESSIN --> 
         <div class="canvas-modal" id="canvas-modal">
             <div class="canvas-toolbar">
                 <button class="canvas-tool-btn" id="draw-mode" onclick="setDrawMode(true)">✏️ Dessiner</button>
