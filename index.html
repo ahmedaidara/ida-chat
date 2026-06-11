@@ -8,18 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
-    
-    <!-- Firebase SDKs - TOUJOURS en premier -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    
     <style>
-        /* === TOUT VOTRE CSS EXISTANT GARDEZ-LE ICI === */
-        /* (Je ne copie pas tout le CSS pour éviter la répétition, mais gardez tout votre CSS) */
         :root {
             --bg-main: #ffffff;
             --bg-chat: #ffffff;
@@ -80,6 +73,19 @@
         .message-bubble { max-width: 70%; padding: 10px 16px; border-radius: 22px; font-size: 0.95rem; line-height: 1.4; position: relative; cursor: pointer; user-select: none; transition: transform 0.1s; animation: fadeIn 0.2s ease-out; display: flex; flex-direction: column; gap: 4px; }
         .sent .message-bubble { background: var(--bubble-sent); color: var(--bubble-sent-text); border-bottom-right-radius: 4px; }
         .received .message-bubble { background: var(--bubble-received); color: var(--text-main); border-bottom-left-radius: 4px; }
+      
+        .message-bubble.bicolor { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%) !important; color: white !important; }
+        .message-bubble.dark-passion { background: linear-gradient(45deg, #1a0000, #8b0000, #1a0000) !important; background-size: 200% 200% !important; color: #ff4444 !important; border: 1px solid #ff0000 !important; animation: shimmer 3s ease infinite !important; }
+        @keyframes shimmer { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .message-bubble.grid-style { background: linear-gradient(45deg, #2c3e50, #3498db) !important; background-image: linear-gradient(#ffffff20 1px, transparent 1px), linear-gradient(90deg, #ffffff20 1px, transparent 1px) !important; background-size: 20px 20px !important; color: white !important; border: 2px solid #ecf0f1 !important; }
+        .message-bubble.rainbow { background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet) !important; background-size: 400% 100% !important; animation: rainbowMove 3s ease infinite !important; color: white !important; font-weight: bold !important; text-shadow: 1px 1px 0 black !important; }
+        @keyframes rainbowMove { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+        .message-bubble.neon { background: #0a0a0a !important; color: #00ffcc !important; border: 1px solid #00ffcc !important; box-shadow: 0 0 10px #00ffcc, inset 0 0 5px #00ffcc !important; font-family: monospace !important; }
+        .message-bubble.wood { background: linear-gradient(45deg, #8B5A2B, #A0522D, #6B3E1B) !important; color: #FFDEAD !important; border-radius: 15px 15px 15px 5px !important; box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 2px 2px 5px rgba(0,0,0,0.3) !important; }
+        .message-bubble.code-style { background: #1e1e1e !important; color: #d4d4d4 !important; font-family: 'Courier New', monospace !important; border-left: 4px solid #007acc !important; border-radius: 8px !important; }
+        .message-bubble.comics { background: #fffde7 !important; color: #000 !important; border: 2px solid #000 !important; border-radius: 20px 20px 20px 5px !important; font-family: 'Comic Sans MS', cursive !important; box-shadow: 5px 5px 0px rgba(0,0,0,0.2) !important; }
+        .message-bubble.watercolor { background: linear-gradient(135deg, #667eea, #764ba2, #f093fb) !important; filter: blur(0.3px) !important; color: white !important; border-radius: 25px 8px 25px 8px !important; }
+        .message-bubble.retro { background: #2d2d2d !important; color: #00ff00 !important; font-family: 'Courier New', monospace !important; border: 2px solid #00ff00 !important; box-shadow: 3px 3px 0px #00ff00 !important; }
         
         .msg-meta { font-size: 0.7rem; opacity: 0.7; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
         .sent .msg-meta { color: #fff; }
@@ -98,7 +104,7 @@
         .input-actions { display: flex; align-items: center; gap: 14px; color: var(--text-main); font-size: 1.15rem; }
         .input-actions i { cursor: pointer; transition: color 0.2s; }
         .input-actions i:hover { color: #a800ff; }
-        
+      
         .translate-menu-btn { cursor: pointer; padding: 0 5px; font-size: 1.2rem; color: var(--text-muted); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
         .translate-menu-btn:hover { color: #0095f6; transform: scale(1.1); }
         .translate-menu-btn.hidden { display: none !important; }
@@ -109,11 +115,10 @@
         .translate-option:hover { background: #0095f620; }
         .translate-option .flag { font-size: 1.2rem; }
         .translate-option .lang-name { flex: 1; }
-        
         #send-btn { color: #0095f6; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: none; margin-left: 8px; }
 
         .floating-panel { display: none; position: absolute; bottom: 70px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; z-index: 5; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-        
+      
         .format-toolbar { display: none; position: absolute; bottom: 75px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 12px; z-index: 6; box-shadow: 0 8px 24px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; justify-content: center; }
         .format-btn { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 0.85rem; color: var(--text-main); transition: all 0.2s; }
         .format-btn:hover { background: #a800ff20; transform: scale(1.05); }
@@ -121,7 +126,6 @@
         .format-color-picker { width: 35px; padding: 6px; cursor: pointer; }
         .format-font-select { font-size: 0.8rem; padding: 6px 8px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); cursor: pointer; }
         .format-size-select { font-size: 0.8rem; padding: 6px 8px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); cursor: pointer; }
-        
         .emoji-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; font-size: 1.8rem; text-align: center; }
         .emoji-grid span { cursor: pointer; transition: transform 0.1s; }
         .emoji-grid span:hover { transform: scale(1.3); }
@@ -135,9 +139,10 @@
         .bg-thumb.active { border-color: #a800ff; }
 
         .context-menu { display: none; position: absolute; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); overflow: hidden; }
+        .context-menu#style-submenu { z-index: 1001; background: var(--panel-bg); min-width: 180px; }
         .context-item { padding: 10px 20px; cursor: pointer; font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
         .context-item:hover { background: rgba(168, 0, 255, 0.1); }
-        
+      
         .reaction-dock { display: none; gap: 10px; padding: 8px; background: var(--panel-bg); border-radius: 30px; border: 1px solid var(--border-color); position: absolute; z-index: 101; font-size: 1.4rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .reaction-dock span { cursor: pointer; transition: transform 0.1s; }
         .reaction-dock span:hover { transform: scale(1.3); }
@@ -146,10 +151,6 @@
         .ephemeral-overlay { display: none; position: absolute; inset: 60px 0 70px 0; background: rgba(150, 47, 191, 0.07); border: 2px dashed #962fbf; pointer-events: none; z-index: 1; align-items: center; justify-content: center; }
         .ephemeral-overlay span { background: #962fbf; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
         
-        #import-modal { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.7); z-index: 20; justify-content: center; align-items: center; padding: 20px; }
-        .import-box { background: var(--bg-main); color: var(--text-main); width: 100%; max-width: 350px; padding: 25px; border-radius: 15px; border: 1px solid var(--border-color); text-align: center; }
-        .drop-zone { border: 2px dashed var(--border-color); padding: 30px 10px; border-radius: 10px; margin: 15px 0; cursor: pointer; }
-
         .typing-indicator { display: none; align-items: center; gap: 5px; padding: 8px 15px; font-size: 0.8rem; color: var(--text-muted); }
         .typing-dots { display: flex; gap: 3px; }
         .typing-dots span { width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: bounceDot 1.4s infinite ease-in-out both; }
@@ -167,623 +168,1640 @@
 
         audio { max-width: 180px; height: 32px; margin-top: 5px; }
         .img-msg { max-width: 200px; border-radius: 12px; margin-top: 5px; cursor: pointer; }
+      
+        #style-submenu { max-height: 400px; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        #style-submenu .context-item { padding: 10px 20px; font-size: 0.85rem; white-space: nowrap; }
+        #style-submenu .context-item:hover { background: #a800ff20; }
         
-        /* Autres styles... gardez tous vos styles existants */
+        .message-bubble.coded { background: repeating-linear-gradient(45deg, #2a2a2a, #2a2a2a 10px, #1a1a1a 10px, #1a1a1a 20px) !important; font-family: monospace !important; letter-spacing: 2px; }
+        .coded-mask { font-family: monospace; font-size: 1.1rem; word-break: break-all; cursor: pointer; }
+        .coded-mask:hover { opacity: 0.8; }
+        .locked-badge { position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 12px; cursor: pointer; z-index: 2; }
+        .unlocked-badge { background: #00cc44; }
+
+        .pin-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .pin-box { background: var(--bg-main); color: var(--text-main); padding: 25px; border-radius: 20px; text-align: center; max-width: 300px; width: 90%; border: 1px solid var(--border-color); }
+        .pin-box h3 { margin-bottom: 15px; }
+        .pin-input { width: 100%; padding: 12px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-main); margin: 15px 0; }
+        .pin-buttons { display: flex; gap: 10px; justify-content: center; }
+        .pin-btn { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        .pin-btn.confirm { background: #0095f6; color: white; }
+        .pin-btn.cancel { background: #ed4956; color: white; }
+        
+        .ephemeral-audio { background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important; border-radius: 20px !important; padding: 8px 12px !important; }
+        .ephemeral-audio audio { max-width: 180px; height: 32px; }
+        .ephemeral-badge { position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; font-size: 0.6rem; padding: 2px 8px; border-radius: 12px; cursor: pointer; z-index: 2; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0.7; transform: scale(1); } }
+        .ephemeral-played { opacity: 0.5; filter: blur(2px); }
+        .ephemeral-played::after { content: "🔇 ÉCOUTÉ"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: black; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
+      
+        .mood-status { position: absolute; bottom: -5px; right: -8px; background: var(--bg-main); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; border: 2px solid var(--border-color); cursor: pointer; transition: transform 0.2s; z-index: 5; }
+        .mood-status:hover { transform: scale(1.2); }
+        .mood-status.animated { animation: moodPulse 1s ease infinite; }
+        @keyframes moodPulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168,0,255,0.4); } 50% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(168,0,255,0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168,0,255,0); } }
+
+        .mood-panel { display: none; position: absolute; top: 60px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 15px; z-index: 15; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .mood-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center; }
+        .mood-item { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px; border-radius: 12px; cursor: pointer; transition: all 0.2s; background: var(--input-bg); border: 1px solid var(--border-color); }
+        .mood-item:hover { transform: scale(1.05); background: #a800ff20; border-color: #a800ff; }
+        .mood-emoji { font-size: 2rem; }
+        .mood-label { font-size: 0.7rem; color: var(--text-muted); }
+        .mood-item.active { background: #a800ff; border-color: #a800ff; }
+        .mood-item.active .mood-label { color: white; }
+        .clear-mood { grid-column: span 4; margin-top: 10px; padding: 10px; background: #ed4956; color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+        .clear-mood:hover { opacity: 0.9; }
+      
+        #other-mood-emoji { display: inline-block; transition: transform 0.2s; }
+        #other-mood-emoji:hover { transform: scale(1.2); }
+      
+        .battery-indicator { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 0.7rem; background: var(--input-bg); padding: 2px 6px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .battery-icon { font-size: 0.75rem; }
+        .battery-percent { font-weight: 600; }
+        .battery-low { color: #ff4444; animation: batteryBlink 1s ease infinite; }
+        .battery-medium { color: #ffaa00; }
+        .battery-high { color: #00cc44; }
+        .battery-charging { color: #0095f6; }
+        @keyframes batteryBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      
+        .flash-btn { cursor: pointer; transition: all 0.2s; animation: flashPulse 2s ease infinite; }
+        .flash-btn:hover { transform: scale(1.2); color: #ffaa00; }
+        .flash-active { animation: flashIntense 0.3s ease infinite; color: #ffaa00 !important; }
+        @keyframes flashPulse { 0%, 100% { opacity: 0.7; text-shadow: 0 0 0px #ffaa00; } 50% { opacity: 1; text-shadow: 0 0 3px #ffaa00; } }
+        @keyframes flashIntense { 0%, 100% { transform: scale(1); text-shadow: 0 0 5px #ffaa00; } 50% { transform: scale(1.1); text-shadow: 0 0 15px #ffaa00; color: #ff6600; } }
+        .flash-notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #ffaa00; font-size: 3rem; padding: 20px; border-radius: 50%; z-index: 2000; animation: flashZoom 0.5s ease-out; pointer-events: none; }
+        @keyframes flashZoom { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+      
+        .canvas-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        .canvas-toolbar { position: fixed; top: 0; left: 0; right: 0; background: #2a2a2a; padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; z-index: 3001; border-bottom: 1px solid #444; }
+        .canvas-tool-btn { background: #3a3a3a; border: none; border-radius: 8px; padding: 8px 12px; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+        .canvas-tool-btn:hover { background: #a800ff; transform: scale(1.05); }
+        .canvas-tool-btn.active { background: #a800ff; border: 1px solid white; }
+        .canvas-colors { display: flex; gap: 5px; }
+        .color-option { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid white; transition: transform 0.1s; }
+        .color-option:hover { transform: scale(1.1); }
+        .canvas-area { background: white; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: crosshair; }
+        #drawing-canvas { display: block; background: white; cursor: crosshair; }
+        .emoji-palette { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #2a2a2a; border-radius: 30px; padding: 10px 15px; display: flex; gap: 12px; z-index: 3002; flex-wrap: wrap; justify-content: center; max-width: 90%; }
+        .emoji-palette span { font-size: 1.5rem; cursor: pointer; transition: transform 0.1s; padding: 5px; }
+        .emoji-palette span:hover { transform: scale(1.3); }
+        .canvas-actions { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 3002; }
+        .canvas-send-btn { background: #0095f6; border: none; border-radius: 30px; padding: 12px 24px; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .canvas-close-btn { background: #ed4956; border: none; border-radius: 30px; padding: 12px 24px; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
+      
+        .blur-mode .message-bubble { filter: blur(5px); transition: filter 0.2s ease; cursor: pointer; }
+        .blur-mode .message-bubble:hover { filter: blur(3px); }
+        .blur-mode .message-bubble.blur-active { filter: blur(5px); }
+        .blur-mode .message-bubble.blur-cleared { filter: blur(0px); }
+        .blur-mode .message-bubble.blur-cleared:hover { filter: blur(0px); }
+        .blur-toggle-btn { cursor: pointer; transition: all 0.2s; }
+        .blur-toggle-btn.active { color: #a800ff; text-shadow: 0 0 3px #a800ff; }
+        .blur-notification { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(168,0,255,0.9); color: white; padding: 8px 16px; border-radius: 30px; font-size: 0.8rem; z-index: 2000; animation: fadeInOut 2s ease; pointer-events: none; }
+        @keyframes fadeInOut { 0% { opacity: 0; transform: translateX(-50%) translateY(10px); } 15% { opacity: 1; transform: translateX(-50%) translateY(0); } 85% { opacity: 1; transform: translateX(-50%) translateY(0); } 100% { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
+      
         .live-bar { height: 4px; background: linear-gradient(90deg, #a800ff, #0076ff, #a800ff); background-size: 200% 100%; animation: liveProgress 2s ease infinite; width: 0%; transition: width 0.1s ease; }
         @keyframes liveProgress { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
         .live-container { background: var(--bg-main); border-bottom: 1px solid var(--border-color); padding: 5px 15px; display: none; align-items: center; gap: 10px; font-size: 0.75rem; color: var(--text-muted); }
         .live-container.active { display: flex; }
-        .flash-btn { cursor: pointer; transition: all 0.2s; }
-        .blur-toggle-btn { cursor: pointer; transition: all 0.2s; }
-        .canvas-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        .pin-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
-        .battery-indicator { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 0.7rem; background: var(--input-bg); padding: 2px 6px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .live-badge { background: #ff4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; animation: livePulse 1s ease infinite; }
+        @keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.05); } }
+        .live-text-preview { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: monospace; background: var(--input-bg); padding: 4px 8px; border-radius: 8px; }
+        .live-cursor { display: inline-block; width: 2px; height: 14px; background: #0095f6; animation: blink 1s step-end infinite; margin-left: 2px; vertical-align: middle; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .live-toggle-btn { cursor: pointer; transition: all 0.2s; }
+        .live-toggle-btn.active { color: #ff4444; text-shadow: 0 0 3px #ff4444; }
+      
+        .photo-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); animation: fadeInModal 0.2s ease-out; }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+        .photo-modal img { max-width: 95%; max-height: 85%; object-fit: contain; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5); cursor: zoom-out; }
+        .photo-modal-close { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10001; }
+        .photo-modal-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        .download-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 30px; padding: 12px 24px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; z-index: 10001; font-weight: 600; }
+        .download-btn:hover { background: #0095f6; transform: translateX(-50%) scale(1.05); }
+        .download-btn i { font-size: 1.1rem; }
+        .downloading { animation: downloadPulse 0.5s ease; }
+        @keyframes downloadPulse { 0%, 100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); background: #00cc44; } }
+
+        .tool-item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; background: var(--input-bg); border: 1px solid var(--border-color); }
+        .tool-item:hover { background: rgba(168, 0, 255, 0.15); transform: scale(1.05); border-color: #a800ff; }
+        .tool-item:active { transform: scale(0.95); }
+        #tools-panel { max-width: 350px; left: 50%; transform: translateX(-50%); bottom: 80px; right: auto; padding: 20px; }
+        @keyframes slideUpTools { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        #tools-panel.show { display: block; animation: slideUpTools 0.2s ease-out; }
+        #tools-menu-btn.active { color: #a800ff; transform: scale(1.1); }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div id="login-screen">
-        <div class="login-card">
-            <h2><i class="fa-brands fa-instagram"></i> Qui êtes-vous ?</h2>
-            <button class="user-btn btn-ida" onclick="selectUser('ida')">
-                <div class="avatar">IDA</div>
-                <div class="user-info-btn">
-                    <span class="name">Ida Wuruss</span>
-                    <span class="tag">IMJM</span>
+    <div class="app-container">
+        <div id="login-screen">
+            <div class="login-card">
+                <h2><i class="fa-brands fa-instagram"></i> Qui êtes-vous ?</h2>
+                <button class="user-btn btn-ida" onclick="selectUser('ida')">
+                    <div class="avatar">IDA</div>
+                    <div class="user-info-btn">
+                        <span class="name">IDA SEUL</span>
+                        <span class="tag">Ida</span>
+                    </div>
+                </button>
+                <button class="user-btn btn-aidara" onclick="selectUser('aidara')">
+                    <div class="avatar">AID</div>
+                    <div class="user-info-btn">
+                        <span class="name">Ahmed Said Aidara</span>
+                        <span class="tag">Aidara</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-header">
+            <div class="header-left" onclick="logout()">
+                <i class="fa-solid fa-arrow-left"></i>
+                <div style="position: relative;">
+                    <div class="header-avatar" id="header-av">--</div>
+                    <div class="mood-status" id="mood-status" onclick="event.stopPropagation(); toggleMoodPanel()">
+                        <span id="mood-emoji">😊</span>
+                    </div>
                 </div>
-            </button>
-            <button class="user-btn btn-aidara" onclick="selectUser('aidara')">
-                <div class="avatar">AID</div>
-                <div class="user-info-btn">
-                    <span class="name">Aidara</span>
-                    <span class="tag">ASIA</span>
+                <div class="header-info">
+                    <div class="h-name" id="header-display-name">
+                        Correspondant
+                        <span id="other-mood-emoji" style="margin-left: 8px; font-size: 1rem; display: inline-block;">😊</span>
+                    </div>
+                    <div class="h-status" id="header-status-text">
+                        En ligne
+                        <span class="battery-indicator" id="battery-indicator">
+                            <span class="battery-icon" id="battery-icon">🔋</span>
+                            <span class="battery-percent" id="battery-percent">--%</span>
+                        </span>
+                    </div>
                 </div>
-            </button>
-        </div>
-    </div>
-
-    <div class="chat-header">
-        <div class="header-left" onclick="logout()">
-            <i class="fa-solid fa-arrow-left"></i>
-            <div style="position: relative;">
-                <div class="header-avatar" id="header-av">--</div>
-            </div>
-            <div class="header-info">
-                <div class="h-name" id="header-display-name">Correspondant</div>
-                <div class="h-status" id="header-status-text">En ligne</div>
-            </div>
-        </div>
-        <div class="header-actions">
-            <i class="fa-solid fa-bell" onclick="activerNotificationsPush()" title="Activer notifications"></i>
-            <i class="fa-solid fa-folder-plus" title="Importer WhatsApp" onclick="toggleModal('import-modal', true)"></i>
-            <i class="fa-solid fa-moon" title="Thème" onclick="toggleTheme()"></i>
-            <i class="fa-solid fa-sliders" title="Paramètres" onclick="togglePanel('settings-panel')"></i>
-        </div>
-    </div>
-
-    <div class="messages-area" id="msg-area"></div>
-
-    <div class="typing-indicator" id="typing-ind">
-        <div class="typing-dots"><span></span><span></span><span></span></div>
-        <span id="typing-txt">Quelqu'un écrit...</span>
-    </div>
-
-    <div class="reply-bar-preview" id="reply-preview">
-        <span id="reply-preview-text">Réponse à un message...</span>
-        <i class="fa-solid fa-xmark" onclick="cancelReply()"></i>
-    </div>
-
-    <div class="chat-input-bar">
-        <div class="input-box-container">
-            <i class="fa-regular fa-face-smile" style="cursor:pointer; margin-right:8px;" onclick="togglePanel('emoji-panel')"></i>
-            <input type="text" class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping()">
-            <div class="input-actions" id="in-actions">
-                <i class="fa-solid fa-microphone" id="mic-btn" onclick="toggleRecording()"></i>
-                <i class="fa-regular fa-image" onclick="triggerImageUpload()"></i>
-            </div>
-            <span id="send-btn" onclick="sendTextMessage()">Envoyer</span>
-        </div>
-        <input type="file" id="img-file" accept="image/*" style="display:none;" onchange="uploadImage(this)">
-    </div>
-
-    <div class="floating-panel" id="emoji-panel">
-        <div class="emoji-grid">
-            <span onclick="insertEmoji('😀')">😀</span>
-            <span onclick="insertEmoji('😂')">😂</span>
-            <span onclick="insertEmoji('❤️')">❤️</span>
-            <span onclick="insertEmoji('🔥')">🔥</span>
-            <span onclick="insertEmoji('👍')">👍</span>
-            <span onclick="insertEmoji('🎉')">🎉</span>
-            <span onclick="insertEmoji('😢')">😢</span>
-            <span onclick="insertEmoji('😮')">😮</span>
-        </div>
-    </div>
-
-    <div class="floating-panel" id="settings-panel">
-        <div class="settings-grid">
-            <div>
-                <h4 style="margin-bottom:8px; font-size:0.85rem;">Couleur des bulles</h4>
-                <div class="color-pickers">
-                    <div class="color-dot active" style="background:linear-gradient(45deg, #a800ff, #0076ff);" onclick="setBubbleColor('linear-gradient(45deg, #a800ff, #0076ff)', this)"></div>
-                    <div class="color-dot" style="background:linear-gradient(45deg, #ff007f, #7300ff);" onclick="setBubbleColor('linear-gradient(45deg, #ff007f, #7300ff)', this)"></div>
-                    <div class="color-dot" style="background:linear-gradient(45deg, #00b4db, #00ffab);" onclick="setBubbleColor('linear-gradient(45deg, #00b4db, #00ffab)', this)"></div>
-                    <div class="color-dot" style="background:#333;" onclick="setBubbleColor('#333', this)"></div>
+                <div class="mood-panel" id="mood-panel">
+                    <div class="mood-grid">
+                        <div class="mood-item" onclick="setMood('😊', 'Heureux')"><span class="mood-emoji">😊</span><span class="mood-label">Heureux</span></div>
+                        <div class="mood-item" onclick="setMood('🚿', 'Au douche')"><span class="mood-emoji">🚿</span><span class="mood-label">Au douche</span></div>
+                        <div class="mood-item" onclick="setMood('🍕', 'Manger')"><span class="mood-emoji">🍕</span><span class="mood-label">Manger</span></div>
+                        <div class="mood-item" onclick="setMood('🚶', 'Sorti')"><span class="mood-emoji">🚶</span><span class="mood-label">Sorti</span></div>
+                        <div class="mood-item" onclick="setMood('💼', 'Travail')"><span class="mood-emoji">💼</span><span class="mood-label">Travail</span></div>
+                        <div class="mood-item" onclick="setMood('📚', 'Étude')"><span class="mood-emoji">📚</span><span class="mood-label">Étude</span></div>
+                        <div class="mood-item" onclick="setMood('🎮', 'Jeux')"><span class="mood-emoji">🎮</span><span class="mood-label">Jeux</span></div>
+                        <div class="mood-item" onclick="setMood('😴', 'Dodo')"><span class="mood-emoji">😴</span><span class="mood-label">Dodo</span></div>
+                        <div class="mood-item" onclick="setMood('🏃', 'Sport')"><span class="mood-emoji">🏃</span><span class="mood-label">Sport</span></div>
+                        <div class="mood-item" onclick="setMood('🎵', 'Musique')"><span class="mood-emoji">🎵</span><span class="mood-label">Musique</span></div>
+                        <div class="mood-item" onclick="setMood('📺', 'Netflix')"><span class="mood-emoji">📺</span><span class="mood-label">Netflix</span></div>
+                        <div class="mood-item" onclick="setMood('☕', 'Café')"><span class="mood-emoji">☕</span><span class="mood-label">Café</span></div>
+                        <div class="clear-mood" onclick="clearMood()">❌ Effacer mon statut</div>
+                    </div>
                 </div>
             </div>
-            <div>
-                <h4 style="margin-bottom:8px; font-size:0.85rem;">Fond d'écran</h4>
-                <div class="bg-pickers">
-                    <div class="bg-thumb active" style="background:#111;" onclick="setChatBg('none', this)"></div>
-                    <div class="bg-thumb" style="background-image:url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=150');" onclick="setChatBg('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=500', this)"></div>
-                    <div class="bg-thumb" style="background-image:url('https://images.unsplash.com/photo-1557683316-973673baf926?w=150');" onclick="setChatBg('https://images.unsplash.com/photo-1557683316-973673baf926?w=500', this)"></div>
+            <div class="header-actions">
+                <i class="fa-solid fa-bolt flash-btn" id="flash-btn" title="Faire vibrer le téléphone de l'autre" onclick="triggerFlashVibration()"></i>
+                <i class="fa-solid fa-eye-slash blur-toggle-btn" id="blur-toggle-btn" title="Mode Flou" onclick="toggleBlurMode()"></i>
+                <i class="fa-solid fa-eye live-toggle-btn" id="live-toggle-btn" title="Mode Live : voir ce que l'autre tape en temps réel" onclick="toggleLiveMode()"></i>
+                <i class="fa-solid fa-moon" title="Thème" onclick="toggleTheme()"></i>
+                <i class="fa-solid fa-sliders" title="Paramètres" onclick="togglePanel('settings-panel')"></i>
+            </div>
+        </div>
+        
+        <div class="live-container" id="live-container">
+            <div class="live-badge"></div>
+            <div class="live-text-preview" id="live-text-preview">
+                <span id="live-sender-name">...</span> : 
+                <span id="live-message-preview"></span>
+                <span class="live-cursor"></span>
+            </div>
+        </div>
+        <div class="live-bar" id="live-bar"></div>
+        <div class="messages-area" id="msg-area"></div>
+ 
+        <div class="ephemeral-overlay" id="eph-overlay">
+            <span>MODE ÉPHÉMÈRE ACTIF</span>
+        </div>
+
+        <div class="typing-indicator" id="typing-ind">
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+            <span id="typing-txt">Quelqu'un écrit...</span>
+        </div>
+
+        <div class="reply-bar-preview" id="reply-preview">
+            <span id="reply-preview-text">Réponse à un message...</span>
+            <i class="fa-solid fa-xmark" onclick="cancelReply()"></i>
+        </div>
+
+        <div class="chat-input-bar">
+            <div class="input-box-container">
+                <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
+                <input type="text" class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping()">
+                <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
+                    <i class="fa-solid fa-language" id="translate-btn" onclick="toggleTranslateMenuDirect(event)" style="cursor:pointer; font-size:1.2rem;" title="Traduire le message"></i>
+                    <i class="fa-solid fa-lock" id="code-mode-btn" onclick="toggleCodeModeDirect()" style="cursor:pointer; font-size:1.2rem;" title="Coder le message"></i>
+                    <i class="fa-solid fa-head-side-headphones" id="ephemeral-audio-btn" onclick="toggleEphemeralAudioModeDirect()" style="cursor:pointer; font-size:1.2rem;" title="Audio éphémère"></i>
+                </div>
+                <span id="send-btn" onclick="sendTextMessage()">Envoyer</span>
+            </div>
+            
+            <div class="floating-panel" id="tools-panel">
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <h4 style="margin-bottom: 5px; font-size: 0.9rem; color: var(--text-muted);">Outils</h4>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+                        <div class="tool-item" onclick="toggleRecording(); closeToolsPanel();"><i class="fa-solid fa-microphone" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Micro</span></div>
+                        <div class="tool-item" onclick="triggerImageUpload(); closeToolsPanel();"><i class="fa-regular fa-image" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Galerie</span></div>
+                        <div class="tool-item" onclick="openCanvasDrawer(); closeToolsPanel();"><i class="fa-solid fa-pencil" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Dessin</span></div>
+                        <div class="tool-item" onclick="toggleTranslateMenu(event); closeToolsPanel();"><i class="fa-solid fa-language" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Traduire</span></div>
+                        <div class="tool-item" onclick="toggleCodeModeDirect(); closeToolsPanel();"><i class="fa-solid fa-lock" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Code</span></div>
+                        <div class="tool-item" onclick="toggleEphemeralAudioMode(); closeToolsPanel();"><i class="fa-solid fa-head-side-headphones" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Audio Éph</span></div>
+                        <div class="tool-item" onclick="togglePanel('emoji-panel'); closeToolsPanel();"><i class="fa-regular fa-face-smile" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Émojis</span></div>
+                        <div class="tool-item" onclick="toggleTheme(); closeToolsPanel();"><i class="fa-solid fa-moon" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Thème</span></div>
+                    </div>
+                    <div class="tools-divider" style="height: 1px; background: var(--border-color); margin: 5px 0;"></div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+                        <div class="tool-item" onclick="toggleEphemeralMode(); closeToolsPanel();"><i class="fa-solid fa-hourglass-half" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Éphémère</span></div>
+                        <div class="tool-item" onclick="toggleBlurMode(); closeToolsPanel();"><i class="fa-solid fa-eye-slash" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Mode Flou</span></div>
+                        <div class="tool-item" onclick="triggerFlashVibration(); closeToolsPanel();"><i class="fa-solid fa-bolt" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Flash</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="translate-dropdown" id="translate-dropdown">
+                <div class="translate-option" onclick="translateInputText('en')"><span class="flag">🇬🇧</span><span class="lang-name">Anglais</span></div>
+                <div class="translate-option" onclick="translateInputText('ar')"><span class="flag">🇸🇦</span><span class="lang-name">Arabe</span></div>
+                <div class="translate-option" onclick="translateInputText('es')"><span class="flag">🇪🇸</span><span class="lang-name">Espagnol</span></div>
+                <div class="translate-option" onclick="translateInputText('ja')"><span class="flag">🇯🇵</span><span class="lang-name">Japonais</span></div>
+                <div class="translate-option" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="toggleCodeMode()"><span class="flag">🔒</span><span class="lang-name">Coder le message</span></div>
+                <div class="translate-option" onclick="toggleEphemeralAudioMode()"><span class="flag">🎙️</span><span class="lang-name">Audio Éphémère</span></div>
+            </div>
+            
+            <input type="file" id="img-file" accept="image/*" style="display:none;" onchange="uploadImage(this)">
+        </div>
+
+        <div class="floating-panel" id="emoji-panel">
+            <div class="emoji-grid">
+                <span onclick="insertEmoji('😀')">😀</span><span onclick="insertEmoji('😂')">😂</span><span onclick="insertEmoji('❤️')">❤️</span><span onclick="insertEmoji('🔥')">🔥</span>
+                <span onclick="insertEmoji('👍')">👍</span><span onclick="insertEmoji('🎉')">🎉</span><span onclick="insertEmoji('😢')">😢</span><span onclick="insertEmoji('😮')">😮</span>
+            </div>
+        </div>
+
+        <div class="floating-panel" id="settings-panel">
+            <div class="settings-grid">
+                <div>
+                    <h4 style="margin-bottom:8px; font-size:0.85rem;">Couleur des bulles</h4>
+                    <div class="color-pickers">
+                        <div class="color-dot active" style="background:linear-gradient(45deg, #a800ff, #0076ff);" onclick="setBubbleColor('linear-gradient(45deg, #a800ff, #0076ff)', this)"></div>
+                        <div class="color-dot" style="background:linear-gradient(45deg, #ff007f, #7300ff);" onclick="setBubbleColor('linear-gradient(45deg, #ff007f, #7300ff)', this)"></div>
+                        <div class="color-dot" style="background:linear-gradient(45deg, #00b4db, #00ffab);" onclick="setBubbleColor('linear-gradient(45deg, #00b4db, #00ffab)', this)"></div>
+                        <div class="color-dot" style="background:#333;" onclick="setBubbleColor('#333', this)"></div>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="margin-bottom:8px; font-size:0.85rem;">Fond d'écran</h4>
+                    <div class="bg-pickers">
+                        <div class="bg-thumb active" style="background:#111;" onclick="setChatBg('none', this)"></div>
+                        <div class="bg-thumb" style="background-image:url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=150');" onclick="setChatBg('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=500', this)"></div>
+                        <div class="bg-thumb" style="background-image:url('https://images.unsplash.com/photo-1557683316-973673baf926?w=150');" onclick="setChatBg('https://images.unsplash.com/photo-1557683316-973673baf926?w=500', this)"></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="import-modal">
-        <div class="import-box">
-            <h3>Import de Conversation</h3>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;">Glissez le fichier texte (.txt) issu d'un export WhatsApp.</p>
-            <div class="drop-zone" onclick="document.getElementById('wa-file').click()" ondragover="event.preventDefault()" ondrop="handleFileDrop(event)">
-                <i class="fa-solid fa-file-import" style="font-size:2rem; margin-bottom:10px; color:#25D366;"></i>
-                <p id="upload-status-text">Cliquez ou déposez votre fichier _chat.txt</p>
+        <div class="context-menu" id="ctx-menu">
+            <div class="context-item" onclick="initiateReply()"><i class="fa-solid fa-reply"></i> Répondre</div>
+            <div class="context-item translate-btn" onclick="translateSelectedMessage()"><i class="fa-solid fa-language"></i> Traduire</div>
+            <div class="context-item" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="showStyleMenu()"><i class="fa-solid fa-palette"></i> Changer le style de bulle ▶</div>
+            <div class="context-item" style="color:#ed4956;" onclick="deleteSelectedMessage()"><i class="fa-solid fa-trash"></i> Supprimer</div>
+        </div>
+
+        <div class="context-menu" id="style-submenu">
+            <div class="context-item" onclick="applyStyleToMessage('bicolor')"><i class="fa-solid fa-fill-drip"></i> Bicolore</div>
+            <div class="context-item" onclick="applyStyleToMessage('dark-passion')"><i class="fa-solid fa-fire-flame-curved"></i> Rouge et Noir</div>
+            <div class="context-item" onclick="applyStyleToMessage('grid-style')"><i class="fa-solid fa-table"></i> Style Tableau</div>
+            <div class="context-item" onclick="applyStyleToMessage('rainbow')"><i class="fa-solid fa-rainbow"></i> Arc-en-ciel</div>
+            <div class="context-item" onclick="applyStyleToMessage('neon')"><i class="fa-regular fa-lightbulb"></i> Néon Glow</div>
+            <div class="context-item" onclick="applyStyleToMessage('wood')"><i class="fa-solid fa-tree"></i> Style Bois</div>
+            <div class="context-item" onclick="applyStyleToMessage('code-style')"><i class="fa-solid fa-code"></i> Style Code</div>
+            <div class="context-item" onclick="applyStyleToMessage('comics')"><i class="fa-solid fa-face-laugh-beam"></i> Style Comics</div>
+            <div class="context-item" onclick="applyStyleToMessage('watercolor')"><i class="fa-solid fa-droplet"></i> Aquarelle</div>
+            <div class="context-item" onclick="applyStyleToMessage('retro')"><i class="fa-solid fa-gamepad"></i> Style Retro</div>
+            <div class="context-item" style="border-top: 1px solid var(--border-color);" onclick="removeStyleFromMessage()"><i class="fa-solid fa-trash-can"></i> Supprimer le style</div>
+        </div>
+
+        <div class="reaction-dock" id="react-dock">
+            <span onclick="applyReaction('❤️')">❤️</span>
+            <span onclick="applyReaction('😂')">😂</span>
+            <span onclick="applyReaction('😮')">😮</span>
+            <span onclick="applyReaction('😢')">😢</span>
+            <span onclick="applyReaction('🔥')">🔥</span>
+            <span onclick="applyReaction('👍')">👍</span>
+        </div>
+        
+        <!-- Modal PIN -->
+        <div class="pin-modal" id="pin-modal">
+            <div class="pin-box">
+                <h3>🔒 Message codé</h3>
+                <p>Entrez le code PIN pour déverrouiller</p>
+                <input type="password" class="pin-input" id="pin-input" maxlength="4" placeholder="****" inputmode="numeric">
+                <div class="pin-buttons">
+                    <button class="pin-btn confirm" onclick="verifyPin()">Déverrouiller</button>
+                    <button class="pin-btn cancel" onclick="closePinModal()">Annuler</button>
+                </div>
             </div>
-            <input type="file" id="wa-file" accept=".txt" style="display:none;" onchange="handleFileSelect(this)">
-            <div style="display:flex; gap:10px; justify-content:center;">
-                <button style="padding:8px 16px; border:none; border-radius:6px; cursor:pointer;" onclick="toggleModal('import-modal', false)">Fermer</button>
+        </div>
+        
+        <!-- Modal Canvas -->
+        <div class="canvas-modal" id="canvas-modal">
+            <div class="canvas-toolbar">
+                <button class="canvas-tool-btn" id="draw-mode" onclick="setDrawMode(true)">✏️ Dessiner</button>
+                <button class="canvas-tool-btn" id="eraser-mode" onclick="setDrawMode(false)">🧽 Effacer</button>
+                <div class="canvas-colors">
+                    <div class="color-option" style="background: #000000;" onclick="setColor('#000000')"></div>
+                    <div class="color-option" style="background: #ff0000;" onclick="setColor('#ff0000')"></div>
+                    <div class="color-option" style="background: #00ff00;" onclick="setColor('#00ff00')"></div>
+                    <div class="color-option" style="background: #0000ff;" onclick="setColor('#0000ff')"></div>
+                    <div class="color-option" style="background: #ffff00;" onclick="setColor('#ffff00')"></div>
+                    <div class="color-option" style="background: #ff00ff;" onclick="setColor('#ff00ff')"></div>
+                    <div class="color-option" style="background: #00ffff;" onclick="setColor('#00ffff')"></div>
+                    <div class="color-option" style="background: #ff6600;" onclick="setColor('#ff6600')"></div>
+                </div>
+                <button class="canvas-tool-btn" onclick="clearCanvas()">🗑️ Effacer tout</button>
+                <button class="canvas-tool-btn" onclick="changeBrushSize(5)">🔵 Petit</button>
+                <button class="canvas-tool-btn" onclick="changeBrushSize(15)">🟢 Moyen</button>
+                <button class="canvas-tool-btn" onclick="changeBrushSize(30)">🔴 Grand</button>
             </div>
+            <canvas id="drawing-canvas" class="canvas-area"></canvas>
+            <div class="emoji-palette" id="emoji-palette">
+                <span onclick="addEmojiToCanvas('😀')">😀</span><span onclick="addEmojiToCanvas('😂')">😂</span><span onclick="addEmojiToCanvas('❤️')">❤️</span>
+                <span onclick="addEmojiToCanvas('🔥')">🔥</span><span onclick="addEmojiToCanvas('👍')">👍</span><span onclick="addEmojiToCanvas('🎉')">🎉</span>
+                <span onclick="addEmojiToCanvas('😢')">😢</span><span onclick="addEmojiToCanvas('😮')">😮</span><span onclick="addEmojiToCanvas('🐱')">🐱</span>
+                <span onclick="addEmojiToCanvas('🐶')">🐶</span><span onclick="addEmojiToCanvas('⭐')">⭐</span><span onclick="addEmojiToCanvas('💀')">💀</span>
+            </div>
+            <div class="canvas-actions">
+                <button class="canvas-send-btn" onclick="sendDrawing()">📤 Envoyer le dessin</button>
+                <button class="canvas-close-btn" onclick="closeCanvasDrawer()">❌ Fermer</button>
+            </div>
+        </div>
+        
+        <!-- Modal Photo -->
+        <div class="photo-modal" id="photo-modal" onclick="closePhotoModal()">
+            <button class="photo-modal-close" onclick="closePhotoModal()"><i class="fa-solid fa-times"></i></button>
+            <img id="modal-image" src="" alt="Photo">
+            <button class="download-btn" id="download-photo-btn" onclick="downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer dans la galerie</button>
         </div>
     </div>
 
-    <div class="context-menu" id="ctx-menu">
-        <div class="context-item" onclick="initiateReply()"><i class="fa-solid fa-reply"></i> Répondre</div>
-        <div class="context-item" style="color:#ed4956;" onclick="deleteSelectedMessage()"><i class="fa-solid fa-trash"></i> Supprimer</div>
-    </div>
+    <script>
+        // ========== CONFIGURATION FIREBASE (2ème code - vos identifiants) ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
+            authDomain: "messagerie-65abc.firebaseapp.com",
+            projectId: "messagerie-65abc",
+            storageBucket: "messagerie-65abc.firebasestorage.app",
+            messagingSenderId: "363641716532",
+            appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const CHAT_ID = "chat_ida_aidara";
 
-    <div class="reaction-dock" id="react-dock">
-        <span onclick="applyReaction('❤️')">❤️</span>
-        <span onclick="applyReaction('😂')">😂</span>
-        <span onclick="applyReaction('😮')">😮</span>
-        <span onclick="applyReaction('😢')">😢</span>
-        <span onclick="applyReaction('🔥')">🔥</span>
-        <span onclick="applyReaction('👍')">👍</span>
-    </div>
-</div>
+        // ========== ÉTAT DE L'APPLICATION ==========
+        let currentUser = null; 
+        let targetUser = null;  
+        let unsubscribeMessages = null;
+        let unsubscribeTyping = null;
+        let typingTimeout = null;
+        let selectedMessageId = null;
+        let replyToId = null;
+        let isEphemeral = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let blurModeActive = false;
+        let pressTimer = null;
+        let currentBlurMessage = null;
+        let liveModeActive = false;
+        let liveTypingTimeout = null;
+        let currentLiveText = "";
+        let liveUpdateTimeout = null;
+        let canvas = null;
+        let ctx = null;
+        let drawing = false;
+        let currentColor = '#000000';
+        let currentBrushSize = 10;
+        let isDrawMode = true;
+        let canvasEmojis = [];
+        let flashInterval = null;
+        let isVibrating = false;
+        let batteryInterval = null;
+        let currentBatteryLevel = null;
+        let isCharging = false;
+        let currentMood = { emoji: '😊', label: 'Heureux' };
+        let moodUpdateTimeout = null;
+        let ephemeralAudioMode = false;
+        let codeModeActive = false;
+        let pendingMessageId = null;
+        const SECRET_PIN = "0507";
+        let translateModeActive = false;
+        let currentTargetLang = 'en';
+        let currentPhotoUrl = null;
 
-<script>
-// ============================================
-// 1. CONFIGURATION FIREBASE (TOUJOURS EN PREMIER)
-// ============================================
-const firebaseConfig = {
-    apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
-    authDomain: "messagerie-65abc.firebaseapp.com",
-    projectId: "messagerie-65abc",
-    storageBucket: "messagerie-65abc.firebasestorage.app",
-    messagingSenderId: "363641716532",
-    appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
-};
-
-// Initialiser Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const chatId = "chat_ida_aidara";
-
-// ============================================
-// 2. VARIABLES GLOBALES
-// ============================================
-let currentUser = null;
-let targetUser = null;
-let unsubscribeMessages = null;
-let unsubscribeTyping = null;
-let typingTimeout = null;
-let selectedMessageId = null;
-let replyToId = null;
-let isEphemeral = false;
-let mediaRecorder = null;
-let audioChunks = [];
-let blurModeActive = false;
-let codeModeActive = false;
-let ephemeralAudioMode = false;
-let pressTimer = null;
-let currentBlurMessage = null;
-
-// ============================================
-// 3. FONCTIONS DE NOTIFICATION (VERSION SIMPLIFIÉE)
-// ============================================
-async function activerNotificationsPush() {
-    if (!currentUser) {
-        console.log("Attendez d'être connecté");
-        return false;
-    }
-    
-    if (!('Notification' in window)) {
-        alert("Votre navigateur ne supporte pas les notifications");
-        return false;
-    }
-    
-    if (Notification.permission !== 'granted') {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            alert("Vous devez autoriser les notifications");
-            return false;
+        // ========== FONCTIONS UTILITAIRES ==========
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
-    }
-    
-    alert("✅ Notifications activées ! Vous recevrez les alertes même en arrière-plan.");
-    
-    // Démarrer l'écoute des messages pour notifier
-    ecouterNouveauxMessages();
-    
-    return true;
-}
-
-function ecouterNouveauxMessages() {
-    if (!currentUser || !targetUser) return;
-    
-    let dernierMessageId = null;
-    
-    db.collection('chats').doc(chatId).collection('messages')
-        .where('senderId', '==', targetUser.id)
-        .orderBy('timestamp', 'desc')
-        .limitToLast(1)
-        .onSnapshot((snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
-                    const message = change.doc.data();
-                    const messageId = change.doc.id;
-                    
-                    if (dernierMessageId === messageId) return;
-                    dernierMessageId = messageId;
-                    
-                    // Vérifier si la page n'est PAS active
-                    const estEnArrierePlan = document.hidden || !document.hasFocus();
-                    
-                    if (estEnArrierePlan && Notification.permission === 'granted') {
-                        new Notification(`📨 ${targetUser.name}`, {
-                            body: message.text || "Nouveau message",
-                            vibrate: [200, 100, 200],
-                            silent: false,
-                            requireInteraction: true
-                        });
-                    }
-                }
-            });
-        });
-}
-
-// ============================================
-// 4. FONCTIONS PRINCIPALES DU CHAT
-// ============================================
-function selectUser(userKey) {
-    currentUser = userKey === 'ida' ? { id: 'ida', name: 'IDA', full: 'Ida' } : { id: 'aidara', name: 'AIDARA', full: 'Aidara' };
-    targetUser = userKey === 'ida' ? { id: 'aidara', name: 'AIDARA', full: 'Aidara' } : { id: 'ida', name: 'IDA', full: 'Ida' };
-
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('header-av').innerText = targetUser.name.substring(0,3);
-    document.getElementById('header-av').style.background = userKey === 'ida' ? 'linear-gradient(45deg, #0076ff, #00ffaa)' : 'linear-gradient(45deg, #ff007f, #ff7300)';
-    document.getElementById('header-display-name').innerText = targetUser.full;
-
-    listenToMessages();
-    listenToTyping();
-    
-    // Activer les notifications après connexion
-    setTimeout(() => activerNotificationsPush(), 2000);
-}
-
-function logout() {
-    if(unsubscribeMessages) unsubscribeMessages();
-    if(unsubscribeTyping) unsubscribeTyping();
-    document.getElementById('login-screen').style.display = 'flex';
-}
-
-function listenToMessages() {
-    unsubscribeMessages = db.collection('chats').doc(chatId).collection('messages')
-        .orderBy('timestamp', 'asc')
-        .limitToLast(60)
-        .onSnapshot(snapshot => {
-            const msgArea = document.getElementById('msg-area');
-            msgArea.innerHTML = '';
-            let lastDateStr = "";
-
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const msgId = doc.id;
-
-                if (data.senderId !== currentUser.id && (!data.readBy || !data.readBy.includes(currentUser.id))) {
-                    db.collection('chats').doc(chatId).collection('messages').doc(msgId).update({
-                        readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.id),
-                        status: "read"
-                    });
-                }
-
-                if(data.timestamp) {
-                    const dateObj = data.timestamp.toDate();
-                    const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                    if(dateStr !== lastDateStr) {
-                        const sep = document.createElement('div');
-                        sep.className = 'date-separator';
-                        sep.innerText = dateStr;
-                        msgArea.appendChild(sep);
-                        lastDateStr = dateStr;
-                    }
-                }
-
-                const row = document.createElement('div');
-                row.className = `message-row ${data.senderId === currentUser.id ? 'sent' : 'received'}`;
-                row.setAttribute('data-id', msgId);
-
-                let bubbleHtml = `<div class="message-bubble" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">`;
-
-                if (data.replyToText) {
-                    bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${data.replyToText}</div>`;
-                }
-
-                if (data.type === 'text') {
-                    let displayText = data.text || "";
-                    displayText = displayText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    displayText = displayText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-                    displayText = displayText.replace(/~~(.*?)~~/g, '<del>$1</del>');
-                    bubbleHtml += `<span>${displayText}</span>`;
-                } else if (data.type === 'image') {
-                    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" onclick="window.open('${data.mediaUrl}')"/>`;
-                } else if (data.type === 'audio') {
-                    bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
-                }
-
-                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-                const checkMark = data.status === 'read' ? '<span class="status-tick">✓✓</span>' : '<span>✓</span>';
-                bubbleHtml += `<div class="msg-meta">${timeStr} ${data.senderId === currentUser.id ? checkMark : ''}</div>`;
-
-                if(data.reactions && Object.keys(data.reactions).length > 0) {
-                    bubbleHtml += `<div class="applied-reactions">`;
-                    Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
-                    bubbleHtml += `</div>`;
-                }
-
-                bubbleHtml += `</div>`;
-                row.innerHTML = bubbleHtml;
-                msgArea.appendChild(row);
-            });
-
-            msgArea.scrollTop = msgArea.scrollHeight;
-        });
-}
-
-function sendTextMessage() {
-    const input = document.getElementById('chat-in');
-    const text = input.value.trim();
-    if(!text) return;
-
-    const msgData = {
-        text: text,
-        senderId: currentUser.id,
-        senderName: currentUser.name,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        status: "sent",
-        readBy: [currentUser.id],
-        type: "text",
-        isEphemeral: isEphemeral,
-        mediaUrl: null
-    };
-
-    if(replyToId) {
-        const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
-        if(parentRow) {
-            msgData.replyToId = replyToId;
-            msgData.replyToText = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
-            msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
+        
+        function cleanHTML(str) {
+            str = str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+            str = str.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+            return str;
         }
-    }
+        
+        function isOnlyEmojis(str) {
+            if(!str) return false;
+            const emojiRegex = /^[\u{1F300}-\u{1F9FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]+$/u;
+            return emojiRegex.test(str.replace(/\s/g, '')) && str.replace(/\s/g, '').length <= 6;
+        }
 
-    input.value = '';
-    cancelReply();
-    toggleSendBtn(false);
-    stopTypingNotify();
+        function formatText(text) {
+            if(!text) return "";
+            let formatted = text;
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/~~(.*?)~~/g, '<del>$1</del>');
+            return formatted;
+        }
 
-    db.collection('chats').doc(chatId).collection('messages').add(msgData);
-}
+        function showTempNotification(message) {
+            const notif = document.createElement('div');
+            notif.textContent = message;
+            notif.style.position = 'fixed';
+            notif.style.bottom = '100px';
+            notif.style.right = '20px';
+            notif.style.background = '#0095f6';
+            notif.style.color = 'white';
+            notif.style.padding = '8px 16px';
+            notif.style.borderRadius = '20px';
+            notif.style.fontSize = '0.85rem';
+            notif.style.zIndex = '1000';
+            notif.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+            document.body.appendChild(notif);
+            setTimeout(() => {
+                notif.style.opacity = '0';
+                setTimeout(() => notif.remove(), 300);
+            }, 2000);
+        }
 
-function handleTyping() {
-    const input = document.getElementById('chat-in');
-    const hasText = input.value.trim().length > 0;
-    toggleSendBtn(hasText);
-    
-    db.collection('chats').doc(chatId).collection('typing').doc(currentUser.id).set({ isTyping: true });
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(stopTypingNotify, 2000);
-}
-
-function stopTypingNotify() {
-    if(currentUser) db.collection('chats').doc(chatId).collection('typing').doc(currentUser.id).set({ isTyping: false });
-}
-
-function listenToTyping() {
-    unsubscribeTyping = db.collection('chats').doc(chatId).collection('typing').doc(targetUser.id)
-        .onSnapshot(doc => {
-            if(doc.exists && doc.data().isTyping) {
-                document.getElementById('typing-txt').innerText = `${targetUser.name} écrit...`;
-                document.getElementById('typing-ind').style.display = 'flex';
+        // ========== SÉLECTION UTILISATEUR ==========
+        function selectUser(userKey) {
+            if(userKey === 'ida') {
+                currentUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
+                targetUser = { id: 'aidara', name: 'Ahmed Said Aidara', full: 'Aidara' };
             } else {
-                document.getElementById('typing-ind').style.display = 'none';
+                currentUser = { id: 'aidara', name: 'Ahmed Said Aidara', full: 'Aidara' };
+                targetUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
             }
-        });
-}
 
-function toggleSendBtn(show) {
-    document.getElementById('send-btn').style.display = show ? 'block' : 'none';
-    document.getElementById('in-actions').style.display = show ? 'none' : 'flex';
-}
-
-function cancelReply() { 
-    replyToId = null; 
-    document.getElementById('reply-preview').style.display = 'none'; 
-}
-
-function initiateReply() {
-    replyToId = selectedMessageId;
-    const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
-    if(parentRow) {
-        const snippet = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
-        document.getElementById('reply-preview-text').innerText = `Répondre à : ${snippet}`;
-        document.getElementById('reply-preview').style.display = 'flex';
-    }
-}
-
-function deleteSelectedMessage() {
-    if(selectedMessageId) {
-        if(confirm("Supprimer ce message définitivement pour tout le monde ?")) {
-            db.collection('chats').doc(chatId).collection('messages').doc(selectedMessageId).delete();
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('header-av').innerText = targetUser.name.substring(0,3);
+            document.getElementById('header-av').style.background = userKey === 'ida' ? 'linear-gradient(45deg, #0076ff, #00ffaa)' : 'linear-gradient(45deg, #ff007f, #ff7300)';
+            document.getElementById('header-display-name').innerHTML = targetUser.full + ' <span id="other-mood-emoji" style="margin-left:8px; font-size:1rem;">😊</span>';
+            
+            listenToMessages();
+            listenToTyping();
+            getBatteryLevel();
+            listenToOtherUserBattery();
+            listenForFlashSignals();
+            saveDefaultMood();
         }
-    }
-    hideContextMenus();
-}
 
-function handleContextMenu(e, msgId) {
-    e.preventDefault();
-    selectedMessageId = msgId;
-    const menu = document.getElementById('ctx-menu');
-    menu.style.display = 'block';
-    menu.style.top = Math.min(e.pageY, window.innerHeight - 100) + 'px';
-    menu.style.left = Math.min(e.pageX, window.innerWidth - 150) + 'px';
-    document.addEventListener('click', hideContextMenus);
-}
+        function logout() {
+            if(unsubscribeMessages) unsubscribeMessages();
+            if(unsubscribeTyping) unsubscribeTyping();
+            document.getElementById('login-screen').style.display = 'flex';
+        }
 
-function hideContextMenus() {
-    document.getElementById('ctx-menu').style.display = 'none';
-    document.removeEventListener('click', hideContextMenus);
-}
-
-function handleDoubleTap(e, msgId) {
-    e.preventDefault();
-    selectedMessageId = msgId;
-    const dock = document.getElementById('react-dock');
-    dock.style.display = 'flex';
-    dock.style.top = Math.min(e.pageY - 60, window.innerHeight - 100) + 'px';
-    dock.style.left = Math.min(e.pageX - 50, window.innerWidth - 200) + 'px';
-    setTimeout(() => dock.style.display = 'none', 5000);
-}
-
-function applyReaction(emoji) {
-    if(selectedMessageId) {
-        const ref = db.collection('chats').doc(chatId).collection('messages').doc(selectedMessageId);
-        ref.update({ [`reactions.${currentUser.id}`]: emoji });
-    }
-    document.getElementById('react-dock').style.display = 'none';
-}
-
-function toggleRecording() {
-    const micIcon = document.getElementById('mic-btn');
-    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-                    const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
-                    reader.onloadend = () => {
-                        sendMediaMessage('audio', reader.result);
-                    };
-                };
-                mediaRecorder.start();
-                micIcon.className = "fa-solid fa-circle-stop";
-                micIcon.style.color = "#ed4956";
-            })
-            .catch(err => alert("Accès micro refusé"));
-    } else {
-        mediaRecorder.stop();
-        micIcon.className = "fa-solid fa-microphone";
-        micIcon.style.color = "var(--text-main)";
-    }
-}
-
-function triggerImageUpload() { 
-    document.getElementById('img-file').click(); 
-}
-
-function uploadImage(input) {
-    if(input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => sendMediaMessage('image', e.target.result);
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function sendMediaMessage(type, base64Data) {
-    db.collection('chats').doc(chatId).collection('messages').add({
-        text: null,
-        senderId: currentUser.id,
-        senderName: currentUser.name,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        status: "sent",
-        readBy: [currentUser.id],
-        type: type,
-        isEphemeral: isEphemeral,
-        mediaUrl: base64Data
-    });
-}
-
-function insertEmoji(emoji) { 
-    document.getElementById('chat-in').value += emoji; 
-    handleTyping(); 
-}
-
-function togglePanel(panelId) {
-    const panel = document.getElementById(panelId);
-    if (panel.style.display === 'block') {
-        panel.style.display = 'none';
-    } else {
-        document.querySelectorAll('.floating-panel').forEach(p => p.style.display = 'none');
-        panel.style.display = 'block';
-    }
-}
-
-function toggleModal(id, open) { 
-    document.getElementById(id).style.display = open ? 'flex' : 'none'; 
-}
-
-function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const target = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', target);
-    localStorage.setItem('theme', target);
-}
-
-function setBubbleColor(color, dot) {
-    document.documentElement.style.setProperty('--bubble-sent', color);
-    localStorage.setItem('bubbleColor', color);
-    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-    dot.classList.add('active');
-}
-
-function setChatBg(url, thumb) {
-    document.getElementById('msg-area').style.backgroundImage = url === 'none' ? 'none' : `url('${url}')`;
-    document.querySelectorAll('.bg-thumb').forEach(t => t.classList.remove('active'));
-    thumb.classList.add('active');
-}
-
-function handleFileSelect(input) { 
-    if(input.files && input.files[0]) parseWhatsAppFile(input.files[0]); 
-}
-
-function handleFileDrop(e) { 
-    e.preventDefault(); 
-    if(e.dataTransfer.files && e.dataTransfer.files[0]) parseWhatsAppFile(e.dataTransfer.files[0]); 
-}
-
-function parseWhatsAppFile(file) {
-    const reader = new FileReader();
-    document.getElementById('upload-status-text').innerText = "Traitement en cours...";
-    reader.onload = function(e) {
-        const lines = e.target.result.split('\n');
-        let count = 0;
-        const waRegex = /^\[?(\d{2}\/\d{2}\/\d{4}),?\s(\d{2}:\d{2})(?::\d{2})?\]?\s-\s([^:]+):\s(.*)$/;
-        lines.forEach(line => {
-            let match = line.match(waRegex);
-            if(match) {
-                let [_, date, time, sender, text] = match;
-                let guessedSender = sender.toLowerCase().includes('ida') ? 'ida' : 'aidara';
-                let senderName = guessedSender === 'ida' ? 'IDA' : 'AIDARA';
-                db.collection('chats').doc(chatId).collection('messages').add({
-                    text: text.trim(),
-                    senderId: guessedSender,
-                    senderName: senderName,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    status: "read",
-                    readBy: ['ida', 'aidara'],
-                    type: "text",
-                    isEphemeral: false,
-                    mediaUrl: null
+        // ========== ÉCOUTE DES MESSAGES (FIRESTORE) ==========
+        function listenToMessages() {
+            if(unsubscribeMessages) unsubscribeMessages();
+            unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
+                .orderBy('timestamp', 'asc')
+                .limitToLast(60)
+                .onSnapshot(snapshot => {
+                    const msgArea = document.getElementById('msg-area');
+                    msgArea.innerHTML = '';
+                    let lastDateStr = "";
+                    
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const msgId = doc.id;
+                        
+                        if(data.timestamp) {
+                            const dateObj = data.timestamp.toDate();
+                            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                            if(dateStr !== lastDateStr) {
+                                const sep = document.createElement('div');
+                                sep.className = 'date-separator';
+                                sep.innerText = dateStr;
+                                msgArea.appendChild(sep);
+                                lastDateStr = dateStr;
+                            }
+                        }
+                        
+                        const row = document.createElement('div');
+                        const isSent = data.senderId === currentUser.id;
+                        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+                        row.setAttribute('data-id', msgId);
+                        
+                        const isGiant = isOnlyEmojis(data.text);
+                        let customStyle = '';
+                        if (isSent && data.bubbleStyle) customStyle = data.bubbleStyle;
+                        
+                        let codedClass = '';
+                        let lockBadge = '';
+                        if (data.isCoded === true) {
+                            codedClass = 'coded';
+                            lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
+                        }
+                        
+                        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">${lockBadge}`;
+                        
+                        if (data.replyToText) {
+                            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+                        }
+                        
+                        if (data.type === 'text') {
+                            let displayText = data.text;
+                            if (data.isCoded === true) {
+                                const originalMessage = data.originalText || data.text;
+                                displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+                                bubbleHtml += displayText;
+                            } else {
+                                displayText = formatText(escapeHTML(displayText));
+                                bubbleHtml += `<span>${displayText}</span>`;
+                            }
+                        } else if (data.type === 'image') {
+                            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)"/>`;
+                        } else if (data.type === 'drawing') {
+                            bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+                        } else if (data.type === 'audio') {
+                            if (data.isEphemeralAudio) {
+                                const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
+                                const isDestroyed = data.destroyed;
+                                if (isDestroyed) {
+                                    bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
+                                } else {
+                                    bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
+                                    if (alreadyPlayed) {
+                                        bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;"><i class="fa-solid fa-head-side-headphones"></i><span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span></div>`;
+                                    } else {
+                                        bubbleHtml += `<div style="padding:5px;"><audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio><small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique</small></div>`;
+                                    }
+                                }
+                            } else {
+                                bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
+                            }
+                        }
+                        
+                        const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+                        const checkMark = data.status === 'read' ? '<span class="status-tick">✓✓</span>' : '<span>✓</span>';
+                        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}</div>`;
+                        
+                        if(data.reactions && Object.keys(data.reactions).length > 0) {
+                            bubbleHtml += `<div class="applied-reactions">`;
+                            Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+                            bubbleHtml += `</div>`;
+                        }
+                        
+                        bubbleHtml += `</div>`;
+                        row.innerHTML = bubbleHtml;
+                        
+                        if (blurModeActive) {
+                            const bubble = row.querySelector('.message-bubble');
+                            if (bubble) {
+                                bubble.classList.add('blur-active');
+                                attachBlurEvents(bubble);
+                            }
+                        }
+                        msgArea.appendChild(row);
+                    });
+                    
+                    // Codes secrets (émojis tombants)
+                    if (!snapshot.metadata.hasPendingWrites && snapshot.docs.length > 0) {
+                        const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+                        const lastMsgData = lastDoc.data();
+                        if (lastMsgData.type === 'text' && lastMsgData.text) {
+                            const text = lastMsgData.text.trim();
+                            if (!window[`played_${lastDoc.id}`]) {
+                                window[`played_${lastDoc.id}`] = true;
+                                if (text.includes('520')) {
+                                    const heartsAndFlowers = ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💞','💓','❤️‍🔥','❣️','💕','💖','💘','💝','💟','🌹','🌷','💐','🌺','😍','🥰','😘','🤩'];
+                                    triggerMixedBombardment(heartsAndFlowers);
+                                } else if (text.includes('88')) {
+                                    const kisses = ['😘','😙','💋','🤤','🫦'];
+                                    triggerMixedBombardment(kisses);
+                                } else if (text.includes('99')) {
+                                    const love = ['🥰','😇','😍'];
+                                    triggerMixedBombardment(love);
+                                } else if (text.length >= 3 && [...new Set(text)].length === 1 && isOnlyEmojis(text)) {
+                                    triggerBombardment([...text][0]);
+                                }
+                            }
+                        }
+                    }
+                    msgArea.scrollTop = msgArea.scrollHeight;
                 });
-                count++;
+        }
+        
+        function triggerBombardment(char) {
+            for (let i = 0; i < 60; i++) {
+                setTimeout(() => {
+                    const e = document.createElement('div');
+                    e.className = 'falling-emoji';
+                    e.innerText = char;
+                    e.style.left = Math.random() * 100 + 'vw';
+                    e.style.top = '-50px';
+                    e.style.fontSize = Math.random() * 30 + 20 + 'px';
+                    e.style.animationDuration = Math.random() * 2 + 2 + 's';
+                    document.body.appendChild(e);
+                    setTimeout(() => e.remove(), 4000);
+                }, i * 50);
             }
+        }
+        
+        function triggerMixedBombardment(emojiList) {
+            for (let i = 0; i < 70; i++) {
+                setTimeout(() => {
+                    const e = document.createElement('div');
+                    e.className = 'falling-emoji';
+                    const randomEmoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+                    e.innerText = randomEmoji;
+                    e.style.left = Math.random() * 100 + 'vw';
+                    e.style.top = '-50px';
+                    e.style.fontSize = Math.random() * 35 + 20 + 'px';
+                    e.style.animationDuration = Math.random() * 2 + 1.5 + 's';
+                    document.body.appendChild(e);
+                    setTimeout(() => e.remove(), 3500);
+                }, i * 40);
+            }
+        }
+
+        // ========== ENVOI DE MESSAGES ==========
+        function toggleSendBtn(show) {
+            document.getElementById('send-btn').style.display = show ? 'block' : 'none';
+            document.getElementById('in-actions').style.display = show ? 'none' : 'flex';
+        }
+        
+        function cancelReply() { replyToId = null; document.getElementById('reply-preview').style.display = 'none'; }
+        
+        async function sendTextMessage() {
+            const input = document.getElementById('chat-in');
+            let text = input.value.trim();
+            if(!text) return;
+            
+            if (translateModeActive && currentTargetLang) {
+                showTempNotification(`🔄 Traduction en cours vers ${currentTargetLang.toUpperCase()}...`);
+                const translatedText = await translateTextToLanguage(text, currentTargetLang);
+                if (translatedText && translatedText !== text) {
+                    text = translatedText;
+                    showTempNotification(`✅ Message traduit en ${currentTargetLang.toUpperCase()}`);
+                }
+                translateModeActive = false;
+                const translateBtn = document.getElementById('translate-btn');
+                if(translateBtn) translateBtn.style.color = '';
+            }
+            
+            let finalText = text;
+            let isCoded = codeModeActive;
+            
+            if (codeModeActive) {
+                finalText = generateMask(text.length);
+                codeModeActive = false;
+                const codeBtn = document.getElementById('code-mode-btn');
+                if(codeBtn) {
+                    codeBtn.style.color = '';
+                    codeBtn.style.textShadow = '';
+                }
+            }
+            
+            const msgData = {
+                text: finalText,
+                originalText: isCoded ? text : null,
+                isCoded: isCoded,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "sent",
+                readBy: [currentUser.id],
+                type: "text",
+                isEphemeral: isEphemeral,
+                mediaUrl: null
+            };
+            
+            if(replyToId) {
+                const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
+                if(parentRow) {
+                    msgData.replyToId = replyToId;
+                    msgData.replyToText = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+                    msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
+                }
+            }
+            
+            input.value = '';
+            cancelReply();
+            toggleSendBtn(false);
+            stopTypingNotify();
+            clearLiveTyping();
+            
+            await db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData);
+        }
+        
+        function generateMask(length) {
+            const chars = ['#', '@', '×', '/', '+', '-', '•', '★', '◆', '▪', '▫', '●', '○', '◊', '♠', '♣', '♥', '♦'];
+            let mask = '';
+            for (let i = 0; i < length; i++) {
+                mask += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return mask;
+        }
+        
+        // ========== TYPING INDICATOR ==========
+        function handleTyping() {
+            const input = document.getElementById('chat-in');
+            const hasText = input.value.trim().length > 0;
+            toggleSendBtn(hasText);
+            
+            db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: true });
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(stopTypingNotify, 2000);
+            sendLiveTypingUpdate();
+        }
+        
+        function stopTypingNotify() {
+            if(currentUser) db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: false });
+        }
+        
+        function listenToTyping() {
+            unsubscribeTyping = db.collection('chats').doc(CHAT_ID).collection('typing').doc(targetUser.id)
+                .onSnapshot(doc => {
+                    if(doc.exists && doc.data().isTyping) {
+                        document.getElementById('typing-txt').innerText = `${targetUser.name} écrit...`;
+                        document.getElementById('typing-ind').style.display = 'flex';
+                    } else {
+                        document.getElementById('typing-ind').style.display = 'none';
+                    }
+                });
+        }
+        
+        // ========== MESSAGES MÉDIAS ==========
+        function triggerImageUpload() { document.getElementById('img-file').click(); }
+        
+        function uploadImage(input) {
+            if(input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => sendMediaMessage('image', e.target.result);
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function sendMediaMessage(type, base64Data) {
+            db.collection('chats').doc(CHAT_ID).collection('messages').add({
+                text: null,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "sent",
+                readBy: [currentUser.id],
+                type: type,
+                isEphemeral: isEphemeral,
+                mediaUrl: base64Data
+            });
+        }
+        
+        // ========== ENREGISTREMENT AUDIO ==========
+        async function toggleRecording() {
+            const micIcon = document.getElementById('mic-btn');
+            if (!micIcon) return;
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = () => {
+                            if (ephemeralAudioMode) {
+                                sendEphemeralAudio(reader.result);
+                            } else {
+                                sendMediaMessage('audio', reader.result);
+                            }
+                        };
+                    };
+                    mediaRecorder.start();
+                    micIcon.className = "fa-solid fa-circle-stop";
+                    micIcon.style.color = "#ed4956";
+                    setTimeout(() => { if(mediaRecorder.state === 'recording') toggleRecording(); }, 10000);
+                } catch(err) { alert("Accès micro refusé."); }
+            } else {
+                mediaRecorder.stop();
+                micIcon.className = "fa-solid fa-microphone";
+                micIcon.style.color = "var(--text-main)";
+            }
+        }
+        
+        function sendEphemeralAudio(base64Data) {
+            db.collection('chats').doc(CHAT_ID).collection('messages').add({
+                text: null,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "sent",
+                readBy: [currentUser.id],
+                type: "audio",
+                isEphemeral: isEphemeral,
+                isEphemeralAudio: true,
+                mediaUrl: base64Data,
+                playedBy: [],
+                destroyed: false
+            });
+            ephemeralAudioMode = false;
+            const audioBtn = document.getElementById('ephemeral-audio-btn');
+            if(audioBtn) {
+                audioBtn.style.color = '';
+                audioBtn.style.textShadow = '';
+            }
+            showTempNotification("🎙️ Audio éphémère envoyé !");
+        }
+        
+        async function handleEphemeralAudioPlay(messageId, audioElement) {
+            const msgRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageId);
+            const doc = await msgRef.get();
+            const data = doc.data();
+            if (!data || !data.isEphemeralAudio) return;
+            if (data.destroyed) {
+                audioElement.remove();
+                return;
+            }
+            if (data.playedBy && data.playedBy.includes(currentUser.id)) {
+                showTempNotification("🔇 Tu as déjà écouté cet audio");
+                audioElement.pause();
+                return;
+            }
+            audioElement.addEventListener('ended', async () => {
+                await msgRef.update({ playedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.id) });
+                const updatedDoc = await msgRef.get();
+                if (updatedDoc.data().playedBy && updatedDoc.data().playedBy.length >= 2) {
+                    await msgRef.delete();
+                    showTempNotification("🗑️ Audio éphémère supprimé");
+                } else {
+                    audioElement.style.opacity = "0.5";
+                    audioElement.disabled = true;
+                    showTempNotification("🔇 Audio écouté - disparaîtra quand l'autre l'aura écouté");
+                }
+            });
+        }
+        
+        // ========== RÉACTIONS ET MENUS ==========
+        function handleDoubleTap(e, msgId) {
+            e.preventDefault();
+            selectedMessageId = msgId;
+            const dock = document.getElementById('react-dock');
+            dock.style.display = 'flex';
+            dock.style.top = Math.min(e.pageY - 60, window.innerHeight - 100) + 'px';
+            dock.style.left = Math.min(e.pageX - 50, window.innerWidth - 200) + 'px';
+            setTimeout(() => dock.style.display = 'none', 5000);
+        }
+        
+        function applyReaction(emoji) {
+            if(selectedMessageId) {
+                const ref = db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId);
+                ref.update({ [`reactions.${currentUser.id}`]: emoji });
+            }
+            document.getElementById('react-dock').style.display = 'none';
+        }
+        
+        function handleContextMenu(e, msgId) {
+            e.preventDefault();
+            selectedMessageId = msgId;
+            const menu = document.getElementById('ctx-menu');
+            menu.style.display = 'block';
+            menu.style.top = Math.min(e.pageY, window.innerHeight - 100) + 'px';
+            menu.style.left = Math.min(e.pageX, window.innerWidth - 150) + 'px';
+            document.addEventListener('click', hideContextMenus);
+        }
+        
+        function hideContextMenus() {
+            document.getElementById('ctx-menu').style.display = 'none';
+            document.getElementById('style-submenu').style.display = 'none';
+            document.removeEventListener('click', hideContextMenus);
+        }
+        
+        function initiateReply() {
+            replyToId = selectedMessageId;
+            const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
+            if(parentRow) {
+                const snippet = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+                document.getElementById('reply-preview-text').innerText = `Répondre à : ${snippet}`;
+                document.getElementById('reply-preview').style.display = 'flex';
+            }
+            hideContextMenus();
+        }
+        
+        async function deleteSelectedMessage() {
+            if(selectedMessageId && confirm("Supprimer ce message définitivement ?")) {
+                await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).delete();
+            }
+            hideContextMenus();
+        }
+        
+        // ========== STYLES DE BULLES ==========
+        let styleMenuOpen = false;
+        
+        function showStyleMenu() {
+            const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+            const isSentMessage = messageRow && messageRow.classList.contains('sent');
+            if (!isSentMessage) {
+                showTempNotification("⚠️ Tu ne peux changer que le style de TES messages !");
+                document.getElementById('ctx-menu').style.display = 'none';
+                return;
+            }
+            if (styleMenuOpen) {
+                closeStyleMenu();
+                return;
+            }
+            const mainMenu = document.getElementById('ctx-menu');
+            const styleMenu = document.getElementById('style-submenu');
+            const rect = mainMenu.getBoundingClientRect();
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            let leftPos = rect.right + 5;
+            if (leftPos + 200 > windowWidth) leftPos = rect.left - 205;
+            let topPos = rect.top;
+            if (topPos + 400 > windowHeight) topPos = windowHeight - 410;
+            if (topPos < 10) topPos = 10;
+            styleMenu.style.position = 'fixed';
+            styleMenu.style.top = topPos + 'px';
+            styleMenu.style.left = leftPos + 'px';
+            styleMenu.style.display = 'block';
+            styleMenuOpen = true;
+            mainMenu.style.display = 'none';
+            setTimeout(() => {
+                document.addEventListener('click', function closeSubmenu(e) {
+                    if (styleMenuOpen && !styleMenu.contains(e.target)) {
+                        closeStyleMenu();
+                        document.removeEventListener('click', closeSubmenu);
+                    }
+                });
+            }, 100);
+        }
+        
+        function closeStyleMenu() {
+            const styleMenu = document.getElementById('style-submenu');
+            styleMenu.style.display = 'none';
+            styleMenuOpen = false;
+        }
+        
+        async function applyStyleToMessage(styleName) {
+            if (!selectedMessageId) return;
+            const styleNames = { 'bicolor':'Bicolore','dark-passion':'Rouge et Noir','grid-style':'Style Tableau','rainbow':'Arc-en-ciel','neon':'Néon Glow','wood':'Style Bois','code-style':'Style Code','comics':'Style Comics','watercolor':'Aquarelle','retro':'Style Retro' };
+            const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+            const isSentMessage = messageRow && messageRow.classList.contains('sent');
+            if (!isSentMessage) {
+                showTempNotification("❌ Tu ne peux changer que le style de TES propres messages !");
+                closeStyleMenu();
+                return;
+            }
+            await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ bubbleStyle: styleName });
+            const bubble = messageRow.querySelector('.message-bubble');
+            if (bubble) {
+                const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro'];
+                allStyles.forEach(style => bubble.classList.remove(style));
+                bubble.classList.add(styleName);
+            }
+            closeStyleMenu();
+            document.getElementById('ctx-menu').style.display = 'none';
+            showTempNotification(`✨ Style "${styleNames[styleName]}" appliqué !`);
+        }
+        
+        async function removeStyleFromMessage() {
+            if (!selectedMessageId) return;
+            const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+            if (!messageRow || !messageRow.classList.contains('sent')) {
+                showTempNotification("❌ Tu ne peux supprimer que le style de TES messages !");
+                closeStyleMenu();
+                return;
+            }
+            await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ bubbleStyle: null });
+            const bubble = messageRow.querySelector('.message-bubble');
+            if (bubble) {
+                const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro'];
+                allStyles.forEach(style => bubble.classList.remove(style));
+            }
+            closeStyleMenu();
+            document.getElementById('ctx-menu').style.display = 'none';
+            showTempNotification(`🗑️ Style supprimé`);
+        }
+        
+        // ========== TRADUCTION ==========
+        async function translateTextToLanguage(text, targetLang) {
+            if (!text || text.trim() === '') return null;
+            const langMap = { 'en': 'en|fr', 'ar': 'ar|fr', 'es': 'es|fr', 'ja': 'ja|fr' };
+            const langPair = langMap[targetLang] || 'en|fr';
+            try {
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.responseData && data.responseData.translatedText) {
+                    let translated = data.responseData.translatedText;
+                    translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+                    return translated;
+                }
+                return null;
+            } catch(error) {
+                console.error("Erreur de traduction:", error);
+                return null;
+            }
+        }
+        
+        function toggleTranslateMenu(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('translate-dropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        async function translateInputText(targetLang) {
+            const input = document.getElementById('chat-in');
+            const originalText = input.value.trim();
+            if (!originalText) {
+                alert("📝 Écris d'abord un message !");
+                document.getElementById('translate-dropdown').classList.remove('show');
+                return;
+            }
+            const langNames = { 'en':'Anglais 🇬🇧','ar':'Arabe 🇸🇦','es':'Espagnol 🇪🇸','ja':'Japonais 🇯🇵' };
+            const translatedText = await translateTextToLanguage(originalText, targetLang);
+            if (translatedText && translatedText !== originalText) {
+                input.value = translatedText;
+                document.getElementById('translate-dropdown').classList.remove('show');
+                showTempNotification(`✅ Traduit en ${langNames[targetLang]}`);
+                handleTyping();
+            } else if (translatedText === originalText) {
+                showTempNotification(`⚠️ Le texte est déjà en ${langNames[targetLang]}`);
+            } else {
+                showTempNotification("❌ Erreur de traduction");
+            }
+        }
+        
+        async function translateSelectedMessage() {
+            if (!selectedMessageId) return;
+            const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+            if (!messageRow) return;
+            const messageSpan = messageRow.querySelector('.message-bubble span:not(.coded-mask)');
+            if (!messageSpan) return;
+            const originalText = messageSpan.innerText;
+            const originalHTML = messageSpan.innerHTML;
+            messageSpan.innerHTML = '<span style="opacity:0.6;">🔄 Traduction...</span>';
+            try {
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=fr|en`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.responseData && data.responseData.translatedText) {
+                    let translated = data.responseData.translatedText;
+                    translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+                    messageSpan.setAttribute('data-original', originalText);
+                    messageSpan.innerHTML = `${translated} <span style="font-size:0.65rem; opacity:0.5;" onclick="restoreOriginalMessage(this.parentElement)">[Original]</span>`;
+                } else {
+                    messageSpan.innerHTML = originalHTML;
+                }
+            } catch(error) {
+                messageSpan.innerHTML = originalHTML;
+            }
+            hideContextMenus();
+        }
+        
+        function restoreOriginalMessage(element) {
+            const original = element.getAttribute('data-original');
+            if (original) {
+                element.innerHTML = original;
+                element.removeAttribute('data-original');
+            }
+        }
+        
+        function toggleTranslateMenuDirect(event) {
+            event.stopPropagation();
+            let existingMenu = document.getElementById('direct-lang-menu');
+            if (existingMenu) { existingMenu.remove(); return; }
+            const menu = document.createElement('div');
+            menu.id = 'direct-lang-menu';
+            menu.style.cssText = `position:fixed; bottom:80px; right:20px; background:var(--panel-bg); backdrop-filter:blur(15px); border:1px solid var(--border-color); border-radius:12px; padding:8px 0; z-index:1000; min-width:150px;`;
+            const languages = [{ code:'en', flag:'🇬🇧', name:'Anglais'},{ code:'ar', flag:'🇸🇦', name:'Arabe'},{ code:'es', flag:'🇪🇸', name:'Espagnol'},{ code:'ja', flag:'🇯🇵', name:'Japonais'}];
+            languages.forEach(lang => {
+                const option = document.createElement('div');
+                option.style.cssText = 'padding:10px 20px; cursor:pointer; display:flex; align-items:center; gap:10px;';
+                option.innerHTML = `<span class="flag">${lang.flag}</span><span>${lang.name}</span>`;
+                option.onclick = () => { translateInputText(lang.code); menu.remove(); };
+                menu.appendChild(option);
+            });
+            const closeOpt = document.createElement('div');
+            closeOpt.style.cssText = 'padding:10px 20px; cursor:pointer; border-top:1px solid var(--border-color); color:#ed4956;';
+            closeOpt.innerHTML = '<i class="fa-solid fa-ban"></i> Fermer';
+            closeOpt.onclick = () => menu.remove();
+            menu.appendChild(closeOpt);
+            document.body.appendChild(menu);
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target) && e.target.id !== 'translate-btn') { menu.remove(); document.removeEventListener('click', closeMenu); }
+                });
+            }, 10);
+        }
+        
+        // ========== MODE CODE ==========
+        function toggleCodeMode() { codeModeActive = !codeModeActive; showTempNotification(codeModeActive ? "🔒 Mode Codé ACTIVÉ" : "🔓 Mode Codé DÉSACTIVÉ"); }
+        function toggleCodeModeDirect() { toggleCodeMode(); const btn = document.getElementById('code-mode-btn'); if(btn) btn.style.color = codeModeActive ? '#ffaa00' : ''; }
+        
+        function showPinModal(messageId) {
+            pendingMessageId = messageId;
+            document.getElementById('pin-modal').style.display = 'flex';
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-input').focus();
+        }
+        function closePinModal() { document.getElementById('pin-modal').style.display = 'none'; pendingMessageId = null; }
+        function verifyPin() {
+            const input = document.getElementById('pin-input');
+            if (input.value === SECRET_PIN) {
+                unlockMessage(pendingMessageId);
+                closePinModal();
+            } else { showTempNotification("❌ Code PIN incorrect !"); input.value = ''; input.focus(); }
+        }
+        function unlockMessage(messageId) {
+            const messageRow = document.querySelector(`[data-id="${messageId}"]`);
+            if (!messageRow) return;
+            const bubble = messageRow.querySelector('.message-bubble');
+            const messageSpan = bubble.querySelector('.coded-mask');
+            if (messageSpan) {
+                const originalText = messageSpan.getAttribute('data-original-text');
+                if (originalText) { messageSpan.innerHTML = originalText; messageSpan.classList.remove('coded-mask'); messageSpan.style.fontFamily = ''; }
+                bubble.classList.remove('coded');
+                const badge = bubble.querySelector('.locked-badge');
+                if (badge) { badge.textContent = '🔓'; badge.classList.add('unlocked-badge'); }
+            }
+        }
+        
+        // ========== AUDIO ÉPHÉMÈRE MODE ==========
+        function toggleEphemeralAudioMode() { ephemeralAudioMode = !ephemeralAudioMode; showTempNotification(ephemeralAudioMode ? "🎙️ Audio Éphémère ACTIVÉ" : "🎙️ Audio Éphémère DÉSACTIVÉ"); }
+        function toggleEphemeralAudioModeDirect() { toggleEphemeralAudioMode(); const btn = document.getElementById('ephemeral-audio-btn'); if(btn) btn.style.color = ephemeralAudioMode ? '#ff4444' : ''; }
+        
+        // ========== MODE ÉPHÉMÈRE ==========
+        function toggleEphemeralMode() {
+            isEphemeral = !isEphemeral;
+            document.getElementById('eph-overlay').style.display = isEphemeral ? 'flex' : 'none';
+            document.getElementById('header-status-text').innerHTML = isEphemeral ? 'Mode Éphémère' : 'En ligne <span class="battery-indicator" id="battery-indicator"><span class="battery-icon">🔋</span><span class="battery-percent">--%</span></span>';
+            showTempNotification(isEphemeral ? "🔐 Mode Éphémère ACTIVÉ" : "🔓 Mode Éphémère DÉSACTIVÉ");
+        }
+        
+        // ========== MODE FLOU ==========
+        function toggleBlurMode() {
+            blurModeActive = !blurModeActive;
+            const container = document.getElementById('msg-area');
+            const blurBtn = document.getElementById('blur-toggle-btn');
+            if (blurModeActive) {
+                container.classList.add('blur-mode');
+                blurBtn.classList.add('active');
+                blurBtn.classList.remove('fa-eye-slash');
+                blurBtn.classList.add('fa-eye');
+                applyBlurToAllMessages();
+                showTempNotification("🔒 Mode Flou activé");
+            } else {
+                container.classList.remove('blur-mode');
+                blurBtn.classList.remove('active');
+                blurBtn.classList.remove('fa-eye');
+                blurBtn.classList.add('fa-eye-slash');
+                removeBlurFromAllMessages();
+                showTempNotification("👁️ Mode Flou désactivé");
+            }
+        }
+        
+        function applyBlurToAllMessages() {
+            document.querySelectorAll('.message-bubble').forEach(bubble => {
+                bubble.classList.add('blur-active');
+                attachBlurEvents(bubble);
+            });
+        }
+        
+        function removeBlurFromAllMessages() {
+            document.querySelectorAll('.message-bubble').forEach(bubble => {
+                bubble.classList.remove('blur-active', 'blur-cleared');
+                removeBlurEvents(bubble);
+            });
+        }
+        
+        function attachBlurEvents(bubble) {
+            bubble.removeEventListener('mousedown', startPressToRead);
+            bubble.removeEventListener('mouseup', endPressToRead);
+            bubble.removeEventListener('mouseleave', cancelPressToRead);
+            bubble.addEventListener('mousedown', startPressToRead);
+            bubble.addEventListener('mouseup', endPressToRead);
+            bubble.addEventListener('mouseleave', cancelPressToRead);
+        }
+        
+        function removeBlurEvents(bubble) {
+            bubble.removeEventListener('mousedown', startPressToRead);
+            bubble.removeEventListener('mouseup', endPressToRead);
+            bubble.removeEventListener('mouseleave', cancelPressToRead);
+        }
+        
+        function startPressToRead(e) {
+            if (!blurModeActive) return;
+            const bubble = e.currentTarget;
+            currentBlurMessage = bubble;
+            pressTimer = setTimeout(() => {
+                if (currentBlurMessage) {
+                    currentBlurMessage.classList.remove('blur-active');
+                    currentBlurMessage.classList.add('blur-cleared');
+                }
+            }, 200);
+        }
+        
+        function endPressToRead(e) {
+            if (!blurModeActive) return;
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            if (currentBlurMessage) {
+                setTimeout(() => {
+                    if (currentBlurMessage && blurModeActive) {
+                        currentBlurMessage.classList.add('blur-active');
+                        currentBlurMessage.classList.remove('blur-cleared');
+                    }
+                    currentBlurMessage = null;
+                }, 500);
+            }
+        }
+        
+        function cancelPressToRead(e) {
+            if (!blurModeActive) return;
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            if (currentBlurMessage) {
+                currentBlurMessage.classList.add('blur-active');
+                currentBlurMessage.classList.remove('blur-cleared');
+                currentBlurMessage = null;
+            }
+        }
+        
+        // ========== MODE LIVE ==========
+        function toggleLiveMode() {
+            liveModeActive = !liveModeActive;
+            const liveBtn = document.getElementById('live-toggle-btn');
+            const liveContainer = document.getElementById('live-container');
+            if (liveModeActive) {
+                liveBtn.classList.add('active');
+                liveBtn.style.color = '#ff4444';
+                liveContainer.classList.add('active');
+                startLiveTypingListener();
+                showTempNotification("🔴 Mode Live ACTIVÉ");
+            } else {
+                liveBtn.classList.remove('active');
+                liveBtn.style.color = '';
+                liveContainer.classList.remove('active');
+                stopLiveTypingListener();
+                showTempNotification("⚫ Mode Live DÉSACTIVÉ");
+            }
+        }
+        
+        function startLiveTypingListener() {
+            if (!targetUser) return;
+            db.collection('live_typing').doc(CHAT_ID).onSnapshot((doc) => {
+                if (doc.exists && liveModeActive) {
+                    const data = doc.data();
+                    const currentText = data.text || "";
+                    const senderId = data.senderId;
+                    const senderName = data.senderName;
+                    if (senderId === targetUser.id && currentText !== currentLiveText) {
+                        currentLiveText = currentText;
+                        document.getElementById('live-sender-name').innerText = senderName || targetUser.name;
+                        const previewSpan = document.getElementById('live-message-preview');
+                        if (previewSpan) previewSpan.innerText = currentText || "en train d'écrire...";
+                        const bar = document.getElementById('live-bar');
+                        if (bar) bar.style.width = Math.min(currentText.length * 2, 100) + '%';
+                        if (liveUpdateTimeout) clearTimeout(liveUpdateTimeout);
+                        liveUpdateTimeout = setTimeout(() => { if(bar) bar.style.width = '0%'; }, 2000);
+                    }
+                }
+            });
+        }
+        
+        function stopLiveTypingListener() {
+            const previewSpan = document.getElementById('live-message-preview');
+            if (previewSpan) previewSpan.innerText = "";
+            const bar = document.getElementById('live-bar');
+            if (bar) bar.style.width = '0%';
+            currentLiveText = "";
+        }
+        
+        function sendLiveTypingUpdate() {
+            if (!currentUser) return;
+            const input = document.getElementById('chat-in');
+            const text = input.value;
+            if (liveUpdateTimeout) clearTimeout(liveUpdateTimeout);
+            liveUpdateTimeout = setTimeout(() => {
+                db.collection('live_typing').doc(CHAT_ID).set({
+                    text: text,
+                    senderId: currentUser.id,
+                    senderName: currentUser.name,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }, 50);
+        }
+        
+        function clearLiveTyping() {
+            db.collection('live_typing').doc(CHAT_ID).set({
+                text: "", senderId: currentUser.id, senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            const bar = document.getElementById('live-bar');
+            if (bar) bar.style.width = '0%';
+        }
+        
+        // ========== FLASH / VIBRATION ==========
+        async function triggerFlashVibration() {
+            if (!targetUser) return;
+            const flashBtn = document.getElementById('flash-btn');
+            flashBtn.classList.add('flash-active');
+            setTimeout(() => flashBtn.classList.remove('flash-active'), 300);
+            await db.collection('flash_signals').add({
+                targetUserId: targetUser.id, sourceUserId: currentUser.id, sourceUserName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(), pattern: [200,100,200]
+            });
+            showTempNotification(`⚡ Vibration envoyée à ${targetUser.name}`);
+            if (navigator.vibrate) navigator.vibrate(100);
+        }
+        
+        function listenForFlashSignals() {
+            if (!currentUser) return;
+            db.collection('flash_signals').where('targetUserId', '==', currentUser.id).orderBy('timestamp', 'desc').limitToLast(10).onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const signalData = change.doc.data();
+                        if (navigator.vibrate) navigator.vibrate([200,100,200]);
+                        const notif = document.createElement('div');
+                        notif.className = 'flash-notification';
+                        notif.innerHTML = `⚡<br><span style="font-size:0.8rem;">${signalData.sourceUserName} vous a flashé !</span>`;
+                        document.body.appendChild(notif);
+                        setTimeout(() => notif.remove(), 1000);
+                        setTimeout(() => change.doc.ref.delete(), 5000);
+                    }
+                });
+            });
+        }
+        
+        // ========== BATTERIE ==========
+        async function getBatteryLevel() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    updateBatteryAndSync(battery);
+                    battery.addEventListener('levelchange', () => updateBatteryAndSync(battery));
+                    battery.addEventListener('chargingchange', () => updateBatteryAndSync(battery));
+                } catch(e) { console.log("Battery API error"); }
+            }
+        }
+        
+        async function updateBatteryAndSync(battery) {
+            const level = Math.floor(battery.level * 100);
+            currentBatteryLevel = level;
+            isCharging = battery.charging;
+            await db.collection('users').doc(currentUser.id).set({
+                battery: { level: level, charging: battery.charging, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }
+            }, { merge: true });
+            updateBatteryDisplay(level, battery.charging);
+        }
+        
+        function updateBatteryDisplay(level, charging) {
+            const percentSpan = document.getElementById('battery-percent');
+            const iconSpan = document.getElementById('battery-icon');
+            if (!percentSpan) return;
+            percentSpan.textContent = level + '%';
+            if (charging) { iconSpan.innerHTML = '⚡'; percentSpan.className = 'battery-percent battery-charging'; }
+            else if (level <= 15) { iconSpan.innerHTML = '🪫'; percentSpan.className = 'battery-percent battery-low'; }
+            else if (level <= 30) { iconSpan.innerHTML = '🔋'; percentSpan.className = 'battery-percent battery-medium'; }
+            else { iconSpan.innerHTML = '🔋'; percentSpan.className = 'battery-percent battery-high'; }
+        }
+        
+        function listenToOtherUserBattery() {
+            if (!targetUser) return;
+            db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+                if (doc.exists && doc.data().battery) {
+                    const b = doc.data().battery;
+                    const percentSpan = document.getElementById('battery-percent');
+                    const iconSpan = document.getElementById('battery-icon');
+                    if (percentSpan) percentSpan.textContent = b.level + '%';
+                    if (b.charging) { if(iconSpan) iconSpan.innerHTML = '⚡'; }
+                    else if (b.level <= 15) { if(iconSpan) iconSpan.innerHTML = '🪫'; }
+                    else { if(iconSpan) iconSpan.innerHTML = '🔋'; }
+                }
+            });
+        }
+        
+        // ========== STATUT D'HUMEUR ==========
+        function toggleMoodPanel() {
+            const panel = document.getElementById('mood-panel');
+            panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+        }
+        
+        async function setMood(emoji, label) {
+            currentMood = { emoji, label };
+            document.getElementById('mood-emoji').textContent = emoji;
+            const moodDiv = document.getElementById('mood-status');
+            moodDiv.classList.add('animated');
+            setTimeout(() => moodDiv.classList.remove('animated'), 2000);
+            await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            document.getElementById('mood-panel').style.display = 'none';
+            showTempNotification(`🎭 Statut: ${emoji} ${label}`);
+        }
+        
+        async function clearMood() {
+            currentMood = { emoji: '😊', label: 'Heureux' };
+            document.getElementById('mood-emoji').textContent = '😊';
+            await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            document.getElementById('mood-panel').style.display = 'none';
+            showTempNotification("🗑️ Statut effacé");
+        }
+        
+        function listenToUserMood() {
+            if (!targetUser) return;
+            db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+                if (doc.exists && doc.data().mood) {
+                    const mood = doc.data().mood;
+                    const otherMoodSpan = document.getElementById('other-mood-emoji');
+                    if (otherMoodSpan) otherMoodSpan.innerHTML = mood.emoji;
+                }
+            });
+        }
+        
+        async function saveDefaultMood() {
+            if (currentUser) {
+                await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            }
+        }
+        
+        // ========== CANVAS DESSIN ==========
+        function openCanvasDrawer() {
+            document.getElementById('canvas-modal').style.display = 'flex';
+            setTimeout(() => initCanvas(), 100);
+        }
+        function closeCanvasDrawer() { document.getElementById('canvas-modal').style.display = 'none'; }
+        
+        function initCanvas() {
+            canvas = document.getElementById('drawing-canvas');
+            ctx = canvas.getContext('2d');
+            const toolbarHeight = 70;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - toolbarHeight - 100;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            canvasEmojis.forEach(emoji => drawEmojiOnCanvas(emoji.emoji, emoji.x, emoji.y, emoji.size));
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+            canvas.addEventListener('touchstart', startDrawingTouch);
+            canvas.addEventListener('touchmove', drawTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+        
+        function getMousePos(canvas, evt) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+        }
+        
+        function startDrawing(e) { drawing = true; const pos = getMousePos(canvas, e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
+        function draw(e) {
+            if (!drawing) return;
+            const pos = getMousePos(canvas, e);
+            if (isDrawMode) {
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentBrushSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            } else {
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, currentBrushSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+        }
+        function stopDrawing() { drawing = false; ctx.beginPath(); }
+        
+        function startDrawingTouch(e) { e.preventDefault(); drawing = true; const rect = canvas.getBoundingClientRect(); const touch = e.touches[0]; const x = touch.clientX - rect.left, y = touch.clientY - rect.top; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y); ctx.stroke(); }
+        function drawTouch(e) { e.preventDefault(); if (!drawing) return; const rect = canvas.getBoundingClientRect(); const touch = e.touches[0]; const x = touch.clientX - rect.left, y = touch.clientY - rect.top; if (isDrawMode) { ctx.strokeStyle = currentColor; ctx.lineWidth = currentBrushSize; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y); } else { ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(x, y, currentBrushSize, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.moveTo(x, y); } }
+        
+        function setColor(color) { currentColor = color; isDrawMode = true; document.getElementById('draw-mode').classList.add('active'); document.getElementById('eraser-mode').classList.remove('active'); }
+        function setDrawMode(mode) { isDrawMode = mode; if(mode) { document.getElementById('draw-mode').classList.add('active'); document.getElementById('eraser-mode').classList.remove('active'); } else { document.getElementById('draw-mode').classList.remove('active'); document.getElementById('eraser-mode').classList.add('active'); } }
+        function changeBrushSize(size) { currentBrushSize = size; }
+        function clearCanvas() { ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height); canvasEmojis = []; }
+        function addEmojiToCanvas(emoji) { const x = canvas.width/2 + (Math.random()-0.5)*100; const y = canvas.height/2 + (Math.random()-0.5)*100; const size = 40 + Math.random()*20; canvasEmojis.push({ emoji, x, y, size }); drawEmojiOnCanvas(emoji, x, y, size); }
+        function drawEmojiOnCanvas(emoji, x, y, size) { ctx.font = `${size}px "Segoe UI Emoji", "Apple Color Emoji"`; ctx.fillStyle = 'black'; ctx.fillText(emoji, x - size/2, y + size/2); }
+        async function sendDrawing() {
+            if (!canvas) return;
+            const imageData = canvas.toDataURL('image/png');
+            await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+                text: null, senderId: currentUser.id, senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(), status: "sent", readBy: [currentUser.id],
+                type: "drawing", isEphemeral: false, mediaUrl: imageData
+            });
+            showTempNotification("🎨 Dessin envoyé !");
+            closeCanvasDrawer();
+        }
+        
+        // ========== PHOTO PLEIN ÉCRAN ==========
+        function openFullscreenPhoto(imgElement) {
+            currentPhotoUrl = imgElement.getAttribute('data-fullsrc') || imgElement.src;
+            const modal = document.getElementById('photo-modal');
+            const modalImg = document.getElementById('modal-image');
+            modal.style.display = 'flex';
+            modalImg.src = currentPhotoUrl;
+            document.body.style.overflow = 'hidden';
+        }
+        function closePhotoModal() {
+            document.getElementById('photo-modal').style.display = 'none';
+            document.body.style.overflow = '';
+            currentPhotoUrl = null;
+        }
+        async function downloadCurrentPhoto() {
+            if (!currentPhotoUrl) return;
+            const downloadBtn = document.getElementById('download-photo-btn');
+            downloadBtn.classList.add('downloading');
+            try {
+                if (currentPhotoUrl.startsWith('data:image')) {
+                    const link = document.createElement('a');
+                    link.href = currentPhotoUrl;
+                    link.download = 'photo_' + Date.now() + '.png';
+                    link.click();
+                } else {
+                    const response = await fetch(currentPhotoUrl);
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = 'photo_' + Date.now() + '.jpg';
+                    link.click();
+                    URL.revokeObjectURL(blobUrl);
+                }
+                showTempNotification('✅ Photo enregistrée !');
+            } catch(e) { showTempNotification('❌ Erreur téléchargement'); }
+            setTimeout(() => downloadBtn.classList.remove('downloading'), 500);
+        }
+        
+        // ========== OUTILS ET PANNEAUX ==========
+        function toggleToolsMenu() {
+            const panel = document.getElementById('tools-panel');
+            const btn = document.getElementById('tools-menu-btn');
+            const isOpen = panel.style.display === 'block';
+            document.querySelectorAll('.floating-panel').forEach(p => { if(p.id !== 'tools-panel') p.style.display = 'none'; });
+            if (isOpen) { panel.style.display = 'none'; btn.classList.remove('active'); }
+            else { panel.style.display = 'block'; btn.classList.add('active'); setTimeout(() => { if(panel.style.display === 'block') { panel.style.display = 'none'; btn.classList.remove('active'); } }, 5000); }
+        }
+        function closeToolsPanel() { const panel = document.getElementById('tools-panel'); panel.style.display = 'none'; document.getElementById('tools-menu-btn').classList.remove('active'); }
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const currentDisplay = panel.style.display;
+            document.querySelectorAll('.floating-panel').forEach(p => p.style.display = 'none');
+            if (currentDisplay !== 'block') panel.style.display = 'block';
+        }
+        function insertEmoji(emoji) { document.getElementById('chat-in').value += emoji; handleTyping(); }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('theme', target);
+        }
+        function setBubbleColor(color, dot) {
+            document.documentElement.style.setProperty('--bubble-sent', color);
+            localStorage.setItem('bubbleColor', color);
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            dot.classList.add('active');
+        }
+        function setChatBg(url, thumb) {
+            document.getElementById('msg-area').style.backgroundImage = url === 'none' ? 'none' : `url('${url}')`;
+            document.querySelectorAll('.bg-thumb').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+        }
+        
+        // Initialisation des thèmes
+        if(localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        if(localStorage.getItem('bubbleColor')) document.documentElement.style.setProperty('--bubble-sent', localStorage.getItem('bubbleColor'));
+        
+        // Raccourci Entrée
+        document.getElementById('chat-in').addEventListener('keydown', (e) => { if(e.key === 'Enter') sendTextMessage(); });
+        
+        // Nettoyage des menus au clic ailleurs
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('translate-dropdown');
+            if (dropdown && !dropdown.contains(e.target) && e.target?.id !== 'translate-menu-btn') dropdown.classList.remove('show');
+            const moodPanel = document.getElementById('mood-panel');
+            if (moodPanel && moodPanel.style.display === 'flex' && !moodPanel.contains(e.target) && e.target?.id !== 'mood-status') moodPanel.style.display = 'none';
         });
-        document.getElementById('upload-status-text').innerText = `Succès ! ${count} messages importés.`;
-        setTimeout(() => toggleModal('import-modal', false), 2000);
-    };
-    reader.readAsText(file);
-}
-
-document.getElementById('chat-in').addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') sendTextMessage();
-});
-
-document.getElementById('header-status-text').style.cursor = 'pointer';
-document.getElementById('header-status-text').onclick = () => {
-    isEphemeral = !isEphemeral;
-    document.getElementById('eph-overlay').style.display = isEphemeral ? 'flex' : 'none';
-    document.getElementById('header-status-text').innerText = isEphemeral ? 'Mode Éphémère' : 'En ligne';
-    document.getElementById('header-status-text').style.color = isEphemeral ? '#962fbf' : 'var(--text-muted)';
-};
-
-// Initialisation du thème
-if(localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
-if(localStorage.getItem('bubbleColor')) document.documentElement.style.setProperty('--bubble-sent', localStorage.getItem('bubbleColor'));
-</script>
-
+    </script>
 </body>
 </html>
