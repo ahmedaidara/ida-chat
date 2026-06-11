@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>💞 Notre Histoire · Ida & Aidara</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a2a3a 0%, #0f1a24 100%);
+            font-family: 'Inter', 'Quicksand', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        /* Conteneur principal */
+        .app-wrapper {
+            width: 100%;
+            max-width: 600px;
+            background: #efe7dd;
+            background-image: radial-gradient(circle at 10% 30%, rgba(255,245,225,0.4) 2%, transparent 2.5%);
+            background-size: 28px 28px;
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* Onglets */
+        .tabs {
+            display: flex;
+            background: linear-gradient(95deg, #054a44 0%, #0a6b5f 100%);
+            gap: 0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .tab-btn.active {
+            background: rgba(0,0,0,0.2);
+            color: white;
+            border-bottom: 3px solid #ffde9c;
+        }
+        .tab-btn i {
+            font-size: 1.1rem;
+        }
+
+        /* Panneaux */
+        .tab-panel {
+            display: none;
+            height: 75vh;
+            overflow-y: auto;
+        }
+        .tab-panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Panneau Chat */
+        .chat-header {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #e0d5c4;
+            background: rgba(255,248,235,0.8);
+        }
+        .chat-avatar {
+            width: 45px;
+            height: 45px;
+            background: #ffde9c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .chat-info h3 {
+            font-size: 1.1rem;
+            color: #2c5a4f;
+        }
+        .chat-info p {
+            font-size: 0.7rem;
+            color: #8b7a66;
+        }
+        .messages-area {
+            flex: 1;
+            padding: 20px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+        .message {
+            max-width: 80%;
+            display: flex;
+            flex-direction: column;
+            animation: fadeSlideUp 0.2s ease-out;
+        }
+        .ida-message { align-items: flex-start; }
+        .aidara-message { align-items: flex-end; margin-left: auto; }
+        .bubble {
+            padding: 10px 14px;
+            border-radius: 22px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .ida-message .bubble {
+            background: white;
+            border-top-left-radius: 5px;
+            color: #111;
+            border: 1px solid #f0e6d5;
+        }
+        .aidara-message .bubble {
+            background: #dcf8c5;
+            border-top-right-radius: 5px;
+            color: #1f2f3e;
+        }
+        .message-time {
+            font-size: 0.65rem;
+            color: #8b7a66;
+            margin: 4px 8px 0;
+        }
+        .date-separator {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #8b7a66;
+            margin: 10px 0;
+            font-weight: 500;
+            background: rgba(0,0,0,0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+            align-self: center;
+        }
+        .img-msg {
+            max-width: 200px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+        audio { max-width: 180px; height: 32px; }
+
+        /* Panneau Import */
+        .import-panel {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .import-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e0d5c4;
+        }
+        .import-card h3 {
+            color: #2c5a4f;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .drop-zone {
+            border: 2px dashed #c4b59e;
+            border-radius: 20px;
+            padding: 35px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fefaf5;
+        }
+        .drop-zone:hover {
+            border-color: #075e54;
+            background: #f5efe5;
+        }
+        .drop-zone i {
+            font-size: 2.5rem;
+            color: #075e54;
+            margin-bottom: 12px;
+        }
+        .drop-zone p {
+            color: #8b7a66;
+            font-size: 0.9rem;
+        }
+        .status-msg {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        .status-success {
+            background: #dcf8c5;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        .status-error {
+            background: #ffe0db;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        .status-info {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255,248,235,0.9);
+            padding: 12px 20px;
+            border-top: 1px solid #e0d5c4;
+            font-size: 0.7rem;
+            color: #6b5a47;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(12px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        .messages-area::-webkit-scrollbar, .tab-panel::-webkit-scrollbar {
+            width: 5px;
+        }
+        .messages-area::-webkit-scrollbar-track, .tab-panel::-webkit-scrollbar-track {
+            background: #e4d9cb;
+        }
+        .messages-area::-webkit-scrollbar-thumb, .tab-panel::-webkit-scrollbar-thumb {
+            background: #b59d7a;
+            border-radius: 10px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #9b7b5c;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e0d5c4;
+            border-top-color: #075e54;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <!-- Onglets -->
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-chat-btn"><i class="fa-regular fa-comment-dots"></i> 💬 Chat</button>
+        <button class="tab-btn" id="tab-import-btn"><i class="fa-solid fa-file-import"></i> 📥 Importer</button>
+    </div>
+
+    <!-- Panneau Chat -->
+    <div class="tab-panel active" id="chat-panel">
+        <div class="chat-header">
+            <div class="chat-avatar"><i class="fas fa-heart" style="color:#c44536;"></i></div>
+            <div class="chat-info">
+                <h3>💞 Ida & Aidara</h3>
+                <p><span id="msgCount">0</span> messages · Notre histoire</p>
+            </div>
+        </div>
+        <div class="messages-area" id="messagesArea">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>⏳ Chargement...</p>
+            </div>
+        </div>
+        <div class="stats-bar">
+            <span><i class="fa-regular fa-heart"></i> IDA SEUL</span>
+            <span><i class="fa-regular fa-star"></i> Ahmed Said Aidara</span>
+            <span><i class="fa-regular fa-clock"></i> Archive</span>
+        </div>
+    </div>
+
+    <!-- Panneau Import -->
+    <div class="tab-panel" id="import-panel">
+        <div class="import-panel">
+            <div class="import-card">
+                <h3><i class="fa-solid fa-cloud-upload-alt"></i> Importer la conversation</h3>
+                <div class="drop-zone" id="dropZone" onclick="document.getElementById('waFile').click()" ondragover="event.preventDefault()" ondrop="handleFileDrop(event)">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <p>📁 Cliquez ou déposez votre fichier _chat.txt</p>
+                    <p style="font-size:0.7rem; margin-top:8px;">Format WhatsApp : [27/11/2023 06:24:07] IDA SEUL: message</p>
+                </div>
+                <input type="file" id="waFile" accept=".txt" style="display:none;" onchange="handleFileSelect(this)">
+                <div id="importStatus" class="status-msg status-info">
+                    <i class="fa-solid fa-info-circle"></i> Prêt à importer. Les messages seront sauvegardés dans Firebase.
+                </div>
+            </div>
+            <div class="import-card">
+                <h3><i class="fa-solid fa-database"></i> Base de données</h3>
+                <p style="font-size:0.85rem; color:#6b5a47;">Les messages sont stockés dans :</p>
+                <code style="display:block; background:#f0ede8; padding:8px; border-radius:8px; margin-top:8px; font-size:0.75rem;">
+                    chats → chat_ida_aidara → messages
+                </code>
+                <p style="font-size:0.75rem; color:#8b7a66; margin-top:12px;">
+                    ✅ Importation unique (évite les doublons)<br>
+                    🔄 Synchronisation automatique avec le chat
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== CONFIGURATION FIREBASE (VOUS CONSERVEZ VOS ID) ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
+        authDomain: "messagerie-65abc.firebaseapp.com",
+        projectId: "messagerie-65abc",
+        storageBucket: "messagerie-65abc.firebasestorage.app",
+        messagingSenderId: "363641716532",
+        appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ========== CONSTANTES ==========
+    const CHAT_ID = "chat_ida_aidara";
+    const IDA_NAME = "IDA SEUL";
+    const AIDARA_NAME = "Ahmed Said Aidara";
+
+    // ========== ÉLÉMENTS DOM ==========
+    const messagesArea = document.getElementById("messagesArea");
+    const msgCountSpan = document.getElementById("msgCount");
+    const importStatus = document.getElementById("importStatus");
+
+    // ========== FONCTIONS UTILITAIRES ==========
+    function formatTimeFromDate(date) {
+        if (!date) return "--:--";
+        return `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    function isOnlyEmojis(str) {
+        if (!str) return false;
+        const emojiRegex = /^[\u{1F300}-\u{1F9FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]+$/u;
+        return emojiRegex.test(str.replace(/\s/g, '')) && str.replace(/\s/g, '').length <= 6;
+    }
+
+    function cleanHTML(str) {
+        if (!str) return "";
+        str = str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        str = str.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+        return str;
+    }
+
+    function formatText(text) {
+        if (!text) return "";
+        let formatted = text;
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        formatted = formatted.replace(/~~(.*?)~~/g, '<del>$1</del>');
+        return formatted;
+    }
+
+    // ========== CRÉATION D'UN MESSAGE HTML ==========
+    function createMessageElement(sender, text, timestamp, type, mediaUrl) {
+        const isIda = (sender === IDA_NAME);
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${isIda ? 'ida-message' : 'aidara-message'}`;
+
+        const bubbleDiv = document.createElement("div");
+        bubbleDiv.className = "bubble";
+
+        if (type === 'text') {
+            const isGiant = isOnlyEmojis(text);
+            if (isGiant) {
+                bubbleDiv.style.fontSize = '2.5rem';
+                bubbleDiv.style.padding = '8px 12px';
+                bubbleDiv.innerHTML = `<span>${cleanHTML(text)}</span>`;
+            } else {
+                bubbleDiv.innerHTML = `<span>${formatText(cleanHTML(text))}</span>`;
+            }
+        } else if (type === 'image' && mediaUrl) {
+            bubbleDiv.innerHTML = `<img src="${mediaUrl}" class="img-msg" onclick="window.open('${mediaUrl}')" alt="image">`;
+        } else if (type === 'audio' && mediaUrl) {
+            bubbleDiv.innerHTML = `<i class="fa-solid fa-volume-high"></i> <audio controls src="${mediaUrl}"></audio>`;
+        } else if (type === 'drawing' && mediaUrl) {
+            bubbleDiv.innerHTML = `<div style="cursor:pointer;" onclick="window.open('${mediaUrl}')">
+                                    <img src="${mediaUrl}" style="max-width:200px; max-height:200px; border-radius:12px;">
+                                    <div style="font-size:0.7rem; text-align:center;">🎨 Dessin</div>
+                                  </div>`;
+        } else {
+            bubbleDiv.innerHTML = `<span>${cleanHTML(text || "[Média]")}</span>`;
+        }
+
+        const timeSpan = document.createElement("div");
+        timeSpan.className = "message-time";
+        let date = timestamp ? timestamp.toDate() : new Date();
+        let timeStr = formatTimeFromDate(date);
+        let dayStr = "";
+        const now = new Date();
+        if (date.toDateString() !== now.toDateString()) {
+            dayStr = date.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'}) + " · ";
+        }
+        timeSpan.innerText = `${dayStr}${timeStr}`;
+
+        messageDiv.appendChild(bubbleDiv);
+        messageDiv.appendChild(timeSpan);
+        return messageDiv;
+    }
+
+    // ========== CHARGEMENT DES MESSAGES DEPUIS FIRESTORE ==========
+    let allMessages = [];
+
+    function renderMessages(messages) {
+        messagesArea.innerHTML = "";
+        if (!messages || messages.length === 0) {
+            messagesArea.innerHTML = `<div class="loading">
+                                        <div class="loading-spinner"></div>
+                                        <p>💬 Aucun message.<br>Allez dans "Importer" pour charger votre historique.</p>
+                                      </div>`;
+            msgCountSpan.innerText = "0";
+            return;
+        }
+
+        let lastDate = "";
+        messages.forEach(msg => {
+            const timestamp = msg.timestamp;
+            let dateStr = "";
+            if (timestamp) {
+                const dateObj = timestamp.toDate();
+                dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                if (dateStr !== lastDate) {
+                    const separator = document.createElement("div");
+                    separator.className = "date-separator";
+                    separator.innerText = dateStr;
+                    messagesArea.appendChild(separator);
+                    lastDate = dateStr;
+                }
+            }
+
+            const msgElement = createMessageElement(
+                msg.sender, 
+                msg.text, 
+                msg.timestamp, 
+                msg.type || 'text', 
+                msg.mediaUrl || null
+            );
+            messagesArea.appendChild(msgElement);
+        });
+
+        msgCountSpan.innerText = messages.length;
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+
+    // Écouter les messages en temps réel
+    function listenToMessages() {
+        db.collection('chats').doc(CHAT_ID).collection('messages')
+            .orderBy('timestamp', 'asc')
+            .onSnapshot((snapshot) => {
+                const messages = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    messages.push({
+                        id: doc.id,
+                        sender: data.senderName || (data.senderId === 'ida' ? IDA_NAME : AIDARA_NAME),
+                        text: data.text || "",
+                        timestamp: data.timestamp,
+                        type: data.type || 'text',
+                        mediaUrl: data.mediaUrl || null
+                    });
+                });
+                allMessages = messages;
+                renderMessages(allMessages);
+            }, (error) => {
+                console.error("Firestore error:", error);
+                messagesArea.innerHTML = `<div class="loading" style="color:#ed4956;">
+                                            <i class="fa-solid fa-circle-exclamation" style="font-size:2rem;"></i>
+                                            <p>❌ Erreur de connexion</p>
+                                          </div>`;
+            });
+    }
+
+    // ========== IMPORT DU FICHIER TXT ==========
+    function parseWhatsAppDate(dateStr) {
+        const match = dateStr.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+        if (match) {
+            const [_, day, month, year, hour, minute, second] = match;
+            return new Date(parseInt(year), parseInt(month)-1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second));
+        }
+        return new Date();
+    }
+
+    function parseConversationText(text) {
+        const lines = text.split(/\r?\n/);
+        const messages = [];
+        const regex = /^\[?(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})\]?\s+([^:]+):\s*(.*)$/;
+        
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            const match = line.match(regex);
+            if (match) {
+                let dateStr = match[1];
+                let senderRaw = match[2].trim();
+                let content = match[3].trim();
+                
+                senderRaw = senderRaw.replace(/[\u200E\u200F\u202A-\u202E]/g, '').trim();
+                content = content.replace(/[\u200E\u200F\u202A-\u202E]/g, '').trim();
+                
+                let sender = "";
+                let senderId = "";
+                if (senderRaw.includes("IDA") || senderRaw.includes("Ida")) {
+                    sender = IDA_NAME;
+                    senderId = "ida";
+                } else if (senderRaw.includes("Ahmed") || senderRaw.includes("Aidara")) {
+                    sender = AIDARA_NAME;
+                    senderId = "aidara";
+                } else {
+                    continue;
+                }
+                
+                const timestamp = parseWhatsAppDate(dateStr);
+                messages.push({
+                    sender: sender,
+                    senderId: senderId,
+                    text: content,
+                    timestamp: timestamp.getTime(),
+                    dateObj: timestamp
+                });
+            }
+        }
+        return messages;
+    }
+
+    async function importToFirebase(messagesArray) {
+        let added = 0;
+        let duplicates = 0;
+        
+        // Récupérer les messages existants pour éviter les doublons
+        const snapshot = await db.collection('chats').doc(CHAT_ID).collection('messages').get();
+        const existingKeys = new Set();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const key = `${data.timestamp?.toMillis() || 0}_${(data.text || "").substring(0,80)}`;
+            existingKeys.add(key);
+        });
+        
+        for (const msg of messagesArray) {
+            const key = `${msg.timestamp}_${msg.text.substring(0,80)}`;
+            if (!existingKeys.has(key)) {
+                await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+                    text: msg.text,
+                    senderId: msg.senderId,
+                    senderName: msg.sender,
+                    timestamp: firebase.firestore.Timestamp.fromDate(msg.dateObj),
+                    status: "read",
+                    readBy: ["ida", "aidara"],
+                    type: "text",
+                    isEphemeral: false
+                });
+                added++;
+                existingKeys.add(key);
+            } else {
+                duplicates++;
+            }
+        }
+        return { added, duplicates };
+    }
+
+    async function importFile(file) {
+        const reader = new FileReader();
+        importStatus.innerHTML = `<i class="fa-solid fa-spinner fa-pulse"></i> Analyse du fichier...`;
+        importStatus.className = "status-msg status-info";
+        
+        reader.onload = async (e) => {
+            const content = e.target.result;
+            const parsed = parseConversationText(content);
+            
+            if (parsed.length === 0) {
+                importStatus.innerHTML = `<i class="fa-solid fa-times-circle"></i> Aucun message valide trouvé. Vérifiez le format.`;
+                importStatus.className = "status-msg status-error";
+                return;
+            }
+            
+            importStatus.innerHTML = `<i class="fa-solid fa-cloud-upload-alt"></i> Import de ${parsed.length} messages en cours...`;
+            
+            const { added, duplicates } = await importToFirebase(parsed);
+            
+            importStatus.innerHTML = `<i class="fa-solid fa-check-circle"></i> ✅ ${added} messages importés, ${duplicates} doublons ignorés.`;
+            importStatus.className = "status-msg status-success";
+            
+            setTimeout(() => {
+                importStatus.innerHTML = `<i class="fa-solid fa-info-circle"></i> Prêt. Rafraîchissez le chat pour voir les messages.`;
+                importStatus.className = "status-msg status-info";
+            }, 4000);
+        };
+        
+        reader.onerror = () => {
+            importStatus.innerHTML = `<i class="fa-solid fa-times-circle"></i> Erreur de lecture du fichier.`;
+            importStatus.className = "status-msg status-error";
+        };
+        
+        reader.readAsText(file, "UTF-8");
+    }
+
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            importFile(input.files[0]);
+        }
+        input.value = "";
+    }
+
+    function handleFileDrop(e) {
+        e.preventDefault();
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            importFile(e.dataTransfer.files[0]);
+        }
+    }
+
+    // ========== GESTION DES ONGLETS ==========
+    function initTabs() {
+        const chatBtn = document.getElementById("tab-chat-btn");
+        const importBtn = document.getElementById("tab-import-btn");
+        const chatPanel = document.getElementById("chat-panel");
+        const importPanel = document.getElementById("import-panel");
+
+        chatBtn.addEventListener("click", () => {
+            chatBtn.classList.add("active");
+            importBtn.classList.remove("active");
+            chatPanel.classList.add("active");
+            importPanel.classList.remove("active");
+        });
+
+        importBtn.addEventListener("click", () => {
+            importBtn.classList.add("active");
+            chatBtn.classList.remove("active");
+            importPanel.classList.add("active");
+            chatPanel.classList.remove("active");
+        });
+    }
+
+    // ========== INITIALISATION ==========
+    function init() {
+        initTabs();
+        listenToMessages();
+        
+        // Configurer le drop zone
+        const dropZone = document.getElementById("dropZone");
+        if (dropZone) {
+            dropZone.addEventListener("dragover", (e) => e.preventDefault());
+        }
+    }
+
+    init();
+  
+  
+</script>
+    <script>
+      
+      
+  </script>
+
+</body>
+</html>
