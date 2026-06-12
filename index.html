@@ -1523,6 +1523,137 @@ html, body {
 #sidebar.visible {
   display: flex !important;
 }
+  
+  /* Mode Clair - sera activé par la classe .light-mode */
+/* Mode Clair - fond blanc + texte gris */
+.light-mode {
+    --bg-primary: #ffffff;      /* Fond principal BLANC */
+    --bg-secondary: #f8f9fa;    /* Fond secondaire GRIS CLAIR */
+    --bg-glass: rgba(0,0,0,0.04);
+    --bg-glass-strong: rgba(0,0,0,0.08);
+    --text-primary: #2c3e50;    /* Texte principal GRIS FONCÉ */
+    --text-secondary: #6c757d;  /* Texte secondaire GRIS */
+    --text-muted: #adb5bd;      /* Texte grisé */
+    --border: rgba(0,0,0,0.1);
+    --border-active: #7c6af7;
+    --bubble-in: #e9ecef;       /* Bulles reçues GRIS TRÈS CLAIR */
+    --bubble-out: linear-gradient(135deg,#7c6af7,#f76ac8); /* Bulles envoyées (garder couleur) */
+    --shadow-glow: 0 0 20px rgba(124,106,247,0.15);
+    --theme-bg1: #ffffff;
+    --theme-bg2: #f8f9fa;
+}
+
+/* Correction du fond animé en mode clair */
+.light-mode #app.gradient-bg::before {
+    background: linear-gradient(135deg, #f0f2f5 0%, #ffffff 50%, #f8f9fa 100%);
+    animation: none;
+}
+
+/* Correction des messages reçus en mode clair */
+.light-mode .msg-row.in .msg-bubble {
+    background: #e9ecef;
+    border: 1px solid #dee2e6;
+    color: #2c3e50;
+}
+
+/* Correction des messages envoyés en mode clair */
+.light-mode .msg-row.out .msg-bubble {
+    background: linear-gradient(135deg,#7c6af7,#f76ac8);
+    color: white;
+}
+
+/* Correction de l'input en mode clair */
+.light-mode #msg-input {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    color: #2c3e50;
+}
+
+.light-mode #msg-input::placeholder {
+    color: #adb5bd;
+}
+
+/* Correction du header en mode clair */
+.light-mode #chat-header {
+    background: rgba(255,255,255,0.95);
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Correction de l'input area en mode clair */
+.light-mode #input-area {
+    background: rgba(255,255,255,0.95);
+    border-top: 1px solid #dee2e6;
+}
+
+/* Correction des boutons en mode clair */
+.light-mode .input-action-btn {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+}
+
+.light-mode .input-action-btn:hover {
+    border-color: #7c6af7;
+    color: #7c6af7;
+}
+
+/* Correction des icônes en mode clair */
+.light-mode .icon-btn {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+}
+
+.light-mode .icon-btn:hover {
+    border-color: #7c6af7;
+    color: #7c6af7;
+}
+
+/* Correction des panneaux en mode clair */
+.light-mode .panel {
+    background: #ffffff;
+    border-left: 1px solid #dee2e6;
+}
+
+.light-mode .settings-row {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.light-mode .settings-row:hover {
+    border-color: #7c6af7;
+}
+
+.light-mode .menu-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.light-mode .menu-card:hover {
+    border-color: #7c6af7;
+    background: #ffffff;
+}
+
+.light-mode .modal-box {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+}
+
+.light-mode .modal-input {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #2c3e50;
+}
+
+/* Correction du background général */
+.light-mode body, 
+.light-mode html {
+    background: #ffffff;
+}
+
+.light-mode #app::before { 
+    background: #ffffff;
+}
 </style>
 </head>
 <body>
@@ -1682,6 +1813,11 @@ html, body {
       <!-- DESIGN -->
       <div class="settings-section">
         <div class="settings-section-title">🎨 Thème & Apparence</div>
+        <div class="settings-row" id="darkmode-toggle" style="cursor:pointer;">
+    <span class="settings-row-icon">🌙</span>
+    <span class="settings-row-label">Mode sombre / clair</span>
+    <span class="settings-row-value" id="darkmode-status">Sombre</span>
+</div>
         <div class="theme-grid" id="theme-grid">
           <div class="theme-swatch active" data-theme="default">
             <div class="swatch-preview" style="background:linear-gradient(135deg,#7c6af7,#f76ac8)"></div>
@@ -2116,11 +2252,12 @@ function startApp(session) {
   }
 
   initPresence();
-  initMessages();
+  initMessages(); 
   initBattery();
   initDayCounter();
   initScreenshotDetection();
   initDailyQuiz();
+  loadDarkMode();
   loadSettings();
   checkCapsules();
 }
@@ -3538,6 +3675,52 @@ if (window._FB_APP) {
   const s = getSession();
   if (s) setTimeout(initFlashListener, 1000);
 }
+  
+  // ============================================================
+// MODE CLAIR / SOMBRE
+// ============================================================
+
+function toggleDarkMode() {
+    const isLight = document.body.classList.contains('light-mode');
+    if (isLight) {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('nexus_theme_mode', 'dark');
+        document.getElementById('darkmode-status').textContent = 'Sombre';
+        document.getElementById('darkmode-toggle').querySelector('.settings-row-icon').textContent = '🌙';
+        toast('Mode sombre activé 🌙', 'info');
+    } else {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('nexus_theme_mode', 'light');
+        document.getElementById('darkmode-status').textContent = 'Clair';
+        document.getElementById('darkmode-toggle').querySelector('.settings-row-icon').textContent = '☀️';
+        toast('Mode clair activé ☀️', 'info');
+    }
+}
+
+// Charger le mode sauvegardé
+function loadDarkMode() {
+    const savedMode = localStorage.getItem('nexus_theme_mode');
+    if (savedMode === 'light') {
+        document.body.classList.add('light-mode');
+        if (document.getElementById('darkmode-status')) {
+            document.getElementById('darkmode-status').textContent = 'Clair';
+        }
+        if (document.getElementById('darkmode-toggle')) {
+            document.getElementById('darkmode-toggle').querySelector('.settings-row-icon').textContent = '☀️';
+        }
+    } else {
+        document.body.classList.remove('light-mode');
+        if (document.getElementById('darkmode-status')) {
+            document.getElementById('darkmode-status').textContent = 'Sombre';
+        }
+        if (document.getElementById('darkmode-toggle')) {
+            document.getElementById('darkmode-toggle').querySelector('.settings-row-icon').textContent = '🌙';
+        }
+    }
+}
+
+// Écouteur sur l'icône (à mettre dans ton init)
+document.getElementById('darkmode-toggle')?.addEventListener('click', toggleDarkMode);
 </script>
 <!-- MENU PAGE (NOUVEAU) -->
 <div id="menu-page" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:var(--bg-primary); z-index:10000; overflow-y:auto;">
