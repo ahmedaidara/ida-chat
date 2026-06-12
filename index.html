@@ -74,8 +74,28 @@
         .sent .message-bubble { background: var(--bubble-sent); color: var(--bubble-sent-text); border-bottom-right-radius: 4px; }
         .received .message-bubble { background: var(--bubble-received); color: var(--text-main); border-bottom-left-radius: 4px; }
       
-        .message-bubble.bicolor { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%) !important; color: white !important; }
-        .message-bubble.dark-passion { background: linear-gradient(45deg, #1a0000, #8b0000, #1a0000) !important; background-size: 200% 200% !important; color: #ff4444 !important; border: 1px solid #ff0000 !important; animation: shimmer 3s ease infinite !important; }
+.message-bubble.bicolor { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; }
+.message-bubble.dark-passion { background: linear-gradient(45deg, #1a0000, #8b0000, #1a0000); background-size: 200% 200%; color: #ff4444; border: 1px solid #ff0000; animation: shimmer 3s ease infinite; }
+.message-bubble.grid-style { background: linear-gradient(45deg, #2c3e50, #3498db); background-image: linear-gradient(#ffffff20 1px, transparent 1px), linear-gradient(90deg, #ffffff20 1px, transparent 1px); background-size: 20px 20px; color: white; border: 2px solid #ecf0f1; }
+.message-bubble.rainbow { background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet); background-size: 400% 100%; animation: rainbowMove 3s ease infinite; color: white; font-weight: bold; text-shadow: 1px 1px 0 black; }
+.message-bubble.neon { background: #0a0a0a; color: #00ffcc; border: 1px solid #00ffcc; box-shadow: 0 0 10px #00ffcc, inset 0 0 5px #00ffcc; font-family: monospace; }
+.message-bubble.wood { background: linear-gradient(45deg, #8B5A2B, #A0522D, #6B3E1B); color: #FFDEAD; border-radius: 15px 15px 15px 5px; box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 2px 2px 5px rgba(0,0,0,0.3); }
+.message-bubble.code-style { background: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace; border-left: 4px solid #007acc; border-radius: 8px; }
+.message-bubble.comics { background: #fffde7; color: #000; border: 2px solid #000; border-radius: 20px 20px 20px 5px; font-family: 'Comic Sans MS', cursive; box-shadow: 5px 5px 0px rgba(0,0,0,0.2); }
+.message-bubble.watercolor { background: linear-gradient(135deg, #667eea, #764ba2, #f093fb); filter: blur(0.3px); color: white; border-radius: 25px 8px 25px 8px; }
+.message-bubble.retro { background: #2d2d2d; color: #00ff00; font-family: 'Courier New', monospace; border: 2px solid #00ff00; box-shadow: 3px 3px 0px #00ff00; }
+.message-bubble.glassmorphism { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); color: #fff; }
+[data-theme="dark"] .message-bubble.glassmorphism { background: rgba(0, 0, 0, 0.4); }
+.message-bubble.crystal { background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1)); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 32px rgba(0,0,0,0.1); color: var(--text-main); }
+.message-bubble.sunset { background: linear-gradient(135deg, #ff6b6b, #feca57, #ff9f43); color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+.message-bubble.ocean { background: linear-gradient(135deg, #667eea, #764ba2, #00b4db); color: white; }
+.message-bubble.forest { background: linear-gradient(135deg, #134e5e, #71b280); color: white; }
+.message-bubble.midnight { background: linear-gradient(135deg, #232526, #414345); color: #00ffcc; border-left: 4px solid #00ffcc; }
+.message-bubble.rose { background: linear-gradient(135deg, #ff758c, #ff7eb3); color: white; }
+.message-bubble.gold { background: linear-gradient(135deg, #f7971e, #ffd200); color: #2c3e50; font-weight: bold; }
+.message-bubble.galaxy { background: radial-gradient(circle at 30% 10%, #20002c, #3a1c71, #000000); color: #fff; background-size: 200% 200%; animation: galaxyMove 8s ease infinite; }
+.message-bubble.cyberpunk { background: #000; color: #ff00ff; border: 2px solid #00ffff; box-shadow: 0 0 15px rgba(0,255,255,0.5), inset 0 0 10px rgba(255,0,255,0.3); text-shadow: 0 0 5px #ff00ff; font-family: monospace; }
+      .message-bubble.dark-passion { background: linear-gradient(45deg, #1a0000, #8b0000, #1a0000) !important; background-size: 200% 200% !important; color: #ff4444 !important; border: 1px solid #ff0000 !important; animation: shimmer 3s ease infinite !important; }
         @keyframes shimmer { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .message-bubble.grid-style { background: linear-gradient(45deg, #2c3e50, #3498db) !important; background-image: linear-gradient(#ffffff20 1px, transparent 1px), linear-gradient(90deg, #ffffff20 1px, transparent 1px) !important; background-size: 20px 20px !important; color: white !important; border: 2px solid #ecf0f1 !important; }
         .message-bubble.rainbow { background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet) !important; background-size: 400% 100% !important; animation: rainbowMove 3s ease infinite !important; color: white !important; font-weight: bold !important; text-shadow: 1px 1px 0 black !important; }
@@ -288,6 +308,418 @@
         @keyframes slideUpTools { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         #tools-panel.show { display: block; animation: slideUpTools 0.2s ease-out; }
         #tools-menu-btn.active { color: #a800ff; transform: scale(1.1); }
+      /* Cacher les boutons flash, mode flou et mode live dans la barre du haut */
+.header-actions .flash-btn,
+.header-actions .blur-toggle-btn,
+.header-actions .live-toggle-btn {
+    display: none !important;
+}
+      
+      /* Page des paramètres */
+.settings-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-main);
+    z-index: 10000;
+    overflow-y: auto;
+    display: none;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.settings-header {
+    position: sticky;
+    top: 0;
+    background: var(--bg-main);
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 10;
+}
+
+.settings-header h3 {
+    flex: 1;
+    font-size: 1.1rem;
+}
+
+.settings-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.settings-section {
+    background: var(--input-bg);
+    border-radius: 15px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+}
+
+.settings-section h4 {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+.profile-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #a800ff, #0076ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+}
+
+.profile-details {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.profile-username {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.info-value {
+    font-weight: 500;
+}
+
+.color-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.color-option-bubble {
+    height: 50px;
+    border-radius: 12px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.color-option-bubble.active {
+    border-color: #a800ff;
+    transform: scale(1.05);
+}
+
+.bg-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.bg-option {
+    height: 80px;
+    border-radius: 12px;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.bg-option.active {
+    border-color: #a800ff;
+}
+
+.close-settings {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-main);
+}
+      
+      /* Bouton Carnet Secret */
+.secret-notebook-btn {
+    position: fixed;
+    bottom: 100px;
+    right: 15px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-image: url('TON_IMAGE_POSTIMAGE_URL');
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 2px solid #a800ff;
+}
+
+.secret-notebook-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(168,0,255,0.4);
+}
+
+/* Page du Carnet Secret */
+.secret-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-main);
+    z-index: 20000;
+    display: none;
+    flex-direction: column;
+    animation: slideUpSecret 0.3s ease-out;
+}
+
+@keyframes slideUpSecret {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.secret-header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: white;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 2px solid #a800ff;
+}
+
+.secret-header h3 {
+    flex: 1;
+    font-size: 1.2rem;
+}
+
+.secret-header i {
+    cursor: pointer;
+    font-size: 1.3rem;
+    transition: transform 0.2s;
+}
+
+.secret-header i:hover {
+    transform: scale(1.1);
+}
+
+.secret-messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--bg-chat);
+}
+
+.secret-message-row {
+    display: flex;
+    width: 100%;
+}
+
+.secret-message-row.sent {
+    justify-content: flex-end;
+}
+
+.secret-message-row.received {
+    justify-content: flex-start;
+}
+
+.secret-message-bubble {
+    max-width: 70%;
+    padding: 10px 16px;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    position: relative;
+    word-wrap: break-word;
+}
+
+.secret-message-row.sent .secret-message-bubble {
+    background: linear-gradient(135deg, #a800ff, #ff007f);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.secret-message-row.received .secret-message-bubble {
+    background: var(--bubble-received);
+    color: var(--text-main);
+    border-bottom-left-radius: 4px;
+}
+
+.secret-msg-meta {
+    font-size: 0.65rem;
+    opacity: 0.7;
+    margin-top: 5px;
+    text-align: right;
+}
+
+.secret-input-bar {
+    padding: 12px;
+    background: var(--bg-main);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.secret-input {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 25px;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    outline: none;
+}
+
+.secret-send-btn {
+    background: linear-gradient(135deg, #a800ff, #ff007f);
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+.secret-send-btn:hover {
+    transform: scale(1.05);
+}
+
+.secret-lock-icon {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 0.7rem;
+    background: #ff4444;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+      
+      /* Nouveaux styles de bulles */
+.message-bubble.glassmorphism {
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    color: #fff !important;
+}
+[data-theme="dark"] .message-bubble.glassmorphism {
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.message-bubble.crystal {
+    background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1)) !important;
+    backdrop-filter: blur(5px) !important;
+    border: 1px solid rgba(255,255,255,0.5) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1) !important;
+    color: var(--text-main) !important;
+}
+
+.message-bubble.sunset {
+    background: linear-gradient(135deg, #ff6b6b, #feca57, #ff9f43) !important;
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+.message-bubble.ocean {
+    background: linear-gradient(135deg, #667eea, #764ba2, #00b4db) !important;
+    color: white !important;
+}
+
+.message-bubble.forest {
+    background: linear-gradient(135deg, #134e5e, #71b280) !important;
+    color: white !important;
+}
+
+.message-bubble.midnight {
+    background: linear-gradient(135deg, #232526, #414345) !important;
+    color: #00ffcc !important;
+    border-left: 4px solid #00ffcc !important;
+}
+
+.message-bubble.rose {
+    background: linear-gradient(135deg, #ff758c, #ff7eb3) !important;
+    color: white !important;
+}
+
+.message-bubble.gold {
+    background: linear-gradient(135deg, #f7971e, #ffd200) !important;
+    color: #2c3e50 !important;
+    font-weight: bold !important;
+}
+
+.message-bubble.galaxy {
+    background: radial-gradient(circle at 30% 10%, #20002c, #3a1c71, #000000) !important;
+    color: #fff !important;
+    background-size: 200% 200% !important;
+    animation: galaxyMove 8s ease infinite !important;
+}
+@keyframes galaxyMove {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+}
+
+.message-bubble.cyberpunk {
+    background: #000 !important;
+    color: #ff00ff !important;
+    border: 2px solid #00ffff !important;
+    box-shadow: 0 0 15px rgba(0,255,255,0.5), inset 0 0 10px rgba(255,0,255,0.3) !important;
+    text-shadow: 0 0 5px #ff00ff !important;
+    font-family: monospace !important;
+}
     </style>
 </head>
 <body>
@@ -358,7 +790,7 @@
                 <i class="fa-solid fa-eye-slash blur-toggle-btn" id="blur-toggle-btn" title="Mode Flou" onclick="toggleBlurMode()"></i>
                 <i class="fa-solid fa-eye live-toggle-btn" id="live-toggle-btn" title="Mode Live : voir ce que l'autre tape en temps réel" onclick="toggleLiveMode()"></i>
                 <i class="fa-solid fa-moon" title="Thème" onclick="toggleTheme()"></i>
-                <i class="fa-solid fa-sliders" title="Paramètres" onclick="togglePanel('settings-panel')"></i>
+                <i class="fa-solid fa-gear" title="Paramètres" onclick="openSettingsPage()" style="cursor:pointer;"></i>
             </div>
         </div>
         
@@ -373,9 +805,7 @@
         <div class="live-bar" id="live-bar"></div>
         <div class="messages-area" id="msg-area"></div>
  
-        <div class="ephemeral-overlay" id="eph-overlay">
-            <span>MODE ÉPHÉMÈRE ACTIF</span>
-        </div>
+       
 
         <div class="typing-indicator" id="typing-ind">
             <div class="typing-dots"><span></span><span></span><span></span></div>
@@ -414,7 +844,7 @@
                     </div>
                     <div class="tools-divider" style="height: 1px; background: var(--border-color); margin: 5px 0;"></div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
-                        <div class="tool-item" onclick="toggleEphemeralMode(); closeToolsPanel();"><i class="fa-solid fa-hourglass-half" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Éphémère</span></div>
+                         
                         <div class="tool-item" onclick="toggleBlurMode(); closeToolsPanel();"><i class="fa-solid fa-eye-slash" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Mode Flou</span></div>
                         <div class="tool-item" onclick="triggerFlashVibration(); closeToolsPanel();"><i class="fa-solid fa-bolt" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Flash</span></div>
                     </div>
@@ -480,6 +910,16 @@
             <div class="context-item" onclick="applyStyleToMessage('comics')"><i class="fa-solid fa-face-laugh-beam"></i> Style Comics</div>
             <div class="context-item" onclick="applyStyleToMessage('watercolor')"><i class="fa-solid fa-droplet"></i> Aquarelle</div>
             <div class="context-item" onclick="applyStyleToMessage('retro')"><i class="fa-solid fa-gamepad"></i> Style Retro</div>
+          <div class="context-item" onclick="applyStyleToMessage('glassmorphism')"><i class="fa-solid fa-gem"></i> Glassmorphism</div>
+<div class="context-item" onclick="applyStyleToMessage('crystal')"><i class="fa-solid fa-crystal"></i> Crystal</div>
+<div class="context-item" onclick="applyStyleToMessage('sunset')"><i class="fa-solid fa-sun"></i> Sunset</div>
+<div class="context-item" onclick="applyStyleToMessage('ocean')"><i class="fa-solid fa-water"></i> Ocean</div>
+<div class="context-item" onclick="applyStyleToMessage('forest')"><i class="fa-solid fa-tree"></i> Forest</div>
+<div class="context-item" onclick="applyStyleToMessage('midnight')"><i class="fa-solid fa-moon"></i> Midnight</div>
+<div class="context-item" onclick="applyStyleToMessage('rose')"><i class="fa-solid fa-flower"></i> Rose</div>
+<div class="context-item" onclick="applyStyleToMessage('gold')"><i class="fa-solid fa-crown"></i> Gold</div>
+<div class="context-item" onclick="applyStyleToMessage('galaxy')"><i class="fa-solid fa-star-of-life"></i> Galaxy</div>
+<div class="context-item" onclick="applyStyleToMessage('cyberpunk')"><i class="fa-solid fa-microchip"></i> Cyberpunk</div>
             <div class="context-item" style="border-top: 1px solid var(--border-color);" onclick="removeStyleFromMessage()"><i class="fa-solid fa-trash-can"></i> Supprimer le style</div>
         </div>
 
@@ -537,13 +977,111 @@
                 <button class="canvas-close-btn" onclick="closeCanvasDrawer()">❌ Fermer</button>
             </div>
         </div>
+        <!-- Page Paramètres -->
+<div class="settings-page" id="settings-page">
+    <div class="settings-header">
+        <i class="fa-solid fa-arrow-left" onclick="closeSettingsPage()" style="cursor:pointer; font-size:1.3rem;"></i>
+        <h3>Paramètres</h3>
+        <i class="fa-solid fa-check" onclick="closeSettingsPage()" style="cursor:pointer; font-size:1.3rem; color:#0095f6;"></i>
+    </div>
+    
+    <div class="settings-content">
+        <!-- Section Profil -->
+        <div class="settings-section">
+            <h4><i class="fa-solid fa-user"></i> Profil</h4>
+            <div class="profile-info" id="profile-info">
+                <div class="profile-avatar" id="settings-avatar">--</div>
+                <div class="profile-details">
+                    <div class="profile-name" id="settings-name">Chargement...</div>
+                    <div class="profile-username" id="settings-username">@...</div>
+                </div>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="fa-regular fa-calendar"></i> Date de naissance</span>
+                <span class="info-value" id="birthdate">01/01/1990</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="fa-regular fa-envelope"></i> Email</span>
+                <span class="info-value" id="email">non renseigné</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="fa-solid fa-location-dot"></i> Localisation</span>
+                <span class="info-value" id="location">France</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="fa-regular fa-clock"></i> Membre depuis</span>
+                <span class="info-value" id="member-since">2024</span>
+            </div>
+        </div>
+        <!-- Bouton Carnet Secret -->
+<div class="secret-notebook-btn" id="secret-notebook-btn" onclick="openSecretPage()" style="background-image: url('https://i.postimg.cc/HnSc4vz4/Design-sans-titre-(3).png');"></div>
+        <!-- Section Bulle de Chat -->
+       <div class="settings-section">
+    <h4><i class="fa-solid fa-message"></i> Style par défaut des bulles</h4>
+    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">Choisis le style qui s'appliquera à tous tes nouveaux messages (sauf ceux où tu as choisi un style spécifique)</p>
+    <select id="default-bubble-style" style="width: 100%; padding: 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); margin-bottom: 15px;">
+        <option value="none">🎨 Style par défaut d'Instagram</option>
+        <option value="bicolor">🌈 Bicolore</option>
+        <option value="dark-passion">🔥 Rouge et Noir</option>
+        <option value="grid-style">📊 Style Tableau</option>
+        <option value="rainbow">🏳️‍🌈 Arc-en-ciel</option>
+        <option value="neon">💡 Néon Glow</option>
+        <option value="wood">🌳 Style Bois</option>
+        <option value="code-style">💻 Style Code</option>
+        <option value="comics">🤣 Style Comics</option>
+        <option value="watercolor">🎨 Aquarelle</option>
+        <option value="retro">🕹️ Style Retro</option>
+        <option value="glassmorphism">🔮 Glassmorphism</option>
+        <option value="crystal">💎 Crystal</option>
+        <option value="sunset">🌅 Sunset</option>
+        <option value="ocean">🌊 Ocean</option>
+        <option value="forest">🌲 Forest</option>
+        <option value="midnight">🌙 Midnight</option>
+        <option value="rose">🌹 Rose</option>
+        <option value="gold">👑 Gold</option>
+        <option value="galaxy">✨ Galaxy</option>
+        <option value="cyberpunk">🤖 Cyberpunk</option>
+    </select>
+    <button onclick="saveDefaultBubbleStyle()" style="width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 10px; color: white; cursor: pointer;">✅ Appliquer ce style par défaut</button>
+</div>
         
+        <!-- Section Fond d'écran -->
+        <div class="settings-section">
+            <h4><i class="fa-solid fa-image"></i> Fond d'écran</h4>
+            <div class="bg-options" id="bg-options">
+                <div class="bg-option" style="background: var(--bg-chat);" data-bg="none"></div>
+                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=150');" data-bg="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=500"></div>
+                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?w=150');" data-bg="https://images.unsplash.com/photo-1557683316-973673baf926?w=500"></div>
+            </div>
+        </div>
+    </div>
+</div>
         <!-- Modal Photo -->
         <div class="photo-modal" id="photo-modal" onclick="closePhotoModal()">
             <button class="photo-modal-close" onclick="closePhotoModal()"><i class="fa-solid fa-times"></i></button>
             <img id="modal-image" src="" alt="Photo">
             <button class="download-btn" id="download-photo-btn" onclick="downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer dans la galerie</button>
         </div>
+      <!-- Page Carnet Secret -->
+<div class="secret-page" id="secret-page">
+    <div class="secret-header">
+        <i class="fa-solid fa-arrow-left" onclick="closeSecretPage()"></i>
+        <h3><i class="fa-solid fa-lock"></i> Carnet Secret 🔒</h3>
+        <i class="fa-solid fa-trash" onclick="clearSecretChat()" style="color:#ff4444;"></i>
+    </div>
+    
+    <div class="secret-messages-area" id="secret-msg-area">
+        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+            <i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 10px;"></i>
+            <p>Messages privés - Personne d'autre ne peut les voir</p>
+        </div>
+    </div>
+    
+    <div class="secret-input-bar">
+        <input type="text" class="secret-input" id="secret-input" placeholder="Message secret...">
+        <button class="secret-send-btn" onclick="sendSecretMessage()">Envoyer <i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+</div>
     </div>
 
     <script>
@@ -569,7 +1107,7 @@
         let typingTimeout = null;
         let selectedMessageId = null;
         let replyToId = null;
-        let isEphemeral = false;
+        
         let mediaRecorder = null;
         let audioChunks = [];
         let blurModeActive = false;
@@ -709,8 +1247,19 @@
                         row.setAttribute('data-id', msgId);
                         
                         const isGiant = isOnlyEmojis(data.text);
-                        let customStyle = '';
-                        if (isSent && data.bubbleStyle) customStyle = data.bubbleStyle;
+                      let customStyle = '';
+if (isSent) {
+    // Style personnalisé du message (prioritaire)
+    if (data.bubbleStyle) {
+        customStyle = data.bubbleStyle;
+    } else {
+        // Style par défaut depuis localStorage
+        const defaultStyle = localStorage.getItem('default_bubble_style');
+        if (defaultStyle && defaultStyle !== 'none') {
+            customStyle = defaultStyle;
+        }
+    }
+}
                         
                         let codedClass = '';
                         let lockBadge = '';
@@ -889,7 +1438,7 @@
                 status: "sent",
                 readBy: [currentUser.id],
                 type: "text",
-                isEphemeral: isEphemeral,
+                
                 mediaUrl: null
             };
             
@@ -968,7 +1517,7 @@
                 status: "sent",
                 readBy: [currentUser.id],
                 type: type,
-                isEphemeral: isEphemeral,
+                 
                 mediaUrl: base64Data
             });
         }
@@ -1161,7 +1710,28 @@
         
         async function applyStyleToMessage(styleName) {
             if (!selectedMessageId) return;
-            const styleNames = { 'bicolor':'Bicolore','dark-passion':'Rouge et Noir','grid-style':'Style Tableau','rainbow':'Arc-en-ciel','neon':'Néon Glow','wood':'Style Bois','code-style':'Style Code','comics':'Style Comics','watercolor':'Aquarelle','retro':'Style Retro' };
+            const styleNames = { 
+    'bicolor':'Bicolore',
+    'dark-passion':'Rouge et Noir',
+    'grid-style':'Style Tableau',
+    'rainbow':'Arc-en-ciel',
+    'neon':'Néon Glow',
+    'wood':'Style Bois',
+    'code-style':'Style Code',
+    'comics':'Style Comics',
+    'watercolor':'Aquarelle',
+    'retro':'Style Retro',
+    'glassmorphism':'Glassmorphism',
+    'crystal':'Crystal',
+    'sunset':'Sunset',
+    'ocean':'Ocean',
+    'forest':'Forest',
+    'midnight':'Midnight',
+    'rose':'Rose',
+    'gold':'Gold',
+    'galaxy':'Galaxy',
+    'cyberpunk':'Cyberpunk'
+};
             const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
             const isSentMessage = messageRow && messageRow.classList.contains('sent');
             if (!isSentMessage) {
@@ -1172,7 +1742,7 @@
             await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ bubbleStyle: styleName });
             const bubble = messageRow.querySelector('.message-bubble');
             if (bubble) {
-                const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro'];
+                const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
                 allStyles.forEach(style => bubble.classList.remove(style));
                 bubble.classList.add(styleName);
             }
@@ -1349,12 +1919,7 @@
         function toggleEphemeralAudioModeDirect() { toggleEphemeralAudioMode(); const btn = document.getElementById('ephemeral-audio-btn'); if(btn) btn.style.color = ephemeralAudioMode ? '#ff4444' : ''; }
         
         // ========== MODE ÉPHÉMÈRE ==========
-        function toggleEphemeralMode() {
-            isEphemeral = !isEphemeral;
-            document.getElementById('eph-overlay').style.display = isEphemeral ? 'flex' : 'none';
-            document.getElementById('header-status-text').innerHTML = isEphemeral ? 'Mode Éphémère' : 'En ligne <span class="battery-indicator" id="battery-indicator"><span class="battery-icon">🔋</span><span class="battery-percent">--%</span></span>';
-            showTempNotification(isEphemeral ? "🔐 Mode Éphémère ACTIVÉ" : "🔓 Mode Éphémère DÉSACTIVÉ");
-        }
+       
         
         // ========== MODE FLOU ==========
         function toggleBlurMode() {
@@ -1802,6 +2367,273 @@
             const moodPanel = document.getElementById('mood-panel');
             if (moodPanel && moodPanel.style.display === 'flex' && !moodPanel.contains(e.target) && e.target?.id !== 'mood-status') moodPanel.style.display = 'none';
         });
+      
+      
+      // ========== PAGE PARAMÈTRES ==========
+function openSettingsPage() {
+    const settingsPage = document.getElementById('settings-page');
+    settingsPage.style.display = 'flex';
+    updateSettingsInfo();
+}
+
+function closeSettingsPage() {
+    const settingsPage = document.getElementById('settings-page');
+    settingsPage.style.display = 'none';
+}
+
+function updateSettingsInfo() {
+    if (targetUser) {
+        document.getElementById('settings-name').innerText = targetUser.name;
+        document.getElementById('settings-username').innerText = '@' + targetUser.full.toLowerCase();
+        document.getElementById('settings-avatar').innerText = targetUser.name.substring(0, 2);
+    }
+    
+    // Charger les infos depuis Firestore
+    if (targetUser) {
+        db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+            if (doc.exists && doc.data().profile) {
+                const profile = doc.data().profile;
+                if (profile.birthdate) document.getElementById('birthdate').innerText = profile.birthdate;
+                if (profile.email) document.getElementById('email').innerText = profile.email;
+                if (profile.location) document.getElementById('location').innerText = profile.location;
+                if (profile.memberSince) document.getElementById('member-since').innerText = profile.memberSince;
+            }
+        });
+    }
+}
+
+// Initialiser les options de bulles dans la nouvelle page
+function initSettingsBubbles() {
+    const savedColor = localStorage.getItem('bubbleColor') || 'linear-gradient(45deg, #a800ff, #0076ff)';
+    document.querySelectorAll('.color-option-bubble').forEach(opt => {
+        if (opt.style.background === savedColor || opt.getAttribute('data-color') === savedColor) {
+            opt.classList.add('active');
+        }
+        opt.onclick = function() {
+            const color = this.getAttribute('data-color') || this.style.background;
+            document.documentElement.style.setProperty('--bubble-sent', color);
+            localStorage.setItem('bubbleColor', color);
+            document.querySelectorAll('.color-option-bubble').forEach(o => o.classList.remove('active'));
+            this.classList.add('active');
+        };
+    });
+    
+    document.querySelectorAll('.bg-option').forEach(opt => {
+        opt.onclick = function() {
+            const bg = this.getAttribute('data-bg');
+            document.getElementById('msg-area').style.backgroundImage = bg === 'none' ? 'none' : `url('${bg}')`;
+            document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
+            this.classList.add('active');
+        };
+    });
+}
+
+// Appeler cette fonction après le chargement
+setTimeout(initSettingsBubbles, 100);
+      
+      // Ajouter/modifier les infos du profil
+async function updateUserProfile(birthdate, email, location) {
+    await db.collection('users').doc(targetUser.id).set({
+        profile: {
+            birthdate: birthdate,
+            email: email,
+            location: location,
+            memberSince: new Date().getFullYear()
+        }
+    }, { merge: true });
+}
+      // ========== CARNET SECRET ==========
+
+
+// ========== CARNET SECRET AVEC CODE PIN ==========
+let secretMessages = [];
+let currentSecretUser = null;
+
+// Code secret à taper (tu peux le changer)
+// ========== CARNET SECRET (Messages partagés entre les 2 users) ==========
+// ========== CARNET SECRET (Messages partagés entre les 2 users) ==========
+let secretMessagesUnsubscribe = null;
+const SECRET_CHAT_ID = "secret_carnet_ida_aidara";
+const SECRET_NOTEBOOK_PIN = "@#IDA";
+
+// Ouvrir le carnet secret avec demande de code
+function openSecretPage() {
+    const userPin = prompt("🔒 CARNET SECRET - Entrez le code d'accès :");
+    
+    if (userPin === null) return;
+    
+    if (userPin === SECRET_NOTEBOOK_PIN) {
+        const secretPage = document.getElementById('secret-page');
+        secretPage.style.display = 'flex';
+        listenToSecretMessages();
+        showTempNotification("✅ Accès au Carnet Secret autorisé !");
+    } else {
+        showTempNotification("❌ Code incorrect ! Accès refusé.");
+    }
+}
+
+// Fermer le carnet secret
+function closeSecretPage() {
+    const secretPage = document.getElementById('secret-page');
+    secretPage.style.display = 'none';
+    if (secretMessagesUnsubscribe) {
+        secretMessagesUnsubscribe();
+        secretMessagesUnsubscribe = null;
+    }
+}
+
+// Écouter les messages secrets dans Firestore (collection séparée)
+function listenToSecretMessages() {
+    if (secretMessagesUnsubscribe) secretMessagesUnsubscribe();
+    
+    if (!currentUser) return;
+    
+    secretMessagesUnsubscribe = db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .limitToLast(50)
+        .onSnapshot(snapshot => {
+            const secretMsgArea = document.getElementById('secret-msg-area');
+            secretMsgArea.innerHTML = '';
+            
+            if (snapshot.empty) {
+                secretMsgArea.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;"><i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 10px;"></i><p>Aucun message secret</p><p style="font-size:0.8rem;">💬 Envoyez votre premier message privé !</p></div>';
+                return;
+            }
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const isSent = data.senderId === currentUser?.id;
+                const row = document.createElement('div');
+                row.className = `secret-message-row ${isSent ? 'sent' : 'received'}`;
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'secret-message-bubble';
+                
+                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+                
+                bubble.innerHTML = `
+                    <div>${escapeHTML(data.text)}</div>
+                    <div class="secret-msg-meta">${timeStr} ${!isSent ? '<i class="fa-solid fa-lock" style="margin-left: 5px;"></i>' : ''}</div>
+                `;
+                
+                row.appendChild(bubble);
+                secretMsgArea.appendChild(row);
+            });
+            
+            secretMsgArea.scrollTop = secretMsgArea.scrollHeight;
+        });
+}
+
+// Envoyer un message secret (visible par les 2)
+async function sendSecretMessage() {
+    const input = document.getElementById('secret-input');
+    let text = input.value.trim();
+    
+    if (!text || !currentUser) {
+        showTempNotification("❌ Vous devez être connecté pour envoyer un message");
+        return;
+    }
+    
+    const msgData = {
+        text: text,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        type: "text"
+    };
+    
+    input.value = '';
+    
+    try {
+        await db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages').add(msgData);
+        showTempNotification("🔒 Message secret envoyé !");
+    } catch(error) {
+        console.error("Erreur:", error);
+        showTempNotification("❌ Erreur lors de l'envoi");
+    }
+}
+
+// Supprimer TOUS les messages secrets
+async function clearSecretChat() {
+    if (!confirm("🗑️ Supprimer TOUS les messages secrets ? Cette action est irréversible !")) return;
+    
+    const secretCode = prompt("🔐 Confirmez le code secret pour effacer tous les messages :");
+    if (secretCode !== SECRET_NOTEBOOK_PIN) {
+        showTempNotification("❌ Code incorrect ! Suppression annulée.");
+        return;
+    }
+    
+    try {
+        const snapshot = await db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages').get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        showTempNotification("✨ Carnet secret vidé !");
+    } catch(error) {
+        console.error("Erreur:", error);
+        showTempNotification("❌ Erreur lors de la suppression");
+    }
+}
+      
+      // Sauvegarder le style de bulle par défaut
+// Sauvegarder le style de bulle par défaut et appliquer immédiatement
+function saveDefaultBubbleStyle() {
+    const select = document.getElementById('default-bubble-style');
+    const selectedStyle = select.value;
+    localStorage.setItem('default_bubble_style', selectedStyle);
+    
+    // Met à jour IMMÉDIATEMENT tous les messages sans style perso
+    updateAllMessagesDefaultStyle();
+    
+    showTempNotification(selectedStyle === 'none' ? "🎨 Style par défaut Instagram rétabli - Mis à jour !" : "✅ Style par défaut enregistré et appliqué !");
+}
+
+// Met à jour tous les messages qui n'ont PAS de style personnalisé
+function updateAllMessagesDefaultStyle() {
+    const defaultStyle = localStorage.getItem('default_bubble_style');
+    
+    document.querySelectorAll('.message-row.sent').forEach(row => {
+        const bubble = row.querySelector('.message-bubble');
+        if (!bubble) return;
+        
+        // Vérifie si ce message a un style personnalisé en base de données
+        const msgId = row.getAttribute('data-id');
+        if (!msgId) return;
+        
+        // On vérifie dans Firestore si ce message a un bubbleStyle
+        db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).get().then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                // Si le message a un style perso, on ne touche pas
+                if (data.bubbleStyle) return;
+                
+                // Sinon on applique le style par défaut
+                const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                allStyles.forEach(style => bubble.classList.remove(style));
+                
+                if (defaultStyle && defaultStyle !== 'none') {
+                    bubble.classList.add(defaultStyle);
+                } else {
+                    // Style par défaut Instagram (aucune classe)
+                    bubble.style.background = '';
+                    bubble.style.color = '';
+                }
+            }
+        });
+    });
+}
+
+// Charger le style par défaut sauvegardé
+function loadDefaultBubbleStyle() {
+    const savedStyle = localStorage.getItem('default_bubble_style');
+    if (savedStyle) {
+        const select = document.getElementById('default-bubble-style');
+        if (select) select.value = savedStyle;
+    }
+}
+
+// Appeler cette fonction au chargement   
+setTimeout(loadDefaultBubbleStyle, 200);
     </script>
 </body>
 </html>
