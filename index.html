@@ -830,6 +830,27 @@ input, textarea {
     transform: scale(1.1);
     transition: all 0.2s;
 }
+      
+      /* Animation du visualiseur audio */
+@keyframes audio-wave {
+    0% { height: 5px; }
+    50% { height: 30px; }
+    100% { height: 5px; }
+}
+
+.audio-wave-bar {
+    display: inline-block;
+    width: 4px;
+    margin: 0 2px;
+    background: #0095f6;
+    border-radius: 2px;
+    animation: audio-wave 0.5s ease infinite;
+}
+
+.filter-btn.active {
+    background: #0095f6 !important;
+    color: white !important;
+}
     </style>
 </head>
 <body>
@@ -931,35 +952,41 @@ input, textarea {
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
                 <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1"></textarea>
-                <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
-                    <i class="fa-solid fa-language" id="translate-btn" onclick="toggleTranslateMenuDirect(event)" style="cursor:pointer; font-size:1.2rem;" title="Traduire le message"></i>
-                    <i class="fa-solid fa-lock" id="code-mode-btn" onclick="toggleCodeModeDirect()" style="cursor:pointer; font-size:1.2rem;" title="Coder le message"></i>
-                    <i class="fa-solid fa-head-side-headphones" id="ephemeral-audio-btn" onclick="toggleEphemeralAudioModeDirect()" style="cursor:pointer; font-size:1.2rem;" title="Audio éphémère"></i>
-                </div>
+             <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
+    <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
+    <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
+    <i class="fa-solid fa-head-side-headphones" id="ephemeral-audio-btn" onclick="toggleEphemeralAudioModeDirect()" style="cursor:pointer; font-size:1.2rem;" title="Audio éphémère"></i>
+                 <i class="fa-solid fa-image" id="media-btn" onclick="ouvrirMenuMedia()" style="cursor:pointer; font-size:1.3rem;" title="Photo/Vidéo/Galerie"></i>
+    <i class="fa-solid fa-microphone" id="audio-btn" onclick="ouvrirMenuAudio()" style="cursor:pointer; font-size:1.3rem;" title="Message vocal avec effets"></i>
+</div>
                 <span id="send-btn" onclick="sendTextMessage()"><i class="fa-regular fa-paper-plane"></i></span>
             </div>
             
-            <div class="floating-panel" id="tools-panel">
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                    <h4 style="margin-bottom: 5px; font-size: 0.9rem; color: var(--text-muted);">Outils</h4>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
-                        <div class="tool-item" onclick="toggleRecording(); closeToolsPanel();"><i class="fa-solid fa-microphone" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Micro</span></div>
-                        <div class="tool-item" onclick="triggerImageUpload(); closeToolsPanel();"><i class="fa-regular fa-image" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Galerie</span></div>
-                        <div class="tool-item" onclick="openCanvasDrawer(); closeToolsPanel();"><i class="fa-solid fa-pencil" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Dessin</span></div>
-                        <div class="tool-item" onclick="toggleTranslateMenu(event); closeToolsPanel();"><i class="fa-solid fa-language" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Traduire</span></div>
-                        <div class="tool-item" onclick="toggleCodeModeDirect(); closeToolsPanel();"><i class="fa-solid fa-lock" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Code</span></div>
-                        <div class="tool-item" onclick="toggleEphemeralAudioMode(); closeToolsPanel();"><i class="fa-solid fa-head-side-headphones" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Audio Éph</span></div>
-                        <div class="tool-item" onclick="togglePanel('emoji-panel'); closeToolsPanel();"><i class="fa-regular fa-face-smile" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Émojis</span></div>
-                        <div class="tool-item" onclick="toggleTheme(); closeToolsPanel();"><i class="fa-solid fa-moon" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Thème</span></div>
-                    </div>
-                    <div class="tools-divider" style="height: 1px; background: var(--border-color); margin: 5px 0;"></div>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
-                         
-                        <div class="tool-item" onclick="toggleBlurMode(); closeToolsPanel();"><i class="fa-solid fa-eye-slash" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Mode Flou</span></div>
-                        <div class="tool-item" onclick="triggerFlashVibration(); closeToolsPanel();"><i class="fa-solid fa-bolt" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Flash</span></div>
-                    </div>
-                </div>
-            </div>
+<div class="floating-panel" id="tools-panel">
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+        <h4 style="margin-bottom: 5px; font-size: 0.9rem; color: var(--text-muted);">Outils</h4>
+        <!-- Première ligne -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+            <div class="tool-item" onclick="toggleRecording(); closeToolsPanel();"><i class="fa-solid fa-microphone" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Micro</span></div>
+            <div class="tool-item" onclick="triggerImageUpload(); closeToolsPanel();"><i class="fa-regular fa-image" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Galerie</span></div>
+            <div class="tool-item" onclick="openCanvasDrawer(); closeToolsPanel();"><i class="fa-solid fa-pencil" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Dessin</span></div>
+            <div class="tool-item" onclick="toggleEphemeralAudioMode(); closeToolsPanel();"><i class="fa-solid fa-head-side-headphones" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Audio Éph</span></div>
+        </div>
+        <!-- Deuxième ligne -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+            <div class="tool-item" onclick="togglePanel('emoji-panel'); closeToolsPanel();"><i class="fa-regular fa-face-smile" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Émojis</span></div>
+            <div class="tool-item" onclick="toggleTheme(); closeToolsPanel();"><i class="fa-solid fa-moon" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Thème</span></div>
+        </div>
+        <div class="tools-divider" style="height: 1px; background: var(--border-color); margin: 5px 0;"></div>
+        <!-- Troisième ligne (avec les bons IDs) -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+            <div class="tool-item" id="translate-menu-btn" onclick="toggleTranslateMenuDirect(event); closeToolsPanel();"><i class="fa-solid fa-language" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Traduire</span></div>
+            <div class="tool-item" id="code-mode-btn-menu" onclick="toggleCodeModeDirect(); closeToolsPanel();"><i class="fa-solid fa-lock" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Code</span></div>
+            <div class="tool-item" onclick="toggleBlurMode(); closeToolsPanel();"><i class="fa-solid fa-eye-slash" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Mode Flou</span></div>
+            <div class="tool-item" onclick="triggerFlashVibration(); closeToolsPanel();"><i class="fa-solid fa-bolt" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Flash</span></div>
+        </div>
+    </div>
+</div>
             
             <div class="translate-dropdown" id="translate-dropdown">
                 <div class="translate-option" onclick="translateInputText('en')"><span class="flag">🇬🇧</span><span class="lang-name">Anglais</span></div>
@@ -1203,6 +1230,72 @@ input, textarea {
         <input type="text" class="secret-input" id="secret-input" placeholder="Message secret...">
         <button class="secret-send-btn" onclick="sendSecretMessage()">Envoyer <i class="fa-solid fa-paper-plane"></i></button>
     </div>
+</div>
+      
+      <!-- Menu Audio avec filtres -->
+<div class="floating-panel" id="audio-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
+    <h4 style="margin-bottom: 10px; font-size: 0.9rem;">🎤 Message vocal</h4>
+    
+    <!-- Filtres vocaux -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+        <button class="filter-btn" data-filter="normal" onclick="choisirFiltreAudio('normal')" style="padding: 8px 12px; border-radius: 20px; border: none; background: #0095f6; color: white;">🎵 Normal</button>
+        <button class="filter-btn" data-filter="grave" onclick="choisirFiltreAudio('grave')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">👨‍🦰 Voix Grave</button>
+        <button class="filter-btn" data-filter="aigu" onclick="choisirFiltreAudio('aigu')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">👶 Voix Enfant</button>
+        <button class="filter-btn" data-filter="robot" onclick="choisirFiltreAudio('robot')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🤖 Robot</button>
+        <button class="filter-btn" data-filter="echo" onclick="choisirFiltreAudio('echo')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🎚️ Écho</button>
+        <button class="filter-btn" data-filter="chipmunk" onclick="choisirFiltreAudio('chipmunk')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🐿️ Chipmunk</button>
+    </div>
+    
+    <!-- Zone d'enregistrement -->
+    <div style="text-align: center; padding: 15px;">
+        <div id="audio-visualizer" style="height: 40px; background: var(--border-color); border-radius: 20px; margin-bottom: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Cliquez sur le micro pour enregistrer</span>
+        </div>
+        
+        <div style="display: flex; justify-content: center; gap: 20px;">
+            <button id="record-audio-btn" onclick="demarrerEnregistrementAudio()" style="background: #ff4444; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+            <button id="stop-audio-btn" onclick="arreterEnregistrementAudio()" disabled style="background: #666; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;">
+                <i class="fa-solid fa-stop"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Prévisualisation -->
+    <div id="audio-preview" style="display: none; margin-top: 15px; padding: 10px; background: var(--input-bg); border-radius: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-play" style="font-size: 1.5rem; color: #0095f6; cursor: pointer;" onclick="previsualiserAudio()"></i>
+            <span style="flex: 1; font-size: 0.8rem;">Audio enregistré <span id="audio-duration"></span></span>
+            <i class="fa-solid fa-trash" style="color: #ff4444; cursor: pointer; font-size: 1.2rem;" onclick="supprimerAudioPreview()"></i>
+        </div>
+    </div>
+    
+    <!-- Boutons action -->
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button onclick="envoyerAudioAvecFiltre()" id="send-audio-btn" disabled style="flex: 1; padding: 12px; background: #0095f6; color: white; border: none; border-radius: 25px; font-weight: bold;">📤 Envoyer</button>
+        <button onclick="fermerMenuAudio()" style="padding: 12px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px; color: var(--text-main);">Annuler</button>
+    </div>
+</div>
+
+<!-- Menu Media (Photo/Vidéo/Galerie) -->
+<div class="floating-panel" id="media-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
+    <h4 style="margin-bottom: 10px;">📷 Média</h4>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+        <div class="tool-item" onclick="ouvrirGalerie()">
+            <i class="fa-regular fa-images" style="font-size: 2rem;"></i>
+            <span style="font-size: 0.7rem;">Galerie</span>
+        </div>
+        <div class="tool-item" onclick="prendrePhoto()">
+            <i class="fa-solid fa-camera" style="font-size: 2rem;"></i>
+            <span style="font-size: 0.7rem;">Appareil photo</span>
+        </div>
+        <div class="tool-item" onclick="prendreVideo()">
+            <i class="fa-solid fa-video" style="font-size: 2rem;"></i>
+            <span style="font-size: 0.7rem;">Vidéo</span>
+        </div>
+    </div>
+    <button onclick="fermerMenuMedia()" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px;">Fermer</button>
 </div>
     </div>
 
@@ -2460,7 +2553,7 @@ function restaurerMessageOriginal(element) {
 
  
         
-       function toggleTranslateMenuDirect(event) {
+    function toggleTranslateMenuDirect(event) {
     event.stopPropagation();
     let existingMenu = document.getElementById('direct-lang-menu');
     if (existingMenu) { 
@@ -2509,7 +2602,7 @@ function restaurerMessageOriginal(element) {
     
     setTimeout(() => {
         document.addEventListener('click', function closeMenu(e) {
-            if (!menu.contains(e.target) && e.target.id !== 'translate-btn') { 
+            if (!menu.contains(e.target) && e.target.id !== 'translate-menu-btn' && e.target.id !== 'translate-btn') { 
                 menu.remove(); 
                 document.removeEventListener('click', closeMenu); 
             }
@@ -2552,40 +2645,75 @@ function desactiverModeTraduction() {
     
  }
 
-// ========== FONCTION DE TRADUCTION SIMPLE (Utilise Google Translate via API) ==========
+// ========== FONCTION DE TRADUCTION (VERSION PROPRE) ==========
+// ========== FONCTION DE TRADUCTION (CORRIGÉE) ==========
 async function traduireTexte(texte, langueCible) {
     if (!texte || !langueCible || texte.trim() === '') return texte;
     
-    // Si la langue cible est le français, on détecte d'abord si c'est déjà français
+    // Si la langue cible est le français, on détecte si c'est déjà français
     if (langueCible === 'fr') {
         const estFrancais = detecterFrancaisRapide(texte);
         if (estFrancais) return texte;
     }
     
     try {
-        // Utiliser LibreTranslate
-        const url = `https://translate.terraprint.co/translate`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                q: texte,
-                source: 'auto',
-                target: langueCible,
-                format: 'text'
-            })
-        });
+        // Déterminer la paire de langue correcte
+        let langPair = '';
         
-        if (response.ok) {
-            const data = await response.json();
-            return data.translatedText || texte;
+        if (langueCible === 'fr') {
+            // Traduire vers le français
+            langPair = 'fr|en';
+        } else if (langueCible === 'en') {
+            // Traduire vers l'anglais
+            langPair = 'en|fr';
+        } else if (langueCible === 'ar') {
+            langPair = 'ar|fr';
+        } else if (langueCible === 'es') {
+            langPair = 'es|fr';
+        } else if (langueCible === 'it') {
+            langPair = 'it|fr';
+        } else if (langueCible === 'de') {
+            langPair = 'de|fr';
+        } else if (langueCible === 'pt') {
+            langPair = 'pt|fr';
+        } else if (langueCible === 'ru') {
+            langPair = 'ru|fr';
+        } else if (langueCible === 'ja') {
+            langPair = 'ja|fr';
+        } else if (langueCible === 'zh') {
+            langPair = 'zh|fr';
         } else {
-            // Fallback vers MyMemory
-            return await fallbackTraduction(texte, langueCible);
+            langPair = 'en|fr';
         }
+        
+        // MyMemory utilise le format "source|target"
+        // Exemple: "en|fr" = de l'anglais vers le français
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(texte)}&langpair=${langPair}`;
+        console.log("🌐 URL:", url);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        console.log("📦 Réponse:", data);
+        
+        if (data && data.responseData && data.responseData.translatedText) {
+            let translated = data.responseData.translatedText;
+            translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+            
+            // Enlever les espaces et retours à la ligne
+            translated = translated.trim();
+            
+            console.log(`✅ Traduction: "${texte}" → "${translated}"`);
+            
+            if (translated.toLowerCase() === texte.toLowerCase()) {
+                return texte;
+            }
+            return translated;
+        }
+        return texte;
     } catch(error) {
-        console.error("Erreur traduction:", error);
-        return await fallbackTraduction(texte, langueCible);
+        console.error("❌ Erreur traduction:", error);
+        return texte;
     }
 }
 
@@ -2603,7 +2731,7 @@ async function fallbackTraduction(texte, langueCible) {
             'ja': 'ja|fr',
             'zh': 'zh|fr'
         };
-        const langPair = mapLangue[langueCible] || `en|fr`;
+        const langPair = mapLangue[langueCible] || 'en|fr';
         const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(texte)}&langpair=${langPair}`;
         const response = await fetch(url);
         const data = await response.json();
@@ -2614,6 +2742,7 @@ async function fallbackTraduction(texte, langueCible) {
         }
         return texte;
     } catch(e) {
+        console.error("Fallback error:", e);
         return texte;
     }
 }
@@ -3687,6 +3816,509 @@ async function copierMessage() {
      }
     
     hideContextMenus();
+}
+      
+      
+  // ========== VARIABLES AUDIO ==========
+let mediaRecorderAudio = null;
+let audioChunksEnregistres = [];
+let filtreAudioActif = 'normal';
+let audioBlobOriginal = null;
+let audioBlobFiltre = null;
+let previewAudioURL = null;
+let analyseurAudio = null;
+let sourceAudio = null;
+let animationFrame = null;
+let streamAudio = null;
+
+// ========== MENU MEDIA ==========
+function ouvrirMenuMedia() {
+    const mediaPanel = document.getElementById('media-panel');
+    if (mediaPanel) mediaPanel.style.display = 'block';
+    const toolsPanel = document.getElementById('tools-panel');
+    if (toolsPanel) toolsPanel.style.display = 'none';
+    const audioPanel = document.getElementById('audio-panel');
+    if (audioPanel) audioPanel.style.display = 'none';
+}
+
+function fermerMenuMedia() {
+    const mediaPanel = document.getElementById('media-panel');
+    if (mediaPanel) mediaPanel.style.display = 'none';
+}
+
+// Fermer TOUS les menus quand on clique ailleurs
+document.addEventListener('click', function(e) {
+    const mediaPanel = document.getElementById('media-panel');
+    const audioPanel = document.getElementById('audio-panel');
+    const toolsPanel = document.getElementById('tools-panel');
+    const toolsBtn = document.getElementById('tools-menu-btn');
+    const mediaBtn = document.getElementById('media-btn');
+    const audioBtn = document.getElementById('audio-btn');
+    
+    if (mediaPanel && !mediaPanel.contains(e.target) && e.target !== mediaBtn) {
+        mediaPanel.style.display = 'none';
+    }
+    if (audioPanel && !audioPanel.contains(e.target) && e.target !== audioBtn) {
+        audioPanel.style.display = 'none';
+    }
+    if (toolsPanel && !toolsPanel.contains(e.target) && e.target !== toolsBtn) {
+        toolsPanel.style.display = 'none';
+    }
+});
+
+function ouvrirGalerie() {
+    fermerMenuMedia();
+    triggerImageUpload();
+}
+
+function prendrePhoto() {
+    fermerMenuMedia();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = event => sendMediaMessage('image', event.target.result);
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    };
+    input.click();
+}
+
+function prendreVideo() {
+    fermerMenuMedia();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.capture = 'environment';
+    input.onchange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = event => sendMediaMessage('video', event.target.result);
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    };
+    input.click();
+}
+
+// ========== MENU AUDIO ==========
+function ouvrirMenuAudio() {
+    const audioPanel = document.getElementById('audio-panel');
+    if (audioPanel) audioPanel.style.display = 'block';
+    const toolsPanel = document.getElementById('tools-panel');
+    if (toolsPanel) toolsPanel.style.display = 'none';
+    const mediaPanel = document.getElementById('media-panel');
+    if (mediaPanel) mediaPanel.style.display = 'none';
+    reinitialiserAudioUI();
+}
+
+function fermerMenuAudio() {
+    const audioPanel = document.getElementById('audio-panel');
+    if (audioPanel) audioPanel.style.display = 'none';
+    // Arrêter l'enregistrement si en cours
+    if (mediaRecorderAudio && mediaRecorderAudio.state === 'recording') {
+        mediaRecorderAudio.stop();
+    }
+    if (streamAudio) {
+        streamAudio.getTracks().forEach(track => track.stop());
+    }
+    if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+    }
+    reinitialiserAudioUI();
+}
+
+function reinitialiserAudioUI() {
+    audioChunksEnregistres = [];
+    if (audioBlobOriginal) {
+        URL.revokeObjectURL(URL.createObjectURL(audioBlobOriginal));
+    }
+    if (previewAudioURL) {
+        URL.revokeObjectURL(previewAudioURL);
+    }
+    audioBlobOriginal = null;
+    audioBlobFiltre = null;
+    previewAudioURL = null;
+    
+    const previewDiv = document.getElementById('audio-preview');
+    if (previewDiv) previewDiv.style.display = 'none';
+    
+    const sendBtn = document.getElementById('send-audio-btn');
+    if (sendBtn) sendBtn.disabled = true;
+    
+    const recordBtn = document.getElementById('record-audio-btn');
+    if (recordBtn) {
+        recordBtn.disabled = false;
+        recordBtn.style.background = '#ff4444';
+    }
+    
+    const stopBtn = document.getElementById('stop-audio-btn');
+    if (stopBtn) {
+        stopBtn.disabled = true;
+        stopBtn.style.background = '#666';
+    }
+    
+    const visualizer = document.getElementById('audio-visualizer');
+    if (visualizer) {
+        visualizer.innerHTML = '<span style="font-size: 0.8rem;">Cliquez sur le micro pour enregistrer</span>';
+    }
+}
+
+function choisirFiltreAudio(filtre) {
+    filtreAudioActif = filtre;
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.style.background = 'var(--input-bg)';
+        btn.style.color = 'var(--text-main)';
+        btn.style.border = '1px solid var(--border-color)';
+    });
+    const btnActif = document.querySelector(`.filter-btn[data-filter="${filtre}"]`);
+    if (btnActif) {
+        btnActif.style.background = '#0095f6';
+        btnActif.style.color = 'white';
+        btnActif.style.border = 'none';
+    }
+    
+    if (audioBlobOriginal) {
+        appliquerFiltreAudio();
+    }
+}
+
+async function demarrerEnregistrementAudio() {
+    try {
+        streamAudio = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Créer l'analyseur pour la visualisation
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyseurAudio = audioContext.createAnalyser();
+        sourceAudio = audioContext.createMediaStreamSource(streamAudio);
+        sourceAudio.connect(analyseurAudio);
+        analyseurAudio.fftSize = 256;
+        
+        mediaRecorderAudio = new MediaRecorder(streamAudio);
+        audioChunksEnregistres = [];
+        
+        mediaRecorderAudio.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunksEnregistres.push(event.data);
+            }
+        };
+        
+        mediaRecorderAudio.onstop = async () => {
+            const audioBlob = new Blob(audioChunksEnregistres, { type: 'audio/webm' });
+            audioBlobOriginal = audioBlob;
+            await appliquerFiltreAudio();
+            
+            const duration = await getAudioDuration(audioBlob);
+            const durationSpan = document.getElementById('audio-duration');
+            if (durationSpan) durationSpan.innerText = `${duration} sec`;
+            
+            const previewDiv = document.getElementById('audio-preview');
+            if (previewDiv) previewDiv.style.display = 'block';
+            
+            const sendBtn = document.getElementById('send-audio-btn');
+            if (sendBtn) sendBtn.disabled = false;
+            
+            // Arrêter l'analyseur
+            if (animationFrame) cancelAnimationFrame(animationFrame);
+            if (analyseurAudio) analyseurAudio.disconnect();
+            if (sourceAudio) sourceAudio.disconnect();
+            if (audioContext) audioContext.close();
+        };
+        
+        mediaRecorderAudio.start(100); // Capturer toutes les 100ms
+        
+        const recordBtn = document.getElementById('record-audio-btn');
+        if (recordBtn) {
+            recordBtn.disabled = true;
+            recordBtn.style.background = '#666';
+        }
+        
+        const stopBtn = document.getElementById('stop-audio-btn');
+        if (stopBtn) {
+            stopBtn.disabled = false;
+            stopBtn.style.background = '#ff4444';
+        }
+        
+        // Démarrer la visualisation en temps réel
+        demarrerVisualisationReelle();
+        
+    } catch(err) {
+        console.error("Erreur micro:", err);
+        showTempNotification("❌ Impossible d'accéder au microphone");
+    }
+}
+
+function demarrerVisualisationReelle() {
+    const visualizer = document.getElementById('audio-visualizer');
+    if (!visualizer || !analyseurAudio) return;
+    
+    const bufferLength = analyseurAudio.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    function animer() {
+        if (!analyseurAudio || !visualizer) return;
+        
+        analyseurAudio.getByteFrequencyData(dataArray);
+        
+        // Calculer le volume moyen
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+        }
+        const moyenne = sum / bufferLength;
+        const hauteurMax = Math.min(50, 20 + (moyenne / 5));
+        
+        // Créer les barres animées
+        visualizer.innerHTML = '';
+        for (let i = 0; i < 20; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'audio-wave-bar';
+            const hauteur = Math.max(5, Math.min(hauteurMax, (dataArray[i % bufferLength] || 0) / 8));
+            bar.style.height = hauteur + 'px';
+            bar.style.width = '4px';
+            bar.style.margin = '0 2px';
+            bar.style.background = '#0095f6';
+            bar.style.borderRadius = '2px';
+            bar.style.transition = 'height 0.05s ease';
+            visualizer.appendChild(bar);
+        }
+        
+        animationFrame = requestAnimationFrame(animer);
+    }
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animer();
+}
+
+function arreterEnregistrementAudio() {
+    if (mediaRecorderAudio && mediaRecorderAudio.state === 'recording') {
+        mediaRecorderAudio.stop();
+        if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
+            animationFrame = null;
+        }
+    }
+}
+
+async function appliquerFiltreAudio() {
+    if (!audioBlobOriginal) return;
+    
+    try {
+        const arrayBuffer = await audioBlobOriginal.arrayBuffer();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        
+        const numberOfChannels = audioBuffer.numberOfChannels;
+        const length = audioBuffer.length;
+        const sampleRate = audioBuffer.sampleRate;
+        const newBuffer = audioContext.createBuffer(numberOfChannels, length, sampleRate);
+        
+        for (let channel = 0; channel < numberOfChannels; channel++) {
+            const inputData = audioBuffer.getChannelData(channel);
+            const outputData = newBuffer.getChannelData(channel);
+            
+            switch(filtreAudioActif) {
+                case 'grave':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 0.7);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
+                case 'aigu':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 1.4);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
+                case 'robot':
+                    for (let i = 0; i < length; i++) {
+                        let val = inputData[i];
+                        val = Math.round(val * 8) / 8;
+                        outputData[i] = val;
+                    }
+                    break;
+                case 'echo':
+                    for (let i = 0; i < length; i++) {
+                        let val = inputData[i];
+                        if (i > 2000) val += inputData[i - 2000] * 0.5;
+                        if (i > 4000) val += inputData[i - 4000] * 0.25;
+                        outputData[i] = Math.min(0.99, Math.max(-0.99, val));
+                    }
+                    break;
+                case 'chipmunk':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 1.8);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
+                default:
+                    outputData.set(inputData);
+            }
+        }
+        
+        audioBlobFiltre = await bufferToWav(newBuffer, audioContext);
+        audioContext.close();
+        
+    } catch(e) {
+        console.error("Erreur filtrage:", e);
+        audioBlobFiltre = audioBlobOriginal;
+    }
+}
+
+async function bufferToWav(buffer, audioContext) {
+    const numberOfChannels = buffer.numberOfChannels;
+    const length = buffer.length * numberOfChannels * 2;
+    const sampleRate = buffer.sampleRate;
+    const wavData = new DataView(new ArrayBuffer(44 + length));
+    
+    function writeString(view, offset, str) {
+        for (let i = 0; i < str.length; i++) {
+            view.setUint8(offset + i, str.charCodeAt(i));
+        }
+    }
+    
+    writeString(wavData, 0, 'RIFF');
+    wavData.setUint32(4, 36 + length, true);
+    writeString(wavData, 8, 'WAVE');
+    writeString(wavData, 12, 'fmt ');
+    wavData.setUint32(16, 16, true);
+    wavData.setUint16(20, 1, true);
+    wavData.setUint16(22, numberOfChannels, true);
+    wavData.setUint32(24, sampleRate, true);
+    wavData.setUint32(28, sampleRate * numberOfChannels * 2, true);
+    wavData.setUint16(32, numberOfChannels * 2, true);
+    wavData.setUint16(34, 16, true);
+    writeString(wavData, 36, 'data');
+    wavData.setUint32(40, length, true);
+    
+    let offset = 44;
+    for (let i = 0; i < buffer.length; i++) {
+        for (let channel = 0; channel < numberOfChannels; channel++) {
+            const sample = buffer.getChannelData(channel)[i];
+            const intSample = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
+            wavData.setInt16(offset, intSample, true);
+            offset += 2;
+        }
+    }
+    
+    return new Blob([wavData], { type: 'audio/wav' });
+}
+
+function previsualiserAudio() {
+    if (previewAudioURL) {
+        URL.revokeObjectURL(previewAudioURL);
+    }
+    
+    const blob = audioBlobFiltre || audioBlobOriginal;
+    if (blob) {
+        previewAudioURL = URL.createObjectURL(blob);
+        const audio = new Audio(previewAudioURL);
+        audio.play();
+        showTempNotification("🎧 Lecture de l'aperçu...");
+    }
+}
+
+function supprimerAudioPreview() {
+    reinitialiserAudioUI();
+    showTempNotification("🗑️ Audio supprimé");
+}
+
+function getAudioDuration(blob) {
+    return new Promise((resolve) => {
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.addEventListener('loadedmetadata', () => {
+            URL.revokeObjectURL(url);
+            resolve(Math.round(audio.duration));
+        });
+        audio.addEventListener('error', () => {
+            URL.revokeObjectURL(url);
+            resolve(0);
+        });
+    });
+}
+
+async function envoyerAudioAvecFiltre() {
+    if (!audioBlobFiltre && !audioBlobOriginal) {
+        showTempNotification("❌ Aucun audio à envoyer");
+        return;
+    }
+    
+    if (!currentUser) {
+        showTempNotification("❌ Vous n'êtes pas connecté");
+        return;
+    }
+    
+    showTempNotification("📤 Envoi de l'audio...");
+    
+    const blob = audioBlobFiltre || audioBlobOriginal;
+    const reader = new FileReader();
+    
+    reader.onloadend = async function() {
+        const base64Audio = reader.result;
+        
+        try {
+            await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+                text: null,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "sent",
+                readBy: [currentUser.id],
+                type: "audio",
+                mediaUrl: base64Audio,
+                filtreAudio: filtreAudioActif
+            });
+            
+            
+            fermerMenuAudio();
+            
+        } catch(error) {
+            console.error("Erreur envoi:", error);
+            showTempNotification("❌ Erreur lors de l'envoi");
+        }
+    };
+    
+    reader.onerror = function() {
+        showTempNotification("❌ Erreur de lecture de l'audio");
+    };
+    
+    reader.readAsDataURL(blob);
+}
+
+function sendMediaMessage(type, base64Data) {
+    db.collection('chats').doc(CHAT_ID).collection('messages').add({
+        text: null,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: type,
+        mediaUrl: base64Data
+    }).then(() => {
+     }).catch(err => {
+        console.error("Erreur envoi média:", err);
+        showTempNotification("❌ Erreur lors de l'envoi");
+    });
+}
+
+// Modifier la fonction sendMediaMessage pour gérer les vidéos
+function sendMediaMessage(type, base64Data) {
+    db.collection('chats').doc(CHAT_ID).collection('messages').add({
+        text: null,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: type,
+        mediaUrl: base64Data
+    });
+    showTempNotification(type === 'video' ? "🎥 Vidéo envoyée" : "📷 Photo envoyée");
 }
     </script>
   
