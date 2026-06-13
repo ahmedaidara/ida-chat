@@ -824,7 +824,12 @@ input, textarea {
     display: block;
 }
       
-        
+        #translate-btn.active {
+    color: #ffaa00 !important;
+    text-shadow: 0 0 3px #ffaa00;
+    transform: scale(1.1);
+    transition: all 0.2s;
+}
     </style>
 </head>
 <body>
@@ -1485,6 +1490,8 @@ async function enregistrerTokenPush() {
             saveDefaultMood();
             activerLesNotifications();
           demanderPermissionNotifications();
+              ecouterChangementsStyle();
+
         }
 
         function logout() {
@@ -1508,6 +1515,33 @@ function listenToMessages() {
             }
         }
     });
+      
+      
+      function ecouterChangementsStyle() {
+    if (!currentUser) return;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('bubbleStyle', '!=', null)
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'modified') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    const newStyle = data.bubbleStyle;
+                    
+                    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                    if (messageRow && messageRow.classList.contains('sent')) {
+                        const bubble = messageRow.querySelector('.message-bubble');
+                        if (bubble && newStyle) {
+                            const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                            allStyles.forEach(style => bubble.classList.remove(style));
+                            bubble.classList.add(newStyle);
+                        }
+                    }
+                }
+            });
+        });
+}
             
             // ========== AFFICHAGE DES MESSAGES (CODE ORIGINAL) ==========
             const msgArea = document.getElementById('msg-area');
@@ -1537,16 +1571,17 @@ function listenToMessages() {
                 
                 const isGiant = isOnlyEmojis(data.text);
                 let customStyle = '';
-                if (isSent) {
-                    if (data.bubbleStyle) {
-                        customStyle = data.bubbleStyle;
-                    } else {
-                        const defaultStyle = localStorage.getItem('default_bubble_style');
-                        if (defaultStyle && defaultStyle !== 'none') {
-                            customStyle = defaultStyle;
-                        }
-                    }
-                }
+// 🔥 Vérifier d'abord le style personnalisé du message
+if (data.bubbleStyle) {
+    customStyle = data.bubbleStyle;
+} else if (data.messageStyle) {
+    customStyle = data.messageStyle;
+} else if (isSent) {
+    const defaultStyle = localStorage.getItem('default_bubble_style');
+    if (defaultStyle && defaultStyle !== 'none') {
+        customStyle = defaultStyle;
+    }
+}
                 
                 let codedClass = '';
                 let lockBadge = '';
@@ -1685,13 +1720,21 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
     const input = document.getElementById('chat-in');
     let text = input.value.trim();
     if(!text) return;
-    
+        if (modeTraductionActif && langueTraduction) {
+         
+        const texteTraduit = await traduireTexte(text, langueTraduction);
+        if (texteTraduit && texteTraduit !== text) {
+            text = texteTraduit;
+             
+        } else {
+            
+        }
+    }
     if (translateModeActive && currentTargetLang) {
-        showTempNotification(`🔄 Traduction en cours vers ${currentTargetLang.toUpperCase()}...`);
-        const translatedText = await translateTextToLanguage(text, currentTargetLang);
+         const translatedText = await translateTextToLanguage(text, currentTargetLang);
         if (translatedText && translatedText !== text) {
             text = translatedText;
-            showTempNotification(`✅ Message traduit en ${currentTargetLang.toUpperCase()}`);
+             
         }
         translateModeActive = false;
         const translateBtn = document.getElementById('translate-btn');
@@ -2112,115 +2155,140 @@ function resetSendButton() {
 //     // ... reste de votre code normal ...
 // }
         // ========== STYLES DE BULLES ==========
-        let styleMenuOpen = false;
-        
-        function showStyleMenu() {
-            const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
-            const isSentMessage = messageRow && messageRow.classList.contains('sent');
-            if (!isSentMessage) {
-                showTempNotification("⚠️ Tu ne peux changer que le style de TES messages !");
-                document.getElementById('ctx-menu').style.display = 'none';
-                return;
-            }
-            if (styleMenuOpen) {
-                closeStyleMenu();
-                return;
-            }
-            const mainMenu = document.getElementById('ctx-menu');
-            const styleMenu = document.getElementById('style-submenu');
-            const rect = mainMenu.getBoundingClientRect();
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            let leftPos = rect.right + 5;
-            if (leftPos + 200 > windowWidth) leftPos = rect.left - 205;
-            let topPos = rect.top;
-            if (topPos + 400 > windowHeight) topPos = windowHeight - 410;
-            if (topPos < 10) topPos = 10;
-            styleMenu.style.position = 'fixed';
-            styleMenu.style.top = topPos + 'px';
-            styleMenu.style.left = leftPos + 'px';
-            styleMenu.style.display = 'block';
-            styleMenuOpen = true;
-            mainMenu.style.display = 'none';
-            setTimeout(() => {
-                document.addEventListener('click', function closeSubmenu(e) {
-                    if (styleMenuOpen && !styleMenu.contains(e.target)) {
-                        closeStyleMenu();
-                        document.removeEventListener('click', closeSubmenu);
-                    }
-                });
-            }, 100);
-        }
-        
-        function closeStyleMenu() {
-            const styleMenu = document.getElementById('style-submenu');
-            styleMenu.style.display = 'none';
-            styleMenuOpen = false;
-        }
-        
-        async function applyStyleToMessage(styleName) {
-            if (!selectedMessageId) return;
-            const styleNames = { 
-    'bicolor':'Bicolore',
-    'dark-passion':'Rouge et Noir',
-    'grid-style':'Style Tableau',
-    'rainbow':'Arc-en-ciel',
-    'neon':'Néon Glow',
-    'wood':'Style Bois',
-    'code-style':'Style Code',
-    'comics':'Style Comics',
-    'watercolor':'Aquarelle',
-    'retro':'Style Retro',
-    'glassmorphism':'Glassmorphism',
-    'crystal':'Crystal',
-    'sunset':'Sunset',
-    'ocean':'Ocean',
-    'forest':'Forest',
-    'midnight':'Midnight',
-    'rose':'Rose',
-    'gold':'Gold',
-    'galaxy':'Galaxy',
-    'cyberpunk':'Cyberpunk'
-};
-            const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
-            const isSentMessage = messageRow && messageRow.classList.contains('sent');
-            if (!isSentMessage) {
-                showTempNotification("❌ Tu ne peux changer que le style de TES propres messages !");
-                closeStyleMenu();
-                return;
-            }
-            await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ bubbleStyle: styleName });
-            const bubble = messageRow.querySelector('.message-bubble');
-            if (bubble) {
-                const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-                allStyles.forEach(style => bubble.classList.remove(style));
-                bubble.classList.add(styleName);
-            }
+      // ========== GESTION DU MENU STYLE ==========
+let styleMenuActive = false;
+
+function showStyleMenu() {
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    const isSentMessage = messageRow && messageRow.classList.contains('sent');
+    
+    if (!isSentMessage) {
+        showTempNotification("⚠️ Tu ne peux changer que le style de TES messages !");
+        document.getElementById('ctx-menu').style.display = 'none';
+        return;
+    }
+    
+    // Si le menu style est déjà ouvert, on le ferme
+    if (styleMenuActive) {
+        closeStyleMenu();
+        return;
+    }
+    
+    const mainMenu = document.getElementById('ctx-menu');
+    const styleMenu = document.getElementById('style-submenu');
+    
+    // Cacher le menu principal
+    mainMenu.style.display = 'none';
+    
+    // Positionner le sous-menu
+    const rect = mainMenu.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    let leftPos = (windowWidth / 2) - 120; // Centré
+    let topPos = (windowHeight / 2) - 150; // Centré
+    
+    styleMenu.style.position = 'fixed';
+    styleMenu.style.top = topPos + 'px';
+    styleMenu.style.left = leftPos + 'px';
+    styleMenu.style.display = 'block';
+    styleMenu.style.zIndex = '10001';
+    styleMenuActive = true;
+    
+    // Fermer le menu si on clique en dehors
+    function fermerStyleMenu(e) {
+        if (!styleMenu.contains(e.target)) {
             closeStyleMenu();
-            document.getElementById('ctx-menu').style.display = 'none';
-            showTempNotification(`✨ Style "${styleNames[styleName]}" appliqué !`);
+            document.removeEventListener('click', fermerStyleMenu);
         }
+    }
+    
+    setTimeout(() => {
+        document.addEventListener('click', fermerStyleMenu);
+    }, 100);
+}
+
+function closeStyleMenu() {
+    const styleMenu = document.getElementById('style-submenu');
+    styleMenu.style.display = 'none';
+    styleMenuActive = false;
+}
+
+// Réappliquer après sélection d'un style
+async function applyStyleToMessage(styleName) {
+    if (!selectedMessageId) return;
+    
+    const styleNames = { 
+        'bicolor':'Bicolore', 'dark-passion':'Rouge et Noir', 'grid-style':'Style Tableau',
+        'rainbow':'Arc-en-ciel', 'neon':'Néon Glow', 'wood':'Style Bois',
+        'code-style':'Style Code', 'comics':'Style Comics', 'watercolor':'Aquarelle',
+        'retro':'Style Retro', 'glassmorphism':'Glassmorphism', 'crystal':'Crystal',
+        'sunset':'Sunset', 'ocean':'Ocean', 'forest':'Forest', 'midnight':'Midnight',
+        'rose':'Rose', 'gold':'Gold', 'galaxy':'Galaxy', 'cyberpunk':'Cyberpunk'
+    };
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    const isSentMessage = messageRow && messageRow.classList.contains('sent');
+    
+    if (!isSentMessage) {
+        showTempNotification("❌ Tu ne peux changer que le style de TES propres messages !");
+        closeStyleMenu();
+        return;
+    }
+    
+    // Mettre à jour Firestore
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ 
+        bubbleStyle: styleName 
+    });
+    
+    // Mettre à jour l'affichage LOCAL immédiatement
+    const bubble = messageRow.querySelector('.message-bubble');
+    if (bubble) {
+        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+        allStyles.forEach(style => bubble.classList.remove(style));
+        bubble.classList.add(styleName);
+    }
+    
+    // Fermer les menus
+    closeStyleMenu();
+    document.getElementById('ctx-menu').style.display = 'none';
+    
+    showTempNotification(`✨ Style "${styleNames[styleName]}" appliqué !`);
+    
+    // Réinitialiser selectedMessageId pour éviter les conflits
+    selectedMessageId = null;
+}
         
-        async function removeStyleFromMessage() {
-            if (!selectedMessageId) return;
-            const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
-            if (!messageRow || !messageRow.classList.contains('sent')) {
-                showTempNotification("❌ Tu ne peux supprimer que le style de TES messages !");
-                closeStyleMenu();
-                return;
-            }
-            await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ bubbleStyle: null });
-            const bubble = messageRow.querySelector('.message-bubble');
-            if (bubble) {
-                const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro'];
-                allStyles.forEach(style => bubble.classList.remove(style));
-            }
-            closeStyleMenu();
-            document.getElementById('ctx-menu').style.display = 'none';
-            showTempNotification(`🗑️ Style supprimé`);
-        }
+      async function removeStyleFromMessage() {
+    if (!selectedMessageId) return;
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow || !messageRow.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux supprimer que le style de TES messages !");
+        closeStyleMenu();
+        return;
+    }
+    
+    // Supprimer le style de Firestore
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ 
+        bubbleStyle: null 
+    });
+    
+    // Supprimer le style visuellement
+    const bubble = messageRow.querySelector('.message-bubble');
+    if (bubble) {
+        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+        allStyles.forEach(style => bubble.classList.remove(style));
+    }
+    
+    closeStyleMenu();
+    document.getElementById('ctx-menu').style.display = 'none';
+    showTempNotification(`🗑️ Style supprimé`);
+    
+    selectedMessageId = null;
+}
         
-        // ========== TRADUCTION ==========
+        // ========== TRADUCTION ========== 
         async function translateTextToLanguage(text, targetLang) {
             if (!text || text.trim() === '') return null;
             const langMap = { 'en': 'en|fr', 'ar': 'ar|fr', 'es': 'es|fr', 'ja': 'ja|fr' };
@@ -2269,68 +2337,297 @@ function resetSendButton() {
             }
         }
         
-        async function translateSelectedMessage() {
-            if (!selectedMessageId) return;
-            const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
-            if (!messageRow) return;
-            const messageSpan = messageRow.querySelector('.message-bubble span:not(.coded-mask)');
-            if (!messageSpan) return;
-            const originalText = messageSpan.innerText;
-            const originalHTML = messageSpan.innerHTML;
-            messageSpan.innerHTML = '<span style="opacity:0.6;">🔄 Traduction...</span>';
-            try {
-                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=fr|en`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data && data.responseData && data.responseData.translatedText) {
-                    let translated = data.responseData.translatedText;
-                    translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-                    messageSpan.setAttribute('data-original', originalText);
-                    messageSpan.innerHTML = `${translated} <span style="font-size:0.65rem; opacity:0.5;" onclick="restoreOriginalMessage(this.parentElement)">[Original]</span>`;
-                } else {
-                    messageSpan.innerHTML = originalHTML;
-                }
-            } catch(error) {
+  // ========== TRADUCTION AVEC LIBRETRANSLATE (QUALITÉ PROFESSIONNELLE) ==========
+async function translateSelectedMessage() {
+    if (!selectedMessageId) return;
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow) return;
+    
+    const messageSpan = messageRow.querySelector('.message-bubble span:not(.coded-mask)');
+    if (!messageSpan) return;
+    
+    const originalText = messageSpan.innerText;
+    const originalHTML = messageSpan.innerHTML;
+    
+    // Détection rapide de la langue
+    const estFrancais = detecterFrancais(originalText);
+    const langueSource = estFrancais ? 'fr' : 'auto';
+    const langueCible = estFrancais ? 'en' : 'fr';
+    const langueNom = estFrancais ? 'Anglais 🇬🇧' : 'Français 🇫🇷';
+    
+    messageSpan.innerHTML = '<span style="opacity:0.6;">🔄 Traduction...</span>';
+    
+    try {
+        // Utiliser LibreTranslate (gratuit, sans clé, bonne qualité)
+        const url = `https://translate.terraprint.co/translate`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                q: originalText,
+                source: langueSource,
+                target: langueCible,
+                format: 'text'
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            let translated = data.translatedText;
+            
+            if (translated && translated !== originalText) {
+                messageSpan.setAttribute('data-original', originalText);
+                messageSpan.innerHTML = `${translated} <span style="font-size:0.65rem; opacity:0.5; cursor:pointer;" onclick="restaurerMessageOriginal(this.parentElement)">[${langueNom}]</span>`;
+            } else {
                 messageSpan.innerHTML = originalHTML;
+                showTempNotification("❌ Traduction identique ou impossible");
             }
-            hideContextMenus();
+        } else {
+            // Si LibreTranslate échoue, essayer MyMemory en secours
+            await fallbackTranslation(originalText, originalHTML, messageSpan, estFrancais);
         }
         
-        function restoreOriginalMessage(element) {
-            const original = element.getAttribute('data-original');
-            if (original) {
-                element.innerHTML = original;
-                element.removeAttribute('data-original');
-            }
-        }
+    } catch(error) {
+        console.error("Erreur LibreTranslate:", error);
+        // Secours vers MyMemory
+        await fallbackTranslation(originalText, originalHTML, messageSpan, estFrancais);
+    }
+    
+    hideContextMenus();
+}
+
+// ========== API DE SECOURS (MyMemory) ==========
+async function fallbackTranslation(originalText, originalHTML, messageSpan, estFrancais) {
+    const langueCible = estFrancais ? 'en|fr' : 'fr|en';
+    const langueNom = estFrancais ? 'Anglais 🇬🇧' : 'Français 🇫🇷';
+    
+    try {
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=${langueCible}`;
+        const response = await fetch(url);
+        const data = await response.json();
         
-        function toggleTranslateMenuDirect(event) {
-            event.stopPropagation();
-            let existingMenu = document.getElementById('direct-lang-menu');
-            if (existingMenu) { existingMenu.remove(); return; }
-            const menu = document.createElement('div');
-            menu.id = 'direct-lang-menu';
-            menu.style.cssText = `position:fixed; bottom:80px; right:20px; background:var(--panel-bg); backdrop-filter:blur(15px); border:1px solid var(--border-color); border-radius:12px; padding:8px 0; z-index:1000; min-width:150px;`;
-            const languages = [{ code:'en', flag:'🇬🇧', name:'Anglais'},{ code:'ar', flag:'🇸🇦', name:'Arabe'},{ code:'es', flag:'🇪🇸', name:'Espagnol'},{ code:'ja', flag:'🇯🇵', name:'Japonais'}];
-            languages.forEach(lang => {
-                const option = document.createElement('div');
-                option.style.cssText = 'padding:10px 20px; cursor:pointer; display:flex; align-items:center; gap:10px;';
-                option.innerHTML = `<span class="flag">${lang.flag}</span><span>${lang.name}</span>`;
-                option.onclick = () => { translateInputText(lang.code); menu.remove(); };
-                menu.appendChild(option);
-            });
-            const closeOpt = document.createElement('div');
-            closeOpt.style.cssText = 'padding:10px 20px; cursor:pointer; border-top:1px solid var(--border-color); color:#ed4956;';
-            closeOpt.innerHTML = '<i class="fa-solid fa-ban"></i> Fermer';
-            closeOpt.onclick = () => menu.remove();
-            menu.appendChild(closeOpt);
-            document.body.appendChild(menu);
-            setTimeout(() => {
-                document.addEventListener('click', function closeMenu(e) {
-                    if (!menu.contains(e.target) && e.target.id !== 'translate-btn') { menu.remove(); document.removeEventListener('click', closeMenu); }
-                });
-            }, 10);
+        if (data && data.responseData && data.responseData.translatedText) {
+            let translated = data.responseData.translatedText;
+            translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+            messageSpan.setAttribute('data-original', originalText);
+            messageSpan.innerHTML = `${translated} <span style="font-size:0.65rem; opacity:0.5; cursor:pointer;" onclick="restaurerMessageOriginal(this.parentElement)">[${langueNom}*]</span>`;
+        } else {
+            messageSpan.innerHTML = originalHTML;
+            showTempNotification("❌ Erreur de traduction");
         }
+    } catch(e) {
+        messageSpan.innerHTML = originalHTML;
+        showTempNotification("❌ Service de traduction indisponible");
+    }
+}
+
+// ========== DÉTECTION FRANÇAIS (SIMPLIFIÉE) ==========
+function detecterFrancais(texte) {
+    if (!texte) return false;
+    
+    // Caractères accentués typiquement français
+    const accents = /[éèêëàâäôöùûüçœ]/i;
+    if (accents.test(texte)) return true;
+    
+    // Mots très communs en français
+    const motsFrancais = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles', 
+                          'le', 'la', 'les', 'un', 'une', 'du', 'de', 'est', 'sont',
+                          'bonjour', 'merci', 'salut', 'oui', 'non', 'et', 'ou', 'mais'];
+    
+    const texteLower = texte.toLowerCase();
+    let compteur = 0;
+    for (const mot of motsFrancais) {
+        if (texteLower.includes(mot)) compteur++;
+        if (compteur >= 2) return true;
+    }
+    return false;
+}
+
+function restaurerMessageOriginal(element) {
+    const original = element.getAttribute('data-original');
+    if (original) {
+        element.innerHTML = original;
+        element.removeAttribute('data-original');
+    }
+}
+
+ 
+        
+       function toggleTranslateMenuDirect(event) {
+    event.stopPropagation();
+    let existingMenu = document.getElementById('direct-lang-menu');
+    if (existingMenu) { 
+        existingMenu.remove(); 
+        return;
+    }
+    
+    const menu = document.createElement('div');
+    menu.id = 'direct-lang-menu';
+    menu.style.cssText = `position:fixed; bottom:80px; right:20px; background:var(--panel-bg); backdrop-filter:blur(15px); border:1px solid var(--border-color); border-radius:12px; padding:8px 0; z-index:1000; min-width:150px;`;
+    
+    const languages = [
+        { code:'fr', flag:'🇫🇷', name:'Français' },
+        { code:'en', flag:'🇬🇧', name:'Anglais' },
+        { code:'ar', flag:'🇸🇦', name:'Arabe' },
+        { code:'es', flag:'🇪🇸', name:'Espagnol' },
+        { code:'it', flag:'🇮🇹', name:'Italien' },
+        { code:'de', flag:'🇩🇪', name:'Allemand' },
+        { code:'pt', flag:'🇵🇹', name:'Portugais' },
+        { code:'ru', flag:'🇷🇺', name:'Russe' },
+        { code:'ja', flag:'🇯🇵', name:'Japonais' },
+        { code:'zh', flag:'🇨🇳', name:'Chinois' }
+    ];
+    
+    languages.forEach(lang => {
+        const option = document.createElement('div');
+        option.style.cssText = 'padding:10px 20px; cursor:pointer; display:flex; align-items:center; gap:10px;';
+        option.innerHTML = `<span class="flag">${lang.flag}</span><span>${lang.name}</span>`;
+        option.onclick = () => { 
+            activerModeTraduction(lang.code, lang.name, lang.flag);
+            menu.remove(); 
+        };
+        menu.appendChild(option);
+    });
+    
+    const closeOpt = document.createElement('div');
+    closeOpt.style.cssText = 'padding:10px 20px; cursor:pointer; border-top:1px solid var(--border-color); color:#ed4956;';
+    closeOpt.innerHTML = '<i class="fa-solid fa-ban"></i> Désactiver la traduction';
+    closeOpt.onclick = () => { 
+        desactiverModeTraduction();
+        menu.remove(); 
+    };
+    menu.appendChild(closeOpt);
+    
+    document.body.appendChild(menu);
+    
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target) && e.target.id !== 'translate-btn') { 
+                menu.remove(); 
+                document.removeEventListener('click', closeMenu); 
+            }
+        });
+    }, 10);
+}
+
+// ========== VARIABLES POUR LA TRADUCTION ==========
+let modeTraductionActif = false;
+let langueTraduction = null;
+let nomLangueTraduction = null;
+let drapeauTraduction = null;
+
+function activerModeTraduction(code, nom, drapeau) {
+    modeTraductionActif = true;
+    langueTraduction = code;
+    nomLangueTraduction = nom;
+    drapeauTraduction = drapeau;
+    
+    const translateBtn = document.getElementById('translate-btn');
+    translateBtn.style.color = '#ffaa00';
+    translateBtn.style.textShadow = '0 0 3px #ffaa00';
+    translateBtn.style.transform = 'scale(1.1)';
+    translateBtn.title = `Traduction active vers ${nom}`;
+    
+   
+}
+
+function desactiverModeTraduction() {
+    modeTraductionActif = false;
+    langueTraduction = null;
+    nomLangueTraduction = null;
+    drapeauTraduction = null;
+    
+    const translateBtn = document.getElementById('translate-btn');
+    translateBtn.style.color = '';
+    translateBtn.style.textShadow = '';
+    translateBtn.style.transform = '';
+    translateBtn.title = 'Traduire le message';
+    
+ }
+
+// ========== FONCTION DE TRADUCTION SIMPLE (Utilise Google Translate via API) ==========
+async function traduireTexte(texte, langueCible) {
+    if (!texte || !langueCible || texte.trim() === '') return texte;
+    
+    // Si la langue cible est le français, on détecte d'abord si c'est déjà français
+    if (langueCible === 'fr') {
+        const estFrancais = detecterFrancaisRapide(texte);
+        if (estFrancais) return texte;
+    }
+    
+    try {
+        // Utiliser LibreTranslate
+        const url = `https://translate.terraprint.co/translate`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                q: texte,
+                source: 'auto',
+                target: langueCible,
+                format: 'text'
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data.translatedText || texte;
+        } else {
+            // Fallback vers MyMemory
+            return await fallbackTraduction(texte, langueCible);
+        }
+    } catch(error) {
+        console.error("Erreur traduction:", error);
+        return await fallbackTraduction(texte, langueCible);
+    }
+}
+
+async function fallbackTraduction(texte, langueCible) {
+    try {
+        const mapLangue = {
+            'fr': 'fr|en',
+            'en': 'en|fr',
+            'ar': 'ar|fr',
+            'es': 'es|fr',
+            'it': 'it|fr',
+            'de': 'de|fr',
+            'pt': 'pt|fr',
+            'ru': 'ru|fr',
+            'ja': 'ja|fr',
+            'zh': 'zh|fr'
+        };
+        const langPair = mapLangue[langueCible] || `en|fr`;
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(texte)}&langpair=${langPair}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data && data.responseData && data.responseData.translatedText) {
+            let translated = data.responseData.translatedText;
+            translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+            return translated;
+        }
+        return texte;
+    } catch(e) {
+        return texte;
+    }
+}
+
+function detecterFrancaisRapide(texte) {
+    if (!texte) return false;
+    const accents = /[éèêëàâäôöùûüçœ]/i;
+    if (accents.test(texte)) return true;
+    const motsFr = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles', 'le', 'la', 'les', 'un', 'une', 'est', 'sont'];
+    const texteLower = texte.toLowerCase();
+    let count = 0;
+    for (const mot of motsFr) {
+        if (texteLower.includes(mot)) count++;
+        if (count >= 2) return true;
+    }
+    return false;
+}
         
         // ========== MODE CODE ==========
         function toggleCodeMode() { codeModeActive = !codeModeActive; showTempNotification(codeModeActive ? "🔒 Mode Codé ACTIVÉ" : "🔓 Mode Codé DÉSACTIVÉ"); }
@@ -2382,14 +2679,14 @@ function resetSendButton() {
                 blurBtn.classList.remove('fa-eye-slash');
                 blurBtn.classList.add('fa-eye');
                 applyBlurToAllMessages();
-                showTempNotification("🔒 Mode Flou activé");
+                 
             } else {
                 container.classList.remove('blur-mode');
                 blurBtn.classList.remove('active');
                 blurBtn.classList.remove('fa-eye');
                 blurBtn.classList.add('fa-eye-slash');
                 removeBlurFromAllMessages();
-                showTempNotification("👁️ Mode Flou désactivé");
+                 
             }
         }
         
@@ -2468,13 +2765,13 @@ function resetSendButton() {
                 liveBtn.style.color = '#ff4444';
                 liveContainer.classList.add('active');
                 startLiveTypingListener();
-                showTempNotification("🔴 Mode Live ACTIVÉ");
+                
             } else {
                 liveBtn.classList.remove('active');
                 liveBtn.style.color = '';
                 liveContainer.classList.remove('active');
                 stopLiveTypingListener();
-                showTempNotification("⚫ Mode Live DÉSACTIVÉ");
+                 
             }
         }
         
@@ -2626,7 +2923,7 @@ function resetSendButton() {
             setTimeout(() => moodDiv.classList.remove('animated'), 2000);
             await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
             document.getElementById('mood-panel').style.display = 'none';
-            showTempNotification(`🎭 Statut: ${emoji} ${label}`);
+            
         }
         
         async function clearMood() {
@@ -2634,7 +2931,7 @@ function resetSendButton() {
             document.getElementById('mood-emoji').textContent = '😊';
             await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
             document.getElementById('mood-panel').style.display = 'none';
-            showTempNotification("🗑️ Statut effacé");
+            
         }
         
         function listenToUserMood() {
@@ -2725,7 +3022,7 @@ function resetSendButton() {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(), status: "sent", readBy: [currentUser.id],
                 type: "drawing", isEphemeral: false, mediaUrl: imageData
             });
-            showTempNotification("🎨 Dessin envoyé !");
+            
             closeCanvasDrawer();
         }
         
@@ -2763,7 +3060,7 @@ function resetSendButton() {
                     link.click();
                     URL.revokeObjectURL(blobUrl);
                 }
-                showTempNotification('✅ Photo enregistrée !');
+                 
             } catch(e) { showTempNotification('❌ Erreur téléchargement'); }
             setTimeout(() => downloadBtn.classList.remove('downloading'), 500);
         }
@@ -2916,10 +3213,8 @@ function openSecretPage() {
         const secretPage = document.getElementById('secret-page');
         secretPage.style.display = 'flex';
         listenToSecretMessages();
-        showTempNotification("✅ Accès au Carnet Secret autorisé !");
-    } else {
-        showTempNotification("❌ Code incorrect ! Accès refusé.");
-    }
+     } else {
+     }
 }
 
 // Fermer le carnet secret
@@ -2998,11 +3293,9 @@ async function sendSecretMessage() {
     
     try {
         await db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages').add(msgData);
-        showTempNotification("🔒 Message secret envoyé !");
-    } catch(error) {
+     } catch(error) {
         console.error("Erreur:", error);
-        showTempNotification("❌ Erreur lors de l'envoi");
-    }
+     }
 }
 
 // Supprimer TOUS les messages secrets
@@ -3011,8 +3304,7 @@ async function clearSecretChat() {
     
     const secretCode = prompt("🔐 Confirmez le code secret pour effacer tous les messages :");
     if (secretCode !== SECRET_NOTEBOOK_PIN) {
-        showTempNotification("❌ Code incorrect ! Suppression annulée.");
-        return;
+         return;
     }
     
     try {
@@ -3020,11 +3312,9 @@ async function clearSecretChat() {
         const batch = db.batch();
         snapshot.docs.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
-        showTempNotification("✨ Carnet secret vidé !");
-    } catch(error) {
+     } catch(error) {
         console.error("Erreur:", error);
-        showTempNotification("❌ Erreur lors de la suppression");
-    }
+     }
 }
       
       // Sauvegarder le style de bulle par défaut
@@ -3037,8 +3327,7 @@ function saveDefaultBubbleStyle() {
     // Met à jour IMMÉDIATEMENT tous les messages sans style perso
     updateAllMessagesDefaultStyle();
     
-    showTempNotification(selectedStyle === 'none' ? "🎨 Style par défaut Instagram rétabli - Mis à jour !" : "✅ Style par défaut enregistré et appliqué !");
-}
+ }
 
 // Met à jour tous les messages qui n'ont PAS de style personnalisé
 function updateAllMessagesDefaultStyle() {
