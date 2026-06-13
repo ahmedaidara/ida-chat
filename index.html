@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram Direct Clone - Privé</title>
+    <title>CHAT-IDA</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
@@ -1273,10 +1273,7 @@ async function demanderPermissionNotifications() {
     if (permission === "granted") {
         console.log("✅ Permission accordée !");
         // Afficher une notification test
-        new Notification("✅ Notifications activées !", {
-            body: "Vous recevrez désormais les messages même quand l'application est fermée",
-            icon: "/icon-192.png"
-        });
+        
         enregistrerTokenPush();
     } else if (permission === "denied") {
         console.log("❌ Permission refusée par l'utilisateur");
@@ -2796,7 +2793,7 @@ async function verifierNouveauxMessages() {
             if (Notification.permission === "granted") {
                 new Notification(`${msg.senderName}`, {
                     body: msg.text || "Nouveau message",
-                    icon: 'https://i.imgur.com/ICON.png'
+                    icon: 'https://i.postimg.cc/J400K7Sd/new-Notification.png'
                 });
             }
             
@@ -2844,7 +2841,7 @@ function ecouterNotificationsNTFY() {
         if (Notification.permission === "granted") {
             new Notification("📱 Nouveau message", {
                 body: event.data,
-                icon: "https://i.imgur.com/icon.png"
+                icon: "https://i.postimg.cc/J400K7Sd/new-Notification.png"
             });
         }
     };
