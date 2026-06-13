@@ -3,7 +3,8 @@
 <head>
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="msapplication-tap-highlight" content="no">
     <title>CHAT-IDA</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -133,8 +134,22 @@
         .reply-bar-preview { display: none; background: var(--input-bg); padding: 8px 15px; border-top: 1px solid var(--border-color); justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted); }
         .chat-input-bar { padding: 12px; background: var(--bg-main); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; }
         .input-box-container { display: flex; align-items: center; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 25px; padding: 4px 12px; width: 100%; }
-        .chat-input { flex: 1; background: transparent; border: none; padding: 8px; font-size: 0.95rem; color: var(--text-main); outline: none; }
-        .input-actions { display: flex; align-items: center; gap: 14px; color: var(--text-main); font-size: 1.15rem; }
+.chat-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 10px 8px;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    outline: none;
+    resize: none;
+    overflow-y: auto;
+    max-height: 120px;  /* 5 lignes x 24px = 120px */
+    min-height: 40px;   /* Hauteur minimum (1 ligne) */
+    font-family: 'Inter', sans-serif;
+    line-height: 1.4;
+}
+      .input-actions { display: flex; align-items: center; gap: 14px; color: var(--text-main); font-size: 1.15rem; }
         .input-actions i { cursor: pointer; transition: color 0.2s; }
         .input-actions i:hover { color: #a800ff; }
       
@@ -733,6 +748,58 @@
     text-shadow: 0 0 5px #ff00ff !important;
     font-family: monospace !important;
 }
+      
+      /* Empêcher le zoom sur mobile */
+body {
+    touch-action: pan-x pan-y;  /* Autorise seulement le défilement, pas le zoom */
+}
+
+/* Pour les inputs (pour qu'on puisse toujours les sélectionner) */
+input, textarea, select, button {
+    touch-action: manipulation;  /* Empêche le zoom sur les éléments cliquables */
+    font-size: 16px;  /* Évite le zoom automatique sur iOS quand on tape dans un input */
+}
+      
+      /* Supprimer le highlight bleu/gris au toucher sur mobile */
+* {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+}
+
+/* Pour les inputs (garder la sélection possible) */
+input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+}
+
+/* Supprimer l'outline bleu sur le focus */
+*:focus {
+    outline: none !important;
+}
+
+/* Pour les boutons et éléments cliquables */
+button, a, .clickable, [onclick] {
+    -webkit-tap-highlight-color: transparent !important;
+    cursor: pointer;
+}
+      
+      /* Empêcher la sélection et le menu contextuel sur mobile */
+.message-bubble, 
+.message-bubble *,
+.message-row,
+[oncontextmenu] {
+    -webkit-touch-callout: none !important;  /* Empêche le menu Copier/Coller */
+    -webkit-user-select: none !important;    /* Empêche la sélection du texte */
+    user-select: none !important;
+}
+
+/* Pour que les inputs restent normaux */
+input, textarea {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+}
     </style>
 </head>
 <body>
@@ -833,13 +900,13 @@
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <input type="text" class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping()">
+                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1"></textarea>
                 <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
                     <i class="fa-solid fa-language" id="translate-btn" onclick="toggleTranslateMenuDirect(event)" style="cursor:pointer; font-size:1.2rem;" title="Traduire le message"></i>
                     <i class="fa-solid fa-lock" id="code-mode-btn" onclick="toggleCodeModeDirect()" style="cursor:pointer; font-size:1.2rem;" title="Coder le message"></i>
                     <i class="fa-solid fa-head-side-headphones" id="ephemeral-audio-btn" onclick="toggleEphemeralAudioModeDirect()" style="cursor:pointer; font-size:1.2rem;" title="Audio éphémère"></i>
                 </div>
-                <span id="send-btn" onclick="sendTextMessage()">Envoyer</span>
+                <span id="send-btn" onclick="sendTextMessage()"><i class="fa-regular fa-paper-plane"></i></span>
             </div>
             
             <div class="floating-panel" id="tools-panel">
@@ -905,12 +972,13 @@
             </div>
         </div>
 
-        <div class="context-menu" id="ctx-menu">
-            <div class="context-item" onclick="initiateReply()"><i class="fa-solid fa-reply"></i> Répondre</div>
-            <div class="context-item translate-btn" onclick="translateSelectedMessage()"><i class="fa-solid fa-language"></i> Traduire</div>
-            <div class="context-item" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="showStyleMenu()"><i class="fa-solid fa-palette"></i> Changer le style de bulle ▶</div>
-            <div class="context-item" style="color:#ed4956;" onclick="deleteSelectedMessage()"><i class="fa-solid fa-trash"></i> Supprimer</div>
-        </div>
+       <div class="context-menu" id="ctx-menu">
+    <div class="context-item" onclick="initiateReply()"><i class="fa-solid fa-reply"></i> Répondre</div>
+    <div class="context-item translate-btn" onclick="translateSelectedMessage()"><i class="fa-solid fa-language"></i> Traduire</div>
+    <div class="context-item" onclick="editSelectedMessage()"><i class="fa-solid fa-pen"></i> Modifier</div>
+    <div class="context-item" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="showStyleMenu()"><i class="fa-solid fa-palette"></i> Changer le style de bulle ▶</div>
+    <div class="context-item" style="color:#ed4956;" onclick="deleteSelectedMessage()"><i class="fa-solid fa-trash"></i> Supprimer</div>
+</div>
 
         <div class="context-menu" id="style-submenu">
             <div class="context-item" onclick="applyStyleToMessage('bicolor')"><i class="fa-solid fa-fill-drip"></i> Bicolore</div>
@@ -1000,8 +1068,8 @@
     
     <div class="settings-content">
         <!-- Section Profil -->
-      <button onclick="testerBotIda()" style="background:#ff007f; color:white; padding:10px; border-radius:10px; margin:5px;">
-    🔔 Tester notification pour Ida (bot d'Ida)
+    <button onclick="demanderPermissionNotifications()" style="background:#0095f6; color:white; padding:10px; border-radius:10px; margin:5px;">
+    🔔 Activer les notifications dans l'app
 </button>
         <div class="settings-section">
             <h4><i class="fa-solid fa-user"></i> Profil</h4>
@@ -1119,102 +1187,94 @@ const firebaseConfig = {
     appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
 };
         
+// ========== CONFIGURATION FIREBASE ==========
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-      // ========== NOTIFICATIONS TELEGRAM ==========
-// ========== NOTIFICATIONS TELEGRAM (VERSION ULTRA SECRETE) ==========
-
-// ========== NOTIFICATIONS TELEGRAM (VERSION SIMPLIFIÉE QUI MARCHE) ==========
-
-// ----- BOT POUR TOI (Aidara) -----
+      
+      // Nettoyage agressif des anciens listeners
+setTimeout(() => {
+    console.log("🧹 Nettoyage des anciennes notifications terminé");
+}, 1500);
+// ==================== CONFIGURATION TELEGRAM ====================
 const TELEGRAM_BOT_TOKEN_AIDARA = "8818466564:AAHhfYo-tufycGw5CJGt8F9YyEm2SgHYvSE";
 const TELEGRAM_CHAT_ID_AIDARA = "7399263012";
-
-// ----- BOT POUR IDA (son propre bot) -----
 const TELEGRAM_BOT_TOKEN_IDA = "8921495493:AAEa1oO9gTh-Lk_QLa5MA65UXllbsLSUoZE";
 const TELEGRAM_CHAT_ID_IDA = "6515818320";
 
-// Fonction simple pour enlever les accents
-function enleverAccents(texte) {
-    if (!texte) return "";
-    const map = {
-        'é':'e','è':'e','ê':'e','ë':'e','à':'a','â':'a','ä':'a',
-        'ô':'o','ö':'o','î':'i','ï':'i','ç':'c','ù':'u','û':'u','ü':'u',
-        'É':'E','È':'E','Ê':'E','Ë':'E','À':'A','Â':'A','Ä':'A',
-        'Ô':'O','Ö':'O','Î':'I','Ï':'I','Ç':'C','Ù':'U','Û':'U','Ü':'U'
-    };
-    return texte.replace(/[éèêëàâäôöîïçùûüÉÈÊËÀÂÄÔÖÎÏÇÙÛÜ]/g, m => map[m] || m);
-}
+// Anti-doublons
+const notifiedMessages = new Set();
 
-// Envoyer un message simple
-async function envoyerTelegram(botToken, chatId, message) {
+// ==================== FONCTION UNIQUE ====================
+async function sendTelegramNotification(senderId) {
+    if (!senderId || !currentUser) return;
+
+    const isFromIda = senderId === 'ida';
+    
+    const botToken = isFromIda ? TELEGRAM_BOT_TOKEN_AIDARA : TELEGRAM_BOT_TOKEN_IDA;
+    const chatId = isFromIda ? TELEGRAM_CHAT_ID_AIDARA : TELEGRAM_CHAT_ID_IDA;
+    
+    const message = `🔔 NOUVEAU MESSAGE\n\n${isFromIda ? 'IDA' : 'Ahmed Said Aidara'} vous a envoyé un message.\n\n👉 Ouvrez l'application pour le lire.`;
+
+    // Anti-doublon (clé = sender + timestamp minute)
+    const key = `${senderId}-${Math.floor(Date.now()/60000)}`;
+    if (notifiedMessages.has(key)) return;
+    notifiedMessages.add(key);
+
     try {
-        const msgPropre = enleverAccents(message.substring(0, 400));
-        // AJOUTER disable_notification=false pour être sûr qu'elle arrive
-        const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msgPropre)}&disable_notification=false`;
-        
-        console.log(`📤 Envoi à Telegram: ${chatId.substring(0,5)}... - ${msgPropre.substring(0,30)}`);
-        
-        const response = await fetch(url);
-        const result = await response.json();
-        
-        if (result.ok) {
-            console.log(`✅ Telegram OK vers ${chatId}`);
-            return true;
-        } else {
-            console.log("❌ Telegram erreur:", result.description);
-            // Tenter avec parse_mode HTML si échoue
-            const url2 = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msgPropre)}&parse_mode=HTML`;
-            const response2 = await fetch(url2);
-            const result2 = await response2.json();
-            if(result2.ok) {
-                console.log("✅ Réussi avec HTML");
-                return true;
-            }
-            return false;
-        }
-    } catch(e) {
-        console.log("❌ Exception:", e.message);
-        return false;
+        const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&disable_notification=false`;
+        await fetch(url);
+        console.log(`✅ Notification Telegram envoyée à ${isFromIda ? 'Aidara' : 'Ida'}`);
+    } catch (e) {
+        console.error("Erreur Telegram:", e);
     }
 }
+// ========== CONFIGURATION TELEGRAM (UN SEUL BOT POUR CHAQUE PERSONNE) ==========
+
+// ========== NOTIFICATION TELEGRAM (SANS CONTENU) ==========
+
+// ========== NOTIFICATION PUSH DANS L'APP ==========
+async function notifierDansApp(expediteurNom) {
+    if (!("Notification" in window)) return;
+    
+    if (Notification.permission === "granted") {
+        let corps = `${expediteurNom} vous a envoyé un message. Ouvrez l'application pour le lire.`;
+        new Notification(`📩 Nouveau message de ${expediteurNom}`, {
+            body: corps,
+            icon: "https://i.postimg.cc/J400K7Sd/new-Notification.png",
+            vibrate: [200, 100, 200],
+            silent: false
+        });
+        console.log("✅ Notification push affichée");
+    }
+}
+
+// ========== DEMANDER PERMISSION PUSH ==========
+async function demanderPermissionNotifications() {
+    if (!("Notification" in window)) {
+        alert("Votre navigateur ne supporte pas les notifications");
+        return;
+    }
+    
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+        console.log("✅ Notifications push autorisées");
+        new Notification("✅ Notifications activées", {
+            body: "Vous recevrez les nouveaux messages",
+            icon: "https://i.postimg.cc/J400K7Sd/new-Notification.png"
+        });
+    } else {
+        console.log("❌ Notifications refusées");
+    }
+}
+ 
 
 // Notifier Aidara (toi) quand Ida envoie un message
-async function notifierAidara(message) {
-    const texte = `📩 Nouveau message de Ida\n\n${message}`;
-    await envoyerTelegram(TELEGRAM_BOT_TOKEN_AIDARA, TELEGRAM_CHAT_ID_AIDARA, texte);
-}
-
-// Notifier Ida (discrètement) quand Aidara envoie un message
-async function notifierIda(message) {
-    const texte = `🔔 Aidara vous a envoyé un message\n\n"${message}"`;
-    await envoyerTelegram(TELEGRAM_BOT_TOKEN_IDA, TELEGRAM_CHAT_ID_IDA, texte);
-}
+ 
 
 // Fonction principale
-async function gererNotification(expediteurId, expediteurNom, message) {
-    if (expediteurId === 'ida') {
-        // Ida envoie → notifier Aidara (ton bot)
-        await envoyerTelegram(TELEGRAM_BOT_TOKEN_AIDARA, TELEGRAM_CHAT_ID_AIDARA, "📩 Message de Ida: " + message);
-    } 
-    else if (expediteurId === 'aidara') {
-        // Aidara envoie → notifier Ida (SON bot)
-        await envoyerTelegram(TELEGRAM_BOT_TOKEN_IDA, TELEGRAM_CHAT_ID_IDA, "🔔 Message de Aidara: " + message);
-    }
-}
+ 
 
-// Fonction TEST (à garder pour vérifier)
-async function testerNotificationTelegram() {
-    console.log("🔔 Test des notifications...");
-    
-    // Test vers toi
-    await envoyerTelegram(TELEGRAM_BOT_TOKEN_AIDARA, TELEGRAM_CHAT_ID_AIDARA, "🧪 TEST: Ceci est un test pour Aidara");
-    
-    // Test vers Ida
-    await envoyerTelegram(TELEGRAM_BOT_TOKEN_IDA, TELEGRAM_CHAT_ID_IDA, "🧪 TEST: Ceci est un test pour Ida - Les notifications fonctionnent!");
-    
-    alert("✅ Tests envoyés ! Vérifie Telegram pour toi et Ida.");
-}
+ 
 // Déclencher les notifications APRÈS la connexion de l'utilisateur
 // Dans ta fonction selectUser(), AJOUTE cette ligne à la fin :
 // activerLesNotifications();
@@ -1409,188 +1469,137 @@ async function enregistrerTokenPush() {
         }
 
         // ========== ÉCOUTE DES MESSAGES (FIRESTORE) ==========
-        function listenToMessages() {
-            if(unsubscribeMessages) unsubscribeMessages();
-            unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
-                .orderBy('timestamp', 'asc')
-                .limitToLast(60)
-                .onSnapshot(snapshot => {
-              
-              
-                            // NOTIFICATIONS TELEGRAM
-              snapshot.docChanges().forEach(change => {
-                if (change.type === 'added') {
-                    const newMsg = change.doc.data();
-                    if (newMsg.senderId !== currentUser?.id) {
-                        console.log("🔔 Nouveau message de", newMsg.senderName);
-                        // Appel Telegram
-                        gererNotification(newMsg.senderId, newMsg.senderName, newMsg.text || "Message");
-                    }
-                }
-            });
-
-               
-                    const msgArea = document.getElementById('msg-area');
-              // 👇 AJOUTE CECI POUR RECEVOIR LES NOTIFICATIONS 👇
-// Dans listenToMessages()
-snapshot.docChanges().forEach(change => {
-    if (change.type === 'added') {
-        const newMsg = change.doc.data();
-        // Éviter les doublons (messages en attente d'envoi)
-        if (change.doc.metadata.hasPendingWrites) return;
-        
-        if (newMsg.senderId !== currentUser?.id) {
-            console.log("🔔 Nouveau message de", newMsg.senderName);
-            
-            // APPEL DIRECT - sans passer par gererNotification qui bug
-            const expediteurId = newMsg.senderId;
-            const message = newMsg.text || "📷 Média";
-            
-            if (expediteurId === 'ida') {
-                // Ida → notifier Aidara
-                envoyerTelegram(TELEGRAM_BOT_TOKEN_AIDARA, TELEGRAM_CHAT_ID_AIDARA, "📩 Message de Ida: " + message);
-            } 
-            else if (expediteurId === 'aidara') {
-                // Aidara → notifier Ida (SON bot)
-                envoyerTelegram(TELEGRAM_BOT_TOKEN_IDA, TELEGRAM_CHAT_ID_IDA, "🔔 Message de Aidara: " + message);
+function listenToMessages() {
+    if(unsubscribeMessages) unsubscribeMessages();
+    unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .limitToLast(60)
+        .onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+            const msg = change.doc.data();
+            if (msg.senderId !== currentUser?.id) {
+                sendTelegramNotification(msg.senderId);
             }
         }
-    }
-});
-                    msgArea.innerHTML = '';
-                    let lastDateStr = "";
-                    
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const msgId = doc.id;
-                        
-                        if(data.timestamp) {
-                            const dateObj = data.timestamp.toDate();
-                            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                            if(dateStr !== lastDateStr) {
-                                const sep = document.createElement('div');
-                                sep.className = 'date-separator';
-                                sep.innerText = dateStr;
-                                msgArea.appendChild(sep);
-                                lastDateStr = dateStr;
-                            } 
-                        }
-                        
-                        const row = document.createElement('div');
-                        const isSent = data.senderId === currentUser.id;
-                        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
-                        row.setAttribute('data-id', msgId);
-                        
-                        const isGiant = isOnlyEmojis(data.text);
-                      let customStyle = '';
-if (isSent) {
-    // Style personnalisé du message (prioritaire)
-    if (data.bubbleStyle) {
-        customStyle = data.bubbleStyle;
-    } else {
-        // Style par défaut depuis localStorage
-        const defaultStyle = localStorage.getItem('default_bubble_style');
-        if (defaultStyle && defaultStyle !== 'none') {
-            customStyle = defaultStyle;
-        }
-    }
-}
-                        
-                        let codedClass = '';
-                        let lockBadge = '';
-                        if (data.isCoded === true) {
-                            codedClass = 'coded';
-                            lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
-                        }
-                        
-                        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">${lockBadge}`;
-                        
-                        if (data.replyToText) {
-                            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
-                        }
-                        
-                        if (data.type === 'text') {
-                            let displayText = data.text;
-                            if (data.isCoded === true) {
-                                const originalMessage = data.originalText || data.text;
-                                displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
-                                bubbleHtml += displayText;
-                            } else {
-                                displayText = formatText(escapeHTML(displayText));
-                                bubbleHtml += `<span>${displayText}</span>`;
-                            }
-                        } else if (data.type === 'image') {
-                            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)"/>`;
-                        } else if (data.type === 'drawing') {
-                            bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
-                        } else if (data.type === 'audio') {
-                            if (data.isEphemeralAudio) {
-                                const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
-                                const isDestroyed = data.destroyed;
-                                if (isDestroyed) {
-                                    bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
-                                } else {
-                                    bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
-                                    if (alreadyPlayed) {
-                                        bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;"><i class="fa-solid fa-head-side-headphones"></i><span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span></div>`;
-                                    } else {
-                                        bubbleHtml += `<div style="padding:5px;"><audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio><small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique</small></div>`;
-                                    }
-                                }
-                            } else {
-                                bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
-                            }
-                        }
-                        
-                        const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-                        const checkMark = data.status === 'read' ? '<span class="status-tick">✓✓</span>' : '<span>✓</span>';
-                        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}</div>`;
-                        
-                        if(data.reactions && Object.keys(data.reactions).length > 0) {
-                            bubbleHtml += `<div class="applied-reactions">`;
-                            Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
-                            bubbleHtml += `</div>`;
-                        }
-                        
-                        bubbleHtml += `</div>`;
-                        row.innerHTML = bubbleHtml;
-                        
-                        if (blurModeActive) {
-                            const bubble = row.querySelector('.message-bubble');
-                            if (bubble) {
-                                bubble.classList.add('blur-active');
-                                attachBlurEvents(bubble);
-                            }
-                        }
-                        msgArea.appendChild(row);
-                    });
-                    
-                    // Codes secrets (émojis tombants)
-                    if (!snapshot.metadata.hasPendingWrites && snapshot.docs.length > 0) {
-                        const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-                        const lastMsgData = lastDoc.data();
-                        if (lastMsgData.type === 'text' && lastMsgData.text) {
-                            const text = lastMsgData.text.trim();
-                            if (!window[`played_${lastDoc.id}`]) {
-                                window[`played_${lastDoc.id}`] = true;
-                                if (text.includes('520')) {
-                                    const heartsAndFlowers = ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💞','💓','❤️‍🔥','❣️','💕','💖','💘','💝','💟','🌹','🌷','💐','🌺','😍','🥰','😘','🤩'];
-                                    triggerMixedBombardment(heartsAndFlowers);
-                                } else if (text.includes('88')) {
-                                    const kisses = ['😘','😙','💋','🤤','🫦'];
-                                    triggerMixedBombardment(kisses);
-                                } else if (text.includes('99')) {
-                                    const love = ['🥰','😇','😍'];
-                                    triggerMixedBombardment(love);
-                                } else if (text.length >= 3 && [...new Set(text)].length === 1 && isOnlyEmojis(text)) {
-                                    triggerBombardment([...text][0]);
-                                }
-                            }
+    });
+            
+            // ========== AFFICHAGE DES MESSAGES (CODE ORIGINAL) ==========
+            const msgArea = document.getElementById('msg-area');
+            msgArea.innerHTML = '';
+            let lastDateStr = "";
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const msgId = doc.id;
+                
+                if(data.timestamp) {
+                    const dateObj = data.timestamp.toDate();
+                    const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                    if(dateStr !== lastDateStr) {
+                        const sep = document.createElement('div');
+                        sep.className = 'date-separator';
+                        sep.innerText = dateStr;
+                        msgArea.appendChild(sep);
+                        lastDateStr = dateStr;
+                    } 
+                }
+                
+                const row = document.createElement('div');
+                const isSent = data.senderId === currentUser.id;
+                row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+                row.setAttribute('data-id', msgId);
+                
+                const isGiant = isOnlyEmojis(data.text);
+                let customStyle = '';
+                if (isSent) {
+                    if (data.bubbleStyle) {
+                        customStyle = data.bubbleStyle;
+                    } else {
+                        const defaultStyle = localStorage.getItem('default_bubble_style');
+                        if (defaultStyle && defaultStyle !== 'none') {
+                            customStyle = defaultStyle;
                         }
                     }
-                    msgArea.scrollTop = msgArea.scrollHeight;
-                });
-        }
+                }
+                
+                let codedClass = '';
+                let lockBadge = '';
+                if (data.isCoded === true) {
+                    codedClass = 'coded';
+                    lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
+                }
+                
+                let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">${lockBadge}`;
+                
+                if (data.replyToText) {
+                    bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+                }
+                
+                if (data.type === 'text') {
+                    let displayText = data.text;
+                    if (data.isCoded === true) {
+                        const originalMessage = data.originalText || data.text;
+                        displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+                        bubbleHtml += displayText;
+                    } else {
+                        displayText = formatText(escapeHTML(displayText));
+                        bubbleHtml += `<span>${displayText}</span>`;
+                    }
+                } else if (data.type === 'image') {
+                    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)"/>`;
+                } else if (data.type === 'drawing') {
+                    bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+                } else if (data.type === 'audio') {
+                    if (data.isEphemeralAudio) {
+                        const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
+                        const isDestroyed = data.destroyed;
+                        if (isDestroyed) {
+                            bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
+                        } else {
+                            bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
+                            if (alreadyPlayed) {
+                                bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;"><i class="fa-solid fa-head-side-headphones"></i><span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span></div>`;
+                            } else {
+                                bubbleHtml += `<div style="padding:5px;"><audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio><small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique</small></div>`;
+                            }
+                        }
+                    } else {
+                        bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
+                    }
+                }
+                
+               const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+const checkMark = data.status === 'read' ? '<span class="status-tick">✓✓</span>' : '<span>✓</span>';
+const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+                
+                if(data.reactions && Object.keys(data.reactions).length > 0) {
+                    bubbleHtml += `<div class="applied-reactions">`;
+                    Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+                    bubbleHtml += `</div>`;
+                }
+                
+                bubbleHtml += `</div>`;
+                row.innerHTML = bubbleHtml;
+                
+                if (blurModeActive) {
+                    const bubble = row.querySelector('.message-bubble');
+                    if (bubble) {
+                        bubble.classList.add('blur-active');
+                        attachBlurEvents(bubble);
+                    }
+                }
+                msgArea.appendChild(row);
+            });
+            
+            msgArea.scrollTop = msgArea.scrollHeight;
+        });
+}
+
+
+
+ 
         
         function triggerBombardment(char) {
             for (let i = 0; i < 60; i++) {
@@ -1634,6 +1643,10 @@ if (isSent) {
         function cancelReply() { replyToId = null; document.getElementById('reply-preview').style.display = 'none'; }
         
        async function sendTextMessage() {
+          if (messageEnCoursEdition) {
+          await confirmerModification();
+         return;
+      }
     const input = document.getElementById('chat-in');
     let text = input.value.trim();
     if(!text) return;
@@ -1686,6 +1699,8 @@ if (isSent) {
     }
     
     input.value = '';
+         autoResizeTextarea();
+
     cancelReply();
     toggleSendBtn(false);
     stopTypingNotify();
@@ -1706,16 +1721,19 @@ if (isSent) {
         }
         
         // ========== TYPING INDICATOR ==========
-        function handleTyping() {
-            const input = document.getElementById('chat-in');
-            const hasText = input.value.trim().length > 0;
-            toggleSendBtn(hasText);
-            
-            db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: true });
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(stopTypingNotify, 2000);
-            sendLiveTypingUpdate();
-        }
+       function handleTyping() {
+    const input = document.getElementById('chat-in');
+    const hasText = input.value.trim().length > 0;
+    toggleSendBtn(hasText);
+    
+    // 👇 AJOUTEZ CETTE LIGNE 👇
+    autoResizeTextarea();
+    
+    db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: true });
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(stopTypingNotify, 2000);
+    sendLiveTypingUpdate();
+}
         
         function stopTypingNotify() {
             if(currentUser) db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: false });
@@ -1897,6 +1915,133 @@ if (isSent) {
             hideContextMenus();
         }
         
+// ========== MODIFIER UN MESSAGE (VERSION AVEC INPUT) ==========
+let messageEnCoursEdition = null; // Stocke l'ID du message qu'on est en train d'éditer
+
+async function editSelectedMessage() {
+    if (!selectedMessageId) return;
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow) return;
+    
+    // Vérifier que c'est notre message (seul l'expéditeur peut modifier)
+    const isSent = messageRow.classList.contains('sent');
+    if (!isSent) {
+         
+        hideContextMenus();
+        return;
+    }
+    
+    // Récupérer le texte du message
+    const messageSpan = messageRow.querySelector('.message-bubble span:not(.coded-mask)');
+    if (!messageSpan) {
+        showTempNotification("❌ Impossible de modifier ce type de message (image, audio, etc.)");
+        hideContextMenus();
+        return;
+    }
+    
+    const ancienTexte = messageSpan.innerText;
+    
+    // Stocker l'ID du message à modifier
+    messageEnCoursEdition = selectedMessageId;
+    
+    // Mettre le texte dans l'input
+    const inputMessage = document.getElementById('chat-in');
+    inputMessage.value = ancienTexte;
+    inputMessage.focus();
+    
+    // Changer le bouton "Envoyer" en bouton "Modifier"
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.innerHTML = '💾 Modifier';
+    sendBtn.style.background = '#ffaa00';
+    sendBtn.style.color = '#000';
+    sendBtn.style.padding = '8px 16px';
+    sendBtn.style.borderRadius = '20px';
+    
+    // Changer la fonction du bouton
+    sendBtn.onclick = confirmerModification;
+    
+    // Ajouter un indicateur visuel
+    showTempNotification(`✏️ Modification du message... (appuyez sur "Modifier" pour valider)`);
+    
+    hideContextMenus();
+}
+
+// ========== CONFIRMER LA MODIFICATION ==========
+async function confirmerModification() {
+    if (!messageEnCoursEdition) {
+        // Si aucun message en cours d'édition, envoyer un nouveau message normalement
+        sendTextMessage();
+        return;
+    }
+    
+    const inputMessage = document.getElementById('chat-in');
+    const nouveauTexte = inputMessage.value.trim();
+    
+    if (nouveauTexte === "") {
+        showTempNotification("❌ Le message ne peut pas être vide !");
+        return;
+    }
+    
+    try {
+        // Mettre à jour dans Firestore
+        const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageEnCoursEdition);
+        
+        await messageRef.update({
+            text: nouveauTexte,
+            originalText: nouveauTexte,
+            isCoded: false,
+            modifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            modified: true
+        });
+        
+        showTempNotification("✅ Message modifié !");
+        
+        // Réinitialiser l'input
+        inputMessage.value = '';
+      autoResizeTextarea();
+
+        inputMessage.focus();
+        
+        // Remettre le bouton "Envoyer" normal
+        resetSendButton();
+        
+        // Réinitialiser la variable
+        messageEnCoursEdition = null;
+        
+    } catch(error) {
+        console.error("Erreur modification:", error);
+        showTempNotification("❌ Erreur lors de la modification");
+    }
+}
+
+// ========== RÉINITIALISER LE BOUTON ENVOYER ==========
+function resetSendButton() {
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.innerHTML = 'Envoyer';
+    sendBtn.style.background = '';
+    sendBtn.style.color = '';
+    sendBtn.style.padding = '';
+    sendBtn.style.borderRadius = '';
+    sendBtn.onclick = sendTextMessage;
+    
+    // Réinitialiser la variable
+    messageEnCoursEdition = null;
+}
+
+// ========== MODIFIER LA FONCTION SEND EXISTANTE ==========
+// Gardez votre fonction sendTextMessage() originale, mais ajoutez cette vérification au début
+// Dans votre sendTextMessage(), ajoutez ces premières lignes :
+
+// async function sendTextMessage() {
+//     // Si on est en mode édition, appeler confirmerModification à la place
+//     if (messageEnCoursEdition) {
+//         await confirmerModification();
+//         return;
+//     }
+//     
+//     // ... reste de votre code normal ...
+// }
         // ========== STYLES DE BULLES ==========
         let styleMenuOpen = false;
         
@@ -2779,6 +2924,8 @@ async function sendSecretMessage() {
     };
     
     input.value = '';
+  autoResizeTextarea();
+
     
     try {
         await db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages').add(msgData);
@@ -2872,107 +3019,197 @@ function loadDefaultBubbleStyle() {
 setTimeout(loadDefaultBubbleStyle, 200);
       
       
-      // NOTIFICATIONS SIMPLES QUI MARCHENT
-async function verifierNouveauxMessages() {
-    if (!currentUser) return;
-    
-    // Récupérer les 5 derniers messages non lus
-    const messagesRef = db.collection('chats').doc(CHAT_ID).collection('messages');
-    const derniersMessages = await messagesRef.orderBy('timestamp', 'desc').limit(5).get();
-    
-    derniersMessages.forEach(doc => {
-        const msg = doc.data();
-        // Si c'est un message de l'autre personne et non lu
-        if (msg.senderId !== currentUser.id && !msg.notificationEnvoyee) {
-            
-            // Afficher notification
-            if (Notification.permission === "granted") {
-                new Notification(`${msg.senderName}`, {
-                    body: msg.text || "Nouveau message",
-                    icon: 'https://i.postimg.cc/J400K7Sd/new-Notification.png'
-                });
-            }
-            
-            // Marquer comme notifié pour ne pas spammer
-            doc.ref.update({ notificationEnvoyee: true });
-        }
-    });
-}
-
-// Vérifier les messages toutes les 3 secondes (même app fermée)
-setInterval(() => {
-    if (currentUser) verifierNouveauxMessages();
-}, 3000);
-      
-      // ========== NOTIFICATIONS AVEC NTFY (GRATUIT ET SIMPLE) ==========
-
-// Ton sujet ntfy (le nom que tu as choisi)
-const NTFY_TOPIC = "mon_chat_ida_aidara";
-
-// Fonction pour envoyer une notification à l'autre personne
-async function envoyerNotificationNTFY(destinataireNom, message) {
-    try {
-        await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
-            method: 'POST',
-            body: message,
-            headers: {
-                'Title': `📩 Nouveau message de ${destinataireNom}`,
-                'Priority': '5',
-                'Tags': 'bell'
-            }
-        });
-        console.log("✅ Notification envoyée");
-    } catch(error) {
-        console.error("❌ Erreur:", error);
-    }
-}
-
-// Fonction pour recevoir les notifications (à mettre dans l'app de l'autre)
-function ecouterNotificationsNTFY() {
-    // Se connecter au sujet ntfy
-    const eventSource = new EventSource(`https://ntfy.sh/${NTFY_TOPIC}/sse`);
-    
-    eventSource.onmessage = (event) => {
-        // Quand une notification arrive
-        if (Notification.permission === "granted") {
-            new Notification("📱 Nouveau message", {
-                body: event.data,
-                icon: "https://i.postimg.cc/J400K7Sd/new-Notification.png"
-            });
-        }
-    };
-    
-    eventSource.onerror = (error) => {
-        console.log("Erreur connexion:", error);
-    };
-}
+     
 
 // Démarrer l'écoute quand l'utilisateur se connecte
-      
-      async function testerBotIda() {
-    console.log("🔔 Test du bot d'Ida...");
-    
-    // Utilise le BOT d'Ida pour envoyer à IDA
-    const botToken = "8921495493:AAEa1oO9gTh-Lk_QLa5MA65UXllbsLSUoZE";
-    const chatId = "6515818320";
-    const message = "🧪 TEST: Ceci est un test depuis le bot d'Ida !";
-    
-    try {
-        const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
-        const response = await fetch(url);
-        const result = await response.json();
-        
-        if (result.ok) {
-            alert("✅ Notification envoyée à Ida ! Elle doit la recevoir sur Telegram.");
-        } else {
-            alert("❌ Erreur: " + result.description);
-        }
-    } catch(e) {
-        alert("❌ Erreur: " + e.message);
-    }
-}
+ 
 // Dans ta fonction selectUser(), ajoute cette ligne à la fin :
 // ecouterNotificationsNTFY();
+      // ========== BLOQUEUR DE NOTIFICATIONS DOUBLONS ==========
+// Ce code intercepte TOUTES les tentatives d'envoi Telegram et bloque les doublons
+
+// Sauvegarder les anciennes fonctions
+const ancienneFetch = window.fetch;
+const messagesEnvoyes = new Set();
+let dernierMessageRecu = "";
+let compteurNotifications = 0;
+
+// Intercepter TOUS les appels fetch vers Telegram
+window.fetch = function(url, options) {
+    // Vérifier si c'est un appel vers Telegram
+    if (typeof url === 'string' && url.includes('api.telegram.org/bot')) {
+        
+        // Extraire le texte du message
+        let texteMessage = "";
+        if (url.includes('text=')) {
+            const match = url.match(/text=([^&]+)/);
+            if (match) {
+                texteMessage = decodeURIComponent(match[1]);
+            }
+        }
+        
+        // Créer une clé unique pour ce message (basée sur le texte et le temps)
+        const maintenant = Date.now();
+        const cleUnique = `${texteMessage.substring(0, 50)}_${Math.floor(maintenant / 5000)}`; // Regroupe par période de 5 secondes
+        
+        // BLOQUER les messages qui contiennent du CONTENU (anciens)
+        const contientContenu = texteMessage.includes('teste') || 
+                                texteMessage.includes('Message de') || 
+                                (texteMessage.length > 30 && !texteMessage.includes('Ouvrez l\'application'));
+        
+        // BLOQUER les messages qui sont des DOUBLONS
+        if (messagesEnvoyes.has(cleUnique) || contientContenu) {
+            console.log("🚫 BLOQUÉ (doublon ou contenu):", texteMessage.substring(0, 50));
+            
+            // Retourner une fausse promesse pour ne pas bloquer l'app
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ ok: true, description: "Bloqué par anti-doublon" })
+            });
+        }
+        
+        // Autoriser le premier message et l'enregistrer
+        messagesEnvoyes.add(cleUnique);
+        console.log("✅ AUTORISÉ (unique):", texteMessage.substring(0, 50));
+        
+        // Nettoyer le cache toutes les 10 secondes
+        setTimeout(() => {
+            messagesEnvoyes.delete(cleUnique);
+        }, 10000);
+    }
+    
+    // Appeler la fonction fetch originale
+    return ancienneFetch.apply(this, arguments);
+};
+
+// Supprimer spécifiquement les listeners/intervalle qui envoient des notifications
+(function nettoyerAnciennesNotifications() {
+    console.log("🧹 Nettoyage des anciennes notifications...");
+    
+    // Désactiver les anciens setInterval
+    const highestId = setInterval(() => {}, 0);
+    for (let i = 0; i < highestId; i++) {
+        clearInterval(i);
+    }
+    
+    // Remettre uniquement les intervals nécessaires (batterie, etc.)
+    if (typeof getBatteryLevel === 'function') {
+        setTimeout(() => getBatteryLevel(), 1000);
+    }
+    
+    console.log("✅ Nettoyage terminé - " + highestId + " intervalles supprimés");
+})();
+
+// Bloquer spécifiquement les fonctions qui envoient les anciens messages
+if (typeof gererNotification === 'function') {
+    window.gererNotification = function() {
+        console.log("🚫 Bloqué: gererNotification");
+        return Promise.resolve();
+    };
+}
+
+if (typeof notifierAidara === 'function') {
+    window.notifierAidara = function() {
+        console.log("🚫 Bloqué: notifierAidara");
+        return Promise.resolve();
+    };
+}
+
+if (typeof notifierIda === 'function') {
+    window.notifierIda = function() {
+        console.log("🚫 Bloqué: notifierIda");
+        return Promise.resolve();
+    };
+}
+
+if (typeof verifierNouveauxMessages === 'function') {
+    // Remplacer la fonction par une version vide
+    window.verifierNouveauxMessages = function() {
+        console.log("🚫 Bloqué: verifierNouveauxMessages");
+        return Promise.resolve();
+    };
+}
+
+// Désactiver l'ancien listener Firestore qui envoyait les notifications
+// (sans casser l'affichage des messages)
+const originalOnSnapshot = firebase.firestore.Query.prototype.onSnapshot;
+firebase.firestore.Query.prototype.onSnapshot = function(...args) {
+    // Créer une version modifiée du callback pour filtrer les notifications
+    if (args[0] && typeof args[0] === 'function') {
+        const originalCallback = args[0];
+        let premierAppel = true;
+        
+        const nouveauCallback = (snapshot) => {
+            // Appeler le callback original pour l'affichage
+            originalCallback(snapshot);
+            
+            // Bloquer les notifications multiples
+            if (premierAppel) {
+                premierAppel = false;
+                setTimeout(() => { premierAppel = true; }, 2000);
+            }
+        };
+        
+        return originalOnSnapshot.call(this, nouveauCallback, args[1]);
+    }
+    
+    return originalOnSnapshot.apply(this, args);
+};
+
+console.log("🔥 ANTI-DOUBLON ACTIF - Seul le premier message Telegram passe !");
+      
+      // ========== EMPÊCHER LE MENU CONTEXTUEL NATIF SUR MOBILE ==========
+document.addEventListener('contextmenu', function(e) {
+    // Empêche le menu contextuel natif sur TOUS les éléments
+    e.preventDefault();
+    return false;
+});
+
+// Empêcher également la sélection de texte sur les messages
+document.querySelectorAll('.message-bubble').forEach(bubble => {
+    bubble.addEventListener('selectstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+});
+      
+      // Gestion du clic long (appui long) sur mobile
+let pressTimerMobile = null;
+
+function startPressTimer(e, msgId) {
+    pressTimerMobile = setTimeout(() => {
+        // Déclencher le menu contextuel après 500ms d'appui
+        handleContextMenu(e, msgId);
+    }, 500);
+}
+
+function cancelPressTimer() {
+    if (pressTimerMobile) {
+        clearTimeout(pressTimerMobile);
+        pressTimerMobile = null;
+    }
+}
+
+// Modifiez votre code HTML des bulles pour ajouter ces événements :
+// Dans listenToMessages(), remplacez l'attribut du message-bubble par :
+// oncontextmenu="handleContextMenu(event, 'msgId')" 
+// ontouchstart="startPressTimer(event, 'msgId')"
+// ontouchend="cancelPressTimer()"
+// ontouchmove="cancelPressTimer()"
+      
+      
+      // ========== AUTO-REDIMENSIONNER LE TEXTAREA ==========
+function autoResizeTextarea() {
+    const textarea = document.getElementById('chat-in');
+    // Réinitialiser la hauteur pour calculer correctement
+    textarea.style.height = 'auto';
+    // Définir la nouvelle hauteur (max 5 lignes)
+    const maxHeight = 120; // 5 lignes x 24px
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = newHeight + 'px';
+    // Gérer le défilement si dépasse 5 lignes
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+}
     </script>
   
   
