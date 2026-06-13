@@ -735,7 +735,19 @@
     </style>
 </head>
 <body>
-
+<!-- Ajoute ça juste après la balise <body> -->
+<script>
+    // Force la page à s'afficher correctement
+    if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        // Essaie de charger l'app quand même
+        window.addEventListener('load', function() {
+            const loginScreen = document.getElementById('login-screen');
+            if (loginScreen) {
+                loginScreen.style.display = 'flex';
+            }
+        });
+    }
+</script>
     <div class="app-container">
         <div id="login-screen">
             <div class="login-card">
