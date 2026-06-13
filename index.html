@@ -9,7 +9,8 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
@@ -1086,17 +1087,80 @@
 
     <script>
         // ========== CONFIGURATION FIREBASE (2ème code - vos identifiants) ==========
-        const firebaseConfig = {
-            apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
-            authDomain: "messagerie-65abc.firebaseapp.com",
-            projectId: "messagerie-65abc",
-            storageBucket: "messagerie-65abc.firebasestorage.app",
-            messagingSenderId: "363641716532",
-            appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
-        };
+      // ========== CONFIGURATION FIREBASE ==========
+const firebaseConfig = {
+    apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
+    authDomain: "messagerie-65abc.firebaseapp.com",
+    projectId: "messagerie-65abc",
+    storageBucket: "messagerie-65abc.firebasestorage.app",
+    messagingSenderId: "363641716532",
+    appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
+};
         
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const messaging = firebase.messaging();
+
+// ========== FONCTION NOTIFICATIONS PUSH ==========
+async function activerLesNotifications() {
+    try {
+        // Vérifier si le navigateur supporte les notifications
+        if (!('Notification' in window)) {
+            console.log("Ce navigateur ne supporte pas les notifications");
+            return;
+        }
+        
+        // Enregistrer le Service Worker
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('Service Worker enregistré avec succès');
+            
+            // Demander la permission
+            const permission = await Notification.requestPermission();
+            
+            if (permission === 'granted') {
+                console.log('Permission notifications accordée !');
+                
+                // Ta clé VAPID
+                const vapidKey = 'BPwxUfJfIr_sR5sMxa6ZAFr0XWxsf3Vin904KaB1CXj6THncXEDqwIfbceN8DxGhyUTPVY1d5khXbxMUtV29Fog';
+                
+                // Récupérer le token
+                const token = await messaging.getToken({
+                    serviceWorkerRegistration: registration,
+                    vapidKey: vapidKey
+                });
+                
+                if (token) {
+                    console.log("Token FCM:", token);
+                    
+                    // Sauvegarder le token dans Firestore pour l'utilisateur connecté
+                    if (currentUser) {
+                        await db.collection('users').doc(currentUser.id).set({
+                            fcmToken: token,
+                            lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                        console.log("Token sauvegardé pour", currentUser.name);
+                    }
+                } else {
+                    console.log("Aucun token reçu");
+                }
+            } else {
+                console.log("Permission notifications refusée");
+            }
+        } else {
+            console.log("Service Worker non supporté");
+        }
+    } catch(error) {
+        console.error("Erreur notifications:", error);
+    }
+}
+
+// Déclencher les notifications APRÈS la connexion de l'utilisateur
+// Dans ta fonction selectUser(), AJOUTE cette ligne à la fin :
+// activerLesNotifications();
+
+// Pour tester immédiatement (optionnel) :
+// activerLesNotifications();
         const CHAT_ID = "chat_ida_aidara";
 
         // ========== ÉTAT DE L'APPLICATION ==========
@@ -1206,6 +1270,7 @@
             listenToOtherUserBattery();
             listenForFlashSignals();
             saveDefaultMood();
+            activerLesNotifications();
         }
 
         function logout() {
