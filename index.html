@@ -8,6 +8,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
+  
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "8600549d-6bc4-4a88-a729-070758622d2f",
+    });
+  });
+</script>
+  
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
@@ -1359,6 +1370,33 @@ async function enregistrerTokenPush() {
                 .orderBy('timestamp', 'asc')
                 .limitToLast(60)
                 .onSnapshot(snapshot => {
+              
+              snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const newMsg = change.doc.data();
+                    if (newMsg.senderId !== currentUser?.id) {
+                        // Notification OneSignal
+                        try {
+                            let msgPreview = "Nouveau message";
+                            if (newMsg.text) msgPreview = newMsg.text.substring(0, 100);
+                            else if (newMsg.type === 'image') msgPreview = "📷 Photo envoyée";
+                            else if (newMsg.type === 'audio') msgPreview = "🎵 Message vocal";
+                            else if (newMsg.type === 'drawing') msgPreview = "🎨 Dessin";
+                            
+                            OneSignal.sendSelfNotification(
+                                newMsg.senderName || targetUser?.name || "Quelqu'un",
+                                msgPreview,
+                                window.location.href
+                            );
+                            console.log("✅ Notification reçue");
+                        } catch(e) {
+                            console.log("Erreur notif:", e);
+                        }
+                    }
+                }
+            });
+
+               
                     const msgArea = document.getElementById('msg-area');
                     msgArea.innerHTML = '';
                     let lastDateStr = "";
@@ -1536,69 +1574,78 @@ if (isSent) {
         
         function cancelReply() { replyToId = null; document.getElementById('reply-preview').style.display = 'none'; }
         
-        async function sendTextMessage() {
-            const input = document.getElementById('chat-in');
-            let text = input.value.trim();
-            if(!text) return;
-            
-            if (translateModeActive && currentTargetLang) {
-                showTempNotification(`🔄 Traduction en cours vers ${currentTargetLang.toUpperCase()}...`);
-                const translatedText = await translateTextToLanguage(text, currentTargetLang);
-                if (translatedText && translatedText !== text) {
-                    text = translatedText;
-                    showTempNotification(`✅ Message traduit en ${currentTargetLang.toUpperCase()}`);
-                }
-                translateModeActive = false;
-                const translateBtn = document.getElementById('translate-btn');
-                if(translateBtn) translateBtn.style.color = '';
-            }
-            
-            let finalText = text;
-            let isCoded = codeModeActive;
-            
-            if (codeModeActive) {
-                finalText = generateMask(text.length);
-                codeModeActive = false;
-                const codeBtn = document.getElementById('code-mode-btn');
-                if(codeBtn) {
-                    codeBtn.style.color = '';
-                    codeBtn.style.textShadow = '';
-                }
-            }
-            
-            const msgData = {
-                text: finalText,
-                originalText: isCoded ? text : null,
-                isCoded: isCoded,
-                senderId: currentUser.id,
-                senderName: currentUser.name,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: "sent",
-                readBy: [currentUser.id],
-                type: "text",
-                
-                mediaUrl: null
-            };
-            
-            if(replyToId) {
-                const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
-                if(parentRow) {
-                    msgData.replyToId = replyToId;
-                    msgData.replyToText = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
-                    msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
-                }
-            }
-            
-            input.value = '';
-            cancelReply();
-            toggleSendBtn(false);
-            stopTypingNotify();
-            clearLiveTyping();
-            
-            await db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData);
-          
-          envoyerNotificationNTFY(targetUser.name, text);
+       async function sendTextMessage() {
+    const input = document.getElementById('chat-in');
+    let text = input.value.trim();
+    if(!text) return;
+    
+    if (translateModeActive && currentTargetLang) {
+        showTempNotification(`🔄 Traduction en cours vers ${currentTargetLang.toUpperCase()}...`);
+        const translatedText = await translateTextToLanguage(text, currentTargetLang);
+        if (translatedText && translatedText !== text) {
+            text = translatedText;
+            showTempNotification(`✅ Message traduit en ${currentTargetLang.toUpperCase()}`);
         }
+        translateModeActive = false;
+        const translateBtn = document.getElementById('translate-btn');
+        if(translateBtn) translateBtn.style.color = '';
+    }
+    
+    let finalText = text;
+    let isCoded = codeModeActive;
+    
+    if (codeModeActive) {
+        finalText = generateMask(text.length);
+        codeModeActive = false;
+        const codeBtn = document.getElementById('code-mode-btn');
+        if(codeBtn) {
+            codeBtn.style.color = '';
+            codeBtn.style.textShadow = '';
+        }
+    }
+    
+    const msgData = {
+        text: finalText,
+        originalText: isCoded ? text : null,
+        isCoded: isCoded,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: "text",
+        mediaUrl: null
+    };
+    
+    if(replyToId) {
+        const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
+        if(parentRow) {
+            msgData.replyToId = replyToId;
+            msgData.replyToText = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+            msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
+        }
+    }
+    
+    input.value = '';
+    cancelReply();
+    toggleSendBtn(false);
+    stopTypingNotify();
+    clearLiveTyping();
+    
+    await db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData);
+    
+    // ⭐⭐⭐ AJOUTE CETTE PARTIE POUR LES NOTIFICATIONS ⭐⭐⭐
+    try {
+        await OneSignal.sendSelfNotification(
+            `${currentUser.name} vous a envoyé un message`,
+            text.substring(0, 100),
+            window.location.href
+        );
+        console.log("✅ Notification OneSignal envoyée");
+    } catch(error) {
+        console.log("❌ Erreur OneSignal:", error);
+    }
+}
         
         function generateMask(length) {
             const chars = ['#', '@', '×', '/', '+', '-', '•', '★', '◆', '▪', '▫', '●', '○', '◊', '♠', '♣', '♥', '♦'];
