@@ -823,6 +823,8 @@ input, textarea {
     white-space: pre-wrap;        /* Conserve les espaces multiples et retours ligne */
     display: block;
 }
+      
+        
     </style>
 </head>
 <body>
@@ -1553,7 +1555,15 @@ function listenToMessages() {
                     lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
                 }
                 
-                let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" oncontextmenu="handleContextMenu(event, '${msgId}')" ondblclick="handleDoubleTap(event, '${msgId}')">${lockBadge}`;
+              let bubbleHtml = `<div class="message-bubble ..." 
+    oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
+    ondblclick="handleDoubleTap(event, '${msgId}')"
+    ontouchstart="demarrerAppuiLong(event, '${msgId}')"
+    ontouchend="annulerAppuiLong()"
+    ontouchmove="annulerAppuiLong()"
+    onmousedown="demarrerAppuiLong(event, '${msgId}')"
+    onmouseup="annulerAppuiLong()"
+    onmouseleave="annulerAppuiLong()">`;
                 
                 if (data.replyToText) {
                     bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
@@ -1906,15 +1916,49 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
             document.getElementById('react-dock').style.display = 'none';
         }
         
-        function handleContextMenu(e, msgId) {
-            e.preventDefault();
-            selectedMessageId = msgId;
-            const menu = document.getElementById('ctx-menu');
-            menu.style.display = 'block';
-            menu.style.top = Math.min(e.pageY, window.innerHeight - 100) + 'px';
-            menu.style.left = Math.min(e.pageX, window.innerWidth - 150) + 'px';
-            document.addEventListener('click', hideContextMenus);
-        }
+       function handleContextMenu(e, msgId) {
+    // Empêcher le comportement par défaut
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    
+    selectedMessageId = msgId;
+    
+    const menu = document.getElementById('ctx-menu');
+    
+    // Positionner le menu au centre de l'écran sur mobile
+    let topPos, leftPos;
+    
+    if (e.touches || (e.clientX === undefined && e.pageX === undefined)) {
+        // C'est un toucher mobile - centrer le menu
+        topPos = (window.innerHeight / 2) - 100;
+        leftPos = (window.innerWidth / 2) - 100;
+    } else {
+        // C'est un clic souris - positionner près du curseur
+        topPos = Math.min(e.pageY, window.innerHeight - 150);
+        leftPos = Math.min(e.pageX, window.innerWidth - 150);
+    }
+    
+    // S'assurer que le menu reste dans l'écran
+    topPos = Math.max(10, Math.min(topPos, window.innerHeight - 200));
+    leftPos = Math.max(10, Math.min(leftPos, window.innerWidth - 180));
+    
+    menu.style.display = 'block';
+    menu.style.position = 'fixed';
+    menu.style.top = topPos + 'px';
+    menu.style.left = leftPos + 'px';
+    menu.style.zIndex = '9999';
+    
+    // Fermer le menu si on clique ailleurs
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu() {
+            menu.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+        });
+    }, 100);
+    
+    // Empêcher la propagation
+    return false;
+}
         
         function hideContextMenus() {
             document.getElementById('ctx-menu').style.display = 'none';
@@ -1987,7 +2031,7 @@ sendBtn.style.color = '#ffaa00';
     sendBtn.onclick = confirmerModification;
     
     // Ajouter un indicateur visuel
-    showTempNotification(`✏️ Modification du message... (appuyez sur "Modifier" pour valider)`);
+    
     
     hideContextMenus();
 }
@@ -2020,7 +2064,7 @@ async function confirmerModification() {
             modified: true
         });
         
-        showTempNotification("✅ Message modifié !");
+       
         
         // Réinitialiser l'input
         inputMessage.value = '';
@@ -3234,6 +3278,61 @@ function autoResizeTextarea() {
     textarea.style.height = newHeight + 'px';
     // Gérer le défilement si dépasse 5 lignes
     textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+}
+      
+      // ========== BLOQUER DÉFILEMENT HORIZONTAL ==========
+document.body.addEventListener('touchmove', function(e) {
+    // Si on est en train de défiler horizontalement
+    if (Math.abs(e.touches[0].clientX - (e.touches[0].clientX - e.touches[0].movementX)) > 10) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+// Forcer la largeur à 100%
+window.addEventListener('resize', function() {
+    document.documentElement.style.overflowX = 'hidden';
+    document.body.style.overflowX = 'hidden';
+});
+document.documentElement.style.overflowX = 'hidden';
+document.body.style.overflowX = 'hidden';
+      
+      // ========== GESTION DE L'APPUI LONG POUR MENU CONTEXTUEL ==========
+let appuiLongTimer = null;
+let elementAppuye = null;
+
+function demarrerAppuiLong(event, msgId) {
+    // Annuler si déjà un timer
+    if (appuiLongTimer) clearTimeout(appuiLongTimer);
+    
+    // Stocker l'ID du message
+    elementAppuye = msgId;
+    
+    // Démarrer le timer
+    appuiLongTimer = setTimeout(() => {
+        // Créer un faux événement avec la position actuelle du toucher
+        let fakeEvent = {
+            preventDefault: () => {},
+            pageY: event.touches ? event.touches[0].pageY : (event.pageY || window.scrollY + 100),
+            pageX: event.touches ? event.touches[0].pageX : (event.pageX || window.scrollX + 100),
+            clientY: event.touches ? event.touches[0].clientY : (event.clientY || 100),
+            clientX: event.touches ? event.touches[0].clientX : (event.clientX || 100)
+        };
+        
+        // Ouvrir le menu
+        handleContextMenu(fakeEvent, msgId);
+        
+        // Nettoyer
+        clearTimeout(appuiLongTimer);
+        appuiLongTimer = null;
+    }, 500);
+}
+
+function annulerAppuiLong() {
+    if (appuiLongTimer) {
+        clearTimeout(appuiLongTimer);
+        appuiLongTimer = null;
+    }
+    elementAppuye = null;
 }
     </script>
   
