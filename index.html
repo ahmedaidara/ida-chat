@@ -1309,7 +1309,7 @@ async function enregistrerTokenPush() {
         if (token) {
             console.log("🎯 Token FCM:", token);
             
-            // Sauvegarder dans Firestore
+            // Sauvegarder dans Firestor
             if (currentUser) {
                 await db.collection('users').doc(currentUser.id).set({
                     fcmToken: token,
@@ -2775,6 +2775,39 @@ function loadDefaultBubbleStyle() {
 
 // Appeler cette fonction au chargement   
 setTimeout(loadDefaultBubbleStyle, 200);
+      
+      
+      // NOTIFICATIONS SIMPLES QUI MARCHENT
+async function verifierNouveauxMessages() {
+    if (!currentUser) return;
+    
+    // Récupérer les 5 derniers messages non lus
+    const messagesRef = db.collection('chats').doc(CHAT_ID).collection('messages');
+    const derniersMessages = await messagesRef.orderBy('timestamp', 'desc').limit(5).get();
+    
+    derniersMessages.forEach(doc => {
+        const msg = doc.data();
+        // Si c'est un message de l'autre personne et non lu
+        if (msg.senderId !== currentUser.id && !msg.notificationEnvoyee) {
+            
+            // Afficher notification
+            if (Notification.permission === "granted") {
+                new Notification(`${msg.senderName}`, {
+                    body: msg.text || "Nouveau message",
+                    icon: 'https://i.imgur.com/ICON.png'
+                });
+            }
+            
+            // Marquer comme notifié pour ne pas spammer
+            doc.ref.update({ notificationEnvoyee: true });
+        }
+    });
+}
+
+// Vérifier les messages toutes les 3 secondes (même app fermée)
+setInterval(() => {
+    if (currentUser) verifierNouveauxMessages();
+}, 3000);
     </script>
 </body>
 </html>
