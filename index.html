@@ -1599,6 +1599,8 @@ if (isSent) {
             clearLiveTyping();
             
             await db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData);
+          
+          envoyerNotificationNTFY(targetUser.name, text);
         }
         
         function generateMask(length) {
@@ -2808,6 +2810,53 @@ async function verifierNouveauxMessages() {
 setInterval(() => {
     if (currentUser) verifierNouveauxMessages();
 }, 3000);
+      
+      // ========== NOTIFICATIONS AVEC NTFY (GRATUIT ET SIMPLE) ==========
+
+// Ton sujet ntfy (le nom que tu as choisi)
+const NTFY_TOPIC = "mon_chat_ida_aidara";
+
+// Fonction pour envoyer une notification à l'autre personne
+async function envoyerNotificationNTFY(destinataireNom, message) {
+    try {
+        await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+            method: 'POST',
+            body: message,
+            headers: {
+                'Title': `📩 Nouveau message de ${destinataireNom}`,
+                'Priority': '5',
+                'Tags': 'bell'
+            }
+        });
+        console.log("✅ Notification envoyée");
+    } catch(error) {
+        console.error("❌ Erreur:", error);
+    }
+}
+
+// Fonction pour recevoir les notifications (à mettre dans l'app de l'autre)
+function ecouterNotificationsNTFY() {
+    // Se connecter au sujet ntfy
+    const eventSource = new EventSource(`https://ntfy.sh/${NTFY_TOPIC}/sse`);
+    
+    eventSource.onmessage = (event) => {
+        // Quand une notification arrive
+        if (Notification.permission === "granted") {
+            new Notification("📱 Nouveau message", {
+                body: event.data,
+                icon: "https://i.imgur.com/icon.png"
+            });
+        }
+    };
+    
+    eventSource.onerror = (error) => {
+        console.log("Erreur connexion:", error);
+    };
+}
+
+// Démarrer l'écoute quand l'utilisateur se connecte
+// Dans ta fonction selectUser(), ajoute cette ligne à la fin :
+// ecouterNotificationsNTFY();
     </script>
 </body>
 </html>
