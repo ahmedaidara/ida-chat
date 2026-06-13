@@ -800,6 +800,29 @@ input, textarea {
     -webkit-user-select: text !important;
     user-select: text !important;
 }
+      
+      #send-btn {
+    font-size: 1.3rem;
+    width: 35px;
+    text-align: center;
+    cursor: pointer;
+}
+      
+      /* Correction de l'affichage des messages */
+.message-bubble {
+    word-wrap: break-word;        /* Coupe les mots trop longs */
+    word-break: break-word;       /* Casse les mots si nécessaire */
+    white-space: normal;          /* Respecte les espaces et retours à la ligne */
+    overflow-wrap: break-word;    /* Évite le débordement */
+    max-width: 80%;               /* Largeur maximale */
+    min-width: 60px;              /* Largeur minimale */
+}
+
+/* Préserver les espaces et retours à la ligne */
+.message-bubble span {
+    white-space: pre-wrap;        /* Conserve les espaces multiples et retours ligne */
+    display: block;
+}
     </style>
 </head>
 <body>
@@ -1544,7 +1567,9 @@ function listenToMessages() {
                         bubbleHtml += displayText;
                     } else {
                         displayText = formatText(escapeHTML(displayText));
-                        bubbleHtml += `<span>${displayText}</span>`;
+// Remplacer les retours à la ligne par <br>
+displayText = displayText.replace(/\n/g, '<br>');
+bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
                     }
                 } else if (data.type === 'image') {
                     bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)"/>`;
@@ -1952,9 +1977,9 @@ async function editSelectedMessage() {
     
     // Changer le bouton "Envoyer" en bouton "Modifier"
     const sendBtn = document.getElementById('send-btn');
-    sendBtn.innerHTML = '💾 Modifier';
-    sendBtn.style.background = '#ffaa00';
-    sendBtn.style.color = '#000';
+    sendBtn.innerHTML = '<i class="fa-regular fa-pen-to-square"></i>';
+    sendBtn.style.background = 'none';
+sendBtn.style.color = '#ffaa00';
     sendBtn.style.padding = '8px 16px';
     sendBtn.style.borderRadius = '20px';
     
@@ -2018,7 +2043,7 @@ async function confirmerModification() {
 // ========== RÉINITIALISER LE BOUTON ENVOYER ==========
 function resetSendButton() {
     const sendBtn = document.getElementById('send-btn');
-    sendBtn.innerHTML = 'Envoyer';
+    sendBtn.innerHTML = '<i class="fa-regular fa-paper-plane"></i>';
     sendBtn.style.background = '';
     sendBtn.style.color = '';
     sendBtn.style.padding = '';
