@@ -1045,6 +1045,10 @@
     </select>
     <button onclick="saveDefaultBubbleStyle()" style="width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 10px; color: white; cursor: pointer;">✅ Appliquer ce style par défaut</button>
 </div>
+      
+      <button onclick="demanderPermissionNotifications()" style="background:#0095f6; color:white; padding:10px; border:none; border-radius:10px; margin:5px;">
+    🔔 Activer les notifications
+</button>
         
         <!-- Section Fond d'écran -->
         <div class="settings-section">
@@ -1248,7 +1252,78 @@ async function activerLesNotifications() {
                 setTimeout(() => notif.remove(), 300);
             }, 2000);
         }
+// ========== FONCTION POUR DEMANDER LES NOTIFICATIONS ==========
+// ========== FONCTION POUR DEMANDER LES NOTIFICATIONS ==========
+async function demanderPermissionNotifications() {
+    console.log("🔔 Tentative d'activation des notifications...");
+    
+    // Vérifier si le navigateur supporte les notifications
+    if (!("Notification" in window)) {
+        console.log("Ce navigateur ne supporte pas les notifications");
+        alert("⚠️ Votre navigateur ne supporte pas les notifications");
+        return;
+    }
+    
+    // Demander la permission DIRECTEMENT (sans vérifier l'état actuel)
+    console.log("📢 Demande de permission en cours...");
+    const permission = await Notification.requestPermission();
+    
+    console.log("🔔 Résultat:", permission);
+    
+    if (permission === "granted") {
+        console.log("✅ Permission accordée !");
+        // Afficher une notification test
+        new Notification("✅ Notifications activées !", {
+            body: "Vous recevrez désormais les messages même quand l'application est fermée",
+            icon: "/icon-192.png"
+        });
+        enregistrerTokenPush();
+    } else if (permission === "denied") {
+        console.log("❌ Permission refusée par l'utilisateur");
+        alert("❌ Vous avez refusé les notifications. Pour les activer, allez dans les paramètres de votre navigateur.");
+    } else {
+        console.log("⏸️ Permission:", permission);
+    }
+}
 
+// Fonction pour enregistrer le token push
+async function enregistrerTokenPush() {
+    try {
+        // Vérifier si le service worker est supporté
+        if (!('serviceWorker' in navigator)) {
+            console.log("Service Worker non supporté");
+            return;
+        }
+        
+        // Enregistrer le service worker
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log("Service Worker enregistré");
+        
+        // Récupérer le token FCM
+        const vapidKey = 'BPwxUfJfIr_sR5sMxa6ZAFr0XWxsf3Vin904KaB1CXj6THncXEDqwIfbceN8DxGhyUTPVY1d5khXbxMUtV29Fog';
+        const token = await messaging.getToken({
+            serviceWorkerRegistration: registration,
+            vapidKey: vapidKey
+        });
+        
+        if (token) {
+            console.log("🎯 Token FCM:", token);
+            
+            // Sauvegarder dans Firestore
+            if (currentUser) {
+                await db.collection('users').doc(currentUser.id).set({
+                    fcmToken: token,
+                    lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                console.log("💾 Token sauvegardé pour", currentUser.name);
+            }
+        } else {
+            console.log("⚠️ Aucun token reçu");
+        }
+    } catch(error) {
+        console.error("❌ Erreur token:", error);
+    }
+}
         // ========== SÉLECTION UTILISATEUR ==========
         function selectUser(userKey) {
             if(userKey === 'ida') {
@@ -1271,6 +1346,7 @@ async function activerLesNotifications() {
             listenForFlashSignals();
             saveDefaultMood();
             activerLesNotifications();
+          demanderPermissionNotifications();
         }
 
         function logout() {
