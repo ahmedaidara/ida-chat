@@ -859,7 +859,7 @@ input, textarea {
     <div class="app-container">
         <div id="login-screen">
             <div class="login-card">
-                <h2><i class="fa-brands fa-instagram"></i> Qui êtes-vous ?</h2>
+                <h2> Qui êtes-vous ?</h2>
                 <button class="user-btn btn-ida" onclick="selectUser('ida')">
                     <div class="avatar">IDA</div>
                     <div class="user-info-btn">
@@ -1149,7 +1149,7 @@ input, textarea {
             </div>
             <div class="info-row">
                 <span class="info-label"><i class="fa-solid fa-location-dot"></i> Localisation</span>
-                <span class="info-value" id="location">France</span>
+                <span class="info-value" id="location">Dakar</span>
             </div>
             <div class="info-row">
                 <span class="info-label"><i class="fa-regular fa-clock"></i> Membre depuis</span>
@@ -1210,7 +1210,7 @@ input, textarea {
         <div class="photo-modal" id="photo-modal" onclick="closePhotoModal()">
             <button class="photo-modal-close" onclick="closePhotoModal()"><i class="fa-solid fa-times"></i></button>
             <img id="modal-image" src="" alt="Photo">
-            <button class="download-btn" id="download-photo-btn" onclick="downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer dans la galerie</button>
+            <button class="download-btn" id="download-photo-btn" onclick="downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer </button>
         </div>
       <!-- Page Carnet Secret -->
 <div class="secret-page" id="secret-page">
@@ -1223,7 +1223,7 @@ input, textarea {
     <div class="secret-messages-area" id="secret-msg-area">
         <div style="text-align: center; color: var(--text-muted); padding: 40px;">
             <i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 10px;"></i>
-            <p>Messages privés - Personne d'autre ne peut les voir</p>
+            <p>Messages privés  </p>
         </div>
     </div>
     
@@ -1283,18 +1283,18 @@ input, textarea {
 <div class="floating-panel" id="media-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
     <h4 style="margin-bottom: 10px;">📷 Média</h4>
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
-        <div class="tool-item" onclick="ouvrirGalerie()">
-            <i class="fa-regular fa-images" style="font-size: 2rem;"></i>
-            <span style="font-size: 0.7rem;">Galerie</span>
-        </div>
-        <div class="tool-item" onclick="prendrePhoto()">
-            <i class="fa-solid fa-camera" style="font-size: 2rem;"></i>
-            <span style="font-size: 0.7rem;">Appareil photo</span>
-        </div>
-        <div class="tool-item" onclick="prendreVideo()">
-            <i class="fa-solid fa-video" style="font-size: 2rem;"></i>
-            <span style="font-size: 0.7rem;">Vidéo</span>
-        </div>
+       <div class="tool-item" onclick="ouvrirGalerieSupabase()">
+    <i class="fa-regular fa-images" style="font-size: 2rem;"></i>
+    <span style="font-size: 0.7rem;">Galerie</span>
+</div>
+<div class="tool-item" onclick="prendrePhotoAvecSupabase()">
+    <i class="fa-solid fa-camera" style="font-size: 2rem;"></i>
+    <span style="font-size: 0.7rem;">Appareil photo</span>
+</div>
+<div class="tool-item" onclick="prendreVideoAvecSupabase()">
+    <i class="fa-solid fa-video" style="font-size: 2rem;"></i>
+    <span style="font-size: 0.7rem;">Vidéo</span>
+</div>
     </div>
     <button onclick="fermerMenuMedia()" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px;">Fermer</button>
 </div>
@@ -1315,6 +1315,191 @@ const firebaseConfig = {
 // ========== CONFIGURATION FIREBASE ==========
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+      
+      // ========== CONFIGURATION SUPRABASE (STOCKAGE PRIVÉ) ==========
+const SUPABASE_URL = "https://noilukehswntfgcsusoe.supabase.co";  // Remplace par ton URL
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vaWx1a2Voc3dudGZnY3N1c29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNzQwOTEsImV4cCI6MjA5Njk1MDA5MX0.y2_dGvo_SrLaozd5zkLe4PFXSY1kSW0DKY5kNv2Keds"; // Remplace par ta clé
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ========== UPLOAD DE FICHIER VERS SUPRABASE ==========
+async function uploadVersSupabase(file, type) {
+    if (!currentUser) {
+        showTempNotification("❌ Connecte-toi d'abord");
+        return null;
+    }
+    
+    // Créer un nom unique
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${currentUser.id}_${Date.now()}.${fileExt}`;
+    const filePath = fileName;  // ← Plus de dossier "messages", directement à la racine
+    
+    console.log("📤 Upload vers Supabase...");
+    console.log("Bucket: chat_media");
+    console.log("Chemin:", filePath);
+    console.log("Taille:", (file.size / 1024).toFixed(2), "KB");
+    
+    try {
+        const { data, error } = await supabaseClient.storage
+            .from('chat_media')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                contentType: file.type,
+                upsert: true  // Permet d'écraser si existe
+            });
+        
+        if (error) {
+            console.error("❌ Erreur Supabase:", error);
+            showTempNotification(`❌ Erreur: ${error.message}`);
+            return null;
+        }
+        
+        console.log("✅ Upload réussi:", data);
+        
+        // Récupérer l'URL publique
+        const { data: urlData } = supabaseClient.storage
+            .from('chat_media')
+            .getPublicUrl(filePath);
+        
+        console.log("📷 URL publique:", urlData.publicUrl);
+        
+        // Bonus : essayer d'ouvrir l'URL pour vérifier
+        try {
+            const test = await fetch(urlData.publicUrl, { method: 'HEAD' });
+            if (test.ok) {
+                console.log("✅ URL accessible !");
+            } else {
+                console.log("⚠️ URL retourne:", test.status);
+            }
+        } catch(e) {
+            console.log("⚠️ Impossible de tester l'URL:", e);
+        }
+        
+        return urlData.publicUrl;
+        
+    } catch (error) {
+        console.error("❌ Exception:", error);
+        showTempNotification("❌ Erreur de connexion");
+        return null;
+    }
+}
+
+// ========== FONCTION SUPPRIMER UN FICHIER ==========
+async function supprimerFichierSupabase(filePath) {
+    const { error } = await supabaseClient.storage
+        .from('chat_media')
+        .remove([filePath]);
+    
+    if (error) console.error("Erreur suppression:", error);
+}
+
+// ========== ENVOI DE PHOTO MODIFIÉ ==========
+async function prendrePhotoAvecSupabase() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = async (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            
+            // Vérifier la taille (max 10 MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showTempNotification("❌ Photo trop grande (max 10 MB)");
+                return;
+            }
+            
+            showTempNotification("📤 Upload de la photo...");
+            
+            const url = await uploadVersSupabase(file, 'image');
+            
+            if (url) {
+                showTempNotification("📷 Photo envoyée !");
+                
+                // Envoyer le message avec l'URL
+                await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+                    text: null,
+                    senderId: currentUser.id,
+                    senderName: currentUser.name,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: "sent",
+                    readBy: [currentUser.id],
+                    type: 'image',
+                    mediaUrl: url,
+                    storage: 'supabase'
+                });
+            } else {
+                showTempNotification("❌ Échec de l'upload"); 
+            }
+        }
+    };
+    input.click();
+}
+
+// ========== ENVOI DE VIDÉO ========= =
+async function prendreVideoAvecSupabase() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.capture = 'environment';
+    input.onchange = async (e) => {
+        if (e.target.files && e.target.files[0]) {
+            showTempNotification("📤 Upload de la vidéo...");
+            const file = e.target.files[0];
+            
+            if (file.size > 50 * 1024 * 1024) {
+                showTempNotification("❌ Vidéo trop grande (max 50 MB)");
+                return;
+            }
+            
+            const url = await uploadVersSupabase(file, 'video');
+            
+            if (url) {
+                await envoyerMessageMedia(url, 'video');
+                showTempNotification("🎥 Vidéo envoyée !");
+            }
+        }
+    };
+    input.click();
+}
+
+// ========== ENVOI DE FICHIER (GALERIE) ==========
+async function ouvrirGalerieSupabase() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*';
+    input.onchange = async (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const type = file.type.startsWith('image/') ? 'image' : 'video';
+            
+            showTempNotification(`📤 Upload ${type === 'image' ? 'photo' : 'vidéo'}...`);
+            
+            const url = await uploadVersSupabase(file, type);
+            
+            if (url) {
+                await envoyerMessageMedia(url, type);
+                showTempNotification(type === 'image' ? "📷 Photo envoyée !" : "🎥 Vidéo envoyée !");
+            }
+        }
+    };
+    input.click();
+}
+
+// ========== ENVOYER LE MESSAGE DANS FIRESTORE ==========
+async function envoyerMessageMedia(mediaUrl, type) {
+    await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+        text: null,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: type,
+        mediaUrl: mediaUrl,
+        storage: 'supabase' // Pour savoir d'où ça vient
+    });
+}
       
       // Nettoyage agressif des anciens listeners
 setTimeout(() => {
@@ -1562,7 +1747,7 @@ async function enregistrerTokenPush() {
         console.error("❌ Erreur token:", error);
     }
 }
-        // ========== SÉLECTION UTILISATEUR ==========
+        // ========== SÉLECTION UTILISATEUR==========
         function selectUser(userKey) {
             if(userKey === 'ida') {
                 currentUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
@@ -1571,6 +1756,9 @@ async function enregistrerTokenPush() {
                 currentUser = { id: 'aidara', name: 'Ahmed Said Aidara', full: 'Aidara' };
                 targetUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
             }
+          
+           localStorage.setItem('lastUser', userKey);
+    console.log("💾 Sauvegardé:", localStorage.getItem('lastUser'));
 
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('header-av').innerText = targetUser.name.substring(0,3);
@@ -1586,6 +1774,7 @@ async function enregistrerTokenPush() {
             activerLesNotifications();
           demanderPermissionNotifications();
               ecouterChangementsStyle();
+           localStorage.setItem('lastUser', userKey);
 
         }
 
@@ -1598,10 +1787,10 @@ async function enregistrerTokenPush() {
         // ========== ÉCOUTE DES MESSAGES (FIRESTORE) ==========
 function listenToMessages() {
     if(unsubscribeMessages) unsubscribeMessages();
-    unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
-        .orderBy('timestamp', 'asc')
-        .limitToLast(60)
-        .onSnapshot(snapshot => {
+   unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
+    .orderBy('timestamp', 'asc')
+    // .limitToLast(60)  // ← COMMENTÉ ou SUPPRIMÉ - charge TOUS les messages 
+    .onSnapshot(snapshot => {
           snapshot.docChanges().forEach(change => {
         if (change.type === 'added') {
             const msg = change.doc.data();
@@ -1640,13 +1829,15 @@ function listenToMessages() {
             
             // ========== AFFICHAGE DES MESSAGES (CODE ORIGINAL) ==========
             const msgArea = document.getElementById('msg-area');
-            msgArea.innerHTML = '';
+            
             let lastDateStr = "";
             
             snapshot.forEach(doc => {
                 const data = doc.data();
                 const msgId = doc.id;
-                
+              if(document.querySelector(`[data-id="${msgId}"]`)) return;
+
+                  
                 if(data.timestamp) {
                     const dateObj = data.timestamp.toDate();
                     const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -1714,7 +1905,7 @@ displayText = displayText.replace(/\n/g, '<br>');
 bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
                     }
                 } else if (data.type === 'image') {
-                    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)"/>`;
+                    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
                 } else if (data.type === 'drawing') {
                     bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
                 } else if (data.type === 'audio') {
@@ -3160,14 +3351,25 @@ function detecterFrancaisRapide(texte) {
         }
         
         // ========== PHOTO PLEIN ÉCRAN ==========
-        function openFullscreenPhoto(imgElement) {
-            currentPhotoUrl = imgElement.getAttribute('data-fullsrc') || imgElement.src;
-            const modal = document.getElementById('photo-modal');
-            const modalImg = document.getElementById('modal-image');
-            modal.style.display = 'flex';
-            modalImg.src = currentPhotoUrl;
-            document.body.style.overflow = 'hidden';
-        }
+       function openFullscreenPhoto(event, imgElement) {
+    if (event) event.stopPropagation();
+    
+    currentPhotoUrl = imgElement.getAttribute('data-fullsrc') || imgElement.src;
+    const modal = document.getElementById('photo-modal');
+    const modalImg = document.getElementById('modal-image');
+    
+    // Afficher le modal
+    modal.style.display = 'flex';
+    modalImg.src = currentPhotoUrl;
+    document.body.style.overflow = 'hidden';
+    
+    // Centrer l'image et la redimensionner automatiquement
+    modalImg.style.maxWidth = '95%';
+    modalImg.style.maxHeight = '85%';
+    modalImg.style.objectFit = 'contain';
+    modalImg.style.margin = 'auto';
+    modalImg.style.display = 'block';
+}
         function closePhotoModal() {
             document.getElementById('photo-modal').style.display = 'none';
             document.body.style.overflow = '';
@@ -3717,7 +3919,10 @@ window.addEventListener('resize', function() {
 });
 document.documentElement.style.overflowX = 'hidden';
 document.body.style.overflowX = 'hidden';
-      
+      // Au chargement de la page, tente une connexion automatique
+window.addEventListener('DOMContentLoaded', function() {
+    autoLogin();
+});
       // ========== GESTION DE L'APPUI LONG POUR MENU CONTEXTUEL ==========
 let appuiLongTimer = null;
 let elementAppuye = null;
@@ -3731,7 +3936,7 @@ function demarrerAppuiLong(event, msgId) {
     
     // Démarrer le timer
     appuiLongTimer = setTimeout(() => {
-        // Créer un faux événement avec la position actuelle du toucher
+        // Créer un faux événement avec la position actuelle du toucher 
         let fakeEvent = {
             preventDefault: () => {},
             pageY: event.touches ? event.touches[0].pageY : (event.pageY || window.scrollY + 100),
@@ -4321,6 +4526,66 @@ function sendMediaMessage(type, base64Data) {
     });
     showTempNotification(type === 'video' ? "🎥 Vidéo envoyée" : "📷 Photo envoyée");
 }
+      
+      function openFullscreenPhoto(event, imgElement) {
+    if (event) event.stopPropagation();
+    
+    currentPhotoUrl = imgElement.getAttribute('data-fullsrc') || imgElement.src;
+    const modal = document.getElementById('photo-modal');
+    const modalImg = document.getElementById('modal-image');
+    
+    modal.style.display = 'flex';
+    modalImg.src = currentPhotoUrl;
+    document.body.style.overflow = 'hidden';
+    
+    // Styles pour centrage parfait
+    modalImg.style.maxWidth = '95%';
+    modalImg.style.maxHeight = '85%';
+    modalImg.style.objectFit = 'contain';
+    modalImg.style.margin = 'auto';
+    modalImg.style.display = 'block';
+    modalImg.style.cursor = 'zoom-out';
+    
+    // Support du pincement pour zoomer (mobile)
+    modalImg.style.touchAction = 'pan-x pan-y';
+}
+
+function closePhotoModal() {
+    document.getElementById('photo-modal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+      
+ // ========== CONNEXION AUTOMATIQUE UNIQUE ==========
+function autoLogin() {
+    const lastUser = localStorage.getItem('lastUser');
+    console.log("🔍 Vérification localStorage:", lastUser);
+    
+    if (lastUser === 'ida') {
+        console.log("🔐 Connexion auto : IDA");
+        selectUser('ida');
+    } else if (lastUser === 'aidara') {
+        console.log("🔐 Connexion auto : AIDARA");
+        selectUser('aidara');
+    } else {
+        console.log("👋 Aucun utilisateur sauvegardé");
+    }
+}
+
+// Un seul event listener
+document.addEventListener('DOMContentLoaded', autoLogin);
+
+// Sauvegarder l'utilisateur dans selectUser (déjà fait  aut)
+// Déconnecter en effaçant le localStorage
+function logoutComplet() {
+    localStorage.removeItem('chat_last_user');
+    logout(); // Ta fonction logout existante
+}
+
+// Lancer la connexion auto au chargement
+document.addEventListener('DOMContentLoaded', autoLogin);
+      
+      
+      
     </script>
   
   
