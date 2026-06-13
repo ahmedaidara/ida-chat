@@ -1002,8 +1002,9 @@ input, textarea {
             </div>
         </div>
 
-       <div class="context-menu" id="ctx-menu">
+      <div class="context-menu" id="ctx-menu">
     <div class="context-item" onclick="initiateReply()"><i class="fa-solid fa-reply"></i> Répondre</div>
+    <div class="context-item" onclick="copierMessage()"><i class="fa-regular fa-copy"></i> Copier le message</div>
     <div class="context-item translate-btn" onclick="translateSelectedMessage()"><i class="fa-solid fa-language"></i> Traduire</div>
     <div class="context-item" onclick="editSelectedMessage()"><i class="fa-solid fa-pen"></i> Modifier</div>
     <div class="context-item" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="showStyleMenu()"><i class="fa-solid fa-palette"></i> Changer le style de bulle ▶</div>
@@ -1046,17 +1047,17 @@ input, textarea {
         <!-- Modal PIN -->
         <div class="pin-modal" id="pin-modal">
             <div class="pin-box">
-                <h3>🔒 Message codé</h3>
-                <p>Entrez le code PIN pour déverrouiller</p>
+                <h3>🫣​👀​🫣</h3>
+                <p>Pour IDA seul</p>
                 <input type="password" class="pin-input" id="pin-input" maxlength="4" placeholder="****" inputmode="numeric">
                 <div class="pin-buttons">
-                    <button class="pin-btn confirm" onclick="verifyPin()">Déverrouiller</button>
-                    <button class="pin-btn cancel" onclick="closePinModal()">Annuler</button>
+                     <button class="pin-btn cancel" onclick="closePinModal()">​❌​</button>
+                   <button class="pin-btn confirm" onclick="verifyPin()">​✅​</button>
                 </div>
             </div>
         </div>
         
-        <!-- Modal Canvas -->
+        <!-- Modal Canvas --> 
         <div class="canvas-modal" id="canvas-modal">
             <div class="canvas-toolbar">
                 <button class="canvas-tool-btn" id="draw-mode" onclick="setDrawMode(true)">✏️ Dessiner</button>
@@ -1583,14 +1584,16 @@ if (data.bubbleStyle) {
     }
 }
                 
-                let codedClass = '';
-                let lockBadge = '';
-                if (data.isCoded === true) {
-                    codedClass = 'coded';
-                    lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
-                }
+               let codedClass = '';
+let lockBadge = '';
+if (data.isCoded === true) {
+    codedClass = 'coded';
+    lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
+    // Ajouter un attribut data-coded sur la bulle pour détecter les messages codés
+}
                 
-              let bubbleHtml = `<div class="message-bubble ..." 
+             let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+    onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
     oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
     ondblclick="handleDoubleTap(event, '${msgId}')"
     ontouchstart="demarrerAppuiLong(event, '${msgId}')"
@@ -3622,6 +3625,68 @@ function annulerAppuiLong() {
         appuiLongTimer = null;
     }
     elementAppuye = null;
+}
+      
+      // ========== COPIER LE MESSAGE ==========
+async function copierMessage() {
+    if (!selectedMessageId) return;
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow) return;
+    
+    // Récupérer le texte du message
+    const messageBubble = messageRow.querySelector('.message-bubble');
+    if (!messageBubble) return;
+    
+    let texteACopier = "";
+    
+    // Vérifier si c'est un message texte
+    const messageSpan = messageBubble.querySelector('span:not(.coded-mask)');
+    if (messageSpan) {
+        texteACopier = messageSpan.innerText;
+    }
+    
+    // Vérifier si c'est un message codé déverrouillé
+    const codedMask = messageBubble.querySelector('.coded-mask');
+    if (codedMask && codedMask.innerText) {
+        texteACopier = codedMask.innerText;
+    }
+    
+    // Si pas de texte, vérifier si c'est une image ou audio
+    if (!texteACopier) {
+        const img = messageBubble.querySelector('img');
+        if (img) {
+            texteACopier = img.src;
+            showTempNotification("📷 Lien de l'image copié");
+        } else {
+            const audio = messageBubble.querySelector('audio');
+            if (audio) {
+                texteACopier = audio.src;
+                showTempNotification("🎵 Lien de l'audio copié");
+            }
+        }
+    }
+    
+    if (!texteACopier) {
+        showTempNotification("❌ Impossible de copier ce message");
+        hideContextMenus();
+        return;
+    }
+    
+    // Copier dans le presse-papier
+    try {
+        await navigator.clipboard.writeText(texteACopier);
+     } catch (err) {
+        // Fallback pour les navigateurs plus anciens
+        const textarea = document.createElement('textarea');
+        textarea.value = texteACopier;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+     }
+    
+    hideContextMenus();
 }
     </script>
   
