@@ -735,19 +735,7 @@
     </style>
 </head>
 <body>
-<!-- Ajoute ça juste après la balise <body> -->
-<script>
-    // Force la page à s'afficher correctement
-    if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
-        // Essaie de charger l'app quand même
-        window.addEventListener('load', function() {
-            const loginScreen = document.getElementById('login-screen');
-            if (loginScreen) {
-                loginScreen.style.display = 'flex';
-            }
-        });
-    }
-</script>
+
     <div class="app-container">
         <div id="login-screen">
             <div class="login-card">
@@ -2914,5 +2902,72 @@ function ecouterNotificationsNTFY() {
 // Dans ta fonction selectUser(), ajoute cette ligne à la fin :
 // ecouterNotificationsNTFY();
     </script>
+  
+  <script>
+    (function() {
+        // FORCER L'AFFICHAGE - Méthode robuste
+        console.log("🔧 Fix GitHub Pages activé");
+        
+        // Fonction qui force l'affichage
+        function forceDisplayApp() {
+            // Récupère l'écran de login
+            const loginScreen = document.getElementById('login-screen');
+            const appContainer = document.querySelector('.app-container');
+            
+            if (loginScreen) {
+                console.log("✅ Écran de login trouvé");
+                // Force l'affichage
+                loginScreen.style.display = 'flex';
+                loginScreen.style.position = 'relative';
+                loginScreen.style.zIndex = '100';
+                
+                // Cache les éventuels messages d'erreur
+                document.body.style.background = 'linear-gradient(135deg, #4f5bd5, #962fbf, #d62976, #feda75)';
+                
+                // Supprime les éventuels textes d'erreur
+                const errorTexts = document.querySelectorAll('body > :not(.app-container)');
+                errorTexts.forEach(el => {
+                    if (el.innerText && (el.innerText.includes('404') || el.innerText.includes('There isn\'t'))) {
+                        el.style.display = 'none';
+                    }
+                });
+            }
+            
+            if (appContainer) {
+                appContainer.style.display = 'flex';
+            }
+        }
+        
+        // Exécute immédiatement
+        forceDisplayApp();
+        
+        // Réexécute plusieurs fois pour être sûr
+        setTimeout(forceDisplayApp, 100);
+        setTimeout(forceDisplayApp, 500);
+        setTimeout(forceDisplayApp, 1000);
+        
+        // Écoute les changements du DOM
+        const observer = new MutationObserver(function(mutations) {
+            forceDisplayApp();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        
+        // Capture l'événement de chargement
+        window.addEventListener('load', forceDisplayApp);
+        document.addEventListener('DOMContentLoaded', forceDisplayApp);
+        
+        // Redirige si on est sur une page 404
+        if (window.location.pathname.includes('404') || document.title.includes('404')) {
+            console.log("🔄 Page 404 détectée, tentative de redirection...");
+            // Essaie de recharger la page racine
+            setTimeout(() => {
+                const repoPath = window.location.pathname.split('/')[1];
+                if (repoPath && !window.location.pathname.endsWith('/index.html')) {
+                    window.location.href = `/${repoPath}/index.html`;
+                }
+            }, 2000);
+        }
+    })();
+</script>
 </body>
 </html>
