@@ -13,28 +13,13 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Gestion des messages reçus en arrière-plan
 messaging.onBackgroundMessage((payload) => {
-    console.log('Message reçu en arrière-plan:', payload);
-    
-    const notificationTitle = payload.notification?.title || 'Nouveau message';
-    const notificationOptions = {
-        body: payload.notification?.body || 'Vous avez reçu un nouveau message',
+    console.log('Message reçu:', payload);
+    const title = payload.notification?.title || 'Nouveau message';
+    const options = {
+        body: payload.notification?.body || 'Vous avez reçu un message',
         icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        vibrate: [200, 100, 200],
-        data: {
-            click_action: '/'
-        }
+        vibrate: [200, 100, 200]
     };
-    
-    self.registration.showNotification(notificationTitle, notificationOptions);
-});
-
-// Gestion du clic sur la notification
-self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    event.waitUntil(
-        clients.openWindow('/')
-    );
+    self.registration.showNotification(title, options);
 });
