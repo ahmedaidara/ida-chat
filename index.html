@@ -1958,11 +1958,33 @@ if (data.isCoded === true) {
 displayText = displayText.replace(/\n/g, '<br>');
 bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
                     }
-                } else if (data.type === 'image') {
-                    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
-                } else if (data.type === 'drawing') {
-                    bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
-                } else if (data.type === 'audio') {
+               } else if (data.type === 'image') {
+    // Affichage IMAGE
+    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+    
+} else if (data.type === 'drawing') {
+    // Affichage DESSIN
+    bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+    
+} else if (data.type === 'video') {
+    // ✅ NOUVEAU : Affichage VIDÉO - CORRECTION SUPABASE
+    const videoUrl = data.mediaUrl || data.fileUrl || "";
+    bubbleHtml += `
+        <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+            <video 
+                src="${videoUrl}" 
+                controls 
+                playsinline 
+                preload="metadata" 
+                style="width: 100%; display: block; object-fit: cover;"
+                poster=""
+            >
+                Votre navigateur ne supporte pas la lecture vidéo
+            </video>
+        </div>
+    `;
+    
+} else if (data.type === 'audio') {
                     if (data.isEphemeralAudio) {
                         const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
                         const isDestroyed = data.destroyed;
@@ -2220,18 +2242,39 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
                     mediaRecorder = new MediaRecorder(stream);
                     audioChunks = [];
                     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-                        const reader = new FileReader();
-                        reader.readAsDataURL(audioBlob);
-                        reader.onloadend = () => {
-                            if (ephemeralAudioMode) {
-                                sendEphemeralAudio(reader.result);
-                            } else {
-                                sendMediaMessage('audio', reader.result);
-                            }
-                        };
-                    };
+                    mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    
+    // Créer un fichier à partir du blob audio
+    const fileName = `audio_${currentUser.id}_${Date.now()}.wav`;
+    const audioFile = new File([audioBlob], fileName, { type: 'audio/wav' });
+    
+    // Upload vers Supabase (comme pour les photos)
+    const audioUrl = await uploadVersSupabase(audioFile, 'audio');
+    
+    if (audioUrl) {
+        // Envoyer seulement l'URL dans Firestore
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            text: null,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: "sent",
+            readBy: [currentUser.id],
+            type: "audio",
+            mediaUrl: audioUrl,
+            isEphemeralAudio: ephemeralAudioMode || false
+        });
+        
+        showTempNotification("✅ Audio envoyé !");
+    } else {
+        showTempNotification("❌ Erreur lors de l'envoi");
+    }
+    
+    // Remettre l'icône micro normal
+    micIcon.className = "fa-solid fa-microphone";
+    micIcon.style.color = "var(--text-main)";
+};
                     mediaRecorder.start();
                     micIcon.className = "fa-solid fa-circle-stop";
                     micIcon.style.color = "#ed4956";
@@ -4625,6 +4668,7 @@ function getAudioDuration(blob) {
     });
 }
 
+// ========== NOUVEAU BLOC CORRIGÉ ==========
 async function envoyerAudioAvecFiltre() {
     if (!audioBlobFiltre && !audioBlobOriginal) {
         showTempNotification("❌ Aucun audio à envoyer");
@@ -4639,40 +4683,32 @@ async function envoyerAudioAvecFiltre() {
     showTempNotification("📤 Envoi de l'audio...");
     
     const blob = audioBlobFiltre || audioBlobOriginal;
-    const reader = new FileReader();
     
-    reader.onloadend = async function() {
-        const base64Audio = reader.result;
+    // ✅ CORRECTION : Upload vers Supabase au lieu de Firestore
+    const file = new File([blob], `audio_${currentUser.id}_${Date.now()}.wav`, { type: 'audio/wav' });
+    const audioUrl = await uploadVersSupabase(file, 'audio');
+    
+    if (audioUrl) {
+        // On envoie juste l'URL dans Firestore (très petit)
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            text: null,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: "sent",
+            readBy: [currentUser.id],
+            type: "audio",
+            mediaUrl: audioUrl,  // ← JUSTE L'URL, pas le fichier !
+            filtreAudio: filtreAudioActif
+        });
         
-        try {
-            await db.collection('chats').doc(CHAT_ID).collection('messages').add({
-                text: null,
-                senderId: currentUser.id,
-                senderName: currentUser.name,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-               heureAffichage: heureLocale, 
-                status: "sent",
-                readBy: [currentUser.id],
-                type: "audio",
-                mediaUrl: base64Audio,
-                filtreAudio: filtreAudioActif
-            });
-            
-            
-            fermerMenuAudio();
-            
-        } catch(error) {
-            console.error("Erreur envoi:", error);
-            showTempNotification("❌ Erreur lors de l'envoi");
-        }
-    };
-    
-    reader.onerror = function() {
-        showTempNotification("❌ Erreur de lecture de l'audio");
-    };
-    
-    reader.readAsDataURL(blob);
+        showTempNotification("✅ Audio envoyé avec succès !");
+        fermerMenuAudio();
+    } else {
+        showTempNotification("❌ Échec de l'upload audio");
+    }
 }
+// ========== FIN NOUVEAU BLOC ==========
 
 function sendMediaMessage(type, base64Data) {
     db.collection('chats').doc(CHAT_ID).collection('messages').add({
@@ -5834,7 +5870,110 @@ document.addEventListener('click', function(e) {
         }
     }
 });
-      
+      // =========================================================================
+// INTERCEPTEUR FIRESTORE : FORÇAGE DE L'AFFICHAGE DES VIDÉOS DANS LE CHAT
+// =========================================================================
+// INJECTEUR ULTIME : COMPLÈTE LES BULLES VIDES AVEC LA VIDÉO SUPABASE
+// =========================================================================
+
+function injecterLecteurVideoDansBullesVides() {
+    // 1. On récupère toutes les bulles du chat
+    const bulles = document.querySelectorAll('#msg-area .message-bubble');
+
+    bulles.forEach((bulle) => {
+        // Si la bulle a déjà une vidéo ou une image visible, on ne fait rien
+        if (bulle.querySelector('video') || (bulle.querySelector('img') && bulle.querySelector('img').src)) return;
+
+        // 2. On cherche si un lien Supabase de vidéo est caché dans les attributs ou le texte
+        // (Certains codes stockent l'url dans data-url, data-file, ou directement dans le texte invisible)
+        let urlTrouvee = bulle.getAttribute('data-url') || bulle.getAttribute('data-file') || "";
+        
+        // Sécurité : si ton code cache l'URL dans un span invisible
+        const spanTexte = bulle.querySelector('span');
+        if (spanTexte && (spanTexte.innerText.includes('chat_media') || spanTexte.innerText.includes('.mp4') || spanTexte.innerText.includes('.webm'))) {
+            urlTrouvee = spanTexte.innerText.trim();
+            spanTexte.style.display = 'none'; // On cache le texte brut de l'URL
+        }
+
+        // Si l'URL pointe bien vers ton bucket Supabase chat_media ou un format vidéo
+        if (urlTrouvee.includes('chat_media') || urlTrouvee.includes('.mp4') || urlTrouvee.includes('.webm') || urlTrouvee.includes('.mov')) {
+            
+            // 3. On crée le lecteur vidéo parfait
+            const lecteurVideo = document.createElement('video');
+            lecteurVideo.src = urlTrouvee;
+            lecteurVideo.controls = true;
+            lecteurVideo.playsInline = true;
+            lecteurVideo.preload = "metadata";
+            lecteurVideo.style.cssText = "width: 100%; max-width: 240px; border-radius: 10px; display: block; margin-bottom: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);";
+
+            // 4. On l'insère tout en haut de la bulle, juste avant l'heure (msg-meta)
+            const metaData = bulle.querySelector('.msg-meta');
+            if (metaData) {
+                bulle.insertBefore(lecteurVideo, metaData);
+            } else {
+                bulle.appendChild(lecteurVideo);
+            }
+            
+            console.log("🎥 Vidéo injectée avec succès dans la bulle vide !");
+        }
+    });
+}
+
+// 5. Surveillance en temps réel de l'écran
+const observateurBulleVide = new MutationObserver(() => {
+    injecterLecteurVideoDansBullesVides();
+});
+
+const zoneChatUltime = document.getElementById('msg-area');
+if (zoneChatUltime) {
+    observateurBulleVide.observe(zoneChatUltime, { childList: true, subtree: true });
+    
+    // Double vérification au démarrage pour les anciennes bulles vides
+    setTimeout(injecterLecteurVideoDansBullesVides, 400);
+    setTimeout(injecterLecteurVideoDansBullesVides, 1200);
+}
+      // =========================================================================
+// DESIGN MULTIMÉDIA : NETTOYAGE DU FOND DE BULLE POUR LES VIDÉOS
+// =========================================================================
+
+const nettoyerFondBullesVideo = () => {
+    // On cherche tous les conteneurs de vidéos ou les balises vidéo dans le chat
+    const videos = document.querySelectorAll('#msg-area video, #msg-area .video-wrapper');
+    
+    videos.forEach((video) => {
+        // On remonte jusqu'à la bulle qui contient la vidéo
+        const bulle = video.closest('.message-bubble');
+        
+        if (bulle) {
+            // On fait sauter le fond, l'ombre et les espaces inutiles pour coller au format de la vidéo
+            bulle.style.setProperty('background', 'transparent', 'important');
+            bulle.style.setProperty('background-color', 'transparent', 'important');
+            bulle.style.setProperty('box-shadow', 'none', 'important');
+            bulle.style.setProperty('padding', '0', 'important');
+            bulle.style.setProperty('border-radius', '12px', 'important');
+            bulle.style.setProperty('overflow', 'hidden', 'important');
+            
+            // Si l'heure (msg-meta) est à l'intérieur, on l'ajuste pour qu'elle soit bien lisible sous la vidéo
+            const meta = bulle.querySelector('.msg-meta');
+            if (meta) {
+                meta.style.setProperty('padding', '2px 5px', 'important');
+                meta.style.setProperty('color', '#8696a0', 'important'); // Gris propre style WhatsApp
+            }
+        }
+    });
+};
+
+// Radar temps réel pour appliquer le style dès qu'une vidéo s'affiche
+const observateurDesignVideo = new MutationObserver(() => {
+    nettoyerFondBullesVideo();
+});
+
+const zoneChatDesign = document.getElementById('msg-area');
+if (zoneChatDesign) {
+    observateurDesignVideo.observe(zoneChatDesign, { childList: true, subtree: true });
+    // Application immédiate au chargement
+    nettoyerFondBullesVideo();
+}
     </script>
   
   
