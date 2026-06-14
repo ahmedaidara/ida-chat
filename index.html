@@ -1012,6 +1012,19 @@ input, textarea {
     <i class="fa-solid fa-head-side-headphones" id="ephemeral-audio-btn" onclick="toggleEphemeralAudioModeDirect()" style="cursor:pointer; font-size:1.2rem;" title="Audio éphémère"></i>
                  <i class="fa-solid fa-image" id="media-btn" onclick="ouvrirMenuMedia()" style="cursor:pointer; font-size:1.3rem;" title="Photo/Vidéo/Galerie"></i>
     <i class="fa-solid fa-microphone" id="audio-btn" onclick="ouvrirMenuAudio()" style="cursor:pointer; font-size:1.3rem;" title="Message vocal avec effets"></i>
+                       <!-- ========== NOUVEAU : TIROIR GIPHY ========== -->
+        <div id="giphy-drawer" style="display: none; position: absolute; bottom: 75px; left: 10px; right: 10px; background: var(--bg-main); border-radius: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); padding: 12px; z-index: 1000; max-height: 350px; flex-direction: column; border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="text" id="giphy-search" placeholder="🔍 Rechercher GIF ou sticker..." style="flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 0.9rem;">
+                <button id="btn-toggle-type" style="background: #f0f2f5; border: none; padding: 0 20px; border-radius: 25px; font-weight: bold; font-size: 0.8rem; cursor: pointer; color: #000;">🎨 GIFS</button>
+            </div>
+            <div id="giphy-results" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; max-height: 260px; padding: 5px;"></div>
+        </div>
+        
+        <!-- Bouton pour ouvrir Giphy -->
+        <div style="display: flex; justify-content: flex-start; margin-top: 5px;">
+            <button id="gif-trigger-btn" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; padding: 5px 10px; color: var(--text-muted);" title="GIF et Stickers">✨ GIF</button>
+        </div>
 </div>
                 <span id="send-btn" onclick="sendTextMessage()"><i class="fa-regular fa-paper-plane"></i></span>
             </div>
@@ -6307,6 +6320,136 @@ if (typeof db !== 'undefined' && typeof CHAT_ID !== 'undefined') {
     };
     
     console.log("🛡️ Le coupe-circuit Firebase Anti-Suppression Croisée est activé !");
+}
+      
+      // =========================================================================
+// GIFS PRÉCHARGÉS (FONCTIONNE SANS API)
+// =========================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const drawer = document.getElementById('giphy-drawer');
+    const resultsContainer = document.getElementById('giphy-results');
+    const triggerBtn = document.getElementById('gif-trigger-btn');
+    
+    // Collection de GIFs populaires qui fonctionnent toujours
+  const gifsPopulaires = [
+    "https://media.tenor.com/GfSX-u7VGM4AAAAC/pikachu-pokemon.gif", // Ton rescapé d'origine
+    "https://media.tenor.com/_hUq1BSUsiMAAAAM/cat-cute.gif",       
+    "https://media.tenor.com/8zkTzFrcGZYAAAAM/goodbye-thank-you.gif", 
+    "https://media.tenor.com/TmNWrln1uJAAAAAC/bongo-cat-cute.gif", 
+    "https://media.tenor.com/zqHbKTg9NxEAAAAM/ray-liotta-laughing.gif", 
+    "https://media.tenor.com/-XaDVlGtQeQAAAAM/laughing-rofl.gif",  
+    "https://media.tenor.com/xnJMR7T9UvUAAAAM/ring-will-you-marry-me.gif",
+
+    // --- LES 10 NOUVEAUX GIFS SPÉCIAL COUPLE & AMOUR ---
+    "https://media.tenor.com/A6mB6w_F5k0AAAAM/milk-and-mocha-hug.gif",       // Câlin mignon (Milk & Mocha)
+    "https://media.tenor.com/7gM0VbVvI7MAAAAM/mochi-peachcat-kisses.gif",   // Bisous sur la joue (Mochi Cat)
+    "https://media.tenor.com/W7Sg5qTfU4IAAAAM/love-heart.gif",              // Énorme cœur qui bat
+    "https://media.tenor.com/1GkUepqMCHYAAAAM/tu-me-manques-i-miss-you.gif",// "Tu me manques" / Câlin triste
+    "https://media.tenor.com/A9f697g_ZBcAAAAM/stitching-together-love.gif", // Coudre un cœur à deux
+    "https://media.tenor.com/b2b-mIuGZ7sAAAAM/milk-and-mocha-love.gif",      // Bisou amoureux sur la truffe
+    "https://media.tenor.com/gK6R8nOaECAAAAAM/love-couple.gif",             // Regard complice sous la couette
+    "https://media.tenor.com/A2T63w6yUo8AAAAM/cute-disney.gif",             // Stitch qui envoie des cœurs
+    "https://media.tenor.com/YwN9_2n7MAMAAAAM/tkthao219-bubududu.gif",       // Ours doudou amoureux terrassé par l'amour
+    "https://media.tenor.com/P4W8_Vv8pGIAAAAM/flying-kiss-love.gif"          // Bisou volant magique (Panda)
+];
+    
+    if (!triggerBtn) return;
+    
+    triggerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (drawer.style.display === 'none' || drawer.style.display === '') {
+            drawer.style.display = 'flex';
+            afficherGifsPrecharges();
+        } else {
+            drawer.style.display = 'none';
+        }
+    });
+    
+    function afficherGifsPrecharges() {
+        if (!resultsContainer) return;
+        resultsContainer.innerHTML = "";
+        
+        gifsPopulaires.forEach(gifUrl => {
+            const img = document.createElement('img');
+            img.src = gifUrl;
+            img.style.cssText = "width: 100%; height: 90px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color);";
+            img.onclick = () => {
+                envoyerGif(gifUrl);
+                drawer.style.display = 'none';
+            };
+            resultsContainer.appendChild(img);
+        });
+    }
+    
+    function envoyerGif(urlImage) {
+        if (currentUser && CHAT_ID) {
+            db.collection('chats').doc(CHAT_ID).collection('messages').add({
+                text: null,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "sent",
+                readBy: [currentUser.id],
+                type: "image",
+                mediaUrl: urlImage,
+                isGif: true
+            }).then(() => {
+                showTempNotification("✅ GIF envoyé !");
+            });
+        }
+    }
+    
+    document.addEventListener('click', (e) => {
+        if (drawer && drawer.style.display === 'flex' && !drawer.contains(e.target) && e.target !== triggerBtn) {
+            drawer.style.display = 'none';
+        }
+    });
+});
+      
+      // =========================================================================
+// OPTIMISATION MULTIMÉDIA : FORÇAGE DE LA TAILLE DES GIFS TENOR (ID & AIDARA)
+// =========================================================================
+
+const calibrerTailleGifsTenor = () => {
+    // 1. On cible toutes les images affichées dans la zone de chat
+    const imagesDuChat = document.querySelectorAll('#msg-area img, .message-bubble img');
+
+    imagesDuChat.forEach((img) => {
+        const sourceUrl = img.src || img.getAttribute('src') || "";
+
+        // 2. On intercepte si le GIF provient de ton tableau Tenor
+        if (sourceUrl.includes('tenor.com') || sourceUrl.includes('media.tenor.com')) {
+            
+            // On force la taille mini style stickers WhatsApp / Telegram
+            img.style.setProperty('max-width', '130px', 'important');
+            img.style.setProperty('width', '130px', 'important');
+            img.style.setProperty('height', 'auto', 'important');
+            img.style.setProperty('object-fit', 'contain', 'important');
+
+            // 3. On fait sauter la bulle derrière pour un rendu transparent parfait
+            const bulle = img.closest('.message-bubble');
+            if (bulle) {
+                bulle.style.setProperty('background', 'transparent', 'important');
+                bulle.style.setProperty('background-color', 'transparent', 'important');
+                bulle.style.setProperty('box-shadow', 'none', 'important');
+                bulle.style.setProperty('padding', '0', 'important');
+            }
+        }
+    });
+};
+
+// Radar temps réel : dès qu'un GIF de ta liste est injecté, on le redimensionne
+const observateurGifsTenor = new MutationObserver(() => {
+    calibrerTailleGifsTenor();
+});
+
+const zoneDiscussionGifs = document.getElementById('msg-area');
+if (zoneDiscussionGifs) {
+    observateurGifsTenor.observe(zoneDiscussionGifs, { childList: true, subtree: true });
+    
+    // Scan direct au rechargement
+    calibrerTailleGifsTenor();
 }
     </script>
   
