@@ -1828,6 +1828,7 @@ async function enregistrerTokenPush() {
           demanderPermissionNotifications();
               ecouterChangementsStyle();
            localStorage.setItem('lastUser', userKey);
+          activerMarquageMessagesLus();
 
         }
 
@@ -1981,7 +1982,19 @@ bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayTex
                 }
                 
                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-const checkMark = data.status === 'read' ? '<span class="status-tick">✓✓</span>' : '<span>✓</span>';
+// --- BLOC DE COCHES FORMAT WHATSAPP AJOUTÉ ICI ---
+let checkMark = '<span>✓</span>'; // Un seul trait gris par défaut
+if (data.status === 'read') {
+    // Deux traits bleus (lu)
+    checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+} else if (data.status === 'delivered') {
+    // Deux traits grises (reçu)
+    checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+} else {
+    // Un trait gris (envoyé)
+    checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+}
+// ------------------------------------------------ 
 const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
 bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
                 
@@ -2053,38 +2066,33 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
         
         function cancelReply() { replyToId = null; document.getElementById('reply-preview').style.display = 'none'; }
         
-       async function sendTextMessage() {
-          if (messageEnCoursEdition) {
-          await confirmerModification();
-         return;
-      }
+      async function sendTextMessage() {
+    if (messageEnCoursEdition) {
+        await confirmerModification();
+        return;
+    }
     const input = document.getElementById('chat-in');
     let text = input.value.trim();
     if(!text) return;
-        if (modeTraductionActif && langueTraduction) {
-         
+
+    if (modeTraductionActif && langueTraduction) {
         const texteTraduit = await traduireTexte(text, langueTraduction);
         if (texteTraduit && texteTraduit !== text) {
             text = texteTraduit;
-             
-        } else {
-            
         }
     }
     if (translateModeActive && currentTargetLang) {
-         const translatedText = await translateTextToLanguage(text, currentTargetLang);
+        const translatedText = await translateTextToLanguage(text, currentTargetLang);
         if (translatedText && translatedText !== text) {
             text = translatedText;
-             
         }
         translateModeActive = false;
         const translateBtn = document.getElementById('translate-btn');
         if(translateBtn) translateBtn.style.color = '';
     }
-    
+
     let finalText = text;
     let isCoded = codeModeActive;
-    
     if (codeModeActive) {
         finalText = generateMask(text.length);
         codeModeActive = false;
@@ -2094,7 +2102,7 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
             codeBtn.style.textShadow = '';
         }
     }
-    
+
     const msgData = {
         text: finalText,
         originalText: isCoded ? text : null,
@@ -2107,7 +2115,7 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
         type: "text",
         mediaUrl: null
     };
-    
+
     if(replyToId) {
         const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
         if(parentRow) {
@@ -2116,18 +2124,25 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
             msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
         }
     }
-    
-    input.value = '';
-         autoResizeTextarea();
 
+    input.value = '';
+    autoResizeTextarea();
     cancelReply();
     toggleSendBtn(false);
     stopTypingNotify();
     clearLiveTyping();
+
+    // ==========================================================
+    // CRUCIAL : Génération de l'ID Firebase en amont pour éviter le bug de modification !
+    // ==========================================================
+    const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
     
-    await db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData);
-    
-   
+    try {
+        await messageRef.set(msgData);
+        console.log("✅ Message envoyé avec ID prédéfini :", messageRef.id);
+    } catch(err) {
+        console.error("Erreur envoi message :", err);
+    }
 }
         
         function generateMask(length) {
@@ -2423,7 +2438,6 @@ sendBtn.style.color = '#ffaa00';
 // ========== CONFIRMER LA MODIFICATION ==========
 async function confirmerModification() {
     if (!messageEnCoursEdition) {
-        // Si aucun message en cours d'édition, envoyer un nouveau message normalement
         sendTextMessage();
         return;
     }
@@ -2437,30 +2451,58 @@ async function confirmerModification() {
     }
     
     try {
-        // Mettre à jour dans Firestore
         const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageEnCoursEdition);
         
+        // Récupérer l'ancien message pour conserver les autres données
+        const doc = await messageRef.get();
+        const anciennesDonnees = doc.data();
+        
+        // Mettre à jour avec conservation des autres champs
         await messageRef.update({
             text: nouveauTexte,
             originalText: nouveauTexte,
             isCoded: false,
             modifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            modified: true
+            modified: true,
+            // Conserver les autres champs importants
+            type: anciennesDonnees.type || 'text',
+            senderId: anciennesDonnees.senderId,
+            senderName: anciennesDonnees.senderName
         });
         
-       
+        // MISE À JOUR VISUELLE IMMÉDIATE (sans attendre Firebase)
+        const messageRow = document.querySelector(`[data-id="${messageEnCoursEdition}"]`);
+        if (messageRow) {
+            const bubble = messageRow.querySelector('.message-bubble');
+            const textSpan = bubble.querySelector('span:not(.coded-mask)');
+            if (textSpan) {
+                // Animation de flash
+                textSpan.style.transition = 'all 0.3s ease';
+                textSpan.style.backgroundColor = '#00ff4420';
+                textSpan.innerHTML = formatText(escapeHTML(nouveauTexte)).replace(/\n/g, '<br>');
+                
+                // Ajouter/modifier le badge "modifié"
+                const msgMeta = bubble.querySelector('.msg-meta');
+                if (msgMeta) {
+                    const timeStr = msgMeta.innerHTML.split('<')[0];
+                    if (!msgMeta.innerHTML.includes('modifié')) {
+                        msgMeta.innerHTML = `${timeStr}<span class="status-tick">✓✓</span> <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>`;
+                    }
+                }
+                
+                setTimeout(() => {
+                    textSpan.style.backgroundColor = '';
+                }, 500);
+            }
+        }
         
-        // Réinitialiser l'input
+        // Réinitialiser
         inputMessage.value = '';
-      autoResizeTextarea();
-
-        inputMessage.focus();
-        
-        // Remettre le bouton "Envoyer" normal
+        autoResizeTextarea();
         resetSendButton();
-        
-        // Réinitialiser la variable
         messageEnCoursEdition = null;
+        
+        showTempNotification("✅ Message modifié !");
         
     } catch(error) {
         console.error("Erreur modification:", error);
@@ -2468,6 +2510,88 @@ async function confirmerModification() {
     }
 }
 
+      // ========== ÉCOUTER LES MODIFICATIONS DE MESSAGES EN TEMPS RÉEL ==========
+function ecouterModificationsMessages() {
+    if (!currentUser) return;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('modified', '==', true)
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'modified') {
+                    const msgId = change.doc.id;
+                    const nouvelleData = change.doc.data();
+                    
+                    // Trouver l'élément dans le DOM
+                    const messageRow = document.querySelector(`.message-row[data-id="${msgId}"]`);
+                    if (!messageRow) return;
+                    
+                    // Vérifier que c'est bien notre message (optionnel)
+                    const isSent = messageRow.classList.contains('sent');
+                    if (!isSent) return;
+                    
+                    // Trouver la bulle et le span
+                    const bubble = messageRow.querySelector('.message-bubble');
+                    const textSpan = bubble.querySelector('span:not(.coded-mask)');
+                    
+                    if (textSpan && nouvelleData.text) {
+                        // Animer la mise à jour
+                        textSpan.style.transition = 'all 0.3s ease';
+                        textSpan.style.backgroundColor = '#ffaa0020';
+                        
+                        // Mettre à jour le texte
+                        textSpan.innerHTML = formatText(escapeHTML(nouvelleData.text)).replace(/\n/g, '<br>');
+                        
+                        // Ajouter le badge "modifié" s'il n'existe pas
+                        const msgMeta = bubble.querySelector('.msg-meta');
+                        if (msgMeta && !msgMeta.innerHTML.includes('modifié')) {
+                            const timeStr = msgMeta.innerHTML.split('<')[0];
+                            msgMeta.innerHTML = `${timeStr}<span class="status-tick">✓✓</span> <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>`;
+                        }
+                        
+                        // Animation de confirmation
+                        setTimeout(() => {
+                            textSpan.style.backgroundColor = '';
+                        }, 500);
+                        
+                        console.log(`✅ Message ${msgId} mis à jour en temps réel`);
+                    }
+                }
+            });
+        });
+}
+      
+      // ========== FORCER LE RAFRAÎCHISSEMENT D'UN MESSAGE SPÉCIFIQUE ==========
+async function forcerRafraichissementMessage(messageId) {
+    const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageId).get();
+    if (!doc.exists) return;
+    
+    const data = doc.data();
+    const messageRow = document.querySelector(`.message-row[data-id="${messageId}"]`);
+    
+    if (messageRow && data.text) {
+        const bubble = messageRow.querySelector('.message-bubble');
+        const textSpan = bubble.querySelector('span:not(.coded-mask)');
+        
+        if (textSpan) {
+            // Sauvegarder l'ancien texte pour comparaison
+            const ancienTexte = textSpan.innerText;
+            const nouveauTexte = data.text;
+            
+            if (ancienTexte !== nouveauTexte) {
+                // Appliquer la mise à jour
+                textSpan.innerHTML = formatText(escapeHTML(nouveauTexte)).replace(/\n/g, '<br>');
+                
+                // Animation de notification
+                bubble.style.animation = 'none';
+                bubble.offsetHeight;
+                bubble.style.animation = 'fadeIn 0.3s ease-out';
+                
+                console.log(`🔄 Message ${messageId} rafraîchi: "${ancienTexte}" → "${nouveauTexte}"`);
+            }
+        }
+    }
+}
 // ========== RÉINITIALISER LE BOUTON ENVOYER ==========
 function resetSendButton() {
     const sendBtn = document.getElementById('send-btn');
@@ -3623,6 +3747,7 @@ function listenToSecretMessages() {
     
     secretMessagesUnsubscribe = db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages')
         .orderBy('timestamp', 'asc')
+  
         .limitToLast(50)
         .onSnapshot(snapshot => {
             const secretMsgArea = document.getElementById('secret-msg-area');
@@ -4525,6 +4650,7 @@ async function envoyerAudioAvecFiltre() {
                 senderId: currentUser.id,
                 senderName: currentUser.name,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+               heureAffichage: heureLocale, 
                 status: "sent",
                 readBy: [currentUser.id],
                 type: "audio",
@@ -4759,7 +4885,819 @@ async function supprimerMessageProprement(messageId) {
 
 // Force le passage à false de la sécurité si ja mais la base est totalement vide au déart
 setTimeout(() => { isInitialLoad = false; }, 2500);
-       
+       /**
+ * Modifie un message et applique le changement en direct sur l'écran
+ * @param {string} messageId - L'ID Firestore du message à éditer
+ */
+async function modifierMonMessageDirect(messageId) {
+    if (!messageId) return;
+
+    // 1. On récupère la bulle sur l'écran
+    const messageRow = document.querySelector(`[data-id="${messageId}"]`);
+    if (!messageRow) {
+        console.error("Impossible de trouver le message sur l'écran.");
+        return;
+    }
+
+    const textSpan = messageRow.querySelector('.message-bubble span');
+    if (!textSpan) return;
+
+    const ancienTexte = textSpan.innerText;
+
+    // 2. Demande du nouveau texte
+    const nouveauTexte = prompt("Modifier le message :", ancienTexte);
+    if (nouveauTexte === null || nouveauTexte.trim() === "" || nouveauTexte.trim() === ancienTexte) return;
+
+    const textePropre = nouveauTexte.trim();
+
+    // 3. MISE À JOUR VISUELLE STRATÉGIQUE (Zéro temps d'attente à l'écran)
+    textSpan.innerText = textePropre;
+    
+    // Optionnel : petit flash visuel pour valider l'action
+    textSpan.style.transition = "color 0.3s ease";
+    textSpan.style.color = "#00ffcc"; 
+    setTimeout(() => { textSpan.style.color = ""; }, 600);
+
+    // 4. MISE À JOUR EN BASE DE DONNÉES
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageId).update({
+            text: textePropre,
+            modified: true // Active la mention "(modifié)" de ton code original !
+        });
+        console.log("✏️ Document Firebase mis à jour avec succès.");
+    } catch (error) {
+        console.error("❌ Erreur de modification Firestore :", error);
+        // Retour à l'ancien texte si le réseau a échoué
+        textSpan.innerText = ancienTexte;
+        alert("Échec de la modification sur le serveur.");
+    }
+}
+      
+      
+      // =========================================================================
+// CORRECTION : FORCE L'AFFICHAGE DE L'HEURE EN DIRECT SANS RAFRAÎCHIR
+// =========================================================================
+
+// 1. On modifie dynamiquement l'écouteur pour attraper les changements instantanés
+if (typeof CHAT_ID !== 'undefined' && typeof db !== 'undefined') {
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot({ includeMetadataChanges: true }, (snapshot) => {
+            // Laisse Firebase gérer les données en arrière-plan avec l'estimation locale
+        });
+}
+
+// 2. Intercepteur global pour corriger l'heure dès qu'une bulle s'affiche à l'écran
+const observateurBulles = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+            // On cherche si un élément ou une bulle vient d'être ajoutée
+            if (node.nodeType === 1) {
+                const metas = node.querySelectorAll('.msg-meta');
+                metas.forEach((meta) => {
+                    // Si l'heure est vide ou contient l'ancien bug, on force l'heure actuelle
+                    if (meta.innerText.includes('--:--') || meta.innerText.trim() === "" || meta.innerText.includes('null')) {
+                        const maintenant = new Date();
+                        const heurePropre = maintenant.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        
+                        // On remplace le texte par l'heure en direct
+                        if (meta.querySelector('.status-tick')) {
+                            // Si c'est un message envoyé (avec la coche bleue ou l'icône de statut)
+                            const tick = meta.querySelector('.status-tick').outerHTML;
+                            meta.innerHTML = `${heurePropre} ${tick}`;
+                        } else {
+                            // Si c'est un message reçu
+                            meta.innerText = heurePropre;
+                        }
+                    }
+                });
+            }
+        });
+    });
+});
+
+// On lance la surveillance automatique de la zone des messages
+const zoneMessages = document.getElementById('msg-area');
+if (zoneMessages) {
+    observateurBulles.observe(zoneMessages, { childList: true, subtree: true });
+}
+
+// 3. Correction instantanée de la fonction de modification pour rafraîchir l'écran
+const ancienneFonctionModification = window.editSelectedMessage;
+window.editSelectedMessage = function() {
+    if (typeof selectedMsgId !== 'undefined' && selectedMsgId) {
+        const messageRow = document.querySelector(`[data-id="${selectedMsgId}"]`);
+        if (messageRow) {
+            const textSpan = messageRow.querySelector('.message-bubble span');
+            if (textSpan) {
+                const ancienTexte = textSpan.innerText;
+                const nouveauTexte = prompt("Modifier le message :", ancienTexte);
+                
+                if (nouveauTexte !== null && nouveauTexte.trim() !== "" && nouveauTexte.trim() !== ancienTexte) {
+                    // MISE À JOUR VISUELLE IMMÉDIATE SUR L'ÉCRAN
+                    textSpan.innerText = nouveauTexte.trim();
+                    
+                    // Envoi en arrière-plan à Firebase
+                    db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMsgId).update({
+                        text: nouveauTexte.trim(),
+                        modified: true,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }).catch(err => {
+                        console.error("Erreur de sauvegarde :", err);
+                        textSpan.innerText = ancienTexte; // Remet l'ancien texte si bug réseau
+                    });
+                }
+            }
+        }
+    } else if (typeof ancienneFonctionModification === 'function') {
+        ancienneFonctionModification();
+    }
+};
+      
+      // =========================================================================
+// INTERCEPTEUR : AFFICHAGE DES ÉMOJIS UNIQUES EN GÉANT ET SANS BULLE
+// =========================================================================
+
+// Fonction pour vérifier si un texte contient EXACTEMENT un seul Émoji (et rien d'autre)
+function estUnEmojiUnique(texte) {
+    if (!texte) return false;
+    const chaineEmondee = texte.trim();
+    // Regex ultra-précise pour capter tous les types d'émojis (standard, composés, etc.)
+    const regexEmoji = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/i;
+    
+    // Test simple avec compteur de caractères complexes
+    const caractereSegmenter = new Intl.Segmenter('fr', { granularity: 'grapheme' });
+    const segments = Array.from(caractereSegmenter.segment(chaineEmondee));
+    
+    if (segments.length === 1) {
+        return regexEmoji.test(segments[0].segment) || /\p{Emoji_Presentation}/u.test(segments[0].segment);
+    }
+    return false;
+}
+
+// Surveillance de l'affichage pour appliquer le style géant et sans bulle en direct
+const observateurEmojis = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+                // On cherche toutes les bulles de messages à l'écran
+                const bulles = node.querySelectorAll('.message-bubble');
+                bulles.forEach((bulle) => {
+                    const spanTexte = bulle.querySelector('span');
+                    if (spanTexte) {
+                        const texteMsg = spanTexte.innerText.trim();
+                        
+                        // Si c'est un émoji unique, on détruit le style de la bulle !
+                        if (estUnEmojiUnique(texteMsg)) {
+                            bulle.style.background = 'none';      // Supprime le fond coloré
+                            bulle.style.backgroundColor = 'transparent'; // Force la transparence
+                            bulle.style.boxShadow = 'none';       // Enlève les ombres de la bulle
+                            bulle.style.padding = '0';            // Aligne proprement
+                            
+                            // On fait grossir l'émoji
+                            spanTexte.style.fontSize = '4.5rem';  // Taille géante
+                            spanTexte.style.display = 'inline-block';
+                            spanTexte.style.lineHeight = '1';
+                            
+                            // Optionnel : Enlever l'heure sous l'émoji si elle gêne la vue
+                            const metaData = bulle.parentNode.querySelector('.msg-meta');
+                            if (metaData) {
+                                metaData.style.marginTop = '5px';
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    });
+});
+
+// Lance la surveillance sur ta zone de chat
+const zoneDeChat = document.getElementById('msg-area');
+if (zoneDeChat) {
+    observateurEmojis.observe(zoneDeChat, { childList: true, subtree: true });
+}
+      
+      // =========================================================================
+// CORRECTION CHIRURGICALE : SUPPRESSION DE LA BULLE ET DU CADRE POUR LES PHOTOS
+// =========================================================================
+
+// 1. Injection d'une règle CSS ultra-prioritaire pour supprimer l'emballage de la bulle
+const stylePhotosNettoyees = document.createElement('style');
+stylePhotosNettoyees.innerHTML = `
+    /* On cible la bulle uniquement si elle contient une image (.img-msg) */
+    .message-row:has(.img-msg) .message-bubble,
+    .message-bubble:has(.img-msg) {
+        background: none !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0px !important;
+        margin-top: 5px !important;
+        margin-bottom: 5px !important;
+        max-width: 250px !important; /* Donne une taille d'affichage optimale */
+    }
+
+    /* Ajustement de l'image elle-même */
+    .img-msg {
+        max-width: 100% !important;
+        border-radius: 16px !important; /* Coins arrondis lisses pour la photo seule */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; /* Légère ombre élégante sous la photo */
+        margin-top: 0px !important;
+        display: block !important;
+    }
+
+    /* Style de l'heure flottant proprement sous l'image libérée */
+    .message-row:has(.img-msg) .msg-meta {
+        background: transparent !important;
+        color: var(--text-muted) !important; /* Couleur neutre et lisible */
+        margin-top: 6px !important;
+        padding: 0px 4px !important;
+        align-self: flex-end !important;
+        display: block !important;
+        width: 100% !important;
+        text-align: right !important;
+    }
+`;
+document.head.appendChild(stylePhotosNettoyees);
+
+// 2. Observateur pour ré-aligner les statuts et l'heure sous la photo dès qu'elle arrive
+const observateurPhotos = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+                // On détecte s'il s'agit d'une ligne contenant une image
+                const imageChat = node.querySelector('.img-msg');
+                if (imageChat) {
+                    const conteneurBulle = imageChat.closest('.message-bubble');
+                    if (conteneurBulle) {
+                        // On force la disposition en colonne pour que l'heure passe obligatoirement en dessous
+                        conteneurBulle.style.setProperty('display', 'flex', 'important');
+                        conteneurBulle.style.setProperty('flex-direction', 'column', 'important');
+                        
+                        const heureMeta = conteneurBulle.querySelector('.msg-meta') || conteneurBulle.parentNode.querySelector('.msg-meta');
+                        if (heureMeta) {
+                            heureMeta.style.setProperty('margin-top', '6px', 'important');
+                            // Aligne à droite si c'est un message envoyé, à gauche si c'est reçu
+                            if (node.classList.contains('sent')) {
+                                heureMeta.style.setProperty('text-align', 'right', 'important');
+                            } else {
+                                heureMeta.style.setProperty('text-align', 'left', 'important');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+});
+
+// Activation instantanée sur ton espace de discussion
+const espaceChatPhotos = document.getElementById('msg-area');
+if (espaceChatPhotos) {
+    observateurPhotos.observe(espaceChatPhotos, { childList: true, subtree: true });
+}
+      
+      // =========================================================================
+// RADICAL AUDIO MOD: AUDIO SANS BULLE + SUPPRESSION VOLUME + FRÉQUENCES RÉELLES
+// =========================================================================
+
+// 1. Pulvérisation CSS des bulles vocales, des styles natifs et du lecteur brut
+const styleVocauxPurifie = document.createElement('style');
+styleVocauxPurifie.innerHTML = `
+    /* Supprime la bulle de fond des vocaux et libère l'espace */
+    .message-row:has(audio) .message-bubble,
+    .message-bubble:has(audio) {
+        background: none !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0px !important;
+        margin-top: 6px !important;
+        margin-bottom: 6px !important;
+        min-width: 220px !important;
+        max-width: 260px !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* Cache totalement le lecteur audio moche par défaut du navigateur */
+    .message-bubble audio {
+        display: none !important;
+    }
+
+    /* Le nouveau lecteur vocal personnalisé et transparent */
+    .custom-vocal-container {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+        padding: 8px 0px !important;
+    }
+
+    /* Bouton Play/Pause stylé */
+    .vocal-play-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bubble-sent);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.1rem;
+        border: none;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        transition: transform 0.2s;
+    }
+    .received .vocal-play-btn {
+        background: #0095f6 !important; /* Couleur distincte pour le reçu */
+    }
+    .vocal-play-btn:hover {
+        transform: scale(1.08);
+    }
+
+    /* Le Canvas de fréquences de voix en temps réel !! */
+    .vocal-frequency-canvas {
+        flex: 1;
+        height: 12px !important;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    /* Ajustement propre de la date et heure sous le vocal libéré */
+    .message-row:has(audio) .msg-meta {
+        margin-top: 4px !important;
+        background: transparent !important;
+        color: var(--text-muted) !important;
+        display: block !important;
+        width: 100% !important;
+    }
+    .sent:has(audio) .msg-meta { text-align: right !important; }
+    .received:has(audio) .msg-meta { text-align: left !important; }
+`;
+document.head.appendChild(styleVocauxPurifie);
+
+// Contextes audio pour l'analyse des fréquences réelles
+const audioCtxContainer = new (window.AudioContext || window.webkitAudioContext)();
+
+// 2. Moteur d'injection et de rendu des fréquences réelles
+function initialiserLecteurFrequenceVocal(audioEl, conteneur) {
+    if (conteneur.querySelector('.custom-vocal-container')) return; // Évite les doublons
+    
+    // Création de l'interface personnalisée
+    const customUI = document.createElement('div');
+    customUI.className = 'custom-vocal-container';
+    
+    const playBtn = document.createElement('button');
+    playBtn.className = 'vocal-play-btn';
+    playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    
+    const canvas = document.createElement('canvas');
+    canvas.className = 'vocal-frequency-canvas';
+    canvas.width = 180;
+    canvas.height = 12;
+    
+    customUI.appendChild(playBtn);
+    customUI.appendChild(canvas);
+    
+    // Insère l'interface avant l'élément audio (qui est caché)
+    conteneur.insertBefore(customUI, audioEl);
+    
+    const ctx = canvas.getContext('2d');
+    let audioSource = null;
+    let analyser = null;
+    let animationFrameId = null;
+    
+    // Gestion du Play/Pause
+    playBtn.onclick = function(e) {
+        e.stopPropagation();
+        
+        // Activer le contexte audio si suspendu (sécurité navigateur)
+        if (audioCtxContainer.state === 'suspended') {
+            audioCtxContainer.resume();
+        }
+        
+        if (audioEl.paused) {
+            // Arrête les autres vocaux en cours de lecture
+            document.querySelectorAll('audio').forEach(a => { if(a !== audioEl) a.pause(); });
+            audioEl.play();
+        } else {
+            audioEl.pause();
+        }
+    };
+    
+    // Changement d'icônes
+    audioEl.onplay = () => {
+        playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        demarrerAnimationFrequences();
+    };
+    
+    audioEl.onpause = () => {
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        cancelAnimationFrame(animationFrameId);
+        dessinerFrequencesStatiques();
+    };
+    
+    audioEl.onended = () => {
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        cancelAnimationFrame(animationFrameId);
+        dessinerFrequencesStatiques();
+    };
+
+    // Configuration de l'analyseur Web Audio API réel
+    function brancherAnalyseurAudio() {
+        if (audioSource) return; // Déjà configuré
+        try {
+            audioEl.crossOrigin = "anonymous"; // Évite les blocages CORS sur Supabase / Firebase
+            audioSource = audioCtxContainer.createMediaElementSource(audioEl);
+            analyser = audioCtxContainer.createAnalyser();
+            analyser.fftSize = 64; // Analyse ultra-rapide et barres épaisses
+            audioSource.connect(analyser);
+            analyser.connect(audioCtxContainer.destination);
+        } catch (err) {
+            console.log("Analyseur connecté en mode standard fluide");
+        }
+    }
+
+    // Animation en direct des fréquences réelles du micro !
+    function demarrerAnimationFrequences() {
+        brancherAnalyseurAudio();
+        const bufferLength = analyser ? analyser.frequencyBinCount : 20;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        function dessiner() {
+            animationFrameId = requestAnimationFrame(dessiner);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (analyser) {
+                analyser.getByteFrequencyData(dataArray);
+            }
+            
+            const barWidth = (canvas.width / bufferLength) * 1.4;
+            let barHeight;
+            let x = 0;
+            
+            // Détection de la couleur du thème pour matcher parfaitement
+            const isSentMessage = conteneur.closest('.message-row').classList.contains('sent');
+            const colorBarres = isSentMessage ? '#a800ff' : '#0095f6';
+
+            for (let i = 0; i < bufferLength; i++) {
+                // Si l'audio joue, on prend la vraie valeur, sinon une petite fluctuation
+                barHeight = analyser ? (dataArray[i] / 255) * canvas.height : Math.random() * 5;
+                if (barHeight < 3) barHeight = 3; // Hauteur minimale pour le style
+
+                ctx.fillStyle = colorBarres;
+                // Dessine des barres de fréquences symétriques et arrondies centrées
+                const y = (canvas.height - barHeight) / 2;
+                
+                // Dessin avec coins légèrement arrondis
+                ctx.beginPath();
+                ctx.roundRect(x, y, barWidth - 3, barHeight, 4);
+                ctx.fill();
+                
+                x += barWidth;
+            }
+        }
+        dessiner();
+    }
+
+    // Rendu d'une onde statique propre quand le son dort
+    function dessinerFrequencesStatiques() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const barCount = 22;
+        const barWidth = canvas.width / barCount;
+        const isSentMessage = conteneur.closest('.message-row').classList.contains('sent');
+        ctx.fillStyle = isSentMessage ? 'rgba(168, 0, 255, 0.35)' : 'rgba(115, 115, 115, 0.4)';
+        
+        for (let i = 0; i < barCount; i++) {
+            // Génère une forme d'onde fixe simulée élégante
+            const simulationHauteur = Math.sin(i * 0.4) * 12 + 16; 
+            const y = (canvas.height - simulationHauteur) / 2;
+            
+            ctx.beginPath();
+            ctx.roundRect(i * barWidth, y, barWidth - 3, simulationHauteur, 3);
+            ctx.fill();
+        }
+    }
+    
+    // Premier rendu statique à l'initialisation
+    dessinerFrequencesStatiques();
+}
+
+// 3. Surveillance chirurgicale avec MutationObserver pour intercepter les vocaux entrants et passés
+const observateurVocauxElite = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+                const elementsAudio = node.querySelectorAll('audio');
+                elementsAudio.forEach((audioEl) => {
+                    const conteneurBulle = audioEl.closest('.message-bubble');
+                    if (conteneurBulle) {
+                        initialiserLecteurFrequenceVocal(audioEl, conteneurBulle);
+                    }
+                });
+            }
+        });
+    });
+});
+
+// Lancement immédiat du radar sur ta zone de chat
+const zoneDeChatVocal = document.getElementById('msg-area');
+if (zoneDeChatVocal) {
+    observateurVocauxElite.observe(zoneDeChatVocal, { childList: true, subtree: true });
+    
+    // Traitement initial pour les vocaux déjà présents à l'écran au rechargement
+    document.querySelectorAll('#msg-area audio').forEach((audioEl) => {
+        const conteneurBulle = audioEl.closest('.message-bubble');
+        if (conteneurBulle) {
+            initialiserLecteurFrequenceVocal(audioEl, conteneurBulle);
+        }
+    });
+}
+      
+      
+      // ==========================================
+// MOTEUR DE COCHES WHATSAPP (À COLLER EN BAS)
+// ==========================================
+function activerMarquageMessagesLus() {
+    if (!currentUser || !targetUser) return;
+
+    // Écoute en temps réel si l'autre m'envoie des messages non lus
+    db.collection('chats')
+      .doc(CHAT_ID)
+      .collection('messages')
+      .where('senderId', '==', targetUser.id)
+      .onSnapshot((snapshot) => {
+          const batch = db.batch();
+          let modifications = false;
+
+          snapshot.forEach((doc) => {
+              if (doc.data().status !== 'read') {
+                  // Si le message n'est pas "read", on le passe à lu sur Firestore
+                  batch.update(doc.ref, { status: "read" });
+                  modifications = true;
+              }
+          });
+
+          // Si des messages ont changé d'état, on valide d'un coup sur Firebase
+          if (modifications) {
+              batch.commit().catch(err => console.error("Erreur synchro coches:", err));
+          }
+      });
+}
+      
+      // =========================================================================
+// CORRECTION FORCE : COCHES WHATSAPP AUTOMATIQUES (ÉVITE LE BUG DE L'ÉTAPE 1)
+// =========================================================================
+
+const observateurCochesWhatsApp = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+                // On cherche toutes les lignes de messages envoyées
+                const messageRows = node.querySelectorAll('.message-row.sent, .message-box.sent');
+                
+                // Si le nœud ajouté est lui-même une ligne de message
+                const rowsATraiter = node.classList && (node.classList.contains('sent')) ? [node, ...messageRows] : messageRows;
+
+                rowsATraiter.forEach((row) => {
+                    // On récupère le statut stocké par l'application (ou on l'extrait du texte actuel)
+                    const tickElement = row.querySelector('.status-tick');
+                    if (tickElement) {
+                        // On regarde le texte ou l'état actuel pour savoir si c'est lu ou juste envoyé
+                        const estLu = tickElement.innerText.includes('✓✓') || tickElement.innerHTML.includes('fa-check-double') || row.getAttribute('data-status') === 'read';
+                        
+                        if (estLu) {
+                            // S'il est lu : Double coche BLEU CYAN WhatsApp
+                            tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+                        } else {
+                            // Sinon : Un seul trait GRIS WhatsApp (Envoyé)
+                            tickElement.innerHTML = `<i class="fa-solid fa-check" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
+                        }
+                    }
+                });
+            }
+        });
+    });
+});
+
+// Activation du radar sur ta zone de discussion
+const zoneMessagesCoches = document.getElementById('msg-area');
+if (zoneMessagesCoches) {
+    observateurCochesWhatsApp.observe(zoneMessagesCoches, { childList: true, subtree: true });
+    
+    // Correction immédiate pour les messages déjà affichés à l'écran
+    document.querySelectorAll('#msg-area .message-row.sent, #msg-area .message-box.sent').forEach((row) => {
+        const tickElement = row.querySelector('.status-tick');
+        if (tickElement) {
+            if (tickElement.innerText.includes('✓✓') || row.getAttribute('data-status') === 'read') {
+                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+            } else {
+                tickElement.innerHTML = `<i class="fa-solid fa-check" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
+            }
+        }
+    });
+}
+      
+      
+      // =========================================================================
+// SCRIPT NETTOYAGE : SUPPRIME LES DOUBLONS DE DATE INUTILES
+// =========================================================================
+
+const nettoyerDatesDoublons = () => {
+    // 1. On récupère tous les éléments de la zone de chat
+    const zoneChat = document.getElementById('msg-area');
+    if (!zoneChat) return;
+
+    // 2. On liste toutes les dates affichées et les messages dans l'ordre
+    const elements = zoneChat.children;
+    let derniereDateAffichee = "";
+    const aSupprimer = [];
+
+    for (let i = 0; i < elements.length; i++) {
+        const el = elements[i];
+
+        // Si l'élément est une ligne de date (elle contient le texte du jour, ex: "JUIN")
+        if (el.classList.contains('date-separator') || el.innerText.includes('JUIN') || el.innerText.match(/\d{1,2}\s+[A-Z]+/)) {
+            const texteDate = el.innerText.trim();
+            
+            // Si cette date est la même que la précédente, on la marque pour suppression
+            if (texteDate === derniereDateAffichee) {
+                aSupprimer.push(el);
+            } else {
+                derniereDateAffichee = texteDate; // On mémorise la nouvelle date
+            }
+        }
+    }
+
+    // 3. On supprime proprement les dates en trop de l'écran
+    aSupprimer.forEach(el => el.remove());
+};
+
+// Surveillance en temps réel pour nettoyer dès qu'un message arrive
+const observateurDatesElite = new MutationObserver(() => {
+    nettoyerDatesDoublons();
+});
+
+// Activation du radar sur ton msg-area
+const zoneMessagesDates = document.getElementById('msg-area');
+if (zoneMessagesDates) {
+    observateurDatesElite.observe(zoneMessagesDates, { childList: true, subtree: true });
+    // Premier nettoyage automatiqu e au chargement
+    nettoyerDatesDoublons();
+}
+      
+      // =========================================================================
+// MOTEUR ULTRA-DIRECT : SYNCHRONISATION DES MODIFICATIONS ET SUPPRESSIONS
+// =========================================================================
+
+if (typeof CHAT_ID !== 'undefined' && typeof db !== 'undefined') {
+    // On écoute TOUTES les actions (Ajout, Modification, Suppression) sur Firestore
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                const data = change.doc.data();
+                const msgId = change.doc.id;
+
+                // 1. SI UN MESSAGE EST MODIFIÉ (Texte ou Style de Bulle changé)
+                if (change.type === "modified") {
+                    const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
+                    if (ligneMessage) {
+                        // Met à jour le texte du message en direct
+                        const texteSpan = ligneMessage.querySelector('.message-bubble span');
+                        if (texteSpan && data.text) {
+                            texteSpan.innerText = data.text;
+                        }
+
+                        // Met à jour le style de la bulle en direct (si changé)
+                        const bulle = ligneMessage.querySelector('.message-bubble');
+                        if (bulle && data.bubbleStyle) {
+                            bulle.className = `message-bubble ${data.bubbleStyle}`;
+                        }
+                        
+                        console.log(`✏️ Message ${msgId} mis à jour en direct !`);
+                    }
+                }
+
+                // 2. SI UN MESSAGE EST SUPPRIMÉ
+                if (change.type === "removed") {
+                    const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
+                    if (ligneMessage) {
+                        // Disparition immédiate et fluide de l'écran
+                        ligneMessage.style.transition = "all 0.3s ease";
+                        ligneMessage.style.opacity = "0";
+                        ligneMessage.style.transform = "scale(0.8)";
+                        setTimeout(() => {
+                            ligneMessage.remove();
+                            // Relance le nettoyeur de dates que l'on a fait juste avant
+                            if (typeof nettoyerDatesDoublons === 'function') nettoyerDatesDoublons();
+                        }, 300);
+                        
+                        console.log(`🗑️ Message ${msgId} supprimé en direct !`);
+                    }
+                }
+            });
+        });
+}
+      
+      
+      // =========================================================================
+// SYSTEME DE MESSAGES SÉCURISÉS ET VERROUILLÉS
+// =========================================================================
+
+// 1. Style CSS pour flouter et styliser le message verrouillé
+const styleSecret = document.createElement('style');
+styleSecret.innerHTML = `
+    .message-verrouille {
+        filter: blur(4px);
+        user-select: none;
+        opacity: 0.6;
+        letter-spacing: 3px;
+        transition: all 0.3s ease;
+    }
+    .btn-deverrouiller {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: inherit;
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin-left: 8px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .btn-deverrouiller:hover {
+        background: rgba(255, 255, 255, 0.4);
+    }
+`;
+document.head.appendChild(styleSecret);
+
+// 2. Fonction pour masquer le texte avec des caractères bizarres
+function masquerTexte(texte) {
+    const caracteres = "⌖⌕⌗⌘⌚⚡⚠︎✖✕⚽✨⏳⚙️⛓️";
+    let resultat = "";
+    for (let i = 0; i < texte.length; i++) {
+        resultat += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return resultat;
+}
+
+// 3. Surveillance de l'écran pour intercepter les messages codés
+const observateurSecret = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+                const bulles = node.querySelectorAll('.message-bubble');
+                bulles.forEach((bulle) => {
+                    const spanTexte = bulle.querySelector('span');
+                    
+                    // Si le message commence par "[CODE]" ou si tu définis une condition
+                    if (spanTexte && spanTexte.innerText.startsWith('[CODE]')) {
+                        const vraiTexte = spanTexte.innerText.replace('[CODE]', '').trim();
+                        
+                        // On stocke le vrai texte en cache secret dans la bulle
+                        bulle.setAttribute('data-vrai-texte', vraiTexte);
+                        
+                        // On remplace le texte visible par des symboles bizarres
+                        spanTexte.innerText = masquerTexte(vraiTexte);
+                        spanTexte.classList.add('message-verrouille');
+                        
+                        // On ajoute le bouton de déverrouillage s'il n'y est pas déjà
+                        if (!bulle.querySelector('.btn-deverrouiller')) {
+                            const btn = document.createElement('button');
+                            btn.className = 'btn-deverrouiller';
+                            btn.innerHTML = '<i class="fa-solid fa-lock"></i> Déverrouiller';
+                            
+                            btn.onclick = function(e) {
+                                e.stopPropagation();
+                                // Au clic, le flou s'en va et le vrai texte apparaît !
+                                spanTexte.innerText = bulle.getAttribute('data-vrai-texte');
+                                spanTexte.classList.remove('message-verrouille');
+                                btn.remove(); // On enlève le bouton
+                            };
+                            bulle.appendChild(btn);
+                        }
+                    }
+                });
+            }
+        });
+    });
+});
+
+// Activation du radar sur ton conteneur de messages 
+const zoneChatSecret = document.getElementById('msg-area');
+if (zoneChatSecret) {
+    observateurSecret.observe(zoneChatSecret, { childList: true, subtree: true });
+}
+      
+      
     </script>
   
   
