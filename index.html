@@ -5696,7 +5696,72 @@ const zoneChatSecret = document.getElementById('msg-area');
 if (zoneChatSecret) {
     observateurSecret.observe(zoneChatSecret, { childList: true, subtree: true });
 }
-      
+      // =========================================================================
+// VERSION CORRIGÉE : SCRIPT DE TÉLÉCHARGEMENT UNIVERSEL (SPÉCIAL IPHONE)
+// =========================================================================
+
+function telechargerImageUniversel(urlImage, nomFichier = 'chat-photo.jpg') {
+    // Détection si l'utilisateur est sur un appareil iOS (iPhone, iPad)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+        // --- STRATÉGIE IPHONE SANS ERREUR DE SYNTAXE ---
+        const nouvelOnglet = window.open();
+        if (nouvelOnglet) {
+            nouvelOnglet.document.write(`
+                <html>
+                <head>
+                    <title>Enregistrer l'image</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body { margin: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+                        img { max-width: 100%; max-height: 80vh; object-fit: contain; }
+                        .instructions { margin-top: 20px; font-size: 14px; text-align: center; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <img src="${urlImage}" />
+                    <div class="instructions">💡 <b>Pour l'enregistrer dans ta Galerie :</b><br>Reste appuyé sur la photo et choisis <b>"Ajouter à Photos"</b></div>
+                </body>
+                </html>
+            `);
+        }
+    } else {
+        // --- STRATÉGIE PC / ANDROID ---
+        fetch(urlImage)
+            .then(response => response.blob())
+            .then(blob => {
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = nomFichier;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
+            })
+            .catch(() => {
+                const a = document.createElement('a');
+                a.href = urlImage;
+                a.download = nomFichier;
+                a.target = '_blank';
+                a.click();
+            });
+    }
+}
+
+// INTERCEPTION DU CLIC SUR LA PHOTO
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('img-msg') || e.target.closest('.img-msg')) {
+        const imageElement = e.target.classList.contains('img-msg') ? e.target : e.target.querySelector('.img-msg');
+        if (imageElement && imageElement.src) {
+            e.preventDefault();
+            e.stopPropagation();
+            telechargerImageUniversel(imageElement.src, 'DakarChat_' + Date.now() + '.jpg');
+        }
+    }
+});
       
     </script>
   
