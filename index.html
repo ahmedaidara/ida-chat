@@ -4939,11 +4939,83 @@ async function modifierMonMessageDirect(messageId) {
 // =========================================================================
 
 // 1. On modifie dynamiquement l'écouteur pour attraper les changements instantanés
+// =========================================================================
+// MOTEUR D'ÉLITE CORRIGÉ : ZÉRO FAUX BADGE SUR LES NOUVEAUX MESSAGES
+// =========================================================================
+
 if (typeof CHAT_ID !== 'undefined' && typeof db !== 'undefined') {
     db.collection('chats').doc(CHAT_ID).collection('messages')
         .orderBy('timestamp', 'asc')
-        .onSnapshot({ includeMetadataChanges: true }, (snapshot) => {
-            // Laisse Firebase gérer les données en arrière-plan avec l'estimation locale
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                const data = change.doc.data();
+                const msgId = change.doc.id;
+                const zoneChat = document.getElementById('msg-area');
+
+                // 1. SI UN MESSAGE EST MODIFIÉ
+                if (change.type === "modified") {
+                    
+                    // --- SÉCURITÉ ANTI-FAUX BADGE ---
+                    // Firebase déclenche parfois "modified" juste pour la mise à jour des coches (status: "read").
+                    // On n'active le déplacement et le badge QUE si le texte a VRAIMENT changé !
+                    const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
+                    if (ligneMessage) {
+                        const texteSpan = ligneMessage.querySelector('.message-bubble span');
+                        
+                        // Si le texte sur l'écran est déjà identique au texte de Firebase, on stoppe tout !
+                        if (texteSpan && texteSpan.innerText.trim() === data.text.trim()) {
+                            return; 
+                        }
+                        
+                        // Si on arrive ici, c'est une VRAIE modification de texte
+                        if (texteSpan && data.text) {
+                            texteSpan.innerText = data.text;
+                        }
+
+                        // Ajout du badge "(modifié)" uniquement pour les vrais changements
+                        let badgeModif = ligneMessage.querySelector('.vrai-badge-modif');
+                        if (!badgeModif) {
+                            badgeModif = document.createElement('small');
+                            badgeModif.className = 'vrai-badge-modif';
+                            badgeModif.style.cssText = "font-size: 0.65rem; opacity: 0.6; margin-left: 5px; font-style: italic;";
+                            badgeModif.innerText = " (modifié)";
+                            
+                            const metaData = ligneMessage.querySelector('.msg-meta');
+                            if (metaData) {
+                                metaData.appendChild(badgeModif);
+                            }
+                        }
+
+                        // On pousse le message modifié tout en bas de la discussion
+                        if (zoneChat) {
+                            zoneChat.appendChild(ligneMessage);
+                            
+                            ligneMessage.style.animation = "none";
+                            setTimeout(() => {
+                                ligneMessage.style.animation = "bounceIn 0.4s ease";
+                            }, 10);
+
+                            zoneChat.scrollTop = zoneChat.scrollHeight;
+                        }
+                        
+                        console.log(`⚡ Vraie modification appliquée sur le message : ${msgId}`);
+                    }
+                }
+
+                // 2. SI UN MESSAGE EST SUPPRIMÉ
+                if (change.type === "removed") {
+                    const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
+                    if (ligneMessage) {
+                        ligneMessage.style.transition = "all 0.3s ease";
+                        ligneMessage.style.opacity = "0";
+                        ligneMessage.style.transform = "scale(0.8)";
+                        setTimeout(() => {
+                            ligneMessage.remove();
+                            if (typeof nettoyerDatesDoublons === 'function') nettoyerDatesDoublons();
+                        }, 300);
+                    }
+                }
+            });
         });
 }
 
