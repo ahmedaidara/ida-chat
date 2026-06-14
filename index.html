@@ -1023,7 +1023,7 @@ input, textarea {
         
         <!-- Bouton pour ouvrir Giphy -->
         <div style="display: flex; justify-content: flex-start; margin-top: 5px;">
-            <button id="gif-trigger-btn" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; padding: 5px 10px; color: var(--text-muted);" title="GIF et Stickers">✨ GIF</button>
+            <button id="gif-trigger-btn" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; padding: 5px 10px; color: var(--text-muted);" title="GIF et Stickers">✨</button>
         </div>
 </div>
                 <span id="send-btn" onclick="sendTextMessage()"><i class="fa-regular fa-paper-plane"></i></span>
@@ -6326,63 +6326,174 @@ if (typeof db !== 'undefined' && typeof CHAT_ID !== 'undefined') {
 // GIFS PRÉCHARGÉS (FONCTIONNE SANS API)
 // =========================================================================
 
+// =========================================================================
+// INTÉGRATION GIFS + STICKERS (TENOR + EMOJIS)
+// =========================================================================
+
 document.addEventListener('DOMContentLoaded', function() {
     const drawer = document.getElementById('giphy-drawer');
     const resultsContainer = document.getElementById('giphy-results');
+    const searchInput = document.getElementById('giphy-search');
+    const toggleBtn = document.getElementById('btn-toggle-type');
     const triggerBtn = document.getElementById('gif-trigger-btn');
     
-    // Collection de GIFs populaires qui fonctionnent toujours
-  const gifsPopulaires = [
-    "https://media.tenor.com/GfSX-u7VGM4AAAAC/pikachu-pokemon.gif", // Ton rescapé d'origine
-    "https://media.tenor.com/_hUq1BSUsiMAAAAM/cat-cute.gif",       
-    "https://media.tenor.com/8zkTzFrcGZYAAAAM/goodbye-thank-you.gif", 
-    "https://media.tenor.com/TmNWrln1uJAAAAAC/bongo-cat-cute.gif", 
-    "https://media.tenor.com/zqHbKTg9NxEAAAAM/ray-liotta-laughing.gif", 
-    "https://media.tenor.com/-XaDVlGtQeQAAAAM/laughing-rofl.gif",  
-    "https://media.tenor.com/xnJMR7T9UvUAAAAM/ring-will-you-marry-me.gif",
-
-    // --- LES 10 NOUVEAUX GIFS SPÉCIAL COUPLE & AMOUR ---
-    "https://media.tenor.com/A6mB6w_F5k0AAAAM/milk-and-mocha-hug.gif",       // Câlin mignon (Milk & Mocha)
-    "https://media.tenor.com/7gM0VbVvI7MAAAAM/mochi-peachcat-kisses.gif",   // Bisous sur la joue (Mochi Cat)
-    "https://media.tenor.com/W7Sg5qTfU4IAAAAM/love-heart.gif",              // Énorme cœur qui bat
-    "https://media.tenor.com/1GkUepqMCHYAAAAM/tu-me-manques-i-miss-you.gif",// "Tu me manques" / Câlin triste
-    "https://media.tenor.com/A9f697g_ZBcAAAAM/stitching-together-love.gif", // Coudre un cœur à deux
-    "https://media.tenor.com/b2b-mIuGZ7sAAAAM/milk-and-mocha-love.gif",      // Bisou amoureux sur la truffe
-    "https://media.tenor.com/gK6R8nOaECAAAAAM/love-couple.gif",             // Regard complice sous la couette
-    "https://media.tenor.com/A2T63w6yUo8AAAAM/cute-disney.gif",             // Stitch qui envoie des cœurs
-    "https://media.tenor.com/YwN9_2n7MAMAAAAM/tkthao219-bubududu.gif",       // Ours doudou amoureux terrassé par l'amour
-    "https://media.tenor.com/P4W8_Vv8pGIAAAAM/flying-kiss-love.gif"          // Bisou volant magique (Panda)
-];
+    // ========== COLLECTION DE GIFS ==========
+    const gifsPopulaires = [
+        "https://media.tenor.com/GfSX-u7VGM4AAAAC/pikachu-pokemon.gif",
+        "https://media.tenor.com/_hUq1BSUsiMAAAAM/cat-cute.gif",       
+        "https://media.tenor.com/8zkTzFrcGZYAAAAM/goodbye-thank-you.gif", 
+        "https://media.tenor.com/TmNWrln1uJAAAAAC/bongo-cat-cute.gif", 
+        "https://media.tenor.com/zqHbKTg9NxEAAAAM/ray-liotta-laughing.gif", 
+        "https://media.tenor.com/-XaDVlGtQeQAAAAM/laughing-rofl.gif",  
+        "https://media.tenor.com/xnJMR7T9UvUAAAAM/ring-will-you-marry-me.gif",
+        "https://media.tenor.com/A6mB6w_F5k0AAAAM/milk-and-mocha-hug.gif",
+        "https://media.tenor.com/7gM0VbVvI7MAAAAM/mochi-peachcat-kisses.gif",
+        "https://media.tenor.com/W7Sg5qTfU4IAAAAM/love-heart.gif",
+        "https://media.tenor.com/1GkUepqMCHYAAAAM/tu-me-manques-i-miss-you.gif",
+        "https://media.tenor.com/A9f697g_ZBcAAAAM/stitching-together-love.gif",
+        "https://media.tenor.com/b2b-mIuGZ7sAAAAM/milk-and-mocha-love.gif",
+        "https://media.tenor.com/gK6R8nOaECAAAAAM/love-couple.gif",
+        "https://media.tenor.com/A2T63w6yUo8AAAAM/cute-disney.gif",
+        "https://media.tenor.com/YwN9_2n7MAMAAAAM/tkthao219-bubududu.gif",
+        "https://media.tenor.com/P4W8_Vv8pGIAAAAM/flying-kiss-love.gif"
+    ];
+    
+    // ========== COLLECTION DE STICKERS (FOND TRANSPARENT) ==========
+    const stickersCollection = [
+        // Émojis en gros format (fond transparent naturellement)
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f60a.png",   // 😊 Souriant
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f60d.png",   // 😍 Amoureux
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f618.png",   // 😘 Bisou
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f495.png",   // 💕 Deux cœurs
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f49a.png",   // 💚 Cœur vert
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f499.png",   // 💙 Cœur bleu
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f49c.png",   // 💜 Cœur violet
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f49b.png",   // 💛 Cœur jaune
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f496.png",   // 💖 Cœur qui brille
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f497.png",   // 💗 Cœur qui grandit
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f49e.png",   // 💞 Cœurs qui tournent
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f49f.png",   // 💟 Cœur ornement
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/2764.png",    // ❤️ Cœur rouge
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f525.png",   // 🔥 Feu
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f44d.png",   // 👍 Pouce haut
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f44f.png",   // 👏 Applaudissements
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f389.png",   // 🎉 Fête
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f38a.png",   // 🎊 Confettis
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4aa.png",   // 💪 Muscu
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4af.png",   // 💯 100
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/2728.png",    // ✨ Étoiles
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f33b.png",   // 🌻 Tournesol
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f338.png",   // 🌸 Fleur cerise
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f339.png",   // 🌹 Rose
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f33a.png",   // 🌺 Hibiscus
+        "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f308.png"    // 🌈 Arc-en-ciel
+    ];
+    
+    let currentType = "gifs"; // "gifs" ou "stickers"
     
     if (!triggerBtn) return;
     
+    // Ouvrir/fermer le tiroir
     triggerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (drawer.style.display === 'none' || drawer.style.display === '') {
             drawer.style.display = 'flex';
-            afficherGifsPrecharges();
+            afficherContenu();
         } else {
             drawer.style.display = 'none';
         }
     });
     
-    function afficherGifsPrecharges() {
+    // Basculer entre GIFs et Stickers
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            currentType = currentType === "gifs" ? "stickers" : "gifs";
+            toggleBtn.innerHTML = currentType === "gifs" ? "🎨 GIFS" : "🔵 STICKERS";
+            toggleBtn.style.background = currentType === "stickers" ? "#25D366" : "#f0f2f5";
+            toggleBtn.style.color = currentType === "stickers" ? "#fff" : "#000";
+            afficherContenu();
+        });
+    }
+    
+    // Recherche (fonctionne pour les deux)
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            if (query.length > 1) {
+                filtrerContenu(query);
+            } else if (query.length === 0) {
+                afficherContenu();
+            }
+        });
+    }
+    
+    function afficherContenu() {
+        if (currentType === "gifs") {
+            afficherGifs(gifsPopulaires);
+        } else {
+            afficherStickers(stickersCollection);
+        }
+    }
+    
+    function filtrerContenu(query) {
+        if (currentType === "gifs") {
+            // Filtrer les GIFs par mot-clé (simple)
+            const filtres = gifsPopulaires.filter(gif => 
+                gif.toLowerCase().includes(query)
+            );
+            afficherGifs(filtres.length > 0 ? filtres : gifsPopulaires);
+        } else {
+            // Filtrer les stickers (garder tous, la recherche est basique)
+            afficherStickers(stickersCollection);
+        }
+    }
+    
+    function afficherGifs(gifs) {
         if (!resultsContainer) return;
         resultsContainer.innerHTML = "";
         
-        gifsPopulaires.forEach(gifUrl => {
+        if (gifs.length === 0) {
+            resultsContainer.innerHTML = '<div style="grid-column: span 3; text-align: center; padding: 20px; color: var(--text-muted);">😕 Aucun GIF trouvé</div>';
+            return;
+        }
+        
+        gifs.forEach(gifUrl => {
             const img = document.createElement('img');
             img.src = gifUrl;
             img.style.cssText = "width: 100%; height: 90px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color);";
+            img.onmouseover = () => img.style.transform = "scale(1.05)";
+            img.onmouseout = () => img.style.transform = "scale(1)";
+            
             img.onclick = () => {
-                envoyerGif(gifUrl);
+                envoyerMedia(currentType === "gifs" ? "gif" : "sticker", gifUrl);
                 drawer.style.display = 'none';
             };
+            
             resultsContainer.appendChild(img);
         });
     }
     
-    function envoyerGif(urlImage) {
+    function afficherStickers(stickers) {
+        if (!resultsContainer) return;
+        resultsContainer.innerHTML = "";
+        
+        stickers.forEach(stickerUrl => {
+            const img = document.createElement('img');
+            img.src = stickerUrl;
+            img.style.cssText = "width: 80px; height: 80px; object-fit: contain; border-radius: 16px; cursor: pointer; transition: transform 0.2s; background: transparent; margin: auto;";
+            img.onmouseover = () => img.style.transform = "scale(1.1)";
+            img.onmouseout = () => img.style.transform = "scale(1)";
+            
+            img.onclick = () => {
+                envoyerMedia("sticker", stickerUrl);
+                drawer.style.display = 'none';
+            };
+            
+            resultsContainer.appendChild(img);
+        });
+    }
+    
+    function envoyerMedia(type, url) {
         if (currentUser && CHAT_ID) {
             db.collection('chats').doc(CHAT_ID).collection('messages').add({
                 text: null,
@@ -6392,14 +6503,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 status: "sent",
                 readBy: [currentUser.id],
                 type: "image",
-                mediaUrl: urlImage,
-                isGif: true
+                mediaUrl: url,
+                isGif: type === "gif",
+                isSticker: type === "sticker"
             }).then(() => {
-                showTempNotification("✅ GIF envoyé !");
+                showTempNotification(type === "gif" ? "✅ GIF envoyé !" : "✅ Sticker envoyé !");
+            }).catch(err => {
+                console.error("Erreur:", err);
+                showTempNotification("❌ Erreur d'envoi");
             });
         }
     }
     
+    // Fermer en cliquant ailleurs
     document.addEventListener('click', (e) => {
         if (drawer && drawer.style.display === 'flex' && !drawer.contains(e.target) && e.target !== triggerBtn) {
             drawer.style.display = 'none';
@@ -6450,6 +6566,59 @@ if (zoneDiscussionGifs) {
     
     // Scan direct au rechargement
     calibrerTailleGifsTenor();
+}
+      
+      // =========================================================================
+// NETTOYEUR ULTIME : DISPARITION DU FOND POUR LES GIFS & STICKERS
+// =========================================================================
+
+const effacerFondGifsEtStickers = () => {
+    // 1. On scanne toutes les images affichées dans le chat
+    const imagesMessages = document.querySelectorAll('#msg-area img, .message-bubble img');
+
+    imagesMessages.forEach((img) => {
+        const url = img.src || img.getAttribute('src') || "";
+
+        // 2. DETECTION DE LA SOURCE (Tenor pour les gifs, JSDelivr/Apple pour tes stickers)
+        const estUnGifOuSticker = url.includes('tenor.com') || url.includes('emoji-datasource-apple') || url.includes('cdn.jsdelivr.net');
+
+        if (estUnGifOuSticker) {
+            // 3. Forçage de la taille mini (style WhatsApp / Telegram)
+            img.style.setProperty('max-width', '120px', 'important');
+            img.style.setProperty('width', '120px', 'important');
+            img.style.setProperty('height', 'auto', 'important');
+            img.style.setProperty('object-fit', 'contain', 'important');
+            img.style.setProperty('border', 'none', 'important'); // Supprime la bordure d'image par défaut
+
+            // 4. SUPPRESSION CHIRURGICALE DE LA BULLE DERRIÈRE
+            const bulle = img.closest('.message-bubble');
+            if (bulle) {
+                bulle.style.setProperty('background', 'transparent', 'important');
+                bulle.style.setProperty('background-color', 'transparent', 'important');
+                bulle.style.setProperty('box-shadow', 'none', 'important');
+                bulle.style.setProperty('padding', '0', 'important');
+                
+                // Si l'heure ou la coche gêne en dessous, on l'aligne proprement
+                const meta = bulle.querySelector('.msg-meta');
+                if (meta) {
+                    meta.style.setProperty('background', 'transparent', 'important');
+                    meta.style.setProperty('margin-top', '2px', 'important');
+                }
+            }
+        }
+    });
+};
+
+// Radar en temps réel : dès qu'Ida ou toi cliquez sur un Sticker, le fond saute à la milliseconde !
+const observateurFondsMedia = new MutationObserver(() => {
+    effacerFondGifsEtStickers();
+});
+
+const zoneChatFonds = document.getElementById('msg-area');
+if (zoneChatFonds) {
+    observateurFondsMedia.observe(zoneChatFonds, { childList: true, subtree: true });
+    // Lancement immédiat pour corriger les stickers déjà présents à l'écran
+    effacerFondGifsEtStickers();
 }
     </script>
   
