@@ -4637,7 +4637,128 @@ function logoutComplet() {
 // Lancer la connexion auto au chargement
 document.addEventListener('DOMContentLoaded', autoLogin);
       
-      
+      // ==========================================
+// FIX NOTIFICATIONS INTEMPÉSTIVES & CLEANUP
+// ==========================================
+
+// Variable globale pour traquer le chargement initial de la base de données
+let isInitialLoad = true;
+
+/**
+ * Fonction d'envoi de notification Telegram optimisée
+ * Bloque l'envoi si le site est en cours de chargement initial
+ */
+async function envoyerNotificationTelegram(titre, message) {
+    // Si c'est le chargement de l'historique à l'ouverture/rafraîchissement, on bloque tout !
+    if (isInitialLoad) {
+        console.log("🚫 Chargement initial : Notification Telegram bloquée.");
+        return;
+    }
+
+    // Configuration des tokens Telegram selon le destinataire
+    const BOT_TOKEN = "7963364955:AAFi6jCqP0j1wXp7eQYv6v1G5u5u_xyz"; // Mets ton token ici
+    let chatIdDestinataire = "";
+
+    if (currentUser && currentUser.id === 'ida') {
+        chatIdDestinataire = "123456789"; // ID de AIDARA pour qu'il reçoive le message d'Ida
+    } else if (currentUser && currentUser.id === 'aidara') {
+        chatIdDestinataire = "987654321"; // ID de IDA pour qu'elle reçoive le message d'Aidara
+    }
+
+    if (!chatIdDestinataire) return;
+
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const text = `💬 *${titre}* :\n${message}`;
+
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatIdDestinataire,
+                text: text,
+                parse_mode: 'Markdown'
+            })
+        });
+        console.log("✅ Notification Telegram envoyée proprement.");
+    } catch (error) {
+        console.error("❌ Erreur envoi Telegram :", error);
+    }
+}
+
+/**
+ * Remplace ou écoute le snapshot Firebase de manière sécurisée
+ */
+function initialiserEcouteurMessages() {
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot((snapshot) => {
+            
+            // Étape 1 : Si c'est le snapshot du démarrage, on traite les données puis on bascule le marqueur
+            if (isInitialLoad) {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        // On affiche juste l'historique à l'écran sans notifier personne
+                        afficherMessageEcran(change.doc.data(), change.doc.id);
+                    }
+                });
+                // L'historique est chargé, on ouvre les vannes uniquement pour le futur
+                isInitialLoad = false;
+                console.log("🚀 Historique chargé. Écouteur Telegram activé pour les prochains messages !");
+                return; 
+            }
+
+            // Étape 2 : Pour tous les messages qui arrivent APRÈS le chargement initial
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const msgData = change.doc.data();
+                    
+                    // On affiche le message
+                    afficherMessageEcran(msgData, change.doc.id);
+
+                    // On envoie la notification unique SEULEMENT si l'expéditeur n'est pas l'utilisateur connecté
+                    if (msgData.sender !== currentUser.id) {
+                        const nomExpediteur = currentUser.id === 'ida' ? 'Ahmed Said Aidara' : 'IDA SEUL';
+                        envoyerNotificationTelegram(`Nouveau message de ${nomExpediteur}`, msgData.text || "📷 Média reçu");
+                    }
+                }
+                
+                // Suppression automatique instantanée si le message est marqué pour destruction
+                if (change.type === "removed") {
+                    const element = document.getElementById(`msg-${change.doc.id}`);
+                    if (element) {
+                        element.style.transform = "scale(0)";
+                        setTimeout(() => element.remove(), 200); // Animation de sortie fluide
+                    }
+                }
+            });
+        });
+}
+
+/**
+ * Fonction pour supprimer proprement et instantanément un message de l'écran et de Firebase
+ * @param {string} messageId - L'UID du message dans Firestore
+ */
+async function supprimerMessageProprement(messageId) {
+    if (!messageId) return;
+    
+    // Suppression visuelle immédiate pour l'utilisateur (Zéro latence perçue)
+    const localElement = document.getElementById(`msg-${messageId}`);
+    if (localElement) {
+        localElement.remove();
+    }
+
+    // Suppression définitive dans la base de données Firebase
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageId).delete();
+        console.log(`🧼 Message ${messageId} supprimé proprement.`);
+    } catch (error) {
+        console.error("❌ Erreur suppression base de données :", error);
+    }
+}
+
+// Force le passage à false de la sécurité si ja mais la base est totalement vide au déart
+setTimeout(() => { isInitialLoad = false; }, 2500);
        
     </script>
   
