@@ -6270,6 +6270,44 @@ if (typeof CHAT_ID !== 'undefined' && typeof db !== 'undefined') {
             });
         });
 }
+      
+      // =========================================================================
+// BOUCLIER DE SUPPRESSION RADICAL : SÉCURISATION DIRECTE DE FIREBASE
+// =========================================================================
+
+if (typeof db !== 'undefined' && typeof CHAT_ID !== 'undefined') {
+    
+    // 1. On sauvegarde la vraie fonction de suppression d'origine de Firebase
+    const vraieFonctionDelete = db.collection('chats').doc(CHAT_ID).collection('messages').doc().constructor.prototype.delete;
+
+    // 2. On réécrit la fonction delete pour y intégrer notre douane de sécurité
+    db.collection('chats').doc(CHAT_ID).collection('messages').doc().constructor.prototype.delete = function() {
+        const referenceDoc = this; // Le document Firebase qu'on veut supprimer
+
+        // 3. On va lire les données du message en cache ou en direct pour savoir qui l'a envoyé
+        return referenceDoc.get().then(doc => {
+            if (doc.exists) {
+                const messageData = doc.data();
+                
+                // Si l'ID de celui qui a créé le message est DIFFÉRENT de l'utilisateur connecté
+                if (messageData.senderId !== currentUser.id) {
+                    
+                    // ON BLOQUE TOUT !
+                    alert("🚨 Impossible ! Ida toi aussi tu peux pas supprimer mon message! 🟥😂😂😂");
+                    console.error("🛡️ Sécurité : Tentative de suppression d'un message tiers bloquée à la racine.");
+                    
+                    // On retourne une promesse rejetée pour stopper le code d'origine
+                    return Promise.reject(new Error("Suppression non autorisée."));
+                }
+            }
+            
+            // Si c'est ton propre message, la suppression est autorisée et s'exécute normalement
+            return vraieFonctionDelete.apply(referenceDoc);
+        });
+    };
+    
+    console.log("🛡️ Le coupe-circuit Firebase Anti-Suppression Croisée est activé !");
+}
     </script>
   
   
