@@ -1320,7 +1320,7 @@ input, textarea {
     <div id="audio-preview" style="display: none; margin-top: 15px; padding: 10px; background: var(--input-bg); border-radius: 12px;">
         <div style="display: flex; align-items: center; gap: 10px;">
             <i class="fa-solid fa-circle-play" style="font-size: 1.5rem; color: #0095f6; cursor: pointer;" onclick="previsualiserAudio()"></i>
-            <span style="flex: 1; font-size: 0.8rem;">Audio enregistré <span id="audio-duration"></span></span>
+            <span style="flex: 1; font-size: 0.8rem;">écouter <span id="audio-duration"></span></span>
             <i class="fa-solid fa-trash" style="color: #ff4444; cursor: pointer; font-size: 1.2rem;" onclick="supprimerAudioPreview()"></i>
         </div>
     </div>
@@ -1985,23 +1985,38 @@ bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayTex
     `;
     
 } else if (data.type === 'audio') {
-                    if (data.isEphemeralAudio) {
-                        const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
-                        const isDestroyed = data.destroyed;
-                        if (isDestroyed) {
-                            bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
-                        } else {
-                            bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
-                            if (alreadyPlayed) {
-                                bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;"><i class="fa-solid fa-head-side-headphones"></i><span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span></div>`;
-                            } else {
-                                bubbleHtml += `<div style="padding:5px;"><audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio><small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique</small></div>`;
-                            }
-                        }
-                    } else {
-                        bubbleHtml += `<i class="fa-solid fa-volume-high"></i> <audio controls src="${data.mediaUrl}"></audio>`;
-                    }
-                }
+    if (data.isEphemeralAudio) {
+        const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
+        const isDestroyed = data.destroyed;
+        if (isDestroyed) {
+            bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
+        } else {
+            bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
+            if (alreadyPlayed) {
+                bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;"><i class="fa-solid fa-head-side-headphones"></i><span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span></div>`;
+            } else {
+                bubbleHtml += `<div style="padding:5px;"><audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio><small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique</small></div>`;
+            }
+        }
+    } else {
+        // ✅ NOUVEAU CODE POUR AUDIO NORMAL (CORRIGÉ)
+        const audioId = `audio_${msgId}`;
+        bubbleHtml += `
+            <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
+                <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+                <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
+                <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
+                <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
+                    <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
+                </div>
+                <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
+            </div>
+        `;
+    }
+}
+                   
                 
                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
 // --- BLOC DE COCHES FORMAT WHATSAPP AJOUTÉ ICI ---
@@ -2243,11 +2258,9 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
                     audioChunks = [];
                     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
                     mediaRecorder.onstop = async () => {
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-    
-    // Créer un fichier à partir du blob audio
-    const fileName = `audio_${currentUser.id}_${Date.now()}.wav`;
-    const audioFile = new File([audioBlob], fileName, { type: 'audio/wav' });
+const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+const fileName = `audio_${currentUser.id}_${Date.now()}.webm`;
+const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
     
     // Upload vers Supabase (comme pour les photos)
     const audioUrl = await uploadVersSupabase(audioFile, 'audio');
@@ -4656,18 +4669,77 @@ function supprimerAudioPreview() {
 function getAudioDuration(blob) {
     return new Promise((resolve) => {
         const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
+        const audio = new Audio();
+        
         audio.addEventListener('loadedmetadata', () => {
             URL.revokeObjectURL(url);
-            resolve(Math.round(audio.duration));
+            const duration = audio.duration;
+            if (isFinite(duration) && duration > 0) {
+                resolve(Math.round(duration));
+            } else {
+                // Si la durée n'est pas disponible, on estime
+                resolve(Math.round(blob.size / 16000)); // Approximation
+            }
         });
+        
         audio.addEventListener('error', () => {
             URL.revokeObjectURL(url);
             resolve(0);
         });
+        
+        audio.src = url;
+        audio.load(); // Force le chargement des métadonnées
+    });
+}
+function mettreAJourProgressionAudio(audioElement, progressBar) {
+    if (!audioElement.paused) {
+        const progress = (audioElement.currentTime / audioElement.duration) * 100;
+        if (progressBar) progressBar.style.width = progress + '%';
+        requestAnimationFrame(() => mettreAJourProgressionAudio(audioElement, progressBar));
+    }
+}
+
+// Initialiser les audios après l'affichage
+function initialiserAudios() {
+    document.querySelectorAll('.audio-message').forEach(container => {
+        const playBtn = container.querySelector('.fa-circle-play');
+        const pauseBtn = container.querySelector('.fa-circle-pause');
+        const audio = container.querySelector('audio');
+        const durationSpan = container.querySelector('.audio-duration');
+        const progressBar = container.querySelector('.audio-progress');
+        
+        if (audio && durationSpan) {
+            audio.addEventListener('loadedmetadata', () => {
+                const minutes = Math.floor(audio.duration / 60);
+                const secondes = Math.floor(audio.duration % 60);
+                durationSpan.textContent = `${minutes}:${secondes.toString().padStart(2, '0')}`;
+            });
+            
+            audio.addEventListener('play', () => {
+                mettreAJourProgressionAudio(audio, progressBar);
+            });
+            
+            audio.addEventListener('timeupdate', () => {
+                if (progressBar && audio.duration) {
+                    const progress = (audio.currentTime / audio.duration) * 100;
+                    progressBar.style.width = progress + '%';
+                }
+            });
+            
+            audio.addEventListener('ended', () => {
+                playBtn.style.display = 'inline';
+                pauseBtn.style.display = 'none';
+                if (progressBar) progressBar.style.width = '0%';
+            });
+        }
     });
 }
 
+// Appeler cette fonction après avoir chargé les messages
+const observerAudio = new MutationObserver(() => {
+    initialiserAudios();
+});
+observerAudio.observe(document.getElementById('msg-area'), { childList: true, subtree: true });
 // ========== NOUVEAU BLOC CORRIGÉ ==========
 async function envoyerAudioAvecFiltre() {
     if (!audioBlobFiltre && !audioBlobOriginal) {
@@ -4979,6 +5051,10 @@ async function modifierMonMessageDirect(messageId) {
 // MOTEUR D'ÉLITE CORRIGÉ : ZÉRO FAUX BADGE SUR LES NOUVEAUX MESSAGES
 // =========================================================================
 
+// =========================================================================
+// MOTEUR D'ÉLITE SUPRÊME : SYNCHRONISATION MODIFICATIONS, SUPPRESSIONS & RÉACTIONS
+// =========================================================================
+
 if (typeof CHAT_ID !== 'undefined' && typeof db !== 'undefined') {
     db.collection('chats').doc(CHAT_ID).collection('messages')
         .orderBy('timestamp', 'asc')
@@ -4988,57 +5064,75 @@ if (typeof CHAT_ID !== 'undefined' && typeof db !== 'undefined') {
                 const msgId = change.doc.id;
                 const zoneChat = document.getElementById('msg-area');
 
-                // 1. SI UN MESSAGE EST MODIFIÉ
+                // 1. SI UN MESSAGE EST MODIFIÉ (OU QU'UNE RÉACTION EST AJOUTÉE)
                 if (change.type === "modified") {
-                    
-                    // --- SÉCURITÉ ANTI-FAUX BADGE ---
-                    // Firebase déclenche parfois "modified" juste pour la mise à jour des coches (status: "read").
-                    // On n'active le déplacement et le badge QUE si le texte a VRAIMENT changé !
                     const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
+                    
                     if (ligneMessage) {
+                        // --- SYNCHRONISATION DES RÉACTIONS EN DIRECT ---
+                        // On cherche le badge ou la zone des réactions dans ta bulle
+                        // (Adapte '.reaction-badge' ou '.reactions-container' si ton code utilise un autre nom)
+                        let conteneurReaction = ligneMessage.querySelector('.reaction-badge, .reactions-container');
+                        
+                        // Si le message contient une réaction dans Firebase
+                        const reactionActive = data.reaction || data.reactions || "";
+
+                        if (reactionActive) {
+                            // Si le conteneur n'existe pas encore dans la bulle, on le crée
+                            if (!conteneurReaction) {
+                                conteneurReaction = document.createElement('div');
+                                conteneurReaction.className = 'reaction-badge';
+                                // Style flottant standard pour les emojis de réaction
+                                conteneurReaction.style.cssText = "position: absolute; bottom: -10px; right: 10px; background: #ffffff; border-radius: 10px; padding: 2px 6px; font-size: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 10; display: flex; align-items: center;";
+                                
+                                const bulle = ligneMessage.querySelector('.message-bubble');
+                                if (bulle) {
+                                    bulle.style.position = 'relative'; // Obligatoire pour le positionnement absolu
+                                    bulle.appendChild(conteneurReaction);
+                                }
+                            }
+                            // On affiche l'emoji en direct
+                            conteneurReaction.innerText = reactionActive;
+                            conteneurReaction.style.display = "flex";
+                        } else if (conteneurReaction) {
+                            // Si la réaction a été supprimée, on la cache de l'écran
+                            conteneurReaction.style.display = "none";
+                        }
+
+
+                        // --- SYNCHRONISATION DU TEXTE ET DU BADGE MODIFIÉ ---
                         const texteSpan = ligneMessage.querySelector('.message-bubble span');
                         
-                        // Si le texte sur l'écran est déjà identique au texte de Firebase, on stoppe tout !
-                        if (texteSpan && texteSpan.innerText.trim() === data.text.trim()) {
-                            return; 
-                        }
-                        
-                        // Si on arrive ici, c'est une VRAIE modification de texte
-                        if (texteSpan && data.text) {
+                        // On ne traite la modification textuelle QUE si le texte a réellement changé
+                        if (texteSpan && data.text && texteSpan.innerText.trim() !== data.text.trim()) {
                             texteSpan.innerText = data.text;
-                        }
 
-                        // Ajout du badge "(modifié)" uniquement pour les vrais changements
-                        let badgeModif = ligneMessage.querySelector('.vrai-badge-modif');
-                        if (!badgeModif) {
-                            badgeModif = document.createElement('small');
-                            badgeModif.className = 'vrai-badge-modif';
-                            badgeModif.style.cssText = "font-size: 0.65rem; opacity: 0.6; margin-left: 5px; font-style: italic;";
-                            badgeModif.innerText = " (modifié)";
-                            
-                            const metaData = ligneMessage.querySelector('.msg-meta');
-                            if (metaData) {
-                                metaData.appendChild(badgeModif);
+                            // Ajout du badge (modifié)
+                            let badgeModif = ligneMessage.querySelector('.vrai-badge-modif');
+                            if (!badgeModif) {
+                                badgeModif = document.createElement('small');
+                                badgeModif.className = 'vrai-badge-modif';
+                                badgeModif.style.cssText = "font-size: 0.65rem; opacity: 0.6; margin-left: 5px; font-style: italic;";
+                                badgeModif.innerText = " (modifié)";
+                                
+                                const metaData = ligneMessage.querySelector('.msg-meta');
+                                if (metaData) metaData.appendChild(badgeModif);
+                            }
+
+                            // On pousse le message modifié tout en bas
+                            if (zoneChat) {
+                                zoneChat.appendChild(ligneMessage);
+                                ligneMessage.style.animation = "none";
+                                setTimeout(() => {
+                                    ligneMessage.style.animation = "bounceIn 0.4s ease";
+                                }, 10);
+                                zoneChat.scrollTop = zoneChat.scrollHeight;
                             }
                         }
-
-                        // On pousse le message modifié tout en bas de la discussion
-                        if (zoneChat) {
-                            zoneChat.appendChild(ligneMessage);
-                            
-                            ligneMessage.style.animation = "none";
-                            setTimeout(() => {
-                                ligneMessage.style.animation = "bounceIn 0.4s ease";
-                            }, 10);
-
-                            zoneChat.scrollTop = zoneChat.scrollHeight;
-                        }
-                        
-                        console.log(`⚡ Vraie modification appliquée sur le message : ${msgId}`);
                     }
                 }
 
-                // 2. SI UN MESSAGE EST SUPPRIMÉ
+                // 2. SI UN MESSAGE EST SUPPRIMÉ 
                 if (change.type === "removed") {
                     const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
                     if (ligneMessage) {
@@ -5973,6 +6067,208 @@ if (zoneChatDesign) {
     observateurDesignVideo.observe(zoneChatDesign, { childList: true, subtree: true });
     // Application immédiate au chargement
     nettoyerFondBullesVideo();
+}
+      
+      // ========== GESTIONNAIRE D'AUDIO CORRIGÉ ==========
+function initialiserTousLesAudios() {
+    document.querySelectorAll('.audio-player-container').forEach(container => {
+        // Éviter les doublons
+        if (container.hasAttribute('data-initialized')) return;
+        container.setAttribute('data-initialized', 'true');
+        
+        const playBtn = container.querySelector('.audio-play-btn');
+        const audioId = playBtn ? playBtn.getAttribute('data-audio') : null;
+        const audio = audioId ? document.getElementById(audioId) : null;
+        const timeSpan = container.querySelector('.audio-time');
+        const durationSpan = container.querySelector('.audio-duration');
+        const progressBar = container.querySelector('.audio-progress');
+        
+        if (!audio || !playBtn) return;
+        
+        let isPlaying = false;
+        
+        // Charger les métadonnées
+        audio.addEventListener('loadedmetadata', () => {
+            const minutes = Math.floor(audio.duration / 60);
+            const secondes = Math.floor(audio.duration % 60);
+            if (durationSpan) {
+                durationSpan.textContent = `${minutes}:${secondes.toString().padStart(2, '0')}`;
+            }
+        });
+        
+        // Mettre à jour le temps actuel
+        audio.addEventListener('timeupdate', () => {
+            if (timeSpan && audio.duration) {
+                const currentMinutes = Math.floor(audio.currentTime / 60);
+                const currentSecondes = Math.floor(audio.currentTime % 60);
+                timeSpan.textContent = `${currentMinutes}:${currentSecondes.toString().padStart(2, '0')}`;
+            }
+            if (progressBar && audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = percent + '%';
+            }
+        });
+        
+        // Fin de l'audio
+        audio.addEventListener('ended', () => {
+            if (playBtn) {
+                playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            }
+            if (progressBar) progressBar.style.width = '0%';
+            isPlaying = false;
+        });
+        
+        // Bouton Play/Pause
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!audio.paused) {
+                audio.pause();
+                playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                isPlaying = false;
+            } else {
+                // Arrêter tous les autres audios
+                document.querySelectorAll('.audio-player-container audio').forEach(otherAudio => {
+                    if (otherAudio !== audio && !otherAudio.paused) {
+                        otherAudio.pause();
+                        const otherBtn = otherAudio.closest('.audio-player-container')?.querySelector('.audio-play-btn');
+                        if (otherBtn) otherBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                    }
+                });
+                audio.play();
+                playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                isPlaying = true;
+            }
+        });
+        
+        // Si l'audio a une erreur
+        audio.addEventListener('error', () => {
+            console.error("Erreur lecture audio:", audio.src);
+            timeSpan.textContent = '❌';
+        });
+        
+        // Forcer le chargement des métadonnées
+        audio.load();
+    });
+}
+
+// Observer les nouveaux messages
+const audioObserver = new MutationObserver(() => {
+    initialiserTousLesAudios();
+});
+
+// Démarrer l'observation
+const msgArea = document.getElementById('msg-area');
+if (msgArea) {
+    audioObserver.observe(msgArea, { childList: true, subtree: true });
+    initialiserTousLesAudios(); // Pour les audios existants  
+}
+      
+      // =========================================================================
+// MOTEUR D'ÉLITE SUPRÊME V2 : CORRECTION FINALE DES RÉACTIONS [OBJECT OBJECT]
+// =========================================================================
+
+if (typeof CHAT_ID !== 'undefined' && typeof db !== 'undefined') {
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                const data = change.doc.data();
+                const msgId = change.doc.id;
+                const zoneChat = document.getElementById('msg-area');
+
+                // 1. SI UN MESSAGE EST MODIFIÉ OU REÇOIT UNE RÉACTION
+                if (change.type === "modified") {
+                    const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
+                    
+                    if (ligneMessage) {
+                        
+                        // --- EXTRACTEUR CHIRURGICAL D'ÉMOJIS ---
+                        let conteneurReaction = ligneMessage.querySelector('.reaction-badge, .reactions-container');
+                        const reactionActive = data.reaction || data.reactions || "";
+
+                        if (reactionActive) {
+                            let emojiAAfficher = "";
+
+                            // Si la réaction est un objet structuré, on va fouiller dedans
+                            if (typeof reactionActive === 'object') {
+                                if (reactionActive.emoji) {
+                                    emojiAAfficher = reactionActive.emoji;
+                                } else {
+                                    // Extraction de la première valeur (ex: { userId: "❤️" })
+                                    const valeurs = Object.values(reactionActive);
+                                    if (valeurs.length > 0) {
+                                        emojiAAfficher = typeof valeurs[0] === 'object' ? (valeurs[0].emoji || "") : valeurs[0];
+                                    }
+                                }
+                            } else {
+                                // Si c'est déjà du texte brut
+                                emojiAAfficher = reactionActive;
+                            }
+
+                            // On n'injecte QUE si on a un émoji valide et propre
+                            if (emojiAAfficher && String(emojiAAfficher).trim() !== "[object Object]") {
+                                if (!conteneurReaction) {
+                                    conteneurReaction = document.createElement('div');
+                                    conteneurReaction.className = 'reaction-badge';
+                                    conteneurReaction.style.cssText = "position: absolute; bottom: -10px; right: 10px; background: #ffffff; border-radius: 10px; padding: 2px 6px; font-size: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 10; display: flex; align-items: center;";
+                                    
+                                    const bulle = ligneMessage.querySelector('.message-bubble');
+                                    if (bulle) {
+                                        bulle.style.position = 'relative';
+                                        bulle.appendChild(conteneurReaction);
+                                    }
+                                }
+                                conteneurReaction.innerText = emojiAAfficher;
+                                conteneurReaction.style.display = "flex";
+                            }
+                        } else if (conteneurReaction) {
+                            conteneurReaction.style.display = "none";
+                        }
+
+                        // --- SYNCHRONISATION DU TEXTE ET DU BADGE MODIFIÉ ---
+                        const texteSpan = ligneMessage.querySelector('.message-bubble span');
+                        
+                        if (texteSpan && data.text && texteSpan.innerText.trim() !== data.text.trim()) {
+                            texteSpan.innerText = data.text;
+
+                            let badgeModif = ligneMessage.querySelector('.vrai-badge-modif');
+                            if (!badgeModif) {
+                                badgeModif = document.createElement('small');
+                                badgeModif.className = 'vrai-badge-modif';
+                                badgeModif.style.cssText = "font-size: 0.65rem; opacity: 0.6; margin-left: 5px; font-style: italic;";
+                                badgeModif.innerText = " (modifié)";
+                                
+                                const metaData = ligneMessage.querySelector('.msg-meta');
+                                if (metaData) metaData.appendChild(badgeModif);
+                            }
+
+                            if (zoneChat) {
+                                zoneChat.appendChild(ligneMessage);
+                                ligneMessage.style.animation = "none";
+                                setTimeout(() => {
+                                    ligneMessage.style.animation = "bounceIn 0.4s ease";
+                                }, 10);
+                                zoneChat.scrollTop = zoneChat.scrollHeight;
+                            }
+                        }
+                    }
+                }
+
+                // 2. SI UN MESSAGE EST SUPPRIMÉ
+                if (change.type === "removed") {
+                    const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
+                    if (ligneMessage) {
+                        ligneMessage.style.transition = "all 0.3s ease";
+                        ligneMessage.style.opacity = "0";
+                        ligneMessage.style.transform = "scale(0.8)";
+                        setTimeout(() => {
+                            ligneMessage.remove();
+                            if (typeof nettoyerDatesDoublons === 'function') nettoyerDatesDoublons();
+                        }, 300);
+                    }
+                }
+            });
+        });
 }
     </script>
   
