@@ -923,6 +923,82 @@ input, textarea {
     opacity: 0 !important;
     visibility: hidden !important;
 }
+      
+      /* === CSS PREMIUM POUR LE MORPION TEMPS RÉEL === */
+.morpion-card {
+    width: 100%;
+    max-width: 280px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    color: var(--text-main);
+}
+[data-theme="dark"] .morpion-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.morpion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 6px;
+}
+.morpion-status {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.morpion-status.active-turn {
+    color: #00ffcc;
+    text-shadow: 0 0 8px rgba(0,255,204,0.4);
+    animation: pulseTurn 1.5s infinite ease-in-out;
+}
+.morpion-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+    aspect-ratio: 1/1;
+}
+.morpion-cell {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.morpion-cell:not(.taken):hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.04);
+}
+.morpion-cell.x { color: #3498db; text-shadow: 0 0 6px rgba(52,152,219,0.5); }
+.morpion-cell.o { color: #e74c3c; text-shadow: 0 0 6px rgba(231,76,60,0.5); }
+.morpion-cell.taken { cursor: not-allowed; }
+.morpion-cell.win-cell {
+    background: rgba(46, 204, 113, 0.3) !important;
+    border-color: #2ecc71 !important;
+    animation: winPop 0.4s ease-out;
+}
+.morpion-overlay-block {
+    pointer-events: none;
+    opacity: 0.6;
+}
+@keyframes pulseTurn { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+@keyframes winPop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -1060,6 +1136,10 @@ input, textarea {
         <!-- Deuxième ligne -->
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
             <div class="tool-item" onclick="togglePanel('emoji-panel'); closeToolsPanel();"><i class="fa-regular fa-face-smile" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Émojis</span></div>
+          <div class="tool-item" onclick="creerSessionMorpion()" style="cursor: pointer;">
+    <i class="fa-solid fa-gamepad" style="font-size: 2rem; color: #a800ff;"></i>
+    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Morpion Pro</span>
+</div>
             <div class="tool-item" onclick="toggleTheme(); closeToolsPanel();"><i class="fa-solid fa-moon" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Thème</span></div>
         </div>
         <div class="tools-divider" style="height: 1px; background: var(--border-color); margin: 5px 0;"></div>
@@ -1883,6 +1963,82 @@ function listenToMessages() {
                 sendTelegramNotification(msg.senderId);
             }
         }
+                    // === NOUVEAU BLOC POUR LES MODIFICATIONS EN TEMPS RÉEL ===
+        else if (change.type === 'modified') {
+            const data = change.doc.data();
+            const msgId = change.doc.id;
+            const existingRow = document.querySelector(`[data-id="${msgId}"]`);
+            
+            if (existingRow && data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+                // Mettre à jour l'affichage du Morpion
+                const card = existingRow.querySelector('.morpion-card');
+                if (card) {
+                    const game = data.gameData;
+                    const isMyTurn = game.turn === currentUser.id;
+                    
+                    // Mettre à jour le statut
+                    const statusDiv = card.querySelector('.morpion-status');
+                    if (statusDiv) {
+                        if (game.status === 'finished') {
+                            if (game.winner === 'nul') {
+                                statusDiv.textContent = "🎯 Match nul !";
+                            } else {
+                                statusDiv.textContent = `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
+                            }
+                            statusDiv.classList.remove('active-turn');
+                        } else {
+                            statusDiv.textContent = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
+                            if (isMyTurn && game.status === 'active') {
+                                statusDiv.classList.add('active-turn');
+                            } else {
+                                statusDiv.classList.remove('active-turn');
+                            }
+                        }
+                    }
+                    
+                    // Mettre à jour les scores
+                    const headerSpan = card.querySelector('.morpion-header span:last-child');
+                    if (headerSpan) {
+                        headerSpan.textContent = `🏆 ${game.scores.X || 0} - ${game.scores.O || 0}`;
+                    }
+                    
+                    // Mettre à jour les 9 cases
+                    for (let i = 0; i < 9; i++) {
+                        const cell = card.querySelector(`.morpion-cell[data-cell-index="${i}"]`);
+                        if (cell) {
+                            const value = game.board[i] || "";
+                            cell.textContent = value;
+                            
+                            cell.classList.remove('x', 'o', 'taken');
+                            if (value === "X") {
+                                cell.classList.add('x', 'taken');
+                            } else if (value === "O") {
+                                cell.classList.add('o', 'taken');
+                            }
+                            
+                            if (game.winningLine && game.winningLine.includes(i)) {
+                                cell.classList.add('win-cell');
+                            } else {
+                                cell.classList.remove('win-cell');
+                            }
+                            
+                            const peutCliquer = (game.status === 'active' && isMyTurn && !value);
+                            cell.style.cursor = peutCliquer ? 'pointer' : 'not-allowed';
+                        }
+                    }
+                    
+                    // Mettre à jour l'oerlay
+                    const grid = card.querySelector('.morpion-grid');
+                    if (grid) {
+                        if (game.status !== 'active' || !isMyTurn) {
+                            grid.classList.add('morpion-overlay-block');
+                        } else {
+                            grid.classList.remove('morpion-overlay-block');
+                        }
+                    }
+                }
+            }
+        }
     });
       
       
@@ -1977,19 +2133,76 @@ if (data.isCoded === true) {
                     bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
                 }
                 
-                if (data.type === 'text') {
-                    let displayText = data.text;
-                    if (data.isCoded === true) {
-                        const originalMessage = data.originalText || data.text;
-                        displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
-                        bubbleHtml += displayText;
-                    } else {
-                        displayText = formatText(escapeHTML(displayText));
-// Remplacer les retours à la ligne par <br>
-displayText = displayText.replace(/\n/g, '<br>');
-bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
-                    }
-               } else if (data.type === 'image') {
+               if (data.type === 'text') {
+    let displayText = data.text;
+    if (data.isCoded === true) {
+        const originalMessage = data.originalText || data.text;
+        displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+        bubbleHtml += displayText;
+    } else {
+        displayText = formatText(escapeHTML(displayText));
+        displayText = displayText.replace(/\n/g, '<br>');
+        bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
+    }
+} 
+else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+    // ========== AFFICHAGE DU MORPION ==========
+    const game = data.gameData;
+    const isMyTurn = game.turn === currentUser.id;
+    const amIPlayerX = game.players.X === currentUser.id;
+    const amIPlayerO = game.players.O === currentUser.id;
+    
+    // Déterminer si c'est le tour du joueur actuel
+    let statusText = "";
+    if (game.status === 'finished') {
+        if (game.winner === 'nul') {
+            statusText = "🎯 Match nul !";
+        } else {
+            statusText = `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
+        }
+    } else {
+        statusText = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
+    }
+
+    // Blocage graphique si ce n'est pas le tour du joueur ou si la partie est finie
+    const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
+
+    let cardHtml = `
+        <div class="morpion-card" style="margin: 5px 0;">
+            <div class="morpion-header">
+                <span>🎮 MORPION </span>
+                <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
+            </div>
+            <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
+                ${statusText}
+            </div>
+            <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
+    `;
+
+    // Génération des 9 cases
+    for (let i = 0; i < 9; i++) {
+        const cellValue = game.board[i] || "";
+        const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
+        const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
+        
+        cardHtml += `
+            <div class="morpion-cell ${cellClass} ${isWinCell}" 
+                 data-cell-index="${i}" 
+                 onclick="jouerCoupMorpion('${msgId}', ${i})"
+                 style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
+                ${cellValue}
+            </div>
+        `;
+    }
+
+    cardHtml += `
+            </div>
+        </div>
+    `;
+    
+    bubbleHtml += cardHtml;
+} 
+else if (data.type === 'image') {
     // Affichage IMAGE
     bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
     
@@ -6767,8 +6980,411 @@ if (document.getElementById('msg-area')) {
     observerBadges.observe(document.getElementById('msg-area'), { childList: true, subtree: true, attributes: true });
     nettoyerTousLesBadgesModifies();
 }
+      
+      // === MOTEUR LOGIQUE MORPION MULTIJOUEUR TEMPS RÉEL ===
+
+// 1. Initialisation et envoi de la structure sur Firestore
+async function creerSessionMorpion() {
+    if (!currentUser || !targetUser) return;
+    
+    if (typeof fermerMenuMedia === 'function') fermerMenuMedia();
+    if (typeof closeToolsPanel === 'function') closeToolsPanel();
+
+    const initialGameStructure = {
+        text: null,  // Important: mettre null car c'est un type game
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: "game",
+        gameData: {
+            gameType: "morpion",
+            status: "active",
+            players: {
+                X: currentUser.id,
+                O: targetUser.id
+            },
+            turn: currentUser.id,
+            firstMoveThisRound: currentUser.id,
+            scores: { X: 0, O: 0 },
+            board: ["", "", "", "", "", "", "", "", ""],
+            winner: null,
+            winningLine: null
+        }
+    };
+
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add(initialGameStructure);
+        showTempNotification("🎮 Partie créée ! C'est à toi de jouer.");
+    } catch (err) {
+        console.error("Erreur création morpion:", err);
+        showTempNotification("❌ Erreur création de la partie");
+    }
+}
+
+// ========== VERSION CORRIGÉE DE JOUER COUP MORPION ==========
+async function jouerCoupMorpion(messageId, cellIndex) {
+    console.log("🎮 Coup joué sur message:", messageId, "case:", cellIndex);
+    
+    if (!currentUser) {
+        console.log("❌ Pas d'utilisateur connecté");
+        return;
+    }
+    
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageId);
+    
+    try {
+        const doc = await docRef.get();
+        if (!doc.exists) {
+            console.log("❌ Document non trouvé");
+            return;
+        }
+
+        const msgData = doc.data();
+        const game = msgData.gameData;
+        
+        if (!game) {
+            console.log("❌ Pas de gameData");
+            return;
+        }
+        
+        console.log("État du jeu:", game);
+        
+        // Vérifier si la partie est active
+        if (game.status !== 'active') {
+            showTempNotification("⏸️ La partie est terminée, nouvelle partie en cours...");
+            return;
+        }
+        
+        // Vérifier si c'est le tour du joueur
+        if (game.turn !== currentUser.id) {
+            showTempNotification(`⏳ C'est au tour de ${targetUser.name} !`);
+            return;
+        }
+        
+        // Vérifier si la case est déjà prise
+        if (game.board[cellIndex] !== "") {
+            showTempNotification("❌ Cette case est déjà prise !");
+            return;
+        }
+        
+        // Déterminer le symbole du joueur actuel
+        const joueurSymbole = game.players.X === currentUser.id ? "X" : "O";
+        console.log("🎯 Symbole du joueur:", joueurSymbole);
+        
+        // Copier le board pour modification
+        const newBoard = [...game.board];
+        newBoard[cellIndex] = joueurSymbole;
+        
+        // Vérifier la victoire
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Lignes
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Colonnes
+            [0, 4, 8], [2, 4, 6]             // Diagonales
+        ];
+        
+        let hasWon = false;
+        let lineGagnante = null;
+        
+        for (let pattern of winPatterns) {
+            if (newBoard[pattern[0]] === joueurSymbole && 
+                newBoard[pattern[1]] === joueurSymbole && 
+                newBoard[pattern[2]] === joueurSymbole) {
+                hasWon = true;
+                lineGagnante = pattern;
+                break;
+            }
+        }
+        
+        // Vérifier si la grille est pleine (match nul)
+        const isFull = !newBoard.includes("");
+        
+        // Préparer la mise à jour
+        let updatedGame = {
+            ...game,
+            board: newBoard
+        };
+        
+        if (hasWon) {
+            updatedGame.status = 'finished';
+            updatedGame.winner = currentUser.id;
+            updatedGame.winningLine = lineGagnante;
+            updatedGame.scores = {
+                ...game.scores,
+                [joueurSymbole]: (game.scores[joueurSymbole] || 0) + 1
+            };
+            showTempNotification(`🎉 Victoire ! ${joueurSymbole} gagne la manche !`);
+            
+            // Relancer après 3 secondes
+            setTimeout(() => relancerProchainRoundMorpion(messageId), 3000);
+            
+        } else if (isFull) {
+            updatedGame.status = 'finished';
+            updatedGame.winner = 'nul';
+            updatedGame.winningLine = null;
+            showTempNotification("🤝 Match nul ! Nouvelle partie dans 3 secondes...");
+            
+            // Relancer après 3 secondes
+            setTimeout(() => relancerProchainRoundMorpion(messageId), 3000);
+            
+        } else {
+            // Changer le tour
+            updatedGame.turn = game.turn === game.players.X ? game.players.O : game.players.X;
+        }
+        
+        // Sauvegarder dans Firestore
+        await docRef.update({ gameData: updatedGame });
+        console.log("✅ Coup enregistré, nouveau board:", updatedGame.board);
+        
+        // MISE À JOUR VISUELLE IMMÉDIATE
+        mettreAJourAffichageMorpion(messageId, updatedGame);
+        
+    } catch (err) {
+        console.error("❌ Erreur lors du coup Morpion:", err);
+        showTempNotification("❌ Erreur lors du coup");
+    }
+}
+
+function mettreAJourAffichageMorpion(messageId, gameData) {
+    const messageRow = document.querySelector(`.message-row[data-id="${messageId}"]`);
+    if (!messageRow) return;
+    
+    const card = messageRow.querySelector('.morpion-card');
+    if (!card) return;
+    
+    const currentUserIsX = gameData.players.X === currentUser.id;
+    const isMyTurn = gameData.turn === currentUser.id;
+    
+    // Mettre à jour le statut
+    const statusDiv = card.querySelector('.morpion-status');
+    if (statusDiv) {
+        if (gameData.status === 'finished') {
+            if (gameData.winner === 'nul') {
+                statusDiv.textContent = "🎯 Match nul !";
+            } else {
+                const winnerName = gameData.winner === currentUser.id ? "Toi" : targetUser.name;
+                statusDiv.textContent = `👑 Gagnant : ${winnerName}`;
+            }
+            statusDiv.classList.remove('active-turn');
+        } else {
+            statusDiv.textContent = isMyTurn ? "⚡ À ton tour ! " : `⏳ ${targetUser.name} réfléchit...`;
+            if (isMyTurn) {
+                statusDiv.classList.add('active-turn');
+            } else {
+                statusDiv.classList.remove('active-turn');
+            }
+        }
+    }
+    
+    // Mettre à jour les scores
+    const header = card.querySelector('.morpion-header span:last-child');
+    if (header) {
+        header.textContent = `🏆 ${gameData.scores.X || 0} - ${gameData.scores.O || 0}`;
+    }
+    
+    // Mettre à jour les cases
+    for (let i = 0; i < 9; i++) {
+        const cell = card.querySelector(`.morpion-cell[data-cell-index="${i}"]`);
+        if (cell) {
+            const value = gameData.board[i] || "";
+            cell.textContent = value;
+            
+            // Mettre à jour les classes
+            if (value === "X") {
+                cell.classList.add('x', 'taken');
+                cell.classList.remove('o');
+            } else if (value === "O") {
+                cell.classList.add('o', 'taken');
+                cell.classList.remove('x');
+            } else {
+                cell.classList.remove('x', 'o', 'taken');
+            }
+            
+            // Surligner les cases gagnantes
+            if (gameData.winningLine && gameData.winningLine.includes(i)) {
+                cell.classList.add('win-cell');
+            } else {
+                cell.classList.remove('win-cell');
+            }
+            
+            // Mettre à jour le curseur
+            const isActive = (gameData.status === 'active' && isMyTurn && !value);
+            cell.style.cursor = isActive ? 'pointer' : 'not-allowed';
+        }
+    }
+    
+    // Mettre à jour l'overlay
+    const grid = card.querySelector('.morpion-grid');
+    if (grid) {
+        const isBlocked = (gameData.status !== 'active' || !isMyTurn);
+        if (isBlocked) {
+            grid.classList.add('morpion-overlay-block');
+        } else {
+            grid.classList.remove('morpion-overlay-block');
+        }
+    }
+}
+// 3. Réinitialisation chirurgicale automatique avec inversion du premier joueur
+async function relancerProchainRoundMorpion(messageId) {
+    console.log("🔄 Relance du round pour:", messageId);
+    
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageId);
+    
+    try {
+        const doc = await docRef.get();
+        if (!doc.exists) return;
+
+        const msgData = doc.data();
+        const game = msgData.gameData;
+        
+        if (!game) return;
+        
+        // Alterner le premier joueur
+        const ancienPremier = game.firstMoveThisRound || game.players.X;
+        const nouveauPremier = ancienPremier === game.players.X ? game.players.O : game.players.X;
+        
+        // Réinitialiser la grille mais garder les scores
+        const updatedGame = {
+            ...game,
+            board: ["", "", "", "", "", "", "", "", ""],
+            status: 'active',
+            winner: null,
+            winningLine: null,
+            firstMoveThisRound: nouveauPremier,
+            turn: nouveauPremier
+        };
+        
+        await docRef.update({ gameData: updatedGame });
+        console.log("✅ Round relancé, nouveau premier joueur:", nouveauPremier);
+        
+        // Mettre à jour l'affichage
+        mettreAJourAffichageMorpion(messageId, updatedGame);
+        
+        // Notification
+        if (nouveauPremier === currentUser.id) {
+            showTempNotification("🎮 Nouvelle manche ! C'est à toi de commencer !");
+        } else {
+            showTempNotification(`🎮 Nouvelle manche ! ${targetUser.name} commence...`);
+        }
+        
+    } catch (err) {
+        console.error("❌ Erreur relance round:", err);
+    }
+}
+      // =========================================================================
+// STYLE MORPION : SUPPRESSION DE LA BULLE + OMBRE LÉGÈRE UNIQUEMENT
+// =========================================================================
+
+// Injection CSS pour enlever la bulle du Morpion
+const styleMorpionClean = document.createElement('style');
+styleMorpionClean.innerHTML = `
+    /* Supprimer complètement la bulle des messages de type game (Morpion) */
+    .message-row:has(.morpion-card) .message-bubble,
+    .message-bubble:has(.morpion-card) {
+        background: none !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border: none !important;
+        padding: 0px !important;
+        margin: 5px 0 !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+    }
+    
+    /* Style propre pour la carte Morpion */
+    .morpion-card {
+        background: rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 24px !important;
+        padding: 12px !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+    
+    /* Ombre au survol (optionnel) */
+    .morpion-card:hover {
+        transform: scale(1.02) !important;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4) !important;
+    }
+    
+    /* Ajuster l'heure sous la carte */
+    .message-row:has(.morpion-card) .msg-meta {
+        margin-top: 6px !important;
+        padding: 0 4px !important;
+        opacity: 0.7 !important;
+        font-size: 0.7rem !important;
+        background: transparent !important;
+    }
+    
+    /* Style des cases du Morpion */
+    .morpion-cell {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 12px !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .morpion-cell:not(.taken):hover {
+        background: rgba(168, 0, 255, 0.3) !important;
+        transform: scale(1.05) !important;
+    }
+    
+    /* Thème sombre spécifique */
+    [data-theme="dark"] .morpion-card {
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    
+    /* État actif du tour */
+    .morpion-status.active-turn {
+        color: #00ffcc !important;
+        text-shadow: 0 0 5px rgba(0, 255, 204, 0.5) !important;
+    }
+`;
+document.head.appendChild(styleMorpionClean);
+
+// Fonction pour appliquer le style à tous les Morpion existants
+function nettoyerStyleMorpion() {
+    document.querySelectorAll('.morpion-card').forEach(card => {
+        // S'assurer que la carte est bien stylée
+        card.style.background = 'rgba(255, 255, 255, 0.1)';
+        card.style.backdropFilter = 'blur(8px)';
+        card.style.webkitBackdropFilter = 'blur(8px)';
+        card.style.borderRadius = '24px';
+        card.style.padding = '12px';
+        card.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.3)';
+        
+        // Nettoyer la bulle parente
+        const bulle = card.closest('.message-bubble');
+        if (bulle) {
+            bulle.style.background = 'transparent';
+            bulle.style.backgroundColor = 'transparent';
+            bulle.style.border = 'none';
+            bulle.style.padding = '0';
+            bulle.style.boxShadow = 'none';
+        }
+    });
+}
+
+// Observer les nouveaux messages pour appliquer le style automatiquement
+const observateurMorpionStyle = new MutationObserver(() => {
+    nettoyerStyleMorpion();
+});
+
+// Démarrer l'observation
+const zoneChatMorpion = document.getElementById('msg-area');
+if (zoneChatMorpion) {
+    observateurMorpionStyle.observe(zoneChatMorpion, { childList: true, subtree: true });
+    nettoyerStyleMorpion(); // Application immédiate
+}
+      
+      
     </script>
   
   
 </body>
-</html>
+  
+</html> 
