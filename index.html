@@ -852,6 +852,59 @@ input, textarea {
     background: #0095f6 !important;
     color: white !important;
 }
+      /* ========== MASQUER MICRO ET AUDIO ÉPHÉMÈRE ========== */
+/* Cache par l'attribut onclick - fonctionne partout */
+.tool-item[onclick="toggleRecording(); closeToolsPanel();"],
+.tool-item[onclick="toggleEphemeralAudioMode(); closeToolsPanel();"],
+.tool-item[onclick*="toggleRecording"],
+.tool-item[onclick*="toggleEphemeralAudioMode"] {
+    display: none !important;
+}
+
+/* Cache dans le translate-dropdown aussi */
+.translate-option[onclick="toggleEphemeralAudioMode()"],
+.translate-option[onclick="toggleCodeMode()"] + .translate-option {
+    display: none !important;
+}
+
+/* Reorganise la grille des outils pour un meilleur rendu */
+#tools-panel > div > div:first-child {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+/* Ajuste la deuxième ligne si nécessaire */
+#tools-panel > div > div:nth-child(2) {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+      
+      /* ========== CACHER MICRO, GALERIE, AUDIO ÉPHÉMÈRE, THÈME ========== */
+
+/* Masquage par attribut onclick exact */
+.tool-item[onclick="toggleRecording(); closeToolsPanel();"],
+.tool-item[onclick="triggerImageUpload(); closeToolsPanel();"],
+.tool-item[onclick="toggleEphemeralAudioMode(); closeToolsPanel();"],
+.tool-item[onclick="toggleTheme(); closeToolsPanel();"] {
+    display: none !important;
+}
+
+/* Forcer l'affichage des éléments restants */
+#tools-panel > div > div:first-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+/* Émojis est dans la deuxième ligne avec Thème (Thème masqué, Émojis OK) */
+#tools-panel > div > div:nth-child(2) {
+    display: grid !important;
+    grid-template-columns: repeat(1, 1fr) !important;
+    justify-content: center !important;
+}
+
+/* Troisième ligne complète (Traduire, Code, Mode Flou, Flash) */
+#tools-panel > div > div:nth-child(3) {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+}
     </style>
 </head>
 <body>
@@ -4585,7 +4638,7 @@ function logoutComplet() {
 document.addEventListener('DOMContentLoaded', autoLogin);
       
       
-      
+       
     </script>
   
   
