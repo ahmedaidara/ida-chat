@@ -905,6 +905,24 @@ input, textarea {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
 }
+      
+      /* Masquer les badges modifiés sur les messages supprimés */
+.message-bubble[style*="#e4e6eb"] + .vrai-badge-modif,
+.message-row:has(.message-bubble[style*="#e4e6eb"]) .vrai-badge-modif,
+.message-row:has(span:contains("supprimé")) .vrai-badge-modif {
+    display: none !important;
+}
+
+/* Forcer la suppression des badges sur les messages supprimés */
+.message-row .vrai-badge-modif {
+    transition: all 0.1s;
+}
+
+.message-row:has(span:contains("supprimé")) .vrai-badge-modif {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
     </style>
 </head>
 <body>
@@ -1842,7 +1860,7 @@ async function enregistrerTokenPush() {
               ecouterChangementsStyle();
            localStorage.setItem('lastUser', userKey);
           activerMarquageMessagesLus();
-
+ecouterMessagesSupprimes();
         }
 
         function logout() {
@@ -2445,12 +2463,80 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             hideContextMenus();
         }
         
-        async function deleteSelectedMessage() {
-            if(selectedMessageId && confirm("Supprimer ce message définitivement ?")) {
-                await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).delete();
-            }
-            hideContextMenus();
+    async function deleteSelectedMessage() {
+    if(!selectedMessageId) return;
+    
+    if(!confirm("Supprimer ce message ? Il sera remplacé par 'Message supprimé'")) return;
+    
+    try {
+        const msgRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId);
+        const doc = await msgRef.get();
+        const data = doc.data();
+        
+        // Supprimer le fichier de Supabase si besoin
+        if (data.mediaUrl && data.storage === 'supabase') {
+            try {
+                const urlParts = data.mediaUrl.split('/');
+                const fileName = urlParts[urlParts.length - 1];
+                await supabaseClient.storage.from('chat_media').remove([fileName]);
+            } catch(e) { console.log("Erreur suppression fichier:", e); }
         }
+        
+        // Mettre à jour - SUPPRIMER TOUT CHAMP MODIFIED
+        await msgRef.update({
+            text: "🚫 Ce message a été supprimé",
+            mediaUrl: null,
+            fileUrl: null,
+            type: "text",
+            isDeleted: true,
+            isDeletedMessage: true,
+            isGif: false,
+            isSticker: false,
+            deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // SUPPRIMER LE CHAMP "modified" S'IL EXISTE
+        try {
+            await msgRef.update({
+                modified: firebase.firestore.FieldValue.delete()
+            });
+        } catch(e) {}
+        
+        showTempNotification("✅ Message supprimé");
+        
+        // MISE À JOUR VISUELLE IMMÉDIATE
+        const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+        if (messageRow) {
+            const bulle = messageRow.querySelector('.message-bubble');
+            if (bulle) {
+                bulle.style.setProperty('background', '#e4e6eb', 'important');
+                bulle.style.setProperty('background-color', '#e4e6eb', 'important');
+                bulle.style.setProperty('color', '#65676b', 'important');
+                bulle.style.setProperty('font-style', 'italic', 'important');
+                
+                // Supprimer TOUS les badges modifiés
+                const badgesModif = messageRow.querySelectorAll('.vrai-badge-modif, .modified-badge, [class*="modif"]');
+                badgesModif.forEach(badge => badge.remove());
+                
+                // Changer le texte immédiatement
+                const span = bulle.querySelector('span');
+                if (span) {
+                    span.innerText = "🚫 Ce message a été supprimé";
+                }
+                
+                // Supprimer les médias
+                const medias = bulle.querySelectorAll('img, video, audio, .video-wrapper, .audio-message, .audio-player-container, .custom-vocal-container, .img-msg');
+                medias.forEach(media => media.remove());
+            }
+        }
+        
+    } catch(error) {
+        console.error("Erreur suppression:", error);
+        showTempNotification("❌ Erreur lors de la suppression");
+    }
+    
+    hideContextMenus();
+}
         
 // ========== MODIFIER UN MESSAGE (VERSION AVEC INPUT) ==========
 let messageEnCoursEdition = null; // Stocke l'ID du message qu'on est en train d'éditer
@@ -2591,39 +2677,34 @@ function ecouterModificationsMessages() {
                     const msgId = change.doc.id;
                     const nouvelleData = change.doc.data();
                     
-                    // Trouver l'élément dans le DOM
+                    // IGNORER LES MESSAGES SUPPRIMÉS
+                    if (nouvelleData.isDeletedMessage === true) {
+                        return; // NE RIEN FAIRE
+                    }
+                    
                     const messageRow = document.querySelector(`.message-row[data-id="${msgId}"]`);
                     if (!messageRow) return;
                     
-                    // Vérifier que c'est bien notre message (optionnel)
                     const isSent = messageRow.classList.contains('sent');
                     if (!isSent) return;
                     
-                    // Trouver la bulle et le span
                     const bubble = messageRow.querySelector('.message-bubble');
                     const textSpan = bubble.querySelector('span:not(.coded-mask)');
                     
-                    if (textSpan && nouvelleData.text) {
-                        // Animer la mise à jour
+                    if (textSpan && nouvelleData.text && !nouvelleData.isDeletedMessage) {
                         textSpan.style.transition = 'all 0.3s ease';
                         textSpan.style.backgroundColor = '#ffaa0020';
-                        
-                        // Mettre à jour le texte
                         textSpan.innerHTML = formatText(escapeHTML(nouvelleData.text)).replace(/\n/g, '<br>');
                         
-                        // Ajouter le badge "modifié" s'il n'existe pas
                         const msgMeta = bubble.querySelector('.msg-meta');
                         if (msgMeta && !msgMeta.innerHTML.includes('modifié')) {
                             const timeStr = msgMeta.innerHTML.split('<')[0];
                             msgMeta.innerHTML = `${timeStr}<span class="status-tick">✓✓</span> <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>`;
                         }
                         
-                        // Animation de confirmation
                         setTimeout(() => {
                             textSpan.style.backgroundColor = '';
                         }, 500);
-                        
-                        console.log(`✅ Message ${msgId} mis à jour en temps réel`);
                     }
                 }
             });
@@ -6619,6 +6700,72 @@ if (zoneChatFonds) {
     observateurFondsMedia.observe(zoneChatFonds, { childList: true, subtree: true });
     // Lancement immédiat pour corriger les stickers déjà présents à l'écran
     effacerFondGifsEtStickers();
+}
+      
+      // =========================================================================
+// SYNCHRONISATION DES MESSAGES SUPPRIMÉS (SANS RAFRAÎCHIR)
+// =========================================================================
+
+function ecouterMessagesSupprimes() {
+    if (!currentUser) return;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('isDeletedMessage', '==', true)
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                // 2. SI UN MESSAGE EST MODIFIÉ (supprimé ou autre)
+if (change.type === "modified") {
+    const data = change.doc.data();
+    const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
+    
+    if (ligneMessage && data.isDeletedMessage === true) {
+        const bulle = ligneMessage.querySelector('.message-bubble');
+        if (bulle) {
+            bulle.style.setProperty('background', '#e4e6eb', 'important');
+            bulle.style.setProperty('color', '#65676b', 'important');
+            bulle.style.setProperty('font-style', 'italic', 'important');
+            
+            const span = bulle.querySelector('span');
+            if (span && !span.innerText.includes("supprimé")) {
+                span.innerText = "🚫 Ce message a été supprimé";
+            }
+            
+            // Supprimer le badge modifié
+            const badgeModif = ligneMessage.querySelector('.vrai-badge-modif');
+            if (badgeModif) badgeModif.remove();
+        }
+    }
+}
+            });
+        });
+}
+      
+      
+      // =========================================================================
+// NETTOYAGE FORCÉ DES BADGES MODIFIÉS
+// =========================================================================
+
+function nettoyerTousLesBadgesModifies() {
+    document.querySelectorAll('.vrai-badge-modif, .modified-badge').forEach(badge => {
+        const messageRow = badge.closest('.message-row');
+        if (messageRow) {
+            const bulle = messageRow.querySelector('.message-bubble');
+            const span = bulle?.querySelector('span');
+            if (span && span.innerText.includes("supprimé")) {
+                badge.remove();
+            }
+        }
+    });
+}
+
+// Observer et nettoyer
+const observerBadges = new MutationObserver(() => {
+    nettoyerTousLesBadgesModifies();
+});
+
+if (document.getElementById('msg-area')) {
+    observerBadges.observe(document.getElementById('msg-area'), { childList: true, subtree: true, attributes: true });
+    nettoyerTousLesBadgesModifies();
 }
     </script>
   
