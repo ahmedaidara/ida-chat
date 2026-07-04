@@ -2567,42 +2567,53 @@ if (msg.senderId === targetUser?.id && msg.status === 'sent') {
         }
         
         // ========== TYPING INDICATOR ==========
-       function handleTyping() {
+     // ========== GESTION DE LA TYPING (CORRIGÉE) ==========
+function handleTyping() {
     const input = document.getElementById('chat-in');
     const hasText = input.value.trim().length > 0;
     toggleSendBtn(hasText);
-    
-    // 👇 AJOUTEZ CETTE LIGNE 👇
     autoResizeTextarea();
-    
-    db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: true });
+    if (currentUser) {
+        db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id)
+            .set({ 
+                isTyping: hasText,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .catch(err => console.error("Erreur typing:", err));
+    }
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(stopTypingNotify, 2000);
+    if (hasText) {
+        typingTimeout = setTimeout(stopTypingNotify, 2000);
+    } else {
+        stopTypingNotify();
+    }
     sendLiveTypingUpdate();
 }
         
-        function stopTypingNotify() {
-            if(currentUser) db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: false });
-        }
+       // ========== ARRÊTER LA TYPING (CORRIGÉE) ==========
+function stopTypingNotify() {
+    if (currentUser) {
+        db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id)
+            .set({ isTyping: false })
+            .catch(err => console.error("Erreur stop typing:", err));
+    }
+    document.getElementById('typing-ind').style.display = 'none';
+}
         
-       // ========== ÉCOUTE DE LA TYPING (CORRIGÉ) ==========
+     // ========== ÉCOUTE DE LA TYPING (CORRIGÉE) ==========
 function listenToTyping() {
     if (!currentUser || !targetUser) return;
-    
-    // On écoute le document de typing de l'AUTRE utilisateur
-    // Si je suis IDA → j'écoute ce que AIDARA tape
-    // Si je suis AIDARA → j'écoute ce que IDA tape
     const otherUserId = targetUser.id;
-    
+    if (unsubscribeTyping) {
+        unsubscribeTyping();
+        unsubscribeTyping = null;
+    }
     unsubscribeTyping = db.collection('chats').doc(CHAT_ID).collection('typing').doc(otherUserId)
         .onSnapshot(doc => {
             if (doc.exists && doc.data().isTyping === true) {
-                // Afficher que l'AUTRE utilisateur est en train d'écrire
                 document.getElementById('typing-txt').innerText = `${targetUser.name} écrit...`;
                 document.getElementById('typing-ind').style.display = 'flex';
-                console.log(`✍️ ${targetUser.name} est en train d'écrire...`);
             } else {
-                // Cacher l'indicateur
                 document.getElementById('typing-ind').style.display = 'none';
             }
         }, (error) => {
