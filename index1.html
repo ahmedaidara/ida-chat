@@ -1894,15 +1894,23 @@ function listenToMessageStatus() {
 // ========== MARQUER LES MESSAGES COMME LUS ==========
 function markMessagesAsRead() {
     if (!currentUser || !targetUser) return;
+    
     const now = Date.now();
     if (lastReadUpdate && (now - lastReadUpdate) < 2000) return;
     lastReadUpdate = now;
+    
+    console.log("📖 Marquage des messages de", targetUser.name, "comme lus...");
+    
     db.collection('chats').doc(CHAT_ID).collection('messages')
         .where('senderId', '==', targetUser.id)
         .where('status', '!=', 'read')
         .get()
         .then(snapshot => {
-            if (snapshot.empty) return;
+            if (snapshot.empty) {
+                console.log("✅ Aucun message à marquer");
+                return;
+            }
+            
             const batch = db.batch();
             snapshot.docs.forEach(doc => {
                 batch.update(doc.ref, { 
@@ -1910,11 +1918,43 @@ function markMessagesAsRead() {
                     readAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             });
-            return batch.commit();
+            
+            return batch.commit().then(() => {
+                console.log(`✅ ${snapshot.size} messages marqués comme LUS`);
+            });
         })
         .catch(err => console.error("Erreur marquage lu:", err));
 }
 
+      
+      // ========== DÉTECTER L'ACTIVITÉ UTILISATEUR ==========
+function detecterActivitePourMarquerLu() {
+    let timeoutMarquage = null;
+    
+    const marquer = () => {
+        if (timeoutMarquage) clearTimeout(timeoutMarquage);
+        timeoutMarquage = setTimeout(() => {
+            markMessagesAsRead();
+        }, 1000);
+    };
+    
+    // Événements qui indiquent que l'utilisateur est actif
+    const events = ['click', 'touchstart', 'scroll', 'keydown', 'focus'];
+    events.forEach(event => {
+        document.addEventListener(event, marquer);
+    });
+    
+    // Quand la page redevient visible
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            markMessagesAsRead();
+        }
+    });
+}
+
+// Appeler cette fonction après la connxon
+// Dans selectUser(), ajoute : detecterActivitePourMarquerLu();
+      
 // ========== VÉRIFIER LA LIVRAISON D'UN MESSAGE ==========
 async function checkMessageDelivery(messageId) {
     try {
@@ -2032,6 +2072,10 @@ async function enregistrerTokenPush() {
 ecouterMessagesSupprimes();
           listenToMessageStatus();                    // ← AJOUTE ICI
 setTimeout(markMessagesAsRead, 1000);      // ← AJOUTE ICI
+              activerSuiviStatuts();
+              setTimeout(marquerMessagesCommeLus, 2000);
+
+
         }
 
         function logout() {
@@ -2039,7 +2083,131 @@ setTimeout(markMessagesAsRead, 1000);      // ← AJOUTE ICI
             if(unsubscribeTyping) unsubscribeTyping();
             document.getElementById('login-screen').style.display = 'flex';
         }
+// ========== ÉCOUTE EN TEMPS RÉEL DES STATUTS DE LECTURE ==========
+function ecouterStatutsTempsReel() {
+    if (!currentUser || !targetUser) return;
+    
+    // Nettoyer les anciens listeners
+    if (window._statutListener) {
+        window._statutListener();
+        window._statutListener = null;
+    }
+    
+    console.log("👀 Écoute des statuts en temps réel activée");
+    
+    // Écouter TOUS les messages du chat
+    window._statutListener = db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id) // Messages de l'AUTRE utilisateur
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'modified') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    
+                    // Si le statut a changé vers 'read'
+                    if (data.status === 'read') {
+                        console.log(`📖 Message ${msgId} marqué comme LU en temps réel`);
+                        updateMessageStatus(msgId, 'read');
+                        
+                        // Mettre à jour l'icône dans l'interface
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const tickElement = messageRow.querySelector('.status-tick');
+                            if (tickElement) {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+                            }
+                        }
+                    } 
+                    else if (data.status === 'delivered') {
+                        console.log(`📨 Message ${msgId} marqué comme DÉLIVRÉ en temps réel`);
+                        updateMessageStatus(msgId, 'delivered');
+                        
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const tickElement = messageRow.querySelector('.status-tick');
+                            if (tickElement) {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
+                            }
+                        }
+                    }
+                }
+            });
+        }, (error) => {
+            console.error("Erreur écoute statuts:", error);
+        });
+}
 
+// ========== FONCTION POUR MARQUER LES MESSAGES COMME LUS ==========
+function marquerTousMessagesCommeLus() {
+    if (!currentUser || !targetUser) return;
+    
+    console.log("📖 Marquage des messages de", targetUser.name, "comme lus...");
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .where('status', '!=', 'read')
+        .get()
+        .then((snapshot) => {
+            if (snapshot.empty) {
+                console.log("✅ Aucun message à marquer comme lu");
+                return;
+            }
+            
+            const batch = db.batch();
+            let count = 0;
+            
+            snapshot.docs.forEach((doc) => {
+                batch.update(doc.ref, { 
+                    status: 'read',
+                    readAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                count++;
+            });
+            
+            return batch.commit().then(() => {
+                console.log(`✅ ${count} messages marqués comme LUS`);
+            });
+        })
+        .catch((err) => {
+            console.error("❌ Erreur marquage:", err);
+        });
+}
+
+// ========== DÉTECTER QUAND L'UTILISATEUR EST ACTIF ==========
+function detecterActiviteUtilisateur() {
+    // Marquer comme lu quand l'utilisateur interagit avec le chat
+    const events = ['click', 'touchstart', 'scroll', 'focus', 'keydown'];
+    
+    events.forEach(event => {
+        document.addEventListener(event, function marquer() {
+            marquerTousMessagesCommeLus();
+            // Supprimer l'écouteur après 5 secondes pour éviter trop d'appels
+            setTimeout(() => {
+                document.removeEventListener(event, marquer);
+            }, 5000);
+        }, { once: true });
+    });
+}
+
+// ========== FONCTION PRINCIPALE À APPELER DANS selectUser ==========
+function activerSuiviStatuts() {
+    // 1. Écouter les statuts en temps réel
+    ecouterStatutsTempsReel();
+    
+    // 2. Marquer les messages comme lus au chargement
+    setTimeout(marquerTousMessagesCommeLus, 1000);
+    
+    // 3. Détecter l'activité pour marquer en temps réel
+    detecterActiviteUtilisateur();
+    
+    // 4. Marquer quand l'utilisateur revient sur la page
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            console.log("👀 Page visible - Marquage des messages comme lus");
+            marquerTousMessagesCommeLus();
+        }
+    });
+}
     // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION CORRIGÉE ==========
 function listenToMessages() {
     if(unsubscribeMessages) unsubscribeMessages();
@@ -2051,7 +2219,7 @@ function listenToMessages() {
         .orderBy('timestamp', 'asc')
         .onSnapshot(snapshot => {
             
-            // ============================================================
+            // ================== ====================== ====================
             // BLOQUER LES NOTIFICATIONS AU PREMIER CHARGEMENT
             // ============================================================
             if (isFirstSnapshot) {
@@ -2064,109 +2232,185 @@ function listenToMessages() {
             // ============================================================
             // TRAITEMENT DES CHANGEMENTS
             // ============================================================
-            snapshot.docChanges().forEach(change => {
-                if (change.type === 'added') {
-                    const msg = change.doc.data();
-                    // 🔥 AJOUTE CE BLOC ICI 🔥
-if (msg.senderId === targetUser?.id && msg.status === 'sent') {
+           snapshot.docChanges().forEach(change => {
+    const data = change.doc.data();
+    const msgId = change.doc.id;
+    
+    // ============================================================
+    // 1. MESSAGE AJOUTÉ (NOUVEAU MESSAGE)
+    // ============================================================
+    if (change.type === 'added') {
+        // Bloque les notifications au premier chargement
+        if (data.senderId !== currentUser?.id && !isFirstSnapshot) {
+            const now = new Date();
+            const msgTime = data.timestamp?.toDate() || new Date(0);
+            const diffSeconds = (now - msgTime) / 1000;
+            if (diffSeconds < 5) {
+                sendTelegramNotification(data.senderId);
+            }
+        }
+        
+        // Marquer comme "delivered" si le message vient de l'autre 
+       // VERSION CORRIGÉE
+if (msg.senderId === targetUser?.id) {
     const msgRef = change.doc.ref;
-    msgRef.update({ 
-        status: 'delivered',
-        deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(err => console.error("Erreur mise à jour delivered:", err));
+    // Si le statut est 'sent' → le mettre en 'delivered'
+    if (msg.status === 'sent') {
+        msgRef.update({ 
+            status: 'delivered',
+            deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => console.error("Erreur mise à jour delivered:", err));
+    }
 }
-                    // ENVOYER LA NOTIFICATION UNIQUEMENT SI :
-                    // 1. Ce n'est pas le premier chargement (!isFirstSnapshot)
-                    // 2. L'expéditeur n'est pas l'utilisateur connecté
-                    // 3. Le message est récent (moins de 5 secondes)
-                    if (!isFirstSnapshot && msg.senderId !== currentUser?.id) {
-                        const now = new Date();
-                        const msgTime = msg.timestamp?.toDate() || new Date(0);
-                        const diffSeconds = (now - msgTime) / 1000;
-                        
-                        if (diffSeconds < 5) {
-                            sendTelegramNotification(msg.senderId);
+    }
+    
+    // ============================================================
+    // 2. MESSAGE MODIFIÉ (MISE À JOUR DU STATUT OU DU TEXTE)
+    // ============================================================
+    else if (change.type === 'modified') {
+        // 🔥 PARTIE 1 : MISE À JOUR DU STATUT (COCHES) 🔥
+        if (data.status) {
+            const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+            if (messageRow) {
+                const isSent = messageRow.classList.contains('sent');
+                if (isSent) {
+                    const bubble = messageRow.querySelector('.message-bubble');
+                    if (bubble) {
+                        const msgMeta = bubble.querySelector('.msg-meta');
+                        if (msgMeta) {
+                            // Extraire l'heure (sans les icônes)
+                            let timeText = msgMeta.textContent;
+                            timeText = timeText.replace(/[✓✓✓]/g, '').replace(/✓/g, '').trim();
+                            
+                            // Déterminer le statut
+                            let statusHtml = '';
+                            if (data.status === 'read') {
+                                statusHtml = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                            } else if (data.status === 'delivered') {
+                                statusHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                            } else {
+                                statusHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+                            }
+                            
+                            // Ajouter "modifié" si présent
+                            const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+                            msgMeta.innerHTML = `${timeText} ${statusHtml}${modifiedTag}`;
                         }
                     }
                 }
-                // === NOUVEAU BLOC POUR LES MODIFICATIONS EN TEMPS RÉEL ===
-                else if (change.type === 'modified') {
+            }
+        }
+        
+        // 🔥 PARTIE 2 : MISE À JOUR DU MORPION (si présent) 🔥
+        if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+            const existingRow = document.querySelector(`[data-id="${msgId}"]`);
+            if (existingRow) {
+                const card = existingRow.querySelector('.morpion-card');
+                if (card) {
+                    const game = data.gameData;
+                    const isMyTurn = game.turn === currentUser.id;
+                    
+                    // Mettre à jour le statut
+                    const statusDiv = card.querySelector('.morpion-status');
+                    if (statusDiv) {
+                        if (game.status === 'finished') {
+                            if (game.winner === 'nul') {
+                                statusDiv.textContent = "🎯 Match nul !";
+                            } else {
+                                statusDiv.textContent = `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
+                            }
+                            statusDiv.classList.remove('active-turn');
+                        } else {
+                            statusDiv.textContent = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
+                            if (isMyTurn && game.status === 'active') {
+                                statusDiv.classList.add('active-turn');
+                            } else {
+                                statusDiv.classList.remove('active-turn');
+                            }
+                        }
+                    }
+                    
+                    // Mettre à jour les scores
+                    const headerSpan = card.querySelector('.morpion-header span:last-child');
+                    if (headerSpan) {
+                        headerSpan.textContent = `🏆 ${game.scores.X || 0} - ${game.scores.O || 0}`;
+                    }
+                    
+                    // Mettre à jour les cases
+                    for (let i = 0; i < 9; i++) {
+                        const cell = card.querySelector(`.morpion-cell[data-cell-index="${i}"]`);
+                        if (cell) {
+                            const value = game.board[i] || "";
+                            cell.textContent = value;
+                            cell.classList.remove('x', 'o', 'taken');
+                            if (value === "X") {
+                                cell.classList.add('x', 'taken');
+                            } else if (value === "O") {
+                                cell.classList.add('o', 'taken');
+                            }
+                            if (game.winningLine && game.winningLine.includes(i)) {
+                                cell.classList.add('win-cell');
+                            } else {
+                                cell.classList.remove('win-cell');
+                            }
+                            const peutCliquer = (game.status === 'active' && isMyTurn && !value);
+                            cell.style.cursor = peutCliquer ? 'pointer' : 'not-allowed';
+                        }
+                    }
+                    
+                    // Mettre à jour l'overlay
+                    const grid = card.querySelector('.morpion-grid');
+                    if (grid) {
+                        if (game.status !== 'active' || !isMyTurn) {
+                            grid.classList.add('morpion-overlay-block');
+                        } else {
+                            grid.classList.remove('morpion-overlay-block');
+                        }
+                    }
+                }
+            }
+        }
+    }
+});
+            // ========== ÉCOUTE EN TEMPS RÉEL DES STATUTS ==========
+function ecouterStatutsEnTempsReel() {
+    if (!currentUser || !targetUser) return;
+    
+    // Écouter les messages de l'autre personne
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'modified') {
                     const data = change.doc.data();
                     const msgId = change.doc.id;
-                    const existingRow = document.querySelector(`[data-id="${msgId}"]`);
                     
-                    if (existingRow && data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
-                        // Mettre à jour l'affichage du Morpion
-                        const card = existingRow.querySelector('.morpion-card');
-                        if (card) {
-                            const game = data.gameData;
-                            const isMyTurn = game.turn === currentUser.id;
-                            
-                            // Mettre à jour le statut
-                            const statusDiv = card.querySelector('.morpion-status');
-                            if (statusDiv) {
-                                if (game.status === 'finished') {
-                                    if (game.winner === 'nul') {
-                                        statusDiv.textContent = "🎯 Match nul !";
-                                    } else {
-                                        statusDiv.textContent = `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
-                                    }
-                                    statusDiv.classList.remove('active-turn');
-                                } else {
-                                    statusDiv.textContent = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
-                                    if (isMyTurn && game.status === 'active') {
-                                        statusDiv.classList.add('active-turn');
-                                    } else {
-                                        statusDiv.classList.remove('active-turn');
-                                    }
-                                }
+                    // SI le statut est 'read' → mettre les coches en BLEU
+                    if (data.status === 'read') {
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const tickElement = messageRow.querySelector('.status-tick');
+                            if (tickElement) {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
                             }
-                            
-                            // Mettre à jour les scores
-                            const headerSpan = card.querySelector('.morpion-header span:last-child');
-                            if (headerSpan) {
-                                headerSpan.textContent = `🏆 ${game.scores.X || 0} - ${game.scores.O || 0}`;
-                            }
-                            
-                            // Mettre à jour les 9 cases
-                            for (let i = 0; i < 9; i++) {
-                                const cell = card.querySelector(`.morpion-cell[data-cell-index="${i}"]`);
-                                if (cell) {
-                                    const value = game.board[i] || "";
-                                    cell.textContent = value;
-                                    
-                                    cell.classList.remove('x', 'o', 'taken');
-                                    if (value === "X") {
-                                        cell.classList.add('x', 'taken');
-                                    } else if (value === "O") {
-                                        cell.classList.add('o', 'taken');
-                                    }
-                                    
-                                    if (game.winningLine && game.winningLine.includes(i)) {
-                                        cell.classList.add('win-cell');
-                                    } else {
-                                        cell.classList.remove('win-cell');
-                                    }
-                                    
-                                    const peutCliquer = (game.status === 'active' && isMyTurn && !value);
-                                    cell.style.cursor = peutCliquer ? 'pointer' : 'not-allowed';
-                                }
-                            }
-                            
-                            // Mettre à jour l'oerlay
-                            const grid = card.querySelector('.morpion-grid');
-                            if (grid) {
-                                if (game.status !== 'active' || !isMyTurn) {
-                                    grid.classList.add('morpion-overlay-block');
-                                } else {
-                                    grid.classList.remove('morpion-overlay-block');
-                                }
+                            // Mettre à jour aussi le message original
+                            updateMessageStatus(msgId, 'read');
+                        }
+                    }
+                    // SI le statut est 'delivered' → mettre les coches en GRIS
+                    else if (data.status === 'delivered') {
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const tickElement = messageRow.querySelector('.status-tick');
+                            if (tickElement) {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
                             }
                         }
                     }
                 }
             });
-            
+        });
+}
             // ============================================================
             // FONCTION POUR ÉCOUTER LES CHANGEMENTS DE STYLE
             // ============================================================
@@ -2600,7 +2844,7 @@ function stopTypingNotify() {
     document.getElementById('typing-ind').style.display = 'none';
 }
         
-     // ========== ÉCOUTE DE LA TYPING (CORRIGÉE) ==========
+     // ========== ÉCOUTE DE LA TYPING (CORRIGÉE) ========== 
 function listenToTyping() {
     if (!currentUser || !targetUser) return;
     const otherUserId = targetUser.id;
@@ -2619,6 +2863,8 @@ function listenToTyping() {
         }, (error) => {
             console.error("Erreur d'écoute typing:", error);
         });
+      ecouterStatutsEnTempsReel();
+
 }
         
         // ========== MESSAGES MÉDIAS ==========
@@ -7536,7 +7782,356 @@ if (zoneChatMorpion) {
     nettoyerStyleMorpion(); // Application immédiate
 }
       
+      // ============================================================
+// FIX ULTIME : STATUTS EN TEMPS RÉEL (100% FONCTIONNEL)
+// ============================================================
+
+// 1. Quand l'utilisateur ouvre le chat, marquer tous les messages comme "read"
+function markAllAsRead() {
+    if (!currentUser || !targetUser) return;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .where('status', '!=', 'read')
+        .get()
+        .then(snapshot => {
+            if (snapshot.empty) return;
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => {
+                batch.update(doc.ref, { 
+                    status: 'read',
+                    readAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            return batch.commit();
+        })
+        .catch(err => console.error("Erreur marquage lu:", err));
+}
+
+// 2. Écouter les changements de statut en temps réel
+function listenStatus() {
+    if (!currentUser) return;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', currentUser.id)
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'modified') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    
+                    // Chercher le message dans le DOM
+                    const row = document.querySelector(`.message-row[data-id="${msgId}"]`);
+                    if (!row) return;
+                    
+                    const meta = row.querySelector('.msg-meta');
+                    if (!meta) return;
+                    
+                    // Garder l'heure uniquement
+                    let timeText = meta.textContent;
+                    timeText = timeText.replace(/[✓✓✓]/g, '').replace(/✓/g, '').trim();
+                    
+                    // Appliquer le bon statut
+                    let checkHtml = '';
+                    if (data.status === 'read') {
+                        checkHtml = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                    } else if (data.status === 'delivered') {
+                        checkHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                    } else {
+                        checkHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+                    }
+                    
+                    meta.innerHTML = timeText + ' ' + checkHtml;
+                    console.log(`🔄 Statut du message ${msgId} : ${data.status}`);
+                }
+            });
+        });
+}
+
+// 3. Activer automatiquement
+const originalSelect = window.selectUser;
+window.selectUser = function(user) {
+    originalSelect(user);
+    setTimeout(() => {
+        markAllAsRead();
+        listenStatus();
+    }, 1000);
+};
+
+// Si déjà connecté
+setTimeout(() => {
+    if (currentUser) {
+        markAllAsRead();
+        listenStatus();
+    }
+}, 2000);
+
+// 4. FORCER le marquage "read" quand on voit les messages (scroll ou clique)
+document.addEventListener('scroll', function() {
+    if (currentUser) markAllAsRead();
+});
+
+console.log("✅ Statuts en temps réel activés !");
       
+      // =========================================================================
+// SOLUTION ULTRA-RAPIDE : MARQUAGE INSTANTANÉ AVEC CACHE LOCAL
+// =========================================================================
+
+// 1. Cache local des statuts de lecture
+const STATUTS_CACHE = {
+    messages: {},
+    lastUpdate: 0,
+    
+    // Sauvegarder un statut
+    set(msgId, status) {
+        this.messages[msgId] = {
+            status: status,
+            time: Date.now()
+        };
+        this._save();
+    },
+    
+    // Récupérer un statut
+    get(msgId) {
+        const entry = this.messages[msgId];
+        if (entry && (Date.now() - entry.time) < 60000) { // 1 minute de cache
+            return entry.status;
+        }
+        return null;
+    },
+    
+    // Sauvegarder dans localStorage
+    _save() {
+        try {
+            localStorage.setItem('chat_statuts_cache', JSON.stringify({
+                messages: this.messages,
+                lastUpdate: Date.now()
+            }));
+        } catch(e) {}
+    },
+    
+    // Charger depuis localStorage
+    load() {
+        try {
+            const data = localStorage.getItem('chat_statuts_cache');
+            if (data) {
+                const parsed = JSON.parse(data);
+                this.messages = parsed.messages || {};
+                this.lastUpdate = parsed.lastUpdate || 0;
+            }
+        } catch(e) {}
+    }
+};
+
+// Charger le cache au démarrage
+STATUTS_CACHE.load();
+
+// 2. MARQUAGE INSTANTANÉ (sans attendre Firebase)
+function marquerMessagesInstantanement() {
+    if (!currentUser || !targetUser) return;
+    
+    console.log("⚡ Marquage INSTANTANÉ des messages...");
+    
+    // Récupérer TOUS les messages de l'autre personne
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .orderBy('timestamp', 'desc')
+        .limit(50) // Les 50 derniers messages seulement pour la vitesse
+        .get()
+        .then(snapshot => {
+            if (snapshot.empty) return;
+            
+            const batch = db.batch();
+            const toUpdate = [];
+            
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                // Marquer comme lu si pas déjà lu
+                if (data.status !== 'read') {
+                    batch.update(doc.ref, { 
+                        status: 'read',
+                        readAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    toUpdate.push(doc.id);
+                    
+                    // Mettre en cache immédiatement
+                    STATUTS_CACHE.set(doc.id, 'read');
+                }
+            });
+            
+            // Mettre à jour l'interface IMMÉDIATEMENT (avant même Firebase)
+            toUpdate.forEach(msgId => {
+                const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                if (messageRow && messageRow.classList.contains('sent')) {
+                    const tickElement = messageRow.querySelector('.status-tick');
+                    if (tickElement) {
+                        tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+                    }
+                    updateMessageStatus(msgId, 'read');
+                }
+            });
+            
+            // Sauvegarder en base (en arrière-plan)
+            if (toUpdate.length > 0) {
+                batch.commit().then(() => {
+                    console.log(`✅ ${toUpdate.length} messages marqués LUS`);
+                }).catch(err => console.error("Erreur batch:", err));
+            }
+        })
+        .catch(err => console.error("Erreur marquage:", err));
+}
+
+// 3. AFFICHER LES STATUTS DEPUIS LE CACHE (très rapide)
+function afficherStatutsDepuisCache() {
+    if (!currentUser) return;
+    
+    document.querySelectorAll('.message-row.sent[data-id]').forEach(row => {
+        const msgId = row.getAttribute('data-id');
+        const cachedStatus = STATUTS_CACHE.get(msgId);
+        
+        if (cachedStatus === 'read') {
+            const tickElement = row.querySelector('.status-tick');
+            if (tickElement) {
+                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+            }
+            updateMessageStatus(msgId, 'read');
+        }
+    });
+}
+
+// 4. ÉCOUTE EN TEMPS RÉEL (optimisée)
+function ecouterStatutsOptimise() {
+    if (!currentUser || !targetUser) return;
+    
+    if (window._statutListener) {
+        window._statutListener();
+        window._statutListener = null;
+    }
+    
+    window._statutListener = db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'modified') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    
+                    // Mettre à jour le cache
+                    if (data.status) {
+                        STATUTS_CACHE.set(msgId, data.status);
+                    }
+                    
+                    // Mettre à jour l'interface
+                    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                    if (messageRow && messageRow.classList.contains('sent')) {
+                        const tickElement = messageRow.querySelector('.status-tick');
+                        if (tickElement) {
+                            if (data.status === 'read') {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+                            } else if (data.status === 'delivered') {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
+                            }
+                        }
+                        updateMessageStatus(msgId, data.status);
+                    }
+                }
+            });
+        });
+}
+
+// 5. FONCTION PRINCIPALE (appelée UNE SEULE fois)
+function activerMarquageUltraRapide() {
+    if (!currentUser || !targetUser) return;
+    
+    console.log("🚀 Activation du marquage ULTRA-RAPIDE");
+    
+    // ÉTAPE 1 : Afficher les statuts depuis le CACHE (0ms - instantané)
+    afficherStatutsDepuisCache();
+    
+    // ÉTAPE 2 : Mettre à jour depuis Firebase (en arrière-plan)
+    setTimeout(() => {
+        marquerMessagesInstantanement();
+    }, 100);
+    
+    // ÉTAPE 3 : Écouter en temps réel
+    setTimeout(() => {
+        ecouterStatutsOptimise();
+    }, 500);
+    
+    // ÉTAPE 4 : Rafraîchir périodiquement (toutes les 5 secondes)
+    if (window._rafraichissementInterval) {
+        clearInterval(window._rafraichissementInterval);
+    }
+    window._rafraichissementInterval = setInterval(() => {
+        if (currentUser && targetUser) {
+            marquerMessagesInstantanement();
+        }
+    }, 5000);
+}
+
+// 6. DÉTECTION D'ACTIVITÉ (rapide)
+function detecterActiviteRapide() {
+    let dernierMarquage = 0;
+    
+    const marquer = () => {
+        const now = Date.now();
+        if (now - dernierMarquage > 2000) { // Max toutes les 2 secondes
+            dernierMarquage = now;
+            marquerMessagesInstantanement();
+        }
+    };
+    
+    const events = ['click', 'touchstart', 'scroll', 'keydown', 'focus'];
+    events.forEach(event => {
+        document.addEventListener(event, marquer, { passive: true });
+    });
+    
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            setTimeout(marquerMessagesInstantanement, 200);
+        }
+    });
+}
+
+// 7. SURCHARGER selectUser
+const originalSelectUser2 = window.selectUser;
+window.selectUser = function(userKey) {
+    originalSelectUser2(userKey);
+    
+    setTimeout(() => {
+        activerMarquageUltraRapide();
+        detecterActiviteRapide();
+    }, 500);
+};
+
+// 8. INITIALISATION AU CHARGEMENT
+setTimeout(() => {
+    if (currentUser && targetUser) {
+        console.log("🔄 Démarrage rapide - utilisateur déjà connecté");
+        activerMarquageUltraRapide();
+        detecterActiviteRapide();
+    }
+}, 300);
+
+// 9. FORCER APRÈS CHARGEMENT COMPLET
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        if (currentUser && targetUser) {
+            console.log("📱 Chargement complet - Marquage final");
+            marquerMessagesInstantanement();
+        }
+    }, 1000);
+});
+
+// 10. VIDER LE CACHE SI TROP VIEUX (plus de 10 minutes)
+const CACHE_AGE_MAX = 10 * 60 * 1000; // 10 minutes
+if (STATUTS_CACHE.lastUpdate && (Date.now() - STATUTS_CACHE.lastUpdate) > CACHE_AGE_MAX) {
+    STATUTS_CACHE.messages = {};
+    STATUTS_CACHE._save();
+    console.log("🧹 Cache des statuts vidé (trop vieux)");
+}
+
+console.log("✅ Marquage ULTRA-RAPIDE activé !");
     </script>
   
   
