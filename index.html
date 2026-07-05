@@ -1045,6 +1045,161 @@ input, textarea {
     min-width: 20px;
     text-align: center;
 }
+      
+      /* ===== TABLEAU BLANC DANS LE CHAT (COMME MORPION) ===== */
+.whiteboard-card {
+    width: 100%;
+    max-width: 320px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    color: var(--text-main);
+    margin: 2px 0;
+}
+[data-theme="dark"] .whiteboard-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.whiteboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 4px;
+}
+.wb-canvas-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid rgba(255,255,255,0.1);
+    aspect-ratio: 16/10;
+    touch-action: none;
+}
+.wb-canvas-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    background: #ffffff;
+    touch-action: none;
+}
+.wb-tools-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 2px 2px 2px;
+    justify-content: center;
+    align-items: center;
+}
+.wb-tool-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+.wb-tool-btn:hover {
+    transform: scale(1.1);
+    background: rgba(168,0,255,0.15);
+}
+.wb-tool-btn.active {
+    border-color: #a800ff;
+    background: rgba(168,0,255,0.2);
+    box-shadow: 0 0 10px rgba(168,0,255,0.2);
+}
+.wb-color-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+.wb-color-btn:hover {
+    transform: scale(1.15);
+}
+.wb-color-btn.active {
+    border-color: #ffffff;
+    box-shadow: 0 0 8px rgba(168,0,255,0.4);
+}
+.wb-size-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    transition: all 0.2s ease;
+}
+.wb-size-btn:hover {
+    transform: scale(1.1);
+    background: rgba(168,0,255,0.15);
+}
+.wb-size-btn.active {
+    border-color: #a800ff;
+    background: rgba(168,0,255,0.2);
+}
+.wb-size-preview {
+    display: inline-block;
+    border-radius: 50%;
+    background: currentColor;
+}
+.wb-actions {
+    display: flex;
+    gap: 4px;
+    padding-top: 4px;
+    justify-content: center;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+.wb-actions button {
+    padding: 3px 12px;
+    border-radius: 14px;
+    border: none;
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.wb-actions button:hover {
+    transform: scale(1.05);
+}
+.wb-clear-btn {
+    background: rgba(255,68,68,0.15);
+    color: #ff4444;
+}
+.wb-close-btn {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-muted);
+}
+.wb-separator {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.06);
+    margin: 0 2px;
+}
     </style>
 </head>
 <body>
@@ -1188,7 +1343,11 @@ input, textarea {
             <div class="tool-item" onclick="togglePanel('emoji-panel'); closeToolsPanel();"><i class="fa-regular fa-face-smile" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Émojis</span></div>
           <div class="tool-item" onclick="creerSessionMorpion()" style="cursor: pointer;">
     <i class="fa-solid fa-gamepad" style="font-size: 2rem; color: #a800ff;"></i>
-    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Morpion Pro</span>
+    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Morpion</span>
+</div>
+          <div class="tool-item" onclick="creerTableauBlanc(); closeToolsPanel();" style="cursor: pointer;">
+    <i class="fa-solid fa-paintbrush" style="font-size: 1.8rem; color: #ff6b6b;"></i>
+    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Tableau Blanc</span>
 </div>
             <div class="tool-item" onclick="toggleTheme(); closeToolsPanel();"><i class="fa-solid fa-moon" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Thème</span></div>
         </div>
@@ -4245,7 +4404,7 @@ function detecterFrancaisRapide(texte) {
                         const bar = document.getElementById('live-bar');
                         if (bar) bar.style.width = Math.min(currentText.length * 2, 100) + '%';
                         if (liveUpdateTimeout) clearTimeout(liveUpdateTimeout);
-                        liveUpdateTimeout = setTimeout(() => { if(bar) bar.style.width = '0%'; }, 1000);
+                        liveUpdateTimeout = setTimeout(() => { if(bar) bar.style.width = '0%'; }, 2000);
                     }
                 }
             });
@@ -4309,7 +4468,7 @@ function detecterFrancaisRapide(texte) {
                         notif.innerHTML = `⚡<br><span style="font-size:0.8rem;">${signalData.sourceUserName} vous a flashé !</span>`;
                         document.body.appendChild(notif);
                         setTimeout(() => notif.remove(), 1000);
-                        setTimeout(() => change.doc.ref.delete(), 1000);
+                        setTimeout(() => change.doc.ref.delete(), 5000);
                     }
                 });
             });
@@ -9045,7 +9204,11 @@ window.listenToMessages = function() {
                     if (change.type === 'added') {
                         const data = change.doc.data();
                         const msgId = change.doc.id;
-                        
+                                // === DÉTECTION DES TABLEAUX BLANCS ===
+        if (data.type === 'whiteboard') {
+            afficherCarteTableauBlanc(msgId, data);
+            return; // On arrête ici pour ne pas afficher deux fois
+        }
                         // Vérifier que c'est vraiment un nouveau message (pas dans le DOM)
                         const existing = document.querySelector(`[data-id="${msgId}"]`);
                         if (existing) return;
@@ -9527,7 +9690,10 @@ function afficherTousLesMessages(snapshot) {
                     </div>
                 `;
             }
-        } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+        } else if (data.type === 'whiteboard') {
+    // Afficher le tableau blanc
+    afficherWb(msgId, data);
+} else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
             // MORPION - code simplifié
             const game = data.gameData;
             const isMyTurn = game.turn === currentUser.id;
@@ -9619,6 +9785,425 @@ function notifierInstantane(expediteurId) {
         });
     }
 }
+      
+      
+// ============================================================
+// TABLEAU BLANC SIMPLIFIÉ (VERSION COMPLÈTE ET FONCTIONNELLE)
+// ============================================================
+
+let wb = {
+    msgId: null,
+    canvas: null,
+    ctx: null,
+    drawing: false,
+    color: '#000000',
+    size: 4,
+    eraser: false,
+    lastX: 0,
+    lastY: 0,
+    unsubscribe: null
+};
+
+const WB_COLORS = ['#000000', '#ff0000', '#ff6b00', '#ffd700', '#00cc44', '#0095f6', '#a800ff', '#ff00ff', '#ffffff'];
+const WB_SIZES = [2, 4, 6, 10, 16];
+
+// ========== CRÉER UN TABLEAU BLANC ==========
+function creerWb() {
+    if (!currentUser || !targetUser) {
+        showTempNotification("❌ Connecte-toi d'abord");
+        return;
+    }
+
+    const msgData = {
+        text: null,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: "whiteboard",
+        whiteboardData: {
+            lines: [],
+            color: '#000000',
+            size: 4,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        }
+    };
+
+    db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData)
+        .then(docRef => {
+            wb.msgId = docRef.id;
+            showTempNotification("🎨 Tableau créé !");
+            // Afficher immédiatement
+            afficherWb(docRef.id, msgData);
+        })
+        .catch(err => {
+            console.error("Erreur création tableau:", err);
+            showTempNotification("❌ Erreur création");
+        });
+}
+
+// ========== AFFICHER LE TABLEAU ==========
+function afficherWb(msgId, data) {
+    // Vérifier si déjà affiché
+    if (document.querySelector(`[data-id="${msgId}"]`)) return;
+
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+
+    const row = document.createElement('div');
+    const isSent = data.senderId === currentUser.id;
+    row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+    row.setAttribute('data-id', msgId);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.style.padding = '0';
+    bubble.style.background = 'transparent';
+    bubble.style.boxShadow = 'none';
+    bubble.style.borderRadius = '0';
+
+    // Générer la carte
+    const cardHtml = genererCarteWb(msgId, data);
+    bubble.innerHTML = cardHtml;
+    row.appendChild(bubble);
+    msgArea.appendChild(row);
+
+    // Initialiser le canvas
+    setTimeout(() => {
+        const canvas = document.getElementById(`wb-canvas-${msgId}`);
+        if (canvas) {
+            initialiserWb(msgId, canvas);
+        }
+    }, 200);
+
+    msgArea.scrollTop = msgArea.scrollHeight;
+}
+
+// ========== GÉNÉRER LA CARTE HTML ==========
+function genererCarteWb(msgId, data) {
+    const linesCount = data.whiteboardData?.lines?.length || 0;
+    const senderName = data.senderName || 'inconnu';
+
+    return `
+        <div class="wb-card" data-wb-id="${msgId}">
+            <div class="wb-header">
+                <span>🎨 Tableau Blanc</span>
+                <span style="font-size:0.6rem;opacity:0.6;">${senderName} · ${linesCount} traits</span>
+            </div>
+            <div class="wb-canvas-box">
+                <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
+            </div>
+            <div class="wb-tools" id="wb-tools-${msgId}">
+                ${genererOutilsWb(msgId)}
+            </div>
+            <div class="wb-actions">
+                <button class="wb-clear" onclick="effacerWb('${msgId}')">🗑️ Effacer</button>
+            </div>
+        </div>
+    `;
+}
+
+// ========== GÉNÉRER LES OUTILS ==========
+function genererOutilsWb(msgId) {
+    let html = '';
+
+    // Couleurs
+    WB_COLORS.forEach(color => {
+        const isWhite = color === '#ffffff';
+        const isActive = color === '#000000' ? 'active' : '';
+        html += `<button class="wb-color ${isActive}" data-msg="${msgId}" data-color="${color}" 
+            style="background:${color}; border-color:${isWhite ? '#ddd' : 'transparent'};"
+            onclick="wbSetColor('${msgId}', '${color}', this)"></button>`;
+    });
+
+    html += `<span style="width:1px;height:20px;background:#ddd;margin:0 4px;"></span>`;
+
+    // Tailles
+    WB_SIZES.forEach(size => {
+        const isActive = size === 4 ? 'active' : '';
+        const ps = Math.min(size, 14);
+        html += `<button class="wb-btn ${isActive}" data-msg="${msgId}" data-size="${size}" onclick="wbSetSize('${msgId}', ${size}, this)">
+            <span style="display:inline-block;width:${ps}px;height:${ps}px;border-radius:50%;background:#000;"></span>
+        </button>`;
+    });
+
+    html += `<span style="width:1px;height:20px;background:#ddd;margin:0 4px;"></span>`;
+
+    // Gomme
+    html += `<button class="wb-btn" data-msg="${msgId}" onclick="wbToggleEraser('${msgId}', this)" title="Gomme">
+        <i class="fa-solid fa-eraser"></i>
+    </button>`;
+
+    return html;
+}
+
+// ========== INITIALISER LE CANVAS ==========
+function initialiserWb(msgId, canvas) {
+    const wrapper = canvas.parentElement;
+    const rect = wrapper.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Fond blanc
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    wb.canvas = canvas;
+    wb.ctx = ctx;
+    wb.msgId = msgId;
+
+    // Événements
+    canvas.addEventListener('mousedown', (e) => wbStart(e, msgId));
+    canvas.addEventListener('mousemove', (e) => wbMove(e, msgId));
+    canvas.addEventListener('mouseup', () => wbStop());
+    canvas.addEventListener('mouseleave', () => wbStop());
+    canvas.addEventListener('touchstart', (e) => wbStartTouch(e, msgId), { passive: false });
+    canvas.addEventListener('touchmove', (e) => wbMoveTouch(e, msgId), { passive: false });
+    canvas.addEventListener('touchend', () => wbStop(), { passive: false });
+
+    // Charger les lignes existantes
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+    docRef.get().then(doc => {
+        if (doc.exists && doc.data().whiteboardData?.lines) {
+            dessinerLignesWb(msgId, doc.data().whiteboardData.lines);
+        }
+    });
+
+    // Écouter en temps réel
+    ecouterWb(msgId);
+}
+
+// ========== ÉCOUTER EN TEMPS RÉEL ==========
+function ecouterWb(msgId) {
+    if (wb.unsubscribe) wb.unsubscribe();
+
+    wb.unsubscribe = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot((doc) => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            if (!data.whiteboardData) return;
+
+            const wbData = data.whiteboardData;
+            if (wbData.lines) {
+                dessinerLignesWb(msgId, wbData.lines);
+            }
+        });
+}
+
+// ========== DESSINER LES LIGNES ==========
+function dessinerLignesWb(msgId, lines) {
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    lines.forEach(line => {
+        ctx.beginPath();
+        ctx.moveTo(line.x1, line.y1);
+        ctx.lineTo(line.x2, line.y2);
+        ctx.strokeStyle = line.color || '#000000';
+        ctx.lineWidth = line.size || 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+    });
+}
+
+// ========== FONCTIONS DE DESSIN ==========
+function wbStart(e, msgId) {
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    wb.drawing = true;
+    wb.canvas = canvas;
+    wb.ctx = canvas.getContext('2d');
+    wb.msgId = msgId;
+    wb.lastX = e.clientX - rect.left;
+    wb.lastY = e.clientY - rect.top;
+
+    const size = wb.eraser ? wb.size * 2 : wb.size;
+    wb.ctx.beginPath();
+    wb.ctx.arc(wb.lastX, wb.lastY, size / 2, 0, Math.PI * 2);
+    wb.ctx.fillStyle = wb.eraser ? '#ffffff' : wb.color;
+    wb.ctx.fill();
+
+    sauvegarderTraitWb(msgId, wb.lastX, wb.lastY, wb.lastX, wb.lastY);
+}
+
+function wbMove(e, msgId) {
+    if (!wb.drawing) return;
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const size = wb.eraser ? wb.size * 2 : wb.size;
+    wb.ctx.beginPath();
+    wb.ctx.moveTo(wb.lastX, wb.lastY);
+    wb.ctx.lineTo(x, y);
+    wb.ctx.strokeStyle = wb.eraser ? '#ffffff' : wb.color;
+    wb.ctx.lineWidth = size;
+    wb.ctx.lineCap = 'round';
+    wb.ctx.lineJoin = 'round';
+    wb.ctx.stroke();
+
+    sauvegarderTraitWb(msgId, wb.lastX, wb.lastY, x, y);
+
+    wb.lastX = x;
+    wb.lastY = y;
+}
+
+function wbStartTouch(e, msgId) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    wb.drawing = true;
+    wb.canvas = canvas;
+    wb.ctx = canvas.getContext('2d');
+    wb.msgId = msgId;
+    wb.lastX = touch.clientX - rect.left;
+    wb.lastY = touch.clientY - rect.top;
+
+    const size = wb.eraser ? wb.size * 2 : wb.size;
+    wb.ctx.beginPath();
+    wb.ctx.arc(wb.lastX, wb.lastY, size / 2, 0, Math.PI * 2);
+    wb.ctx.fillStyle = wb.eraser ? '#ffffff' : wb.color;
+    wb.ctx.fill();
+
+    sauvegarderTraitWb(msgId, wb.lastX, wb.lastY, wb.lastX, wb.lastY);
+}
+
+function wbMoveTouch(e, msgId) {
+    e.preventDefault();
+    if (!wb.drawing) return;
+    const touch = e.touches[0];
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    const size = wb.eraser ? wb.size * 2 : wb.size;
+    wb.ctx.beginPath();
+    wb.ctx.moveTo(wb.lastX, wb.lastY);
+    wb.ctx.lineTo(x, y);
+    wb.ctx.strokeStyle = wb.eraser ? '#ffffff' : wb.color;
+    wb.ctx.lineWidth = size;
+    wb.ctx.lineCap = 'round';
+    wb.ctx.lineJoin = 'round';
+    wb.ctx.stroke();
+
+    sauvegarderTraitWb(msgId, wb.lastX, wb.lastY, x, y);
+
+    wb.lastX = x;
+    wb.lastY = y;
+}
+
+function wbStop() {
+    wb.drawing = false;
+}
+
+// ========== SAUVEGARDER UN TRAIT ==========
+function sauvegarderTraitWb(msgId, x1, y1, x2, y2) {
+    if (!msgId) return;
+
+    const line = {
+        x1, y1, x2, y2,
+        color: wb.eraser ? '#ffffff' : wb.color,
+        size: wb.eraser ? wb.size * 2 : wb.size
+    };
+
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+    docRef.update({
+        'whiteboardData.lines': firebase.firestore.FieldValue.arrayUnion(line),
+        'whiteboardData.color': wb.color,
+        'whiteboardData.size': wb.size,
+        'whiteboardData.lastUpdate': firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(err => console.error("Erreur sauvegarde:", err));
+}
+
+// ========== OUTILS ==========
+function wbSetColor(msgId, color, btn) {
+    wb.color = color;
+    wb.eraser = false;
+
+    document.querySelectorAll(`#wb-tools-${msgId} .wb-color`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll(`#wb-tools-${msgId} .wb-btn`).forEach(b => b.classList.remove('active'));
+}
+
+function wbSetSize(msgId, size, btn) {
+    wb.size = size;
+    document.querySelectorAll(`#wb-tools-${msgId} .wb-btn`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function wbToggleEraser(msgId, btn) {
+    wb.eraser = !wb.eraser;
+    btn.classList.toggle('active');
+
+    if (wb.eraser) {
+        document.querySelectorAll(`#wb-tools-${msgId} .wb-color`).forEach(b => b.classList.remove('active'));
+    }
+}
+
+// ========== EFFACER ==========
+function effacerWb(msgId) {
+    if (!confirm("🗑️ Effacer tout le dessin ?")) return;
+
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+    docRef.update({ 'whiteboardData.lines': [] }).then(() => {
+        const canvas = document.getElementById(`wb-canvas-${msgId}`);
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, rect.width, rect.height);
+        }
+        showTempNotification("🗑️ Tableau effacé");
+    }).catch(err => {
+        console.error("Erreur effacement:", err);
+        showTempNotification("❌ Erreur");
+    });
+}
+
+// ========== DÉTECTER L'ARRIVÉE D'UN TABLEAU BLANC ==========
+// Cette fonction est appelée automatiquement quand un message "whiteboard" arrive
+function verifierWb(data, msgId) {
+    if (data.type === 'whiteboard') {
+        if (!document.querySelector(`[data-id="${msgId}"]`)) {
+            afficherWb(msgId, data);
+        }
+    }
+}
+
+console.log("✅ Tableau Blanc chargé !");
     </script>
   
    
