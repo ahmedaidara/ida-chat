@@ -81,9 +81,21 @@
 
         /* ZONE MESSAGES */
         .messages-area { flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-chat); display: flex; flex-direction: column; gap: 10px; position: relative; background-size: cover; background-position: center; }
-        .message-row { display: flex; width: 100%; margin-bottom: 2px; position: relative; }
-        .message-row.sent { justify-content: flex-end; }
-        .message-row.received { justify-content: flex-start; }
+       .message-row { 
+    display: flex; 
+    width: 100%; 
+    margin-bottom: 4px; 
+    padding: 0 0px;  /* ← METS 0 ou supprime cette ligne */
+    position: relative; 
+}
+       .message-row.sent { 
+    justify-content: flex-end; 
+    padding-right: 4px;  /* ← CHANGE 14px → 4px (petit espace à droite) */
+}
+       .message-row.received { 
+    justify-content: flex-start; 
+    padding-left: 4px;   /* ← CHANGE 14px → 4px (petit espace à gauche) */
+}
         
         .message-bubble { max-width: 70%; padding: 6px 10px; border-radius: 22px; font-size: 0.85rem; line-height: 1.4; position: relative; cursor: pointer; user-select: none; transition: transform 0.1s; animation: fadeIn 0.2s ease-out; display: flex; flex-direction: column; gap: 4px; }
         .sent .message-bubble { background: var(--bubble-sent); color: var(--bubble-sent-text); border-bottom-right-radius: 4px; }
@@ -1579,7 +1591,7 @@ input, textarea {
 </div>
           <div class="tool-item" onclick="creerTableauBlanc(); closeToolsPanel();" style="cursor: pointer;">
     <i class="fa-solid fa-paintbrush" style="font-size: 1.8rem; color: #ff6b6b;"></i>
-    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Tableau Blanc</span>
+    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Dessin en direct</span>
 </div>
             <div class="tool-item" onclick="toggleTheme(); closeToolsPanel();"><i class="fa-solid fa-moon" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Thème</span></div>
         </div>
@@ -2809,7 +2821,11 @@ if (isFirstSnapshot) {
         msgArea.appendChild(row);
     });
     
+    // Forcer le scroll seulement si l'utilisateur est en bas
+const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
+if (isAtBottom) {
     msgArea.scrollTop = msgArea.scrollHeight;
+}
 }
 
 // ET GARDE TON CODE EXISTANT POUR LES CHANGEMENTS
@@ -10028,6 +10044,9 @@ function notifierInstantane(expediteurId) {
 // ============================================================
 // TABLEAU BLANC SIMPLIFIÉ (VERSION COMPLÈTE ET FONCTIONNELLE)
 // ============================================================
+// ============================================================
+// 🚀 TABLEAU BLANC ULTRA RAPIDE (OPTIMISÉ)
+// ============================================================
 
 let wb = {
     msgId: null,
@@ -10039,14 +10058,18 @@ let wb = {
     eraser: false,
     lastX: 0,
     lastY: 0,
-    unsubscribe: null
+    unsubscribe: null,
+    lines: [],           // Stockage local des lignes
+    isSyncing: false,    // Empêche les boucles
+    syncTimeout: null,
+    lastSyncTime: 0
 };
 
 const WB_COLORS = ['#000000', '#ff0000', '#ff6b00', '#ffd700', '#00cc44', '#0095f6', '#a800ff', '#ff00ff', '#ffffff'];
 const WB_SIZES = [2, 4, 6, 10, 16];
 
 // ========== CRÉER UN TABLEAU BLANC ==========
-function creerWb() {
+function creerTableauBlanc() {
     if (!currentUser || !targetUser) {
         showTempNotification("❌ Connecte-toi d'abord");
         return;
@@ -10071,8 +10094,8 @@ function creerWb() {
     db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData)
         .then(docRef => {
             wb.msgId = docRef.id;
+            wb.lines = [];
             showTempNotification("🎨 Tableau créé !");
-            // Afficher immédiatement
             afficherWb(docRef.id, msgData);
         })
         .catch(err => {
@@ -10083,7 +10106,6 @@ function creerWb() {
 
 // ========== AFFICHER LE TABLEAU ==========
 function afficherWb(msgId, data) {
-    // Vérifier si déjà affiché
     if (document.querySelector(`[data-id="${msgId}"]`)) return;
 
     const msgArea = document.getElementById('msg-area');
@@ -10101,13 +10123,11 @@ function afficherWb(msgId, data) {
     bubble.style.boxShadow = 'none';
     bubble.style.borderRadius = '0';
 
-    // Générer la carte
     const cardHtml = genererCarteWb(msgId, data);
     bubble.innerHTML = cardHtml;
     row.appendChild(bubble);
     msgArea.appendChild(row);
 
-    // Initialiser le canvas
     setTimeout(() => {
         const canvas = document.getElementById(`wb-canvas-${msgId}`);
         if (canvas) {
@@ -10115,10 +10135,13 @@ function afficherWb(msgId, data) {
         }
     }, 200);
 
-    msgArea.scrollTop = msgArea.scrollHeight;
+    // Ne pas scroller si l'utilisateur est en train de dessiner
+    if (!wb.drawing) {
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }
 }
 
-// ========== GÉNÉRER LA CARTE HTML ==========
+// ========== GÉNÉRER LA CARTE ==========
 function genererCarteWb(msgId, data) {
     const linesCount = data.whiteboardData?.lines?.length || 0;
     const senderName = data.senderName || 'inconnu';
@@ -10127,7 +10150,7 @@ function genererCarteWb(msgId, data) {
         <div class="wb-card" data-wb-id="${msgId}">
             <div class="wb-header">
                 <span>🎨 Dessin</span>
-                <span style="font-size:0.6rem;opacity:0.6;">En direct</span>
+                <span style="font-size:0.6rem;opacity:0.6;">En direct-Ida au carré</span>
             </div>
             <div class="wb-canvas-box">
                 <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
@@ -10135,7 +10158,7 @@ function genererCarteWb(msgId, data) {
             <div class="wb-tools" id="wb-tools-${msgId}">
                 ${genererOutilsWb(msgId)}
             </div>
-           
+            
         </div>
     `;
 }
@@ -10144,7 +10167,6 @@ function genererCarteWb(msgId, data) {
 function genererOutilsWb(msgId) {
     let html = '';
 
-    // Couleurs
     WB_COLORS.forEach(color => {
         const isWhite = color === '#ffffff';
         const isActive = color === '#000000' ? 'active' : '';
@@ -10153,9 +10175,8 @@ function genererOutilsWb(msgId) {
             onclick="wbSetColor('${msgId}', '${color}', this)"></button>`;
     });
 
-    html += `<span style="width:1px;height:20px;background:#ddd;margin:0 4px;"></span>`;
+    html += `<span class="wb-separator"></span>`;
 
-    // Tailles
     WB_SIZES.forEach(size => {
         const isActive = size === 4 ? 'active' : '';
         const ps = Math.min(size, 14);
@@ -10164,9 +10185,8 @@ function genererOutilsWb(msgId) {
         </button>`;
     });
 
-    html += `<span style="width:1px;height:20px;background:#ddd;margin:0 4px;"></span>`;
+    html += `<span class="wb-separator"></span>`;
 
-    // Gomme
     html += `<button class="wb-btn" data-msg="${msgId}" onclick="wbToggleEraser('${msgId}', this)" title="Gomme">
         <i class="fa-solid fa-eraser"></i>
     </button>`;
@@ -10188,37 +10208,38 @@ function initialiserWb(msgId, canvas) {
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    // Fond blanc
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, rect.width, rect.height);
 
     wb.canvas = canvas;
     wb.ctx = ctx;
     wb.msgId = msgId;
+    wb.lines = [];
 
     // Événements
     canvas.addEventListener('mousedown', (e) => wbStart(e, msgId));
     canvas.addEventListener('mousemove', (e) => wbMove(e, msgId));
-    canvas.addEventListener('mouseup', () => wbStop());
-    canvas.addEventListener('mouseleave', () => wbStop());
+    canvas.addEventListener('mouseup', () => wbStop(msgId));
+    canvas.addEventListener('mouseleave', () => wbStop(msgId));
     canvas.addEventListener('touchstart', (e) => wbStartTouch(e, msgId), { passive: false });
     canvas.addEventListener('touchmove', (e) => wbMoveTouch(e, msgId), { passive: false });
-    canvas.addEventListener('touchend', () => wbStop(), { passive: false });
+    canvas.addEventListener('touchend', () => wbStop(msgId), { passive: false });
 
-    // Charger les lignes existantes
+    // Charger les lignes existantes depuis Firestore
     const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
     docRef.get().then(doc => {
         if (doc.exists && doc.data().whiteboardData?.lines) {
-            dessinerLignesWb(msgId, doc.data().whiteboardData.lines);
+            wb.lines = doc.data().whiteboardData.lines || [];
+            dessinerToutesLesLignes(msgId);
         }
     });
 
-    // Écouter en temps réel
-    ecouterWb(msgId);
+    // Écouter en temps réel (mais OPTIMISÉ)
+    ecouterWbOptimise(msgId);
 }
 
-// ========== ÉCOUTER EN TEMPS RÉEL ==========
-function ecouterWb(msgId) {
+// ========== ÉCOUTE OPTIMISÉE ==========
+function ecouterWbOptimise(msgId) {
     if (wb.unsubscribe) wb.unsubscribe();
 
     wb.unsubscribe = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
@@ -10227,15 +10248,21 @@ function ecouterWb(msgId) {
             const data = doc.data();
             if (!data.whiteboardData) return;
 
-            const wbData = data.whiteboardData;
-            if (wbData.lines) {
-                dessinerLignesWb(msgId, wbData.lines);
+            const newLines = data.whiteboardData.lines || [];
+            
+            // Ne mettre à jour que si le nombre de lignes a changé
+            if (newLines.length !== wb.lines.length) {
+                wb.lines = newLines;
+                // Redessiner uniquement si ce n'est pas nous qui dessinons
+                if (!wb.drawing) {
+                    dessinerToutesLesLignes(msgId);
+                }
             }
         });
 }
 
-// ========== DESSINER LES LIGNES ==========
-function dessinerLignesWb(msgId, lines) {
+// ========== DESSINER TOUTES LES LIGNES ==========
+function dessinerToutesLesLignes(msgId) {
     const canvas = document.getElementById(`wb-canvas-${msgId}`);
     if (!canvas) return;
 
@@ -10251,7 +10278,7 @@ function dessinerLignesWb(msgId, lines) {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, rect.width, rect.height);
 
-    lines.forEach(line => {
+    wb.lines.forEach(line => {
         ctx.beginPath();
         ctx.moveTo(line.x1, line.y1);
         ctx.lineTo(line.x2, line.y2);
@@ -10263,7 +10290,7 @@ function dessinerLignesWb(msgId, lines) {
     });
 }
 
-// ========== FONCTIONS DE DESSIN ==========
+// ========== FONCTIONS DE DESSIN OPTIMISÉES ==========
 function wbStart(e, msgId) {
     const canvas = document.getElementById(`wb-canvas-${msgId}`);
     if (!canvas) return;
@@ -10275,14 +10302,13 @@ function wbStart(e, msgId) {
     wb.msgId = msgId;
     wb.lastX = e.clientX - rect.left;
     wb.lastY = e.clientY - rect.top;
-
+    
+    // Dessiner un point
     const size = wb.eraser ? wb.size * 2 : wb.size;
     wb.ctx.beginPath();
     wb.ctx.arc(wb.lastX, wb.lastY, size / 2, 0, Math.PI * 2);
     wb.ctx.fillStyle = wb.eraser ? '#ffffff' : wb.color;
     wb.ctx.fill();
-
-    sauvegarderTraitWb(msgId, wb.lastX, wb.lastY, wb.lastX, wb.lastY);
 }
 
 function wbMove(e, msgId) {
@@ -10294,6 +10320,7 @@ function wbMove(e, msgId) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    // Dessiner localement (instantané)
     const size = wb.eraser ? wb.size * 2 : wb.size;
     wb.ctx.beginPath();
     wb.ctx.moveTo(wb.lastX, wb.lastY);
@@ -10304,10 +10331,20 @@ function wbMove(e, msgId) {
     wb.ctx.lineJoin = 'round';
     wb.ctx.stroke();
 
-    sauvegarderTraitWb(msgId, wb.lastX, wb.lastY, x, y);
+    // Sauvegarder dans le buffer local
+    const line = {
+        x1: wb.lastX, y1: wb.lastY,
+        x2: x, y2: y,
+        color: wb.eraser ? '#ffffff' : wb.color,
+        size: size
+    };
+    wb.lines.push(line);
 
     wb.lastX = x;
     wb.lastY = y;
+
+    // Sauvegarder sur Firestore (mais en RALENTI avec throttle)
+    sauvegarderWbThrottle(msgId);
 }
 
 function wbStartTouch(e, msgId) {
@@ -10329,8 +10366,6 @@ function wbStartTouch(e, msgId) {
     wb.ctx.arc(wb.lastX, wb.lastY, size / 2, 0, Math.PI * 2);
     wb.ctx.fillStyle = wb.eraser ? '#ffffff' : wb.color;
     wb.ctx.fill();
-
-    sauvegarderTraitWb(msgId, wb.lastX, wb.lastY, wb.lastX, wb.lastY);
 }
 
 function wbMoveTouch(e, msgId) {
@@ -10354,62 +10389,59 @@ function wbMoveTouch(e, msgId) {
     wb.ctx.lineJoin = 'round';
     wb.ctx.stroke();
 
-    sauvegarderTraitWb(msgId, wb.lastX, wb.lastY, x, y);
+    const line = {
+        x1: wb.lastX, y1: wb.lastY,
+        x2: x, y2: y,
+        color: wb.eraser ? '#ffffff' : wb.color,
+        size: size
+    };
+    wb.lines.push(line);
 
     wb.lastX = x;
     wb.lastY = y;
+
+    sauvegarderWbThrottle(msgId);
 }
 
-function wbStop() {
+function wbStop(msgId) {
     wb.drawing = false;
+    // Sauvegarder une dernière fois
+    if (msgId) {
+        sauvegarderWbForce(msgId);
+    }
 }
 
-// ========== SAUVEGARDER UN TRAIT ==========
-// ========== BUFFER DE TRAITS ==========
-let wbBuffer = [];
-let wbBufferTimeout = null;
-const WB_BUFFER_DELAY = 300; // Envoi toutes les 300ms
+// ========== SAUVEGARDE AVEC THROTTLE (RÉDUIT LES REQUÊTES) ==========
+let wbThrottleTimer = null;
+let wbThrottleLines = [];
 
-function sauvegarderTraitWb(msgId, x1, y1, x2, y2) {
+function sauvegarderWbThrottle(msgId) {
     if (!msgId) return;
-
-    const line = {
-        x1, y1, x2, y2,
-        color: wb.eraser ? '#ffffff' : wb.color,
-        size: wb.eraser ? wb.size * 2 : wb.size
-    };
-
-    // Ajouter au buffer
-    wbBuffer.push(line);
-
-    // Si pas de timeout, démarrer
-    if (!wbBufferTimeout) {
-        wbBufferTimeout = setTimeout(() => {
-            envoyerBufferWb(msgId);
-        }, WB_BUFFER_DELAY);
-    }
+    
+    clearTimeout(wbThrottleTimer);
+    wbThrottleTimer = setTimeout(() => {
+        sauvegarderWbForce(msgId);
+    }, 300); // Sauvegarde toutes les 300ms
 }
 
-function envoyerBufferWb(msgId) {
-    if (wbBuffer.length === 0) {
-        wbBufferTimeout = null;
-        return;
-    }
-
-    const lines = [...wbBuffer];
-    wbBuffer = [];
-    wbBufferTimeout = null;
-
+function sauvegarderWbForce(msgId) {
+    if (!msgId || wb.isSyncing) return;
+    
+    wb.isSyncing = true;
+    
+    // Prendre uniquement les nouvelles lignes (les 20 dernières maximum)
+    const linesToSave = wb.lines;  // ← Pas de limite, sauvegarde TOUT
+    
     const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
     docRef.update({
-        'whiteboardData.lines': firebase.firestore.FieldValue.arrayUnion(...lines),
+        'whiteboardData.lines': linesToSave,
         'whiteboardData.color': wb.color,
         'whiteboardData.size': wb.size,
         'whiteboardData.lastUpdate': firebase.firestore.FieldValue.serverTimestamp()
     }).catch(err => {
-        console.error("Erreur envoi buffer:", err);
-        // Réessayer en renvoyant les lignes dans le buffer
-        wbBuffer = [...lines, ...wbBuffer];
+        console.error("Erreur sauvegarde:", err);
+    }).finally(() => {
+        wb.isSyncing = false;
     });
 }
 
@@ -10443,21 +10475,26 @@ function wbToggleEraser(msgId, btn) {
 function effacerWb(msgId) {
     if (!confirm("🗑️ Effacer tout le dessin ?")) return;
 
+    wb.lines = [];
+    
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.parentElement.getBoundingClientRect();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+    }
+
     const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
     docRef.update({ 'whiteboardData.lines': [] }).then(() => {
-        const canvas = document.getElementById(`wb-canvas-${msgId}`);
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            const rect = canvas.parentElement.getBoundingClientRect();
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, rect.width, rect.height);
-        }
         showTempNotification("🗑️ Tableau effacé");
     }).catch(err => {
         console.error("Erreur effacement:", err);
         showTempNotification("❌ Erreur");
     });
 }
+
+console.log("✅ Tableau Blanc OPTIMISÉ chargé !");
 
 // ========== DÉTECTER L'ARRIVÉE D'UN TABLEAU BLANC ==========
 // Cette fonction est appelée automatiquement quand un message "whiteboard" arrive
@@ -10491,13 +10528,555 @@ inputChat.addEventListener('keydown', function(e) {
         this.selectionStart = this.selectionEnd = start + 1;
     }
 });
+      
+      
+      // ========== CRÉER UN TABLEAU BLANC ==========
+function creerTableauBlanc() {
+    if (!currentUser || !targetUser) {
+        showTempNotification("❌ Connecte-toi d'abord");
+        return;
+    }
+
+    const msgData = {
+        text: null,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: "whiteboard",
+        whiteboardData: {
+            lines: [],
+            color: '#000000',
+            size: 4,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        }
+    };
+
+    db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData)
+        .then(docRef => {
+            showTempNotification("🎨 Tableau créé !");
+            // Afficher directement le tableau
+            afficherWb(docRef.id, msgData);
+        })
+        .catch(err => {
+            console.error("Erreur création tableau:", err);
+            showTempNotification("❌ Erreur création");
+        });
+}
+      
+      // ============================================================
+// ⚡ MÉTHODE ULTIME - BLOQUE TOUT SCROLL AUTO ⚡
+// ============================================================
+
+// 1. FORCER LE SCROLL À RESTER À SA POSITION
+(function() {
+    console.log("🔥 ACTIVATION DU VERROU DE SCROLL ULTIME");
+    
+    // Stocker la position du scroll
+    let savedScrollPosition = 0;
+    let isForcingScroll = false;
+    
+    // Sauvegarder la position actuelle
+    function saveScrollPosition() {
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea) {
+            savedScrollPosition = msgArea.scrollTop;
+        }
+    }
+    
+    // Restaurer la position
+    function restoreScrollPosition() {
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea && !isForcingScroll) {
+            msgArea.scrollTop = savedScrollPosition;
+        }
+    }
+    
+    // Observer TOUS les changements dans le DOM
+    const observer = new MutationObserver(function(mutations) {
+        const msgArea = document.getElementById('msg-area');
+        if (!msgArea) return;
+        
+        // Si on n'est pas en train de forcer, on sauvegarde et on restore
+        if (!isForcingScroll) {
+            // Sauvegarder avant le changement
+            const currentPos = msgArea.scrollTop;
+            
+            // Après un court délai, restaurer
+            clearTimeout(window._scrollRestoreTimeout);
+            window._scrollRestoreTimeout = setTimeout(() => {
+                if (msgArea.scrollTop !== currentPos && !isForcingScroll) {
+                    msgArea.scrollTop = currentPos;
+                    console.log("🔄 Scroll restauré à:", currentPos);
+                }
+            }, 10);
+        }
+    });
+    
+    // Démarrer l'observation
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        observer.observe(msgArea, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
+        });
+    }
+    
+    // 2. INTERCEPTER TOUTES LES TENTATIVES DE SCROLL
+    const originalScrollTo = window.scrollTo;
+    window.scrollTo = function(x, y) {
+        // Bloquer si on est dans le msg-area
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea && y !== undefined && y > 0) {
+            // Autoriser seulement si l'utilisateur est en bas
+            const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
+            if (!isAtBottom) {
+                console.log("🚫 Scroll bloqué par la méthode ultime");
+                return;
+            }
+        }
+        return originalScrollTo.call(this, x, y);
+    };
+    
+    // 3. INTERCEPTER scrollTop
+    Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
+        get: function() {
+            return this._scrollTop || 0;
+        },
+        set: function(value) {
+            const msgArea = document.getElementById('msg-area');
+            if (this === msgArea || this === document.documentElement) {
+                // Vérifier si c'est un scroll forcé ou volontaire
+                const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
+                const isUserAction = window._isUserScrolling || false;
+                
+                if (!isAtBottom && !isUserAction) {
+                    console.log("🚫 scrollTop bloqué par la méthode ultime");
+                    return;
+                }
+            }
+            this._scrollTop = value;
+            if (this === msgArea) {
+                // Appliquer le scroll
+                if (this._scrollTop !== undefined) {
+                    this.scrollTo(0, this._scrollTop);
+                }
+            }
+        }
+    });
+    
+    // 4. DÉTECTER LE SCROLL UTILISATEUR
+    document.addEventListener('scroll', function(e) {
+        window._isUserScrolling = true;
+        clearTimeout(window._userScrollTimeout);
+        window._userScrollTimeout = setTimeout(() => {
+            window._isUserScrolling = false;
+        }, 200);
+    }, { passive: true, capture: true });
+    
+    // 5. BLOQUER LE SCROLL AUTO DE FIREBASE
+    // Intercepter tous les appels à scrollTop = ...
+    const originalScrollTopSetter = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop')?.set;
+    if (originalScrollTopSetter) {
+        Object.defineProperty(Element.prototype, 'scrollTop', {
+            set: function(value) {
+                const msgArea = document.getElementById('msg-area');
+                if (this === msgArea) {
+                    const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
+                    if (!isAtBottom && !window._isUserScrolling) {
+                        console.log("🚫 scrollTop intercepté par la méthode ultime");
+                        return;
+                    }
+                }
+                if (this._scrollTop !== value) {
+                    this._scrollTop = value;
+                    if (this === msgArea) {
+                        this.scrollTo(0, value);
+                    }
+                }
+            },
+            get: function() {
+                return this._scrollTop || 0;
+            }
+        });
+    }
+    
+    // 6. FORCER LA POSITION DU SCROLL TOUTES LES 100ms
+    setInterval(function() {
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea && !window._isUserScrolling) {
+            const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
+            if (!isAtBottom && msgArea._scrollTop !== undefined && msgArea._scrollTop !== msgArea.scrollTop) {
+                // Restaurer seulement si c'était un scroll forcé
+                msgArea.scrollTo(0, msgArea._scrollTop);
+            }
+        }
+    }, 100);
+    
+    console.log("✅ VERROU ULTIME ACTIVÉ - Plus aucun scroll auto !");
+})();
+
+// 7. COMMANDE POUR DÉBLOQUER TEMPORAIREMENT (optionnel)
+window.forceScrollToBottom = function() {
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        window._isUserScrolling = true;
+        msgArea.scrollTo(0, msgArea.scrollHeight);
+        setTimeout(() => {
+            window._isUserScrolling = false;
+        }, 500);
+    }
+};
+
+// 8. COMMANDE POUR RÉACTIVER LE SCROLL AUTO (optionnel) 
+window.enableAutoScroll = function() {
+    location.reload(); // Le plus radical
+};
+
+console.log("💡 Utilise forceScrollToBottom() pour défiler en bas manuellement");
+      
+      // ============================================================
+// ⚡ FORCER LA SYNCHRONISATION EN TEMPS RÉEL DU TABLEAU ⚡
+// ============================================================
+
+// 1. ÉCOUTEUR DÉDIÉ POUR LE TABLEAU BLANC
+function ecouterTableauBlancTempsReel(msgId) {
+    if (!msgId) return;
+    
+    console.log("👀 Écoute du tableau en temps réel:", msgId);
+    
+    // Nettoyer l'ancien écouteur
+    if (window._wbListener) {
+        window._wbListener();
+        window._wbListener = null;
+    }
+    
+    window._wbListener = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot(function(doc) {
+            if (!doc.exists) return;
+            
+            const data = doc.data();
+            if (!data.whiteboardData) return;
+            
+            const wbData = data.whiteboardData;
+            
+            // Mettre à jour le canvas en temps réel
+            const canvas = document.getElementById(`wb-canvas-${msgId}`);
+            if (!canvas) return;
+            
+            // Forcer le redessin
+            dessinerLignesWbTempsReel(msgId, wbData.lines);
+            
+            console.log("🔄 Tableau mis à jour en temps réel");
+        }, function(error) {
+            console.error("Erreur écoute tableau:", error);
+        });
+}
+
+// 2. VERSION FORCÉE DE DESSIN
+function dessinerLignesWbTempsReel(msgId, lines) {
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // Effacer et redessiner TOUT
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    if (lines && lines.length > 0) {
+        lines.forEach(line => {
+            ctx.beginPath();
+            ctx.moveTo(line.x1, line.y1);
+            ctx.lineTo(line.x2, line.y2);
+            ctx.strokeStyle = line.color || '#000000';
+            ctx.lineWidth = line.size || 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        });
+    }
+}
+
+// 3. MODIFIER LA FONCTION INITIALISERWb
+const originalInitialiserWb = initialiserWb;
+initialiserWb = function(msgId, canvas) {
+    // Appeler l'originale
+    originalInitialiserWb(msgId, canvas);
+    
+    // AJOUTER L'ÉCOUTEUR TEMPS RÉEL
+    setTimeout(function() {
+        ecouterTableauBlancTempsReel(msgId);
+    }, 500);
+};
+
+// 4. MODIFIER AFFICHERWB POUR ACTIVER L'ÉCOUTE
+const originalAfficherWb = afficherWb;
+afficherWb = function(msgId, data) {
+    // Appeler l'originale
+    originalAfficherWb(msgId, data);
+    
+    // Attendre que le canvas soit créé puis écouter
+    setTimeout(function() {
+        ecouterTableauBlancTempsReel(msgId);
+    }, 1000);
+};
+
+// 5. FORCER LA MISE À JOUR QUAND UN TRAIT EST AJOUTÉ
+const originalSauvegarderTraitWb = sauvegarderTraitWb;
+sauvegarderTraitWb = function(msgId, x1, y1, x2, y2) {
+    if (!msgId) return;
+
+    const line = {
+        x1, y1, x2, y2,
+        color: wb.eraser ? '#ffffff' : wb.color,
+        size: wb.eraser ? wb.size * 2 : wb.size
+    };
+
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+    docRef.update({
+        'whiteboardData.lines': firebase.firestore.FieldValue.arrayUnion(line),
+        'whiteboardData.color': wb.color,
+        'whiteboardData.size': wb.size,
+        'whiteboardData.lastUpdate': firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function() {
+        // Après la sauvegarde, forcer la mise à jour locale
+        const canvas = document.getElementById(`wb-canvas-${msgId}`);
+        if (canvas && !wb.drawing) {
+            // Redessiner TOUT depuis Firestore
+            docRef.get().then(function(doc) {
+                if (doc.exists && doc.data().whiteboardData) {
+                    dessinerLignesWbTempsReel(msgId, doc.data().whiteboardData.lines);
+                }
+            });
+        }
+    }).catch(function(err) {
+        console.error("Erreur sauvegarde:", err);
+    });
+};
+
+// 6. AJOUTER UN ÉCOUTEUR GLOBAL POUR TOUS LES TABLEAUX
+function ecouterTousLesTableaux() {
+    if (!currentUser) return;
+    
+    console.log("🔍 Recherche des tableaux blancs existants...");
+    
+    // Chercher tous les messages de type whiteboard
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('type', '==', 'whiteboard')
+        .onSnapshot(function(snapshot) {
+            snapshot.docChanges().forEach(function(change) {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    
+                    console.log("🎨 Nouveau tableau détecté:", msgId);
+                    
+                    // Vérifier si le tableau est déjà affiché
+                    if (!document.querySelector(`[data-id="${msgId}"]`)) {
+                        afficherWb(msgId, data);
+                    }
+                }
+            });
+        });
+}
+
+// 7. APPELER L'ÉCOUTEUR GLOBAL AU DÉMARRAGE
+setTimeout(function() {
+    if (currentUser) {
+        ecouterTousLesTableaux();
+        console.log("✅ Écoute globale des tableaux activée");
+    }
+}, 2000);
+
+console.log("✅ SYNCHRONISATION TEMPS RÉEL ACTIVÉE POUR LE TABLEAU BLANC");
+      
+      // ============================================================
+// ⚡ MÉTHODE ULTIME - BLOQUE TOUT SCROLL AUTO ⚡
+// ============================================================
+
+// 1. FORCER LE SCROLL À RESTER À SA POSITION
+(function() {
+    console.log("🔥 ACTIVATION DU VERROU DE SCROLL ULTIME");
+    
+    // Stocker la position du scroll
+    let savedScrollPosition = 0;
+    let isForcingScroll = false;
+    
+    // Sauvegarder la position actuelle
+    function saveScrollPosition() {
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea) {
+            savedScrollPosition = msgArea.scrollTop;
+        }
+    }
+    
+    // Restaurer la position
+    function restoreScrollPosition() {
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea && !isForcingScroll) {
+            msgArea.scrollTop = savedScrollPosition;
+        }
+    }
+    
+    // Observer TOUS les changements dans le DOM
+    const observer = new MutationObserver(function(mutations) {
+        const msgArea = document.getElementById('msg-area');
+        if (!msgArea) return;
+        
+        // Si on n'est pas en train de forcer, on sauvegarde et on restore
+        if (!isForcingScroll) {
+            // Sauvegarder avant le changement
+            const currentPos = msgArea.scrollTop;
+            
+            // Après un court délai, restaurer
+            clearTimeout(window._scrollRestoreTimeout);
+            window._scrollRestoreTimeout = setTimeout(() => {
+                if (msgArea.scrollTop !== currentPos && !isForcingScroll) {
+                    msgArea.scrollTop = currentPos;
+                    console.log("🔄 Scroll restauré à:", currentPos);
+                }
+            }, 10);
+        }
+    });
+    
+    // Démarrer l'observation
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        observer.observe(msgArea, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
+        });
+    }
+    
+    // 2. INTERCEPTER TOUTES LES TENTATIVES DE SCROLL
+    const originalScrollTo = window.scrollTo;
+    window.scrollTo = function(x, y) {
+        // Bloquer si on est dans le msg-area
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea && y !== undefined && y > 0) {
+            // Autoriser seulement si l'utilisateur est en bas
+            const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
+            if (!isAtBottom) {
+                console.log("🚫 Scroll bloqué par la méthode ultime");
+                return;
+            }
+        }
+        return originalScrollTo.call(this, x, y);
+    };
+    
+    // 3. INTERCEPTER scrollTop
+    Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
+        get: function() {
+            return this._scrollTop || 0;
+        },
+        set: function(value) {
+            const msgArea = document.getElementById('msg-area');
+            if (this === msgArea || this === document.documentElement) {
+                // Vérifier si c'est un scroll forcé ou volontaire
+                const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
+                const isUserAction = window._isUserScrolling || false;
+                
+                if (!isAtBottom && !isUserAction) {
+                    console.log("🚫 scrollTop bloqué par la méthode ultime");
+                    return;
+                }
+            }
+            this._scrollTop = value;
+            if (this === msgArea) {
+                // Appliquer le scroll
+                if (this._scrollTop !== undefined) {
+                    this.scrollTo(0, this._scrollTop);
+                }
+            }
+        }
+    });
+    
+    // 4. DÉTECTER LE SCROLL UTILISATEUR
+    document.addEventListener('scroll', function(e) {
+        window._isUserScrolling = true;
+        clearTimeout(window._userScrollTimeout);
+        window._userScrollTimeout = setTimeout(() => {
+            window._isUserScrolling = false;
+        }, 200);
+    }, { passive: true, capture: true });
+    
+    // 5. BLOQUER LE SCROLL AUTO DE FIREBASE
+    // Intercepter tous les appels à scrollTop = ...
+    const originalScrollTopSetter = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop')?.set;
+    if (originalScrollTopSetter) {
+        Object.defineProperty(Element.prototype, 'scrollTop', {
+            set: function(value) {
+                const msgArea = document.getElementById('msg-area');
+                if (this === msgArea) {
+                    const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
+                    if (!isAtBottom && !window._isUserScrolling) {
+                        console.log("🚫 scrollTop intercepté par la méthode ultime");
+                        return;
+                    }
+                }
+                if (this._scrollTop !== value) {
+                    this._scrollTop = value;
+                    if (this === msgArea) {
+                        this.scrollTo(0, value);
+                    }
+                }
+            },
+            get: function() {
+                return this._scrollTop || 0;
+            }
+        });
+    }
+    
+    // 6. FORCER LA POSITION DU SCROLL TOUTES LES 100ms
+    setInterval(function() {
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea && !window._isUserScrolling) {
+            const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
+            if (!isAtBottom && msgArea._scrollTop !== undefined && msgArea._scrollTop !== msgArea.scrollTop) {
+                // Restaurer seulement si c'était un scroll forcé
+                msgArea.scrollTo(0, msgArea._scrollTop);
+            }
+        }
+    }, 100);
+    
+    console.log("✅ VERROU ULTIME ACTIVÉ - Plus aucun scroll auto !");
+})();
+
+// 7. COMMANDE POUR DÉBLOQUER TEMPORAIREMENT (optionnel)
+window.forceScrollToBottom = function() {
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        window._isUserScrolling = true;
+        msgArea.scrollTo(0, msgArea.scrollHeight);
+        setTimeout(() => {
+            window._isUserScrolling = false;
+        }, 500);
+    }
+};
+
+// 8. COMMANDE POUR RÉACTIVER LE SCROLL AUTO (optionnel)
+window.enableAutoScroll = function() {
+    location.reload(); // Le plus radical
+};
+
+console.log("💡 Utilise forceScrollToBottom() pour défiler en bas manuellement");
     </script>
   
    
 </body>   
   
 </html>    
-
-                                                                                                    
-
-  
+              
