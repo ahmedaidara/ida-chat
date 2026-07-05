@@ -999,6 +999,52 @@ input, textarea {
 }
 @keyframes pulseTurn { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
 @keyframes winPop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+      
+      /* ========== BOUTON FLOATTANT NOUVEAU MESSAGE ========== */
+.new-message-floating-btn {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0095f6;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 149, 246, 0.4);
+    cursor: pointer;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    animation: slideUpNewMsg 0.3s ease-out;
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.new-message-floating-btn:hover {
+    transform: translateX(-50%) scale(1.05);
+}
+
+.new-message-floating-btn i {
+    font-size: 1rem;
+}
+
+@keyframes slideUpNewMsg {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.new-message-count {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    padding: 0px 8px;
+    font-size: 0.75rem;
+    line-height: 20px;
+    min-width: 20px;
+    text-align: center;
+}
     </style>
 </head>
 <body>
@@ -1082,7 +1128,12 @@ input, textarea {
         </div>
         <div class="live-bar" id="live-bar"></div>
         <div class="messages-area" id="msg-area"></div>
- 
+ <!-- Bouton flottant "Nouveau message" -->
+<div class="new-message-floating-btn" id="new-msg-floating-btn" onclick="scrollToBottom()">
+    <i class="fa-regular fa-comment"></i>
+    <span id="new-msg-text">📩 Nouveau message</span>
+    <span class="new-message-count" id="new-msg-count">1</span>
+</div>
        
 
         <div class="typing-indicator" id="typing-ind">
@@ -8679,7 +8730,223 @@ async function mettreAJourMaBatterie() {
     statusSpan.innerHTML = statutHtml + batteryHtml;
 }
        
-      
+      // =========================================================================
+// BOUTON FLOATING "NOUVEAU MESSAGE" (DÉFILEMENT INTELLIGENT)
+// =========================================================================
+
+// État du bouton flottant
+let newMessageCount = 0;
+let isAtBottom = true;
+let isButtonVisible = false;
+let unreadMessages = [];
+
+// Détecter si l'utilisateur est en bas de la conversation
+function detecterPositionDefilement() {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return true;
+    
+    // Marge de 100px pour considérer qu'on est "en bas"
+    const tolerance = 150;
+    const atBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < tolerance;
+    isAtBottom = atBottom;
+    
+    // Si l'utilisateur scrolle en bas, cacher le bouton et réinitialiser le compteur
+    if (atBottom && isButtonVisible) {
+        cacherBoutonNouveauMessage();
+    }
+    
+    return atBottom;
+}
+
+// Afficher le bouton flottant
+function afficherBoutonNouveauMessage(compteur) {
+    const btn = document.getElementById('new-msg-floating-btn');
+    const countSpan = document.getElementById('new-msg-count');
+    const textSpan = document.getElementById('new-msg-text');
+    
+    if (!btn) return;
+    
+    // Mettre à jour le compteur
+    newMessageCount = compteur || newMessageCount + 1;
+    
+    // Mettre à jour le texte
+    if (newMessageCount === 1) {
+        textSpan.textContent = '📩 Nouveau message';
+    } else {
+        textSpan.textContent = `📩 ${newMessageCount} nouveaux messages`;
+    }
+    
+    // Mettre à jour le badge
+    if (countSpan) {
+        countSpan.textContent = newMessageCount;
+    }
+    
+    // Afficher le bouton avec animation
+    btn.style.display = 'flex';
+    isButtonVisible = true;
+    
+    // Cacher automatiquement après 8 secondes si l'utilisateur ne clique pas
+    clearTimeout(window._newMsgTimeout);
+    window._newMsgTimeout = setTimeout(() => {
+        if (isButtonVisible && !isAtBottom) {
+            // Réduire le compteur mais garder le bouton visible
+            // (l'utilisateur a vu la notification mais n'a pas cliqué)
+        }
+    }, 8000);
+}
+
+// Cacher le bouton flottant
+function cacherBoutonNouveauMessage() {
+    const btn = document.getElementById('new-msg-floating-btn');
+    if (!btn) return;
+    
+    btn.style.display = 'none';
+    isButtonVisible = false;
+    newMessageCount = 0;
+    
+    // Réinitialiser les messages non lus
+    unreadMessages = [];
+    
+    clearTimeout(window._newMsgTimeout);
+}
+
+// Défiler en bas de la conversation
+function scrollToBottom() {
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        msgArea.scrollTo({
+            top: msgArea.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+    
+    // Cacher le bouton après le défilement
+    setTimeout(() => {
+        cacherBoutonNouveauMessage();
+        isAtBottom = true;
+    }, 300);
+}
+
+// AJOUTER CETTE FONCTION DANS L'ÉCOUTEUR DE MESSAGES (listenToMessages)
+// POUR DÉTECTER L'ARRIVÉE DE NOUVEAUX MESSAGES
+
+// ========== FONCTION MODIFIÉE POUR DÉTECTER LES NOUVEAUX MESSAGES ==========
+// À AJOUTER DANS listenToMessages(), à l'intérieur du traitement des 'added'
+
+/*
+// Dans la partie snapshot.docChanges().forEach(change => {
+//   if (change.type === 'added') {
+//     
+//     // AJOUTER CE BLOC APRÈS l'affichage du message :
+//     
+//     // Vérifier si le message vient de l'autre utilisateur
+//     if (data.senderId !== currentUser.id) {
+//         // Vérifier si l'utilisateur est en bas de la conversation
+//         const estEnBas = detecterPositionDefilement();
+//         
+//         if (!estEnBas) {
+//             // L'utilisateur est en haut → afficher le bouton
+//             afficherBoutonNouveauMessage();
+//         } else {
+//             // L'utilisateur est en bas → défiler automatiquement
+//             setTimeout(scrollToBottom, 100);
+//         }
+//     }
+//     
+//   }
+// });
+*/
+
+// ========== ÉCOUTE LES ÉVÉNEMENTS DE DÉFILEMENT ==========
+function initNewMessageButton() {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+    
+    // Détecter le défilement pour cacher le bouton
+    msgArea.addEventListener('scroll', function() {
+        const atBottom = detecterPositionDefilement();
+        if (atBottom && isButtonVisible) {
+            // L'utilisateur a scrollé en bas → cacher le bouton
+            cacherBoutonNouveauMessage();
+        }
+    }, { passive: true });
+    
+    // Détecter le redimensionnement (clavier mobile, etc.)
+    window.addEventListener('resize', function() {
+        detecterPositionDefilement();
+    }, { passive: true });
+}
+
+// ========== SURCHARGER LA FONCTION D'ÉCOUTE DE MESSAGES ==========
+// Pour intégrer la détection des nouveaux messages
+
+// Sauvegarder l'ancienne fonction
+const originalListenToMessages = window.listenToMessages;
+
+// Redéfinir la fonction pour inclure la détection des nouveaux messages
+window.listenToMessages = function() {
+    if (originalListenToMessages) {
+        // Appeler l'originale
+        originalListenToMessages();
+    }
+    
+    // Si l'écoute est déjà active, on ajoute un second listener dédié aux nouveaux messages
+    if (currentUser && targetUser) {
+        // Écouter UNIQUEMENT les nouveaux messages de l'autre personne
+        if (window._newMsgListener) {
+            window._newMsgListener();
+        }
+        
+        window._newMsgListener = db.collection('chats').doc(CHAT_ID).collection('messages')
+            .where('senderId', '==', targetUser.id)
+            .orderBy('timestamp', 'desc')
+            .limitToLast(5) // Ne prendre que les derniers pour éviter la surcharge
+            .onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const data = change.doc.data();
+                        const msgId = change.doc.id;
+                        
+                        // Vérifier que c'est vraiment un nouveau message (pas dans le DOM)
+                        const existing = document.querySelector(`[data-id="${msgId}"]`);
+                        if (existing) return;
+                        
+                        // Vérifier si le message est de l'autre personne
+                        if (data.senderId === targetUser.id) {
+                            // Attendre que le message soit affiché avant de décider
+                            setTimeout(() => {
+                                const estEnBas = detecterPositionDefilement();
+                                
+                                if (!estEnBas) {
+                                    // L'utilisateur est en haut → afficher le bouton
+                                    // Vérifier que le message est bien affiché
+                                    const msgInDom = document.querySelector(`[data-id="${msgId}"]`);
+                                    if (msgInDom) {
+                                        afficherBoutonNouveauMessage();
+                                    }
+                                } else {
+                                    // L'utilisateur est en bas → défiler
+                                    setTimeout(scrollToBottom, 200);
+                                }
+                            }, 300);
+                        }
+                    }
+                });
+            });
+    }
+};
+
+// ========== INITIALISATION ==========
+setTimeout(() => {
+    initNewMessageButton();
+    
+    // Si déjà connecté, activer
+    if (currentUser && targetUser) {
+        window.listenToMessages();
+    }
+}, 500);
+
+console.log("✅ Bouton flottant 'Nouveau message' activé !");
       
     </script>
   
