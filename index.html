@@ -1200,6 +1200,212 @@ input, textarea {
     background: rgba(255,255,255,0.06);
     margin: 0 2px;
 }
+      /* ===== TABLEAU BLANC - CARTE AVEC DIMENSIONS FIXES ET OMBRES ===== */
+.wb-card {
+    width: 350px;
+    max-width: 280px;
+    height: 450px;
+    background: var(--bg-main);
+    border-radius: 20px;
+    padding: 12px;
+    border: 2px solid rgba(168, 0, 255, 0.25);
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.15),
+        0 8px 30px rgba(168, 0, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    margin: 4px 0;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    flex-shrink: 0;
+}
+.wb-canvas-box {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    flex: 1;
+    min-height: 0;
+    touch-action: none;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.wb-card:hover {
+    box-shadow: 
+        0 6px 25px rgba(0, 0, 0, 0.2),
+        0 12px 40px rgba(168, 0, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+[data-theme="dark"] .wb-card {
+    background: rgba(20, 20, 30, 0.95);
+    border-color: rgba(168, 0, 255, 0.35);
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.4),
+        0 8px 30px rgba(168, 0, 255, 0.1);
+}
+
+.wb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(168, 0, 255, 0.1);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    min-height: 24px;
+}
+
+.wb-header span:first-child {
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wb-canvas-box {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    flex: 1;
+    min-height: 0;
+    touch-action: none;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .wb-canvas-box {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.wb-canvas-box canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    background: #ffffff;
+    touch-action: none;
+}
+
+.wb-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 2px 4px 2px;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+[data-theme="dark"] .wb-tools {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.wb-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.06);
+    background: var(--bg-main);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.wb-btn:hover {
+    transform: scale(1.1);
+    border-color: #a800ff;
+    box-shadow: 0 2px 8px rgba(168, 0, 255, 0.15);
+}
+
+.wb-btn.active {
+    border-color: #a800ff;
+    background: rgba(168, 0, 255, 0.12);
+    box-shadow: 0 0 12px rgba(168, 0, 255, 0.15);
+}
+
+.wb-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.wb-color:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.wb-color.active {
+    border-color: #a800ff;
+    box-shadow: 0 0 12px rgba(168, 0, 255, 0.3), 0 0 0 2px var(--bg-main);
+}
+
+.wb-separator {
+    width: 1px;
+    height: 22px;
+    background: rgba(0, 0, 0, 0.06);
+    margin: 0 3px;
+}
+
+[data-theme="dark"] .wb-separator {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.wb-actions {
+    display: flex;
+    gap: 6px;
+    padding-top: 6px;
+    justify-content: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+    min-height: 30px;
+}
+
+[data-theme="dark"] .wb-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.wb-actions button {
+    padding: 4px 14px;
+    border-radius: 16px;
+    border: none;
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wb-actions button:hover {
+    transform: scale(1.04);
+}
+
+.wb-clear {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+.wb-clear:hover {
+    background: rgba(255, 68, 68, 0.2);
+}
     </style>
 </head>
 <body>
@@ -9888,8 +10094,8 @@ function genererCarteWb(msgId, data) {
     return `
         <div class="wb-card" data-wb-id="${msgId}">
             <div class="wb-header">
-                <span>🎨 Tableau Blanc</span>
-                <span style="font-size:0.6rem;opacity:0.6;">${senderName} · ${linesCount} traits</span>
+                <span>🎨 Dessin</span>
+                <span style="font-size:0.6rem;opacity:0.6;">En direct</span>
             </div>
             <div class="wb-canvas-box">
                 <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
@@ -9897,9 +10103,7 @@ function genererCarteWb(msgId, data) {
             <div class="wb-tools" id="wb-tools-${msgId}">
                 ${genererOutilsWb(msgId)}
             </div>
-            <div class="wb-actions">
-                <button class="wb-clear" onclick="effacerWb('${msgId}')">🗑️ Effacer</button>
-            </div>
+           
         </div>
     `;
 }
@@ -10129,6 +10333,11 @@ function wbStop() {
 }
 
 // ========== SAUVEGARDER UN TRAIT ==========
+// ========== BUFFER DE TRAITS ==========
+let wbBuffer = [];
+let wbBufferTimeout = null;
+const WB_BUFFER_DELAY = 300; // Envoi toutes les 300ms
+
 function sauvegarderTraitWb(msgId, x1, y1, x2, y2) {
     if (!msgId) return;
 
@@ -10138,13 +10347,38 @@ function sauvegarderTraitWb(msgId, x1, y1, x2, y2) {
         size: wb.eraser ? wb.size * 2 : wb.size
     };
 
+    // Ajouter au buffer
+    wbBuffer.push(line);
+
+    // Si pas de timeout, démarrer
+    if (!wbBufferTimeout) {
+        wbBufferTimeout = setTimeout(() => {
+            envoyerBufferWb(msgId);
+        }, WB_BUFFER_DELAY);
+    }
+}
+
+function envoyerBufferWb(msgId) {
+    if (wbBuffer.length === 0) {
+        wbBufferTimeout = null;
+        return;
+    }
+
+    const lines = [...wbBuffer];
+    wbBuffer = [];
+    wbBufferTimeout = null;
+
     const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
     docRef.update({
-        'whiteboardData.lines': firebase.firestore.FieldValue.arrayUnion(line),
+        'whiteboardData.lines': firebase.firestore.FieldValue.arrayUnion(...lines),
         'whiteboardData.color': wb.color,
         'whiteboardData.size': wb.size,
         'whiteboardData.lastUpdate': firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(err => console.error("Erreur sauvegarde:", err));
+    }).catch(err => {
+        console.error("Erreur envoi buffer:", err);
+        // Réessayer en renvoyant les lignes dans le buffer
+        wbBuffer = [...lines, ...wbBuffer];
+    });
 }
 
 // ========== OUTILS ==========
@@ -10210,3 +10444,4 @@ console.log("✅ Tableau Blanc chargé !");
 </body>   
   
 </html>    
+              
