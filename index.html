@@ -8133,151 +8133,103 @@ if (STATUTS_CACHE.lastUpdate && (Date.now() - STATUTS_CACHE.lastUpdate) > CACHE_
 console.log("✅ Marquage ULTRA-RAPIDE activé !");
       
       // =========================================================================
-// STATUT EN LIGNE/HORS LIGNE AVEC DÉTECTION D'ÉCRAN ACTIF
+// =========================================================================
+// STATUT EN LIGNE/HORS LIGNE AVEC HEURE EXACTE DE DÉCONNEXION (CORRIGÉ)
 // =========================================================================
 
-// 1. État global du statut
+// 1. État global du statut (Concerne uniquement l'utilisateur local)
 const STATUT_UTILISATEUR = {
     estActif: false,
     derniereAction: Date.now(),
     ecranVisible: true,
     pingInterval: null,
-    statutListener: null
+    statutListener: null,
+    heureDeconnexion: null
 };
 
-// 2. Fonction pour mettre à jour le statut en ligne
+// 2. Fonction pour mettre à jour mon statut dans Firestore
 function mettreAJourStatutUtilisateur(estEnLigne, type = 'manuel') {
     if (!currentUser) return;
     
     const userRef = db.collection('users').doc(currentUser.id);
     const maintenant = firebase.firestore.FieldValue.serverTimestamp();
+    const maintenantDate = new Date();
     
-    // Mettre à jour le statut
+    if (!estEnLigne) {
+        STATUT_UTILISATEUR.heureDeconnexion = maintenantDate;
+        console.log(`⏰ Ma déconnexion sauvegardée: ${maintenantDate.toLocaleTimeString()}`);
+    } else {
+        STATUT_UTILISATEUR.heureDeconnexion = null;
+    }
+    
     userRef.set({
         online: estEnLigne,
         lastSeen: maintenant,
+        lastSeenExact: maintenantDate.toISOString(),
+        heureDeconnexion: STATUT_UTILISATEUR.heureDeconnexion ? STATUT_UTILISATEUR.heureDeconnexion.toISOString() : null,
         userId: currentUser.id,
         userName: currentUser.name,
         lastActivity: maintenant,
-        statusType: type // 'visible', 'background', 'manuel'
+        statusType: type
     }, { merge: true }).then(() => {
-        console.log(`📊 Statut mis à jour: ${estEnLigne ? '🟢 EN LIGNE' : '⚪ HORS LIGNE'} (${type})`);
+        console.log(`📊 Mon statut mis à jour: ${estEnLigne ? '🟢 EN LIGNE' : '⚪ HORS LIGNE'} (${type})`);
     }).catch(err => console.error("Erreur mise à jour statut:", err));
 }
 
-// 3. Détection de l'activité de l'utilisateur (écran visible)
+// 3. Détection de mes actions (Envoie les données à Firestore, SANS toucher à l'écran)
 function detecterActiviteEcran() {
-    // Quand l'écran devient visible
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
-            // Écran en arrière-plan → HORS LIGNE
-            console.log("📱 Écran en arrière-plan → HORS LIGNE");
+            console.log("📱 Mon écran est en arrière-plan → Hors ligne");
             STATUT_UTILISATEUR.ecranVisible = false;
             mettreAJourStatutUtilisateur(false, 'background');
-            
-            // Mettre à jour l'affichage "Vu à..."
-            const statusSpan = document.getElementById('header-status-text');
-            if (statusSpan) {
-                const maintenant = new Date();
-                const heures = maintenant.getHours().toString().padStart(2, '0');
-                const minutes = maintenant.getMinutes().toString().padStart(2, '0');
-                statusSpan.innerHTML = `
-                    <span style="color: #8696a0;">⚪ Vu à ${heures}:${minutes}</span>
-                    <span class="battery-indicator" id="battery-indicator">
-                        <span class="battery-icon" id="battery-icon">🔋</span>
-                        <span class="battery-percent" id="battery-percent">--%</span>
-                    </span>
-                `;
-            }
         } else {
-            // Écran visible → EN LIGNE
-            console.log("📱 Écran visible → EN LIGNE");
+            console.log("📱 Mon écran est visible → En ligne");
             STATUT_UTILISATEUR.ecranVisible = true;
             STATUT_UTILISATEUR.derniereAction = Date.now();
             mettreAJourStatutUtilisateur(true, 'visible');
-            
-            // Mettre à jour l'affichage "En ligne"
-            const statusSpan = document.getElementById('header-status-text');
-            if (statusSpan) {
-                statusSpan.innerHTML = `
-                    <span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>
-                    <span class="battery-indicator" id="battery-indicator">
-                        <span class="battery-icon" id="battery-icon">🔋</span>
-                        <span class="battery-percent" id="battery-percent">--%</span>
-                    </span>
-                `;
-            }
         }
     });
     
-    // Détecter quand l'utilisateur quitte la page
     window.addEventListener('beforeunload', function() {
-        console.log("🚪 Départ de la page → HORS LIGNE");
         mettreAJourStatutUtilisateur(false, 'depart');
     });
     
-    // Détecter quand l'utilisateur est inactif (pas de mouvement pendant 30 secondes)
-    let tempsInactivite = 0;
+    let tempsInactivite = Date.now();
+    let estInactif = false;
+    
     const resetInactivite = () => {
         tempsInactivite = Date.now();
         STATUT_UTILISATEUR.derniereAction = Date.now();
         
-        // Si l'écran est visible et qu'il était hors ligne, repasser en ligne
-        if (STATUT_UTILISATEUR.ecranVisible && !document.hidden) {
+        if (STATUT_UTILISATEUR.ecranVisible && !document.hidden && estInactif) {
+            estInactif = false;
             mettreAJourStatutUtilisateur(true, 'actif');
-            
-            // Mettre à jour l'affichage
-            const statusSpan = document.getElementById('header-status-text');
-            if (statusSpan) {
-                statusSpan.innerHTML = `
-                    <span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>
-                    <span class="battery-indicator" id="battery-indicator">
-                        <span class="battery-icon" id="battery-icon">🔋</span>
-                        <span class="battery-percent" id="battery-percent">--%</span>
-                    </span>
-                `;
-            }
         }
     };
     
-    // Écouter toutes les actions de l'utilisateur
+    // Écouter mes mouvements
     const events = ['click', 'touchstart', 'scroll', 'keydown', 'mousemove', 'focus'];
     events.forEach(event => {
         document.addEventListener(event, resetInactivite, { passive: true });
     });
     
-    // Vérifier l'inactivité toutes les 5 secondes
+    // Vérifier mon inactivité toutes les 5 secondes
     setInterval(() => {
         const now = Date.now();
         const diff = now - tempsInactivite;
         
-        // Si inactif depuis plus de 30 secondes et écran visible
-        if (diff > 30000 && STATUT_UTILISATEUR.ecranVisible && !document.hidden) {
-            console.log("⏳ Inactif depuis 30s → HORS LIGNE");
+        if (diff > 30000 && STATUT_UTILISATEUR.ecranVisible && !document.hidden && !estInactif) {
+            estInactif = true;
+            console.log("⏳ Je suis inactif depuis 30s → Hors ligne");
             mettreAJourStatutUtilisateur(false, 'inactif');
-            
-            // Afficher "Vu à..."
-            const statusSpan = document.getElementById('header-status-text');
-            if (statusSpan) {
-                const maintenant = new Date();
-                const heures = maintenant.getHours().toString().padStart(2, '0');
-                const minutes = maintenant.getMinutes().toString().padStart(2, '0');
-                statusSpan.innerHTML = `
-                    <span style="color: #8696a0;">⚪ Vu à ${heures}:${minutes}</span>
-                    <span class="battery-indicator" id="battery-indicator">
-                        <span class="battery-icon" id="battery-icon">🔋</span>
-                        <span class="battery-percent" id="battery-percent">--%</span>
-                    </span>
-                `;
-            }
         }
     }, 5000);
     
-    // Ping toutes les 10 secondes si l'écran est visible
+    // Mon Ping périodique
     STATUT_UTILISATEUR.pingInterval = setInterval(() => {
         if (!document.hidden && STATUT_UTILISATEUR.ecranVisible) {
             const diff = Date.now() - STATUT_UTILISATEUR.derniereAction;
-            // Si actif (moins de 30s d'inactivité)
             if (diff < 30000) {
                 mettreAJourStatutUtilisateur(true, 'ping');
             }
@@ -8285,7 +8237,7 @@ function detecterActiviteEcran() {
     }, 10000);
 }
 
-// 4. Écouter le statut de l'AUTRE utilisateur
+// 4. Écouter le statut de l'AUTRE utilisateur (La SEULE fonction qui modifie l'affichage)
 function ecouterStatutAutreAvecHorodatage() {
     if (!currentUser || !targetUser) return;
     
@@ -8297,51 +8249,49 @@ function ecouterStatutAutreAvecHorodatage() {
     }
     
     const statusSpan = document.getElementById('header-status-text');
+    if (!statusSpan) return;
     
     window._statutListener = db.collection('users').doc(targetUser.id)
         .onSnapshot((doc) => {
             if (!doc.exists) {
-                statusSpan.innerHTML = `
-                    <span style="color: #8696a0;">⚪ Hors ligne</span>
-                    <span class="battery-indicator" id="battery-indicator">
-                        <span class="battery-icon" id="battery-icon">🔋</span>
-                        <span class="battery-percent" id="battery-percent">--%</span>
-                    </span>
-                `;
+                statusSpan.innerHTML = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
                 return;
             }
             
             const data = doc.data();
             const estEnLigne = data.online === true;
             
-            // Vérifier si le dernier seen est récent (moins de 30 secondes)
-            let estVraimentEnLigne = false;
-            let dernierVu = "Hors ligne";
-            
-            if (data.lastSeen) {
-                const lastSeen = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
-                const diffSecondes = (Date.now() - lastSeen.getTime()) / 1000;
-                
-                // Si en ligne et dernier seen < 30s
-                if (estEnLigne && diffSecondes < 30) {
-                    estVraimentEnLigne = true;
-                }
-                
-                // Format de l'heure
-                const heures = lastSeen.getHours().toString().padStart(2, '0');
-                const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
-                dernierVu = `Vu à ${heures}:${minutes}`;
+            // Récupérer l'heure de déconnexion de l'AUTRE depuis Firestore
+            let heureDeconnexion = null;
+            if (data.heureDeconnexion) {
+                heureDeconnexion = new Date(data.heureDeconnexion);
+            } else if (data.lastSeen) {
+                heureDeconnexion = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
             }
             
-            // AFFICHAGE
+            // Sécurité anti-crash : Vérifier s'il donne des signes de vie récents (Moins de 35 secondes)
+            let estVraimentEnLigne = false;
+            if (estEnLigne && data.lastSeen) {
+                const lastSeenDate = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
+                const diffSecondes = (Date.now() - lastSeenDate.getTime()) / 1000;
+                if (diffSecondes < 35) {
+                    estVraimentEnLigne = true;
+                }
+            }
+            
+            // Construction de l'affichage de l'autre
             let statutHtml = '';
             if (estVraimentEnLigne) {
                 statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
+            } else if (heureDeconnexion) {
+                const heures = heureDeconnexion.getHours().toString().padStart(2, '0');
+                const minutes = heureDeconnexion.getMinutes().toString().padStart(2, '0');
+                statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${heures}:${minutes}</span>`;
             } else {
-                statutHtml = `<span style="color: #8696a0;">⚪ ${dernierVu}</span>`;
+                statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
             }
             
-            // Batterie
+            // Récupération de sa batterie
             let batteryHtml = '';
             if (data.battery) {
                 const level = data.battery.level || 0;
@@ -8354,109 +8304,72 @@ function ecouterStatutAutreAvecHorodatage() {
                         <span class="battery-percent ${color}" id="battery-percent">${level}%</span>
                     </span>
                 `;
+            } else {
+                batteryHtml = `
+                    <span class="battery-indicator" id="battery-indicator">
+                        <span class="battery-icon" id="battery-icon">🔋</span>
+                        <span class="battery-percent" id="battery-percent">--%</span>
+                    </span>
+                `;
             }
             
+            // Application finale à l'écran
             statusSpan.innerHTML = statutHtml + batteryHtml;
             
-            // Mood
             if (data.mood) {
                 const otherMoodSpan = document.getElementById('other-mood-emoji');
-                if (otherMoodSpan) {
-                    otherMoodSpan.textContent = data.mood.emoji || '😊';
-                }
+                if (otherMoodSpan) otherMoodSpan.textContent = data.mood.emoji || '😊';
             }
             
-            console.log(`📊 Statut ${targetUser.name}: ${estVraimentEnLigne ? '🟢 En ligne' : '⚪ ' + dernierVu}`);
         }, (error) => {
             console.error("Erreur écoute statut:", error);
         });
 }
 
-// 5. Fonction pour forcer le statut EN LIGNE (quand l'écran est visible)
+// 5. Fonction pour forcer mon statut initial
 function forcerStatutEnLigneSiVisible() {
     if (!currentUser) return;
-    
     if (!document.hidden) {
-        console.log("🔄 Écran visible → Forçage EN LIGNE");
         mettreAJourStatutUtilisateur(true, 'force');
-        
-        const statusSpan = document.getElementById('header-status-text');
-        if (statusSpan) {
-            statusSpan.innerHTML = `
-                <span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>
-                <span class="battery-indicator" id="battery-indicator">
-                    <span class="battery-icon" id="battery-icon">🔋</span>
-                    <span class="battery-percent" id="battery-percent">--%</span>
-                </span>
-            `;
-        }
     } else {
-        console.log("📱 Écran en arrière-plan → HORS LIGNE");
         mettreAJourStatutUtilisateur(false, 'force_background');
     }
 }
 
-// 6. ACTIVER LE SYSTÈME COMPLET
+// 6. Activer le système
 function activerSystemeStatutComplet() {
     if (!currentUser || !targetUser) return;
     
-    console.log(`🚀 Activation du système de statut pour ${currentUser.name}`);
-    
-    // 1. Détection de l'écran
     detecterActiviteEcran();
     
-    // 2. Forcer le statut initial
     setTimeout(() => {
         forcerStatutEnLigneSiVisible();
     }, 500);
     
-    // 3. Écouter le statut de l'autre
     setTimeout(() => {
         ecouterStatutAutreAvecHorodatage();
     }, 1000);
-    
-    // 4. Vérifier périodiquement le statut
-    setInterval(() => {
-        if (!document.hidden) {
-            const diff = Date.now() - STATUT_UTILISATEUR.derniereAction;
-            if (diff < 30000) {
-                // Actif → EN LIGNE
-                mettreAJourStatutUtilisateur(true, 'periodic');
-            }
-        }
-    }, 15000);
 }
 
-// 7. SURCHARGER selectUser
-const originalSelectUser5 = window.selectUser;
+// 7. Surcharger selectUser
+const originalSelectUser6 = window.selectUser;
 window.selectUser = function(userKey) {
-    if (originalSelectUser5) {
-        originalSelectUser5(userKey);
+    if (originalSelectUser6) {
+        originalSelectUser6(userKey);
     }
-    
     setTimeout(() => {
         activerSystemeStatutComplet();
     }, 1500);
 };
 
-// 8. Initialisation si déjà connecté
+// 8. Initialisation automatique
 setTimeout(() => {
     if (currentUser && targetUser) {
-        console.log("🔄 Démarrage du système de statut");
         activerSystemeStatutComplet();
     }
 }, 1000);
 
-// 9. FORCER après chargement
-window.addEventListener('load', function() {
-    setTimeout(() => {
-        if (currentUser && targetUser) {
-            forcerStatutEnLigneSiVisible();
-        }
-    }, 2000);
-});
-
-// 10. Nettoyage
+// 9. Nettoyage lors des changements
 function nettoyerSystemeStatut() {
     if (window._statutListener) {
         window._statutListener();
@@ -8466,31 +8379,7 @@ function nettoyerSystemeStatut() {
         clearInterval(STATUT_UTILISATEUR.pingInterval);
         STATUT_UTILISATEUR.pingInterval = null;
     }
-    if (currentUser) {
-        mettreAJourStatutUtilisateur(false, 'nettoyage');
-    }
 }
-
-// 11. Fonction de débogage
-function afficherStatutActuel() {
-    if (!currentUser || !targetUser) return;
-    
-    console.log("=== STATUT ACTUEL ===");
-    console.log("Utilisateur:", currentUser.name);
-    console.log("Écran visible:", !document.hidden);
-    console.log("Dernière action:", new Date(STATUT_UTILISATEUR.derniereAction).toLocaleTimeString());
-    
-    db.collection('users').doc(targetUser.id).get().then(doc => {
-        if (doc.exists) {
-            console.log("Statut de", targetUser.name + ":", doc.data());
-        } else {
-            console.log("⚠️ Aucun document pour", targetUser.name);
-        }
-    });
-}
-
-console.log("💡 Tape 'afficherStatutActuel()' dans la console pour voir le statut");
-console.log("✅ Système de statut avec détection d'écran activé !");
     </script>
   
   
