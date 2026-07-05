@@ -8948,9 +8948,44 @@ setTimeout(() => {
 
 console.log("✅ Bouton flottant 'Nouveau message' activé !");
       
+      
+      
+      // ========== OUVERTURE DU CARNET SECRET VERS UNE NOUVELLE PAGE ==========
+function openSecretPageVersFichier() {
+    // Demander le code d'accès
+    const code = prompt("🔒 CARNET SECRET\n\nEntrez le code d'accès pour ouvrir votre conversation privée :");
+    
+    if (code === null) return; // Annulé
+    
+    if (code === "0507") {
+        // Ouvrir la nouvelle page dans un nouvel onglet ou dans la même fenêtre
+        window.open('secret.html', '_blank');
+        // Alternative : window.location.href = 'secret.html';
+    } else {
+        alert("❌ Code incorrect ! Veuillez réessayer.");
+    }
+}
+
+// Modifier la fonction du bouton Carnet Secret pour utiliser la nouvelle méthode
+const originalOpenSecret = window.openSecretPage;
+window.openSecretPage = function() {
+    openSecretPageVersFichier();
+};
+
+// Surcharger le bouton existant
+document.addEventListener('DOMContentLoaded', function() {
+    const secretBtn = document.getElementById('secret-notebook-btn');
+    if (secretBtn) {
+        secretBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openSecretPageVersFichier();
+        };
+    }
+});
     </script>
   
-  
+   
 </body>   
   
 </html>    
