@@ -2234,7 +2234,7 @@ function detecterActiviteUtilisateur() {
             // Supprimer l'écouteur après 5 secondes pour éviter trop d'appels
             setTimeout(() => {
                 document.removeEventListener(event, marquer);
-            }, 5000);
+            }, 1000);
         }, { once: true });
     });
 }
@@ -2908,7 +2908,7 @@ function ecouterStatutsEnTempsReel() {
         
         function cancelReply() { replyToId = null; document.getElementById('reply-preview').style.display = 'none'; }
         
-      async function sendTextMessage() {
+     async function sendTextMessage() {
     if (messageEnCoursEdition) {
         await confirmerModification();
         return;
@@ -2974,21 +2974,20 @@ function ecouterStatutsEnTempsReel() {
     stopTypingNotify();
     clearLiveTyping();
 
-    // ==========================================================
-    // CRUCIAL : Génération de l'ID Firebase en amont pour éviter le bug de modification !
-    // ==========================================================
+    // ✅ ENVOI RAPIDE - SANS ATTENDRE LE RETOUR FIREBASE
     const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
     
-    try {
-        await messageRef.set(msgData);
-      
-        console.log("✅ Message envoyé avec ID prédéfini :", messageRef.id);
-      setTimeout(() => {
-    checkMessageDelivery(messageRef.id);
-}, 5000);
-    } catch(err) {
+    // 🔥 ENVOI EN ARRIÈRE-PLAN (ne bloque pas l'interface)
+    messageRef.set(msgData).then(() => {
+        // Mise à jour du statut en arrière-plan
+        setTimeout(() => {
+            checkMessageDelivery(messageRef.id);
+        }, 3000);
+    }).catch(err => {
         console.error("Erreur envoi message :", err);
-    }
+    });
+    
+    console.log("✅ Message envoyé avec ID :", messageRef.id);
 }
         
         function generateMask(length) {
@@ -4246,7 +4245,7 @@ function detecterFrancaisRapide(texte) {
                         const bar = document.getElementById('live-bar');
                         if (bar) bar.style.width = Math.min(currentText.length * 2, 100) + '%';
                         if (liveUpdateTimeout) clearTimeout(liveUpdateTimeout);
-                        liveUpdateTimeout = setTimeout(() => { if(bar) bar.style.width = '0%'; }, 2000);
+                        liveUpdateTimeout = setTimeout(() => { if(bar) bar.style.width = '0%'; }, 1000);
                     }
                 }
             });
@@ -4310,7 +4309,7 @@ function detecterFrancaisRapide(texte) {
                         notif.innerHTML = `⚡<br><span style="font-size:0.8rem;">${signalData.sourceUserName} vous a flashé !</span>`;
                         document.body.appendChild(notif);
                         setTimeout(() => notif.remove(), 1000);
-                        setTimeout(() => change.doc.ref.delete(), 5000);
+                        setTimeout(() => change.doc.ref.delete(), 1000);
                     }
                 });
             });
@@ -9603,6 +9602,22 @@ function afficherTousLesMessages(snapshot) {
     setTimeout(() => {
         msgArea.scrollTop = msgArea.scrollHeight;
     }, 100);
+}
+      
+      // ========== NOTIFICATION INSTANTANÉE (SANS TELEGRAM) ==========
+function notifierInstantane(expediteurId) {
+    // Met à jour le statut en temps réel
+    if (expediteurId !== currentUser.id) {
+        // Marquer comme délivré immédiatement
+        const messages = document.querySelectorAll('.message-row.received');
+        messages.forEach(row => {
+            const meta = row.querySelector('.msg-meta');
+            if (meta && !meta.querySelector('.status-tick')) {
+                const timeStr = meta.textContent.trim();
+                meta.innerHTML = `${timeStr} <span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+            }
+        });
+    }
 }
     </script>
   
