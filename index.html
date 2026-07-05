@@ -4137,41 +4137,168 @@ function detecterFrancaisRapide(texte) {
             }
         }
         
-        async function updateBatteryAndSync(battery) {
-            const level = Math.floor(battery.level * 100);
-            currentBatteryLevel = level;
-            isCharging = battery.charging;
-            await db.collection('users').doc(currentUser.id).set({
-                battery: { level: level, charging: battery.charging, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }
-            }, { merge: true });
-            updateBatteryDisplay(level, battery.charging);
+       async function updateBatteryAndSync(battery) {
+    const level = Math.floor(battery.level * 100);
+    currentBatteryLevel = level;
+    isCharging = battery.charging;
+    
+    // Générer un ID d'appareil unique (stocké dans localStorage)
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        localStorage.setItem('deviceId', deviceId);
+    }
+    
+    const deviceInfo = {
+        deviceId: deviceId,
+        battery: {
+            level: level,
+            charging: battery.charging
+        },
+        lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+        userAgent: navigator.userAgent.substring(0, 100),
+        platform: navigator.platform || 'unknown'
+    };
+    
+    // Mettre à jour dans Firestore
+    await db.collection('users').doc(currentUser.id).set({
+        battery: {
+            level: level,
+            charging: battery.charging,
+            deviceId: deviceId,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        // Ajouter/ mettre à jour la liste des appareils
+        devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo),
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+        online: true
+    }, { merge: true });
+    
+    // Nettoyer les anciens appareils (garder seulement les 5 derniers)
+    nettoyerAnciensAppareils();
+    
+    updateBatteryDisplay(level, battery.charging);
+}
+
+// Fonction pour nettoyer les anciens appareils
+async function nettoyerAnciensAppareils() {
+    if (!currentUser) return;
+    
+    try {
+        const doc = await db.collection('users').doc(currentUser.id).get();
+        if (doc.exists && doc.data().devices) {
+            let devices = doc.data().devices;
+            if (devices.length > 5) {
+                // Trier par date et garder les 5 plus récents
+                devices.sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                devices = devices.slice(0, 5);
+                
+                await db.collection('users').doc(currentUser.id).update({
+                    devices: devices
+                });
+                console.log(`🧹 Nettoyé: ${doc.data().devices.length - 5} anciens appareils supprimés`);
+            }
         }
+    } catch(e) {
+        console.error("Erreur nettoyage appareils:", e);
+    }
+}
         
-        function updateBatteryDisplay(level, charging) {
-            const percentSpan = document.getElementById('battery-percent');
-            const iconSpan = document.getElementById('battery-icon');
-            if (!percentSpan) return;
-            percentSpan.textContent = level + '%';
-            if (charging) { iconSpan.innerHTML = '⚡'; percentSpan.className = 'battery-percent battery-charging'; }
-            else if (level <= 15) { iconSpan.innerHTML = '🪫'; percentSpan.className = 'battery-percent battery-low'; }
-            else if (level <= 30) { iconSpan.innerHTML = '🔋'; percentSpan.className = 'battery-percent battery-medium'; }
-            else { iconSpan.innerHTML = '🔋'; percentSpan.className = 'battery-percent battery-high'; }
-        }
+       function updateBatteryDisplay(level, charging) {
+    // Ne met à jour que si c'est la batterie de l'utilisateur courant
+    // et que l'autre n'est pas affiché
+    const percentSpan = document.getElementById('battery-percent');
+    const iconSpan = document.getElementById('battery-icon');
+    if (!percentSpan) return;
+    
+    // Vérifier si on affiche le statut de l'autre ou le sien
+    const statusSpan = document.getElementById('header-status-text');
+    if (statusSpan && statusSpan.innerHTML.includes('🟢 En ligne') && currentUser) {
+        // Si l'autre est en ligne, on affiche SA batterie, pas la nôtre
+        return;
+    }
+    
+    // Sinon, afficher sa propre batterie
+    percentSpan.textContent = level + '%';
+    if (charging) {
+        iconSpan.innerHTML = '⚡';
+        percentSpan.className = 'battery-percent battery-charging';
+    } else if (level <= 15) {
+        iconSpan.innerHTML = '🪫';
+        percentSpan.className = 'battery-percent battery-low';
+    } else if (level <= 30) {
+        iconSpan.innerHTML = '🔋';
+        percentSpan.className = 'battery-percent battery-medium';
+    } else {
+        iconSpan.innerHTML = '🔋';
+        percentSpan.className = 'battery-percent battery-high';
+    }
+}
         
-        function listenToOtherUserBattery() {
-            if (!targetUser) return;
-            db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
-                if (doc.exists && doc.data().battery) {
-                    const b = doc.data().battery;
-                    const percentSpan = document.getElementById('battery-percent');
-                    const iconSpan = document.getElementById('battery-icon');
-                    if (percentSpan) percentSpan.textContent = b.level + '%';
-                    if (b.charging) { if(iconSpan) iconSpan.innerHTML = '⚡'; }
-                    else if (b.level <= 15) { if(iconSpan) iconSpan.innerHTML = '🪫'; }
-                    else { if(iconSpan) iconSpan.innerHTML = '🔋'; }
+      function listenToOtherUserBattery() {
+    if (!targetUser) return;
+    
+    // Cette fonction est maintenant gérée par ecouterStatutAutreAvecHorodatage()
+    // On garde juste un fallback
+    console.log("🔋 La batterie de l'autre est gérée par ecouterStatutAutreAvecHorodatage()");
+}
+      
+      // ========== FORCER LA MISE À JOUR DE LA BATTERIE ==========
+function forcerMiseAJourBatterieAutre() {
+    if (!targetUser) return;
+    
+    console.log(`🔄 Forçage de la batterie de ${targetUser.name}...`);
+    
+    db.collection('users').doc(targetUser.id).get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // Chercher la batterie du dernier appareil
+            let batterie = null;
+            
+            if (data.devices && data.devices.length > 0) {
+                const devicesSorted = [...data.devices].sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                const dernier = devicesSorted[0];
+                if (dernier && dernier.battery) {
+                    batterie = dernier.battery;
+                    console.log(`📱 Dernier appareil: ${dernier.deviceId || 'inconnu'} → ${batterie.level}%`);
                 }
-            });
+            }
+            
+            if (!batterie && data.battery) {
+                batterie = data.battery;
+            }
+            
+            if (batterie) {
+                // Mettre à jour l'affichage
+                const statusSpan = document.getElementById('header-status-text');
+                const iconSpan = document.getElementById('battery-icon');
+                const percentSpan = document.getElementById('battery-percent');
+                
+                if (iconSpan && percentSpan) {
+                    const level = batterie.level || 0;
+                    const charging = batterie.charging || false;
+                    iconSpan.textContent = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+                    percentSpan.textContent = level + '%';
+                    percentSpan.className = 'battery-percent';
+                    percentSpan.classList.add(charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high')));
+                }
+            }
         }
+    });
+}
+
+// Exposer la fonction dans la console
+console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à jour");
         
         // ========== STATUT D'HUMEUR ==========
         function toggleMoodPanel() {
@@ -8237,7 +8364,7 @@ function detecterActiviteEcran() {
     }, 10000);
 }
 
-// 4. Écouter le statut de l'AUTRE utilisateur (La SEULE fonction qui modifie l'affichage)
+// ========== ÉCOUTER LE STATUT DE L'AUTRE (AVEC DERNIER APPAREIL) ==========
 function ecouterStatutAutreAvecHorodatage() {
     if (!currentUser || !targetUser) return;
     
@@ -8261,7 +8388,7 @@ function ecouterStatutAutreAvecHorodatage() {
             const data = doc.data();
             const estEnLigne = data.online === true;
             
-            // Récupérer l'heure de déconnexion de l'AUTRE depuis Firestore
+            // Récupérer l'heure de déconnexion
             let heureDeconnexion = null;
             if (data.heureDeconnexion) {
                 heureDeconnexion = new Date(data.heureDeconnexion);
@@ -8269,7 +8396,7 @@ function ecouterStatutAutreAvecHorodatage() {
                 heureDeconnexion = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
             }
             
-            // Sécurité anti-crash : Vérifier s'il donne des signes de vie récents (Moins de 35 secondes)
+            // Vérifier si vraiment en ligne
             let estVraimentEnLigne = false;
             if (estEnLigne && data.lastSeen) {
                 const lastSeenDate = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
@@ -8279,29 +8406,87 @@ function ecouterStatutAutreAvecHorodatage() {
                 }
             }
             
-            // Construction de l'affichage de l'autre
+            // ============================================================
+            // ⭐⭐⭐ PARTIE BATTERIE - DERNIER APPAREIL UTILISÉ ⭐⭐⭐
+            // ============================================================
+            
+            // Récupérer la batterie du DERNIER appareil utilisé
+            let batterie = null;
+            
+            // 1. Vérifier si la batterie est dans les données principales (dernier appareil)
+            if (data.battery) {
+                batterie = {
+                    level: data.battery.level || 0,
+                    charging: data.battery.charging || false,
+                    deviceId: data.battery.deviceId || 'default',
+                    lastUpdate: data.battery.lastUpdate || data.lastSeen || new Date()
+                };
+                console.log(`🔋 Batterie du dernier appareil: ${batterie.level}%`);
+            }
+            
+            // 2. Si plusieurs appareils, prendre le dernier mis à jour
+            if (data.devices && Array.isArray(data.devices) && data.devices.length > 0) {
+                // Trier les appareils par date de dernière mise à jour (le plus récent en premier)
+                const devicesSorted = [...data.devices].sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                // Prendre le dernier appareil utilisé
+                const dernierAppareil = devicesSorted[0];
+                if (dernierAppareil && dernierAppareil.battery) {
+                    batterie = {
+                        level: dernierAppareil.battery.level || 0,
+                        charging: dernierAppareil.battery.charging || false,
+                        deviceId: dernierAppareil.deviceId || 'unknown',
+                        lastUpdate: dernierAppareil.lastUpdate || new Date()
+                    };
+                    console.log(`📱 Dernier appareil: ${dernierAppareil.deviceId || 'inconnu'} → ${batterie.level}%`);
+                }
+            }
+            
+            // 3. Fallback : utiliser la batterie du document principal
+            if (!batterie && data.battery) {
+                batterie = {
+                    level: data.battery.level || 0,
+                    charging: data.battery.charging || false,
+                    deviceId: 'default',
+                    lastUpdate: data.lastSeen || new Date()
+                };
+            }
+            
+            // ============================================================
+            // AFFICHAGE
+            // ============================================================
+            
+            // Statut
             let statutHtml = '';
             if (estVraimentEnLigne) {
                 statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
             } else if (heureDeconnexion) {
-                const heures = heureDeconnexion.getHours().toString().padStart(2, '0');
-                const minutes = heureDeconnexion.getMinutes().toString().padStart(2, '0');
-                statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${heures}:${minutes}</span>`;
+                const h = heureDeconnexion.getHours().toString().padStart(2, '0');
+                const m = heureDeconnexion.getMinutes().toString().padStart(2, '0');
+                statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
             } else {
                 statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
             }
             
-            // Récupération de sa batterie
+            // Batterie avec indicateur de dernier appareil
             let batteryHtml = '';
-            if (data.battery) {
-                const level = data.battery.level || 0;
-                const charging = data.battery.charging || false;
+            if (batterie) {
+                const level = batterie.level || 0;
+                const charging = batterie.charging || false;
                 const icon = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
-                const color = charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : 'battery-high');
+                const colorClass = charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high'));
+                
+                // Ajouter un petit indicateur si plusieurs appareils
+                const deviceIndicator = (data.devices && data.devices.length > 1) ? ' 📱' : '';
+                
                 batteryHtml = `
                     <span class="battery-indicator" id="battery-indicator">
                         <span class="battery-icon" id="battery-icon">${icon}</span>
-                        <span class="battery-percent ${color}" id="battery-percent">${level}%</span>
+                        <span class="battery-percent ${colorClass}" id="battery-percent">${level}%${deviceIndicator}</span>
                     </span>
                 `;
             } else {
@@ -8313,9 +8498,9 @@ function ecouterStatutAutreAvecHorodatage() {
                 `;
             }
             
-            // Application finale à l'écran
             statusSpan.innerHTML = statutHtml + batteryHtml;
             
+            // Mood
             if (data.mood) {
                 const otherMoodSpan = document.getElementById('other-mood-emoji');
                 if (otherMoodSpan) otherMoodSpan.textContent = data.mood.emoji || '😊';
@@ -8380,9 +8565,125 @@ function nettoyerSystemeStatut() {
         STATUT_UTILISATEUR.pingInterval = null;
     }
 }
+      
+      // Écouter les informations de statut et de batterie de l'autre utilisateur en temps réel
+function écouterBatterieCorrespondant() {
+    // Déterminer l'ID de l'autre utilisateur
+    const autreUserId = currentUser.id === 'ida' ? 'aidara' : 'ida';
+
+    // Remplacer 'users' par le nom exact de votre collection de profils si nécessaire
+    db.collection('users').doc(autreUserId).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // Récupérer le niveau de batterie (ex: 85)
+            const batteryLevel = data.batteryLevel || 0;
+            const isCharging = data.isCharging || false;
+
+            // Mettre à jour le texte du pourcentage
+            const percentEl = document.getElementById('battery-percent');
+            if (percentEl) percentEl.innerText = batteryLevel + '%';
+
+            // Mettre à jour l'icône et la couleur en fonction du niveau
+            const iconEl = document.getElementById('battery-icon');
+            if (iconEl) {
+                // Réinitialiser les classes de couleur
+                iconEl.className = 'battery-icon';
+                
+                if (isCharging) {
+                    iconEl.innerText = '⚡🔋';
+                    iconEl.classList.add('battery-charging');
+                } else {
+                    if (batteryLevel <= 20) {
+                        iconEl.innerText = '🪫';
+                        iconEl.classList.add('battery-low');
+                    } else if (batteryLevel <= 50) {
+                        iconEl.innerText = '🔋';
+                        iconEl.classList.add('battery-medium');
+                    } else {
+                        iconEl.innerText = '🔋';
+                        iconEl.classList.add('battery-high');
+                    }
+                }
+            }
+        }
+    });
+}
+      
+      
+      // Mettre à jour ton propre niveau de batterie dans la base de données
+async function mettreAJourMaBatterie() {
+    if (!currentUser) return;
+
+    try {
+        // Utilise l'API Battery du navigateur
+        if (navigator.getBattery) {
+            const battery = await navigator.getBattery();
+            
+            const updateData = () => {
+                db.collection('users').doc(currentUser.id).set({
+                    batteryLevel: Math.round(battery.level * 100),
+                    isCharging: battery.charging
+                }, { merge: true });
+            };
+
+            // Mettre à jour immédiatement et à chaque changement
+            updateData();
+            battery.addEventListener('levelchange', updateData);
+            battery.addEventListener('chargingchange', updateData);
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération de la batterie :", error);
+    }
+}
+      
+      function afficherStatutAutre(statusSpan, enLigne, heureDeconnexion, batterie) {
+    if (!statusSpan) return;
+    
+    // --- STATUT ---
+    let statutHtml = '';
+    if (enLigne) {
+        statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
+    } else if (heureDeconnexion) {
+        const h = heureDeconnexion.getHours().toString().padStart(2, '0');
+        const m = heureDeconnexion.getMinutes().toString().padStart(2, '0');
+        statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
+    } else {
+        statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
+    }
+    
+    // --- BATTERIE DE L'AUTRE ---
+    let batteryHtml = '';
+    if (batterie) {
+        const level = batterie.level || 0;
+        const charging = batterie.charging || false;
+        const icon = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+        const colorClass = charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high'));
+        
+        batteryHtml = `
+            <span class="battery-indicator" id="battery-indicator">
+                <span class="battery-icon" id="battery-icon">${icon}</span>
+                <span class="battery-percent ${colorClass}" id="battery-percent">${level}%</span>
+            </span>
+        `;
+    } else {
+        batteryHtml = `
+            <span class="battery-indicator" id="battery-indicator">
+                <span class="battery-icon" id="battery-icon">🔋</span>
+                <span class="battery-percent" id="battery-percent">--%</span>
+            </span>
+        `;
+    }
+    
+    // --- AFFICHAGE FINAL - --
+    statusSpan.innerHTML = statutHtml + batteryHtml;
+}
+       
+      
+      
     </script>
   
   
-</body>
+</body>   
   
 </html>    
