@@ -9077,6 +9077,194 @@ function getChatUser() {
 
 // Exposer la fonction au niveau global
 window.getChatUser = getChatUser;
+      
+      // ========== CARNET SECRET - GESTION IFRAME ==========
+
+// Fonction pour ouvrir le carnet secret en iframe
+function openSecretPageInIframe() {
+    // Créer l'overlay pour l'iframe
+    const overlay = document.createElement('div');
+    overlay.id = 'secret-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.88);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        animation: fadeInOverlay 0.3s ease;
+    `;
+    
+    // Header avec barre de contrôle
+    const header = document.createElement('div');
+    header.style.cssText = `
+        background: linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e);
+        background-size: 200% 200%;
+        animation: gradientMove 4s ease infinite;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #a800ff;
+        flex-shrink: 0;
+        min-height: 56px;
+        z-index: 10;
+    `;
+    header.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-lock" style="color:#ffd700; font-size:1.2rem; animation: lockPulse 2s ease infinite;"></i>
+            <span style="color:white; font-weight:700; font-size:1rem; letter-spacing:0.5px;">📖 Carnet Secret</span>
+            <span style="color:rgba(255,255,255,0.3); font-size:0.65rem; letter-spacing:1px; border-left:1px solid rgba(255,255,255,0.1); padding-left:8px;">🔒 Privé</span>
+        </div>
+        <button onclick="closeSecretIframe()" style="
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        " onmouseover="this.style.background='rgba(255,0,0,0.25)'; this.style.borderColor='#ff4444';" 
+        onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+            <i class="fa-solid fa-xmark"></i> Fermer
+        </button>
+    `;
+    
+    // Iframe
+    const iframe = document.createElement('iframe');
+    iframe.id = 'secret-iframe';
+    iframe.src = 'secret.html';
+    iframe.style.cssText = `
+        flex: 1;
+        width: 100%;
+        border: none;
+        background: #0a0a0a;
+        display: block;
+    `;
+    
+    // Assemblage
+    overlay.appendChild(header);
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+    
+    // Désactiver le scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Ajouter les animations manquantes
+    const styleAnim = document.createElement('style');
+    styleAnim.textContent = `
+        @keyframes fadeInOverlay {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes lockPulse {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 0px transparent; }
+            50% { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        }
+        #secret-overlay {
+            animation: fadeInOverlay 0.3s ease;
+        }
+    `;
+    document.head.appendChild(styleAnim);
+}
+
+// Fonction pour fermer l'iframe
+function closeSecretIframe() {
+    const overlay = document.getElementById('secret-overlay');
+    if (overlay) {
+        overlay.style.transition = 'all 0.3s ease';
+        overlay.style.opacity = '0';
+        overlay.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            overlay.remove();
+            document.body.style.overflow = '';
+        }, 350);
+    }
+}
+
+// ========== FONCTION POUR RÉCUPÉRER L'UTILISATEUR ==========
+// Cette fonction permet au fichier secret.html de récupérer les infos de l'utilisateur connecté
+window.getChatUser = function() {
+    if (typeof currentUser !== 'undefined' && currentUser && typeof targetUser !== 'undefined' && targetUser) {
+        return {
+            currentUser: currentUser,
+            targetUser: targetUser
+        };
+    }
+    return null;
+};
+
+// ========== GESTION DU BOUTON CARNET SECRET ==========
+// Cette fonction est appelée quand on clique sur le bouton 🔒 dans les paramètres
+function openSecretNotebook() {
+    // Demander le code d'accès
+    const code = prompt("🔒 CARNET SECRET\n\nEntrez le code d'accès pour ouvrir votre conversation privée :");
+    
+    // Si l'utilisateur annule
+    if (code === null) return;
+    
+    // Vérifier le code
+    if (code === "0507") {
+        // Ouvrir l'iframe
+        openSecretPageInIframe();
+    } else {
+        // Code incorrect
+        alert("❌ Code incorrect ! Veuillez réessayer.");
+        // Réessayer automatiquement
+        setTimeout(() => {
+            openSecretNotebook();
+        }, 500);
+    }
+}
+
+// ========== MODIFICATION DU BOUTON EXISTANT ==========
+// Attendre que le DOM soit chargé pour modifier le comportement du bouton
+document.addEventListener('DOMContentLoaded', function() {
+    // Trouver le bouton du carnet secret (par son ID ou sa classe)
+    const secretBtn = document.getElementById('secret-notebook-btn');
+    
+    if (secretBtn) {
+        // Supprimer les anciens écouteurs (s'il y en a)
+        const newBtn = secretBtn.cloneNode(true);
+        secretBtn.parentNode.replaceChild(newBtn, secretBtn);
+        
+        // Ajouter le nouvel écouteur
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openSecretNotebook();
+        });
+        
+        console.log('🔒 Bouton Carnet Secret initialisé avec succès');
+    } else {
+        console.warn('⚠️ Bouton Carnet Secret non trouvé - vérifiez l\'ID "secret-notebook-btn"');
+    }
+});
+
+// ========== TOUCHE ÉCHAP POUR FERMER L'IFRAME ==========
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const overlay = document.getElementById('secret-overlay');
+        if (overlay) {
+            closeSecretIframe();
+        }
+    }
+});
     </script>
   
    
