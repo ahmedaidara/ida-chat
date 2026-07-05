@@ -85,7 +85,7 @@
         .message-row.sent { justify-content: flex-end; }
         .message-row.received { justify-content: flex-start; }
         
-        .message-bubble { max-width: 70%; padding: 10px 16px; border-radius: 22px; font-size: 0.95rem; line-height: 1.4; position: relative; cursor: pointer; user-select: none; transition: transform 0.1s; animation: fadeIn 0.2s ease-out; display: flex; flex-direction: column; gap: 4px; }
+        .message-bubble { max-width: 70%; padding: 6px 10px; border-radius: 22px; font-size: 0.85rem; line-height: 1.4; position: relative; cursor: pointer; user-select: none; transition: transform 0.1s; animation: fadeIn 0.2s ease-out; display: flex; flex-direction: column; gap: 4px; }
         .sent .message-bubble { background: var(--bubble-sent); color: var(--bubble-sent-text); border-bottom-right-radius: 4px; }
         .received .message-bubble { background: var(--bubble-received); color: var(--text-main); border-bottom-left-radius: 4px; }
       
@@ -122,7 +122,7 @@
         .message-bubble.watercolor { background: linear-gradient(135deg, #667eea, #764ba2, #f093fb) !important; filter: blur(0.3px) !important; color: white !important; border-radius: 25px 8px 25px 8px !important; }
         .message-bubble.retro { background: #2d2d2d !important; color: #00ff00 !important; font-family: 'Courier New', monospace !important; border: 2px solid #00ff00 !important; box-shadow: 3px 3px 0px #00ff00 !important; }
         
-        .msg-meta { font-size: 0.7rem; opacity: 0.7; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
+        .msg-meta { font-size: 0.6rem; opacity: 0.7; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
         .sent .msg-meta { color: #fff; }
         .received .msg-meta { color: var(--text-muted); }
         .status-tick { color: #0095f6; font-weight: bold; }
@@ -1405,6 +1405,32 @@ input, textarea {
 
 .wb-clear:hover {
     background: rgba(255, 68, 68, 0.2);
+}
+      
+      /* ===== BLOQUER TOUT DÉBORDEMENT ===== */
+* {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.app-container {
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.chat-input-bar {
+    overflow: hidden !important;
+}
+
+.input-box-container {
+    overflow: hidden !important;
+    max-width: 100% !important;
+}
+
+.chat-input {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
 }
     </style>
 </head>
@@ -5062,7 +5088,13 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
         if(localStorage.getItem('bubbleColor')) document.documentElement.style.setProperty('--bubble-sent', localStorage.getItem('bubbleColor'));
         
         // Raccourci Entrée
-        document.getElementById('chat-in').addEventListener('keydown', (e) => { if(e.key === 'Enter') sendTextMessage(); });
+      document.getElementById('chat-in').addEventListener('keydown', (e) => { 
+    if(e.key === 'Enter' && !e.shiftKey) { 
+        e.preventDefault(); 
+        // Ne fait rien - Entrée seul = saut de ligne (déjà géré par textarea)
+        // Pour envoyer, il faut cliquer sur le bouton ✈️
+    } 
+});
         
         // Nettoyage des menus au clic ailleurs
         document.addEventListener('click', function(e) {
@@ -10438,10 +10470,34 @@ function verifierWb(data, msgId) {
 }
 
 console.log("✅ Tableau Blanc chargé !");
+      
+      
+      // ===== SAUT DE LIGNE PAR ENTRÉE =====
+const inputChat = document.getElementById('chat-in');
+
+inputChat.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        // On stoppe le comportement par défaut (qui pourrait soumettre un formulaire ou déclencher un envoi)
+        e.preventDefault(); 
+        
+        // On récupère la position actuelle du curseur
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        
+        // On insère le saut de ligne (\n) à l'endroit exact du curseur
+        this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
+        
+        // On remet le curseur juste après le saut de ligne qu'on vient de créer
+        this.selectionStart = this.selectionEnd = start + 1;
+    }
+});
     </script>
   
    
 </body>   
   
 </html>    
-              
+
+                                                                                                    
+
+  
