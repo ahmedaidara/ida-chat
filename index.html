@@ -2268,7 +2268,7 @@ function listenToMessages() {
     unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
         .orderBy('timestamp', 'asc')
         .onSnapshot(snapshot => {
-            
+             if (isFirstSnapshot) { afficherTousLesMessages(snapshot); }
             // ================== ====================== ====================
             // BLOQUER LES NOTIFICATIONS AU PREMIER CHARGEMENT
             // ============================================================
@@ -2282,7 +2282,147 @@ function listenToMessages() {
             // ============================================================
             // TRAITEMENT DES CHANGEMENTS
             // ============================================================
-           snapshot.docChanges().forEach(change => {
+           // Forcer l'affichage des messages existants avant de traiter les changements
+if (isFirstSnapshot) {
+    const msgArea = document.getElementById('msg-area');
+    msgArea.innerHTML = '';
+    let lastDateStr = "";
+    
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const msgId = doc.id;
+        
+        if(data.timestamp) {
+            const dateObj = data.timestamp.toDate();
+            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+            if(dateStr !== lastDateStr) {
+                const sep = document.createElement('div');
+                sep.className = 'date-separator';
+                sep.innerText = dateStr;
+                msgArea.appendChild(sep);
+                lastDateStr = dateStr;
+            } 
+        }
+        
+        const row = document.createElement('div');
+        const isSent = data.senderId === currentUser.id;
+        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+        row.setAttribute('data-id', msgId);
+        
+        const isGiant = isOnlyEmojis(data.text);
+        let customStyle = '';
+        if (data.bubbleStyle) {
+            customStyle = data.bubbleStyle;
+        } else if (data.messageStyle) {
+            customStyle = data.messageStyle;
+        } else if (isSent) {
+            const defaultStyle = localStorage.getItem('default_bubble_style');
+            if (defaultStyle && defaultStyle !== 'none') {
+                customStyle = defaultStyle;
+            }
+        }
+        
+        let codedClass = '';
+        if (data.isCoded === true) {
+            codedClass = 'coded';
+        }
+        
+        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+            onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
+            oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
+            ondblclick="handleDoubleTap(event, '${msgId}')"
+            ontouchstart="demarrerAppuiLong(event, '${msgId}')"
+            ontouchend="annulerAppuiLong()"
+            ontouchmove="annulerAppuiLong()"
+            onmousedown="demarrerAppuiLong(event, '${msgId}')"
+            onmouseup="annulerAppuiLong()"
+            onmouseleave="annulerAppuiLong()">`;
+        
+        if (data.replyToText) {
+            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+        }
+        
+        if (data.type === 'text') {
+            let displayText = data.text;
+            if (data.isCoded === true) {
+                const originalMessage = data.originalText || data.text;
+                displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+                bubbleHtml += displayText;
+            } else {
+                displayText = formatText(escapeHTML(displayText));
+                displayText = displayText.replace(/\n/g, '<br>');
+                bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
+            }
+        } else if (data.type === 'image') {
+            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+        } else if (data.type === 'drawing') {
+            bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+        } else if (data.type === 'video') {
+            const videoUrl = data.mediaUrl || data.fileUrl || "";
+            bubbleHtml += `
+                <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+                    <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
+                </div>
+            `;
+        } else if (data.type === 'audio') {
+            const audioId = `audio_${msgId}`;
+            if (data.isEphemeralAudio) {
+                // ... garde ton code existant pour audio éphémère
+            } else {
+                bubbleHtml += `
+                    <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
+                        <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
+                        <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
+                        <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
+                            <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
+                        </div>
+                        <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
+                    </div>
+                `;
+            }
+        }
+        
+        const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+        
+        let checkMark = '<span>✓</span>';
+        if (data.status === 'read') {
+            checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+        } else if (data.status === 'delivered') {
+            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+        } else {
+            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+        }
+        
+        const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+        
+        if(data.reactions && Object.keys(data.reactions).length > 0) {
+            bubbleHtml += `<div class="applied-reactions">`;
+            Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+            bubbleHtml += `</div>`;
+        }
+        
+        bubbleHtml += `</div>`;
+        row.innerHTML = bubbleHtml;
+        
+        if (blurModeActive) {
+            const bubble = row.querySelector('.message-bubble');
+            if (bubble) {
+                bubble.classList.add('blur-active');
+                attachBlurEvents(bubble);
+            }
+        }
+        msgArea.appendChild(row);
+    });
+    
+    msgArea.scrollTop = msgArea.scrollHeight;
+}
+
+// ET GARDE TON CODE EXISTANT POUR LES CHANGEMENTS
+snapshot.docChanges().forEach(change => {
     const data = change.doc.data();
     const msgId = change.doc.id;
     
@@ -9265,6 +9405,205 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+      
+      
+      // ============================================================
+// ✅ FONCTION POUR AFFICHER TOUS LES MESSAGES
+// ============================================================
+function afficherTousLesMessages(snapshot) {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+    
+    // Si pas de messages
+    if (snapshot.empty) {
+        msgArea.innerHTML = `
+            <div style="text-align:center; color:var(--text-muted); padding:40px;">
+                <i class="fa-regular fa-comment" style="font-size:3rem; margin-bottom:10px;"></i>
+                <p>Aucun message</p>
+                <p style="font-size:0.8rem; opacity:0.5;">💬 Envoyez votre premier message</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Vider la zone
+    msgArea.innerHTML = '';
+    
+    let lastDateStr = "";
+    
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const msgId = doc.id;
+        
+        // Ajouter le séparateur de date
+        if (data.timestamp) {
+            const dateObj = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+            if (dateStr !== lastDateStr) {
+                const sep = document.createElement('div');
+                sep.className = 'date-separator';
+                sep.innerText = dateStr;
+                msgArea.appendChild(sep);
+                lastDateStr = dateStr;
+            }
+        }
+        
+        const row = document.createElement('div');
+        const isSent = data.senderId === currentUser.id;
+        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+        row.setAttribute('data-id', msgId);
+        
+        const isGiant = isOnlyEmojis(data.text);
+        let customStyle = '';
+        if (data.bubbleStyle) {
+            customStyle = data.bubbleStyle;
+        } else if (data.messageStyle) {
+            customStyle = data.messageStyle;
+        } else if (isSent) {
+            const defaultStyle = localStorage.getItem('default_bubble_style');
+            if (defaultStyle && defaultStyle !== 'none') {
+                customStyle = defaultStyle;
+            }
+        }
+        
+        let codedClass = '';
+        let lockBadge = '';
+        if (data.isCoded === true) {
+            codedClass = 'coded';
+            lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
+        }
+        
+        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+            onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
+            oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
+            ondblclick="handleDoubleTap(event, '${msgId}')"
+            ontouchstart="demarrerAppuiLong(event, '${msgId}')"
+            ontouchend="annulerAppuiLong()"
+            ontouchmove="annulerAppuiLong()"
+            onmousedown="demarrerAppuiLong(event, '${msgId}')"
+            onmouseup="annulerAppuiLong()"
+            onmouseleave="annulerAppuiLong()">`;
+        
+        if (data.replyToText) {
+            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+        }
+        
+        // TEXTE
+        if (data.type === 'text') {
+            let displayText = data.text;
+            if (data.isCoded === true) {
+                const originalMessage = data.originalText || data.text;
+                displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+                bubbleHtml += displayText;
+            } else {
+                displayText = formatText(escapeHTML(displayText));
+                displayText = displayText.replace(/\n/g, '<br>');
+                bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
+            }
+        } else if (data.type === 'image') {
+            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+        } else if (data.type === 'drawing') {
+            bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+        } else if (data.type === 'video') {
+            const videoUrl = data.mediaUrl || data.fileUrl || "";
+            bubbleHtml += `
+                <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+                    <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
+                </div>
+            `;
+        } else if (data.type === 'audio') {
+            const audioId = `audio_${msgId}`;
+            if (!data.isEphemeralAudio) {
+                bubbleHtml += `
+                    <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
+                        <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
+                        <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
+                        <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
+                            <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
+                        </div>
+                        <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
+                    </div>
+                `;
+            }
+        } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+            // MORPION - code simplifié
+            const game = data.gameData;
+            const isMyTurn = game.turn === currentUser.id;
+            const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
+            
+            let cardHtml = `
+                <div class="morpion-card" style="margin: 5px 0;">
+                    <div class="morpion-header">
+                        <span>🎮 MORPION </span>
+                        <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
+                    </div>
+                    <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
+                        ${game.status === 'finished' ? (game.winner === 'nul' ? "🎯 Match nul !" : `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`) : (isMyTurn ? "⚡ À ton tour !" : `⏳ ${targetUser.name} réfléchit...`)}
+                    </div>
+                    <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
+            `;
+            
+            for (let i = 0; i < 9; i++) {
+                const cellValue = game.board[i] || "";
+                const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
+                const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
+                cardHtml += `
+                    <div class="morpion-cell ${cellClass} ${isWinCell}" 
+                         data-cell-index="${i}" 
+                         onclick="jouerCoupMorpion('${msgId}', ${i})"
+                         style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
+                        ${cellValue}
+                    </div>
+                `;
+            }
+            
+            cardHtml += `</div></div>`;
+            bubbleHtml += cardHtml;
+        }
+        
+        // HEURE ET STATUT
+        const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+        
+        let checkMark = '<span>✓</span>';
+        if (data.status === 'read') {
+            checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+        } else if (data.status === 'delivered') {
+            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+        } else {
+            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+        }
+        
+        const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+        
+        // RÉACTIONS
+        if (data.reactions && Object.keys(data.reactions).length > 0) {
+            bubbleHtml += `<div class="applied-reactions">`;
+            Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+            bubbleHtml += `</div>`;
+        }
+        
+        bubbleHtml += `</div>`;
+        row.innerHTML = bubbleHtml;
+        
+        if (blurModeActive) {
+            const bubble = row.querySelector('.message-bubble');
+            if (bubble) {
+                bubble.classList.add('blur-active');
+                attachBlurEvents(bubble);
+            }
+        }
+        msgArea.appendChild(row);
+    });
+    
+    // Scroll
+    setTimeout(() => {
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }, 100);
+}
     </script>
   
    
