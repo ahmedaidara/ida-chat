@@ -1030,19 +1030,23 @@
   </div>
 
   <!-- ===== LIGHTBOX ===== -->
-  <div class="lightbox" id="lightbox">
-    <button class="lb-close" id="lbClose"><i class="fas fa-times"></i></button>
-    <div class="lb-toolbar">
-      <button><i class="fas fa-share-alt"></i></button>
-      <button><i class="fas fa-star"></i></button>
-      <button><i class="fas fa-trash" id="lbDelete"></i></button>
-    </div>
-    <img class="lb-image" id="lbImage" src="" alt="visionneuse" />
-    <div class="lb-nav">
-      <button id="lbPrev"><i class="fas fa-chevron-left"></i></button>
-      <button id="lbNext"><i class="fas fa-chevron-right"></i></button>
-    </div>
+ <!-- ===== LIGHTBOX (version corrigée) ===== -->
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" id="lbClose"><i class="fas fa-times"></i></button>
+  <div class="lb-toolbar">
+    <button><i class="fas fa-share-alt"></i></button>
+    <button><i class="fas fa-star"></i></button>
+    <button><i class="fas fa-trash" id="lbDelete"></i></button>
   </div>
+  <!-- 🔧 REMPLACER l'img par un conteneur dynamique -->
+  <div id="lbContainer" style="max-width:90vw;max-height:85vh;display:flex;align-items:center;justify-content:center;">
+    <!-- <img> ou <video> sera injecté ici -->
+  </div>
+  <div class="lb-nav">
+    <button id="lbPrev"><i class="fas fa-chevron-left"></i></button>
+    <button id="lbNext"><i class="fas fa-chevron-right"></i></button>
+  </div>
+</div>
 
   <!-- ============================================================ -->
   <!-- JAVASCRIPT COMPLET avec R2 + Firebase                          -->
@@ -1206,69 +1210,149 @@
       // 6. UPLOAD DE FICHIERS VERS R2
       // ============================================================
       
-      async function uploadFiles(files) {
-        if (!currentUser) return;
-        if (isUploading) return;
-        isUploading = true;
-        progressContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-        
-        let uploaded = 0;
-        const total = files.length;
-        
-        for (const file of files) {
-          try {
-            // Générer un chemin unique dans R2
-            const timestamp = Date.now();
-            const ext = file.name.split('.').pop();
-            const fileName = `${timestamp}_${file.name}`;
-            const r2Key = `users/${currentUser.uid}/${file.type.startsWith('video') ? 'videos' : 'photos'}/${fileName}`;
-            
-            // Obtenir une URL signée pour l'upload
-            const uploadUrl = await getUploadUrl(r2Key);
-            
-            // Upload direct vers R2
-            const response = await fetch(uploadUrl, {
-              method: 'PUT',
-              body: file,
-              headers: {
-                'Content-Type': file.type || 'application/octet-stream'
-              }
-            });
-            
-            if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
-            
-            // Sauvegarder les métadonnées dans Firestore
-            await db.collection('media').add({
-              userId: currentUser.uid,
-              fileName: file.name,
-              r2Key: r2Key,
-              fileSize: file.size,
-              fileType: file.type,
-              mediaType: file.type.startsWith('video') ? 'video' : 'photo',
-              uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
-              tags: [],
-              album: ''
-            });
-            
-            uploaded++;
-            const progress = (uploaded / total) * 100;
-            progressBar.style.width = progress + '%';
-            
-          } catch (err) {
-            console.error('Erreur upload:', err);
-            alert(`Erreur lors de l'upload de ${file.name}: ${err.message}`);
-          }
+   async function uploadFiles(files) {
+  if (!currentUser) return;
+  if (isUploading) return;
+  
+  const MAX_VIDEO_SIZE = 500 * 1024 * 1024;
+  const MAX_PHOTO_SIZE = 50 * 1024 * 1024;
+  
+  const validFiles = [];
+  for (const file of files) {
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_PHOTO_SIZE;
+    
+    if (file.size > maxSize) {
+      alert(`❌ ${file.name} est trop volumineux (max ${maxSize/1024/1024} Mo)`);
+      continue;
+    }
+    validFiles.push(file);
+  }
+  
+  if (validFiles.length === 0) {
+    alert('Aucun fichier valide à uploader');
+    return;
+  }
+  
+  isUploading = true;
+  progressContainer.style.display = 'block';
+  progressBar.style.width = '0%';
+  
+  let uploaded = 0;
+  const total = validFiles.length;
+  
+  for (const file of validFiles) {
+    try {
+      const isVideo = file.type.startsWith('video/');
+      const folder = isVideo ? 'videos' : 'photos';
+      
+      const timestamp = Date.now();
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+      const r2Key = `users/${currentUser.uid}/${folder}/${timestamp}_${safeName}`;
+      
+      // 🔧 Upload de la vidéo vers R2
+      const uploadUrl = await getUploadUrl(r2Key);
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream'
         }
-        
-        isUploading = false;
-        progressContainer.style.display = 'none';
-        progressBar.style.width = '0%';
-        
-        // Recharger la galerie
-        loadMedia();
+      });
+      
+      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+      
+      // 🔧 GÉNÉRER UNE MINIATURE
+      let thumbnailKey = null;
+      if (isVideo) {
+        try {
+          // Générer la miniature
+          const thumbnailDataUrl = await generateVideoThumbnail(file, 400);
+          
+          // Convertir en Blob
+          const blob = await fetch(thumbnailDataUrl).then(r => r.blob());
+          
+          // Upload de la miniature dans R2
+          const thumbKey = `users/${currentUser.uid}/thumbnails/${timestamp}_${safeName}.jpg`;
+          const thumbUploadUrl = await getUploadUrl(thumbKey);
+          
+          await fetch(thumbUploadUrl, {
+            method: 'PUT',
+            body: blob,
+            headers: { 'Content-Type': 'image/jpeg' }
+          });
+          
+          thumbnailKey = thumbKey;
+        } catch (thumbErr) {
+          console.warn('Miniature non générée:', thumbErr);
+          // Pas de miniature, on utilisera un fallback
+        }
       }
       
+      // Sauvegarder dans Firestore
+      const mediaData = {
+        userId: currentUser.uid,
+        fileName: file.name,
+        r2Key: r2Key,
+        fileSize: file.size,
+        fileType: file.type,
+        mediaType: isVideo ? 'video' : 'photo',
+        uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        tags: [],
+        album: '',
+        thumbnailKey: thumbnailKey // 🔧 Sauvegarder la référence de la miniature
+      };
+      
+      // 🔧 Si c'est une vidéo, ajouter la durée
+      if (isVideo) {
+        try {
+          const duration = await getVideoDuration(file);
+          mediaData.duration = duration;
+        } catch (e) {
+          mediaData.duration = 0;
+        }
+      }
+      
+      await db.collection('media').add(mediaData);
+      
+      uploaded++;
+      const progress = (uploaded / total) * 100;
+      progressBar.style.width = progress + '%';
+      
+    } catch (err) {
+      console.error('Erreur upload:', err);
+      alert(`❌ Erreur pour ${file.name}: ${err.message}`);
+    }
+  }
+  
+  isUploading = false;
+  progressContainer.style.display = 'none';
+  progressBar.style.width = '0%';
+  loadMedia();
+}
+      // ============================================================
+// 6.2 OBTENIR LA DURÉE D'UNE VIDÉO
+// ============================================================
+
+function getVideoDuration(file) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    
+    video.addEventListener('loadedmetadata', () => {
+      URL.revokeObjectURL(url);
+      resolve(video.duration);
+    });
+    
+    video.addEventListener('error', () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Impossible de lire la durée'));
+    });
+    
+    video.load();
+  });
+}
       // ============================================================
       // 7. CHARGEMENT DES MÉDIAS DEPUIS FIRESTORE + R2
       // ============================================================
@@ -1287,12 +1371,13 @@
       const data = doc.data();
       try {
         const url = await getSignedUrl(data.r2Key, 300);
-        mediaList.push({
-          id: doc.id,
-          ...data,
-          url: url,
-          ratio: data.mediaType === 'video' ? 1.6 : 1.33
-        });
+       // Dans loadMedia(), quand tu crées le média
+mediaList.push({
+  id: doc.id,
+  ...data,
+  url: url,
+  ratio: data.mediaType === 'video' ? 1.78 : 1.33, // 16:9 pour vidéos, 4:3 pour photos
+});
       } catch (e) {
         console.warn('Erreur signature pour', data.r2Key, e);
         mediaList.push({
@@ -1445,69 +1530,129 @@
       // 9. LIGHTBOX
       // ============================================================
       
-      function openLightbox(index) {
-        if (allMedia.length === 0) return;
-        currentIndex = index;
-        const media = allMedia[currentIndex];
-        if (!media) return;
-        lbImage.src = media.url || '';
-        lightbox.classList.add('open');
-        document.body.style.overflow = 'hidden';
-      }
-      
-      function closeLightbox() {
-        lightbox.classList.remove('open');
-        document.body.style.overflow = 'auto';
-      }
-      
-      function navigateLightbox(delta) {
-        if (allMedia.length === 0) return;
-        currentIndex = (currentIndex + delta + allMedia.length) % allMedia.length;
-        const media = allMedia[currentIndex];
-        if (media) lbImage.src = media.url || '';
-      }
-      
-      lbClose.addEventListener('click', closeLightbox);
-      lbPrev.addEventListener('click', (e) => { e.stopPropagation(); navigateLightbox(-1); });
-      lbNext.addEventListener('click', (e) => { e.stopPropagation(); navigateLightbox(1); });
-      
-      lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox || e.target === lbImage) closeLightbox();
-      });
-      
-      document.addEventListener('keydown', (e) => {
-        if (!lightbox.classList.contains('open')) return;
-        if (e.key === 'Escape') closeLightbox();
-        if (e.key === 'ArrowLeft') navigateLightbox(-1);
-        if (e.key === 'ArrowRight') navigateLightbox(1);
-        e.preventDefault();
-      });
-      
-      // Suppression depuis la lightbox
-      lbDelete.addEventListener('click', async () => {
-        if (!currentUser) return;
-        const media = allMedia[currentIndex];
-        if (!media) return;
-        if (!confirm(`Supprimer "${media.fileName}" ?`)) return;
-        
-        try {
-          // Supprimer de R2
-          const params = {
-            Bucket: R2_CONFIG.bucket,
-            Key: media.r2Key
-          };
-          await s3.deleteObject(params).promise();
-          
-          // Supprimer de Firestore
-          await db.collection('media').doc(media.id).delete();
-          
-          // Recharger
-          closeLightbox();
-          loadMedia();
-        } catch (err) {
-          alert('Erreur lors de la suppression: ' + err.message);
-        }
-      });
+    // ============================================================
+// 9. LIGHTBOX (version corrigée - support vidéo)
+// ============================================================
+
+const lbContainer = document.getElementById('lbContainer');
+
+// ============================================================
+// 9. LIGHTBOX AMÉLIORÉ AVEC SUPPORT VIDÉO
+// ============================================================
+
+function openLightbox(index) {
+  if (allMedia.length === 0) return;
+  currentIndex = index;
+  const media = allMedia[currentIndex];
+  if (!media) return;
+  
+  lbContainer.innerHTML = '';
+  
+  const isVideo = media.mediaType === 'video' || 
+                  (media.fileType && media.fileType.startsWith('video/'));
+  
+  if (isVideo) {
+    // 🔧 Lightbox pour vidéo
+    const videoWrapper = document.createElement('div');
+    videoWrapper.style.cssText = `
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    `;
+    
+    const video = document.createElement('video');
+    video.src = media.url || '';
+    video.controls = true;
+    video.autoplay = false;
+    video.playsInline = true;
+    video.style.cssText = `
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: 8px;
+      background: #000;
+    `;
+    
+    // 🔧 Charger les sous-titres si disponibles (optionnel)
+    // video.textTracks
+    
+    videoWrapper.appendChild(video);
+    lbContainer.appendChild(videoWrapper);
+    
+    // 🔧 Ajouter la durée dans la toolbar
+    const durationInfo = document.createElement('span');
+    if (media.duration) {
+      durationInfo.textContent = formatDuration(media.duration);
+      durationInfo.style.cssText = `
+        color: white;
+        font-size: 14px;
+        opacity: 0.7;
+        margin-right: auto;
+        padding: 0 12px;
+        font-family: monospace;
+      `;
+      document.querySelector('.lb-toolbar').prepend(durationInfo);
+    }
+    
+  } else {
+    // 🔧 Lightbox pour photo
+    const img = document.createElement('img');
+    img.src = media.url || '';
+    img.alt = media.fileName || 'photo';
+    img.style.cssText = `
+      max-width: 90vw;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 8px;
+    `;
+    lbContainer.appendChild(img);
+  }
+  
+  lightbox.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('open');
+  document.body.style.overflow = 'auto';
+  // 🔧 Arrêter la vidéo si elle est en cours
+  const video = lbContainer.querySelector('video');
+  if (video) {
+    video.pause();
+    video.currentTime = 0;
+  }
+}
+
+function navigateLightbox(delta) {
+  if (allMedia.length === 0) return;
+  currentIndex = (currentIndex + delta + allMedia.length) % allMedia.length;
+  openLightbox(currentIndex); // 🔧 On réouvre avec le bon média
+}
+
+// 📌 Mettre à jour les événements existants
+lbClose.addEventListener('click', closeLightbox);
+lbPrev.addEventListener('click', (e) => { e.stopPropagation(); navigateLightbox(-1); });
+lbNext.addEventListener('click', (e) => { e.stopPropagation(); navigateLightbox(1); });
+
+lightbox.addEventListener('click', (e) => {
+  if (e.target === lightbox) closeLightbox();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!lightbox.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') navigateLightbox(-1);
+  if (e.key === 'ArrowRight') navigateLightbox(1);
+  if (e.key === ' ') {
+    e.preventDefault();
+    const video = lbContainer.querySelector('video');
+    if (video) {
+      video.paused ? video.play() : video.pause();
+    }
+  }
+});
 
       // ============================================================
       // 10. ÉVÉNEMENTS UPLOAD
@@ -1642,8 +1787,241 @@
       
     })();
     
+    // ============================================================
+// RENDU DE LA GRILLE (version améliorée)
+// ============================================================
+
+function renderGrid(mediaList) {
+  gridContainer.innerHTML = '';
+  if (!mediaList || mediaList.length === 0) {
+    gridContainer.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--text-secondary);">
+        <i class="fas fa-cloud-upload-alt" style="font-size:48px;margin-bottom:16px;"></i>
+        <p style="font-size:18px;">Aucune photo ou vidéo</p>
+        <p style="font-size:14px;">Cliquez sur le bouton + pour importer vos souvenirs</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Grouper par jour
+  const groups = {};
+  mediaList.forEach(m => {
+    const date = m.uploadedAt ? m.uploadedAt.toDate?.() : new Date();
+    const key = date.toDateString();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  });
+  
+  const sortedKeys = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a));
+  
+  sortedKeys.forEach(key => {
+    const header = document.createElement('div');
+    header.className = 'day-header';
+    const displayDate = new Date(key);
+    const today = new Date();
+    let label = key;
+    if (displayDate.toDateString() === today.toDateString()) label = "Aujourd'hui";
+    else if (displayDate.toDateString() === new Date(today - 86400000).toDateString()) label = 'Hier';
+    else label = displayDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    header.innerHTML = `<span>${label}</span>`;
+    gridContainer.appendChild(header);
     
+    const grid = document.createElement('div');
+    grid.className = 'photo-grid';
     
+    const items = groups[key];
+    items.forEach((media) => {
+      const item = document.createElement('div');
+      item.className = 'photo-item';
+      if (selectedIds.has(media.id)) item.classList.add('selected');
+      
+      // Ajustement flex
+      const ratio = media.ratio || (media.mediaType === 'video' ? 1.6 : 1.33);
+      item.style.flexGrow = (ratio * 100).toFixed(0);
+      item.style.flexBasis = (200 * ratio).toFixed(0) + 'px';
+      item.style.position = 'relative';
+      
+      // 🔧 Détection du type
+      const isVideo = media.mediaType === 'video' || 
+                      (media.fileType && media.fileType.startsWith('video/'));
+      
+      // Image ou vidéo
+      const mediaElement = document.createElement(isVideo ? 'video' : 'img');
+      if (isVideo) {
+        mediaElement.muted = true;
+        mediaElement.loop = false;
+        mediaElement.preload = 'metadata';
+        mediaElement.playsInline = true;
+        mediaElement.style.objectFit = 'cover';
+        mediaElement.style.width = '100%';
+        mediaElement.style.height = '100%';
+        
+        // 🔧 Essayer de charger la vidéo (peut être lent)
+        if (media.url) {
+          mediaElement.src = media.url;
+          // Essayer de charger la première frame
+          mediaElement.addEventListener('loadeddata', () => {
+            // La vidéo est chargée
+          });
+        }
+        
+        // 🔧 Ajouter un overlay "▶️" sur la vidéo
+        const playOverlay = document.createElement('div');
+        playOverlay.style.cssText = `
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0,0,0,0.5);
+          border-radius: 50%;
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 24px;
+          pointer-events: none;
+        `;
+        playOverlay.innerHTML = '<i class="fas fa-play"></i>';
+        item.appendChild(playOverlay);
+        
+        // 🔧 Ajouter badge "VIDEO"
+        const badge = document.createElement('div');
+        badge.style.cssText = `
+          position: absolute;
+          bottom: 8px;
+          right: 8px;
+          background: rgba(0,0,0,0.7);
+          color: white;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 500;
+          pointer-events: none;
+        `;
+        badge.textContent = '🎬';
+        item.appendChild(badge);
+        
+      } else {
+        mediaElement.src = media.url || '';
+        mediaElement.alt = media.fileName || 'photo';
+        mediaElement.loading = 'lazy';
+        mediaElement.style.objectFit = 'cover';
+        mediaElement.style.width = '100%';
+        mediaElement.style.height = '100%';
+      }
+      
+      item.appendChild(mediaElement);
+      
+      // Overlay (comme avant)
+      const overlay = document.createElement('div');
+      overlay.className = 'photo-overlay';
+      overlay.innerHTML = `
+        <div class="check-circle" data-id="${media.id}">
+          <i class="fas fa-check" style="font-size:12px;opacity:${selectedIds.has(media.id)?1:0};"></i>
+        </div>
+        <div class="star-icon" data-id="${media.id}"><i class="far fa-star"></i></div>
+      `;
+      item.appendChild(overlay);
+      
+      // Click pour lightbox
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.check-circle') || e.target.closest('.star-icon')) return;
+        const idx = allMedia.findIndex(m => m.id === media.id);
+        if (idx !== -1) openLightbox(idx);
+      });
+      
+      // Sélection
+      const check = overlay.querySelector('.check-circle');
+      check.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = media.id;
+        if (selectedIds.has(id)) {
+          selectedIds.delete(id);
+          item.classList.remove('selected');
+          check.querySelector('i').style.opacity = '0';
+        } else {
+          selectedIds.add(id);
+          item.classList.add('selected');
+          check.querySelector('i').style.opacity = '1';
+        }
+      });
+      
+      // Favoris
+      const star = overlay.querySelector('.star-icon');
+      star.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const icon = star.querySelector('i');
+        icon.classList.toggle('fas');
+        icon.classList.toggle('far');
+        icon.style.color = icon.classList.contains('fas') ? '#FCC934' : 'rgba(255,255,255,0.7)';
+      });
+      
+      grid.appendChild(item);
+    });
+    
+    gridContainer.appendChild(grid);
+  });
+}
+    // ============================================================
+// 6.1 GÉNÉRATION DE MINIATURE VIDÉO
+// ============================================================
+
+function generateVideoThumbnail(file, maxWidth = 300) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Créer un objet URL pour la vidéo
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    video.muted = true;
+    video.crossOrigin = 'anonymous';
+    
+    // Attendre que la vidéo soit chargée
+    video.addEventListener('loadedmetadata', () => {
+      // Aller à 1 seconde ou au milieu de la vidéo
+      const seekTime = Math.min(1, video.duration / 2);
+      video.currentTime = seekTime;
+    });
+    
+    video.addEventListener('seeked', () => {
+      try {
+        // Calculer les dimensions
+        const ratio = video.videoWidth / video.videoHeight;
+        let width = maxWidth;
+        let height = width / ratio;
+        
+        if (height > maxWidth) {
+          height = maxWidth;
+          width = height * ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(video, 0, 0, width, height);
+        
+        // Récupérer la miniature en base64
+        const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+        URL.revokeObjectURL(url);
+        resolve(thumbnail);
+      } catch (err) {
+        reject(err);
+      }
+    });
+    
+    video.addEventListener('error', () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Impossible de charger la vidéo'));
+    });
+    
+    // Charger la vidéo
+    video.load();
+  });
+}
   </script>
 
 </body>
