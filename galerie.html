@@ -2,2027 +2,1164 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📸 Mon Coffre-Fort Photos</title>
-  
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Font Awesome 6 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GALERIE IDA</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  
-  <!-- AWS S3 SDK pour R2 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1504.0/aws-sdk.min.js"></script>
-
   <style>
-    /* ===== VARIABLES CSS (thèmes clair/sombre) ===== */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    :root {
-      --bg-page: #FFFFFF;
-      --bg-sidebar: #FFFFFF;
-      --bg-header: #FFFFFF;
-      --bg-search: #F1F3F4;
-      --bg-hover: rgba(0,0,0,0.04);
-      --bg-active: #E8F0FE;
-      --text-primary: #202124;
-      --text-secondary: #5F6368;
-      --accent: #1A73E8;
-      --border: #DADCE0;
-      --font: 'Google Sans', 'Roboto', sans-serif;
-      --sidebar-width: 256px;
-      --header-height: 64px;
-    }
-    
-    body.dark {
-      --bg-page: #131314;
-      --bg-sidebar: #1E1F20;
-      --bg-header: #1E1F20;
-      --bg-search: #2B2D2E;
-      --bg-hover: rgba(255,255,255,0.06);
-      --bg-active: #1E2A3A;
-      --text-primary: #E3E3E3;
-      --text-secondary: #9AA0A6;
-      --accent: #A8C7FA;
-      --border: #3C3F41;
-    }
-    
-    body {
-      font-family: var(--font);
-      background: var(--bg-page);
-      color: var(--text-primary);
-      transition: background 0.2s, color 0.2s;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* ===== HEADER ===== */
-    .app-header {
-      height: var(--header-height);
-      background: var(--bg-header);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--border);
-      z-index: 30;
-    }
-    .logo-area { display: flex; align-items: center; gap: 8px; width: var(--sidebar-width); flex-shrink: 0; }
-    .logo-icon { width: 40px; height: 40px; }
-    .logo-text { font-size: 22px; font-weight: 400; color: var(--text-primary); }
-    
-    .search-wrapper { flex: 1; max-width: 720px; margin: 0 24px; position: relative; }
-    .search-bar {
-      background: var(--bg-search);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      height: 44px;
-      border: 1px solid transparent;
-      transition: background 0.2s, box-shadow 0.2s;
-    }
-    .search-bar:focus-within {
-      background: var(--bg-page);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-      border-color: var(--accent);
-    }
-    .search-bar i { color: var(--text-secondary); margin-right: 12px; }
-    .search-bar input {
-      background: transparent;
-      border: none;
-      outline: none;
-      font-size: 16px;
-      width: 100%;
-      color: var(--text-primary);
-    }
-    .search-bar input::placeholder { color: var(--text-secondary); }
-    
-    .header-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; flex-shrink: 0; }
-    .header-actions button {
-      background: transparent;
-      border: none;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      color: var(--text-secondary);
-      font-size: 20px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .header-actions button:hover { background: var(--bg-hover); }
-    .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 500;
-      font-size: 14px;
-      cursor: pointer;
-    }
+   body {
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 12px;
+}
 
-    /* ===== LAYOUT ===== */
-    .app-layout { display: flex; flex: 1; overflow: hidden; background: var(--bg-page); }
-    
-    .sidebar {
-      width: var(--sidebar-width);
-      flex-shrink: 0;
-      background: var(--bg-sidebar);
-      padding: 16px 0;
+   .app-container {
+  max-width: 390px;
+  width: 100%;
+  height: 844px;
+  background: #ffffff;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+    /* ===== CONTENU SCROLLABLE ===== */
+    .content-area {
+      flex: 1;
       overflow-y: auto;
+      padding: 0 16px 80px 16px;
+      scroll-behavior: smooth;
+      position: relative;
     }
-    .sidebar-nav { display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
-    .sidebar-item {
+
+    .content-area::-webkit-scrollbar {
+      width: 3px;
+    }
+    .content-area::-webkit-scrollbar-thumb {
+      background: #dadce0;
+      border-radius: 20px;
+    }
+
+    /* ===== STATUS BAR ===== */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 4px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e1f22;
+    }
+    .status-icons {
+      display: flex;
+      gap: 4px;
+      font-size: 13px;
+      color: #3c4043;
+    }
+
+    /* ===== HEADER ACTIONS ===== */
+    .header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0 14px 0;
+    }
+    .header-left {
+      background: #f1f3f4;
+      border-radius: 30px;
+      padding: 6px 14px 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1e1f22;
+      cursor: pointer;
+    }
+    .header-left i {
+      color: #5f6368;
+      font-size: 14px;
+    }
+    .header-right {
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 8px 20px;
-      border-radius: 0 50px 50px 0;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-secondary);
+    }
+    .header-right i {
+      font-size: 22px;
+      color: #1e1f22;
       cursor: pointer;
-      transition: background 0.15s;
-      border: none;
-      background: transparent;
-      width: 100%;
-      text-align: left;
     }
-    .sidebar-item i { width: 24px; font-size: 20px; }
-    .sidebar-item:hover { background: var(--bg-hover); }
-    .sidebar-item.active {
-      background: var(--bg-active);
-      color: var(--accent);
-    }
-
-    /* ===== MAIN CONTENT ===== */
-    .main-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px 32px 40px 32px;
-      background: var(--bg-page);
-    }
-    
-    .day-header {
+    .avatar {
+      width: 34px;
+      height: 34px;
+      background: #aecbfa;
+      border-radius: 50%;
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin: 28px 0 12px 0;
+      justify-content: center;
+      font-weight: 600;
+      color: #1a3a6b;
       font-size: 14px;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-    
-    .photo-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 16px;
-    }
-    
-    .photo-item {
-      flex: 1 0 auto;
-      position: relative;
-      border-radius: 4px;
-      overflow: hidden;
       cursor: pointer;
-      background: var(--bg-hover);
-      min-height: 150px;
-      max-height: 240px;
-      transition: transform 0.2s;
     }
-    .photo-item img {
+
+    /* ===== VUE COLLECTIONS ===== */
+    #collectionsView {
       display: block;
+    }
+    #collectionsView.hidden {
+      display: none;
+    }
+
+    /* Quick Grid */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 8px 0 18px 0;
+    }
+    .quick-card {
+      background: #f2f4f7;
+      border-radius: 16px;
+      padding: 14px 4px 10px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .quick-card:active {
+      transform: scale(0.95);
+      background: #e5e8ec;
+    }
+    .quick-card .icon-wrap {
+      background: white;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #1a1a1a;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .quick-card span {
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 6px;
+      color: #202124;
+    }
+
+    /* Section header */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 18px 0 10px 0;
+    }
+    .section-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #202124;
+    }
+    .section-header .chevron {
+      color: #5f6368;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* Albums - carrousel */
+    .albums-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+    }
+    .albums-scroll::-webkit-scrollbar {
+      height: 3px;
+    }
+    .album-card {
+      flex: 0 0 130px;
+      border-radius: 18px;
+      background: #f1f3f4;
+      overflow: hidden;
+      position: relative;
+      height: 130px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .album-card:active {
+      transform: scale(0.95);
+    }
+    .album-card img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.3s, filter 0.3s;
-      border-radius: 4px;
     }
-    .photo-item:hover img {
-      transform: scale(1.02);
-      filter: brightness(0.92);
-    }
-    
-    .photo-overlay {
+    .album-card .label {
       position: absolute;
-      inset: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 10px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.25s;
+      bottom: 10px;
+      left: 10px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.25);
+      padding: 3px 12px 3px 8px;
+      border-radius: 20px;
+      backdrop-filter: blur(2px);
     }
-    .photo-item:hover .photo-overlay { opacity: 1; }
-    .photo-overlay .check-circle {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.4);
-      border: 2px solid rgba(255,255,255,0.7);
+    .album-card.create {
+      background: white;
+      border: 1.5px dashed #dadce0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #fff;
-      pointer-events: auto;
-      cursor: pointer;
+      color: #1a73e8;
+      font-weight: 500;
+      font-size: 13px;
     }
-    .photo-overlay .star-icon {
-      color: rgba(255,255,255,0.7);
-      font-size: 22px;
-      pointer-events: auto;
-      cursor: pointer;
+    .album-card.create i {
+      font-size: 28px;
+      margin-bottom: 4px;
     }
-    .photo-overlay .star-icon:hover { color: #FCC934; }
 
-    /* ===== LIGHTBOX ===== */
-    .lightbox {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      z-index: 999;
+    /* Personnes */
+    .people-scroll {
+      display: flex;
+      gap: 18px;
+      overflow-x: auto;
+      padding: 4px 0 12px 0;
+    }
+    .people-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 0 0 72px;
+      cursor: pointer;
+    }
+    .people-item .circle {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    .people-item .circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .people-item .pname {
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 4px;
+      color: #202124;
+    }
+
+    /* Lieux */
+    .lieux-container {
+      display: flex;
+      gap: 10px;
+      margin: 4px 0 8px 0;
+    }
+    .lieux-map {
+      flex: 2;
+      background: #d9e2ef;
+      border-radius: 18px;
+      height: 90px;
+      background-image: linear-gradient(145deg, #b8d0e6, #8aa9c9);
+      display: flex;
+      align-items: flex-end;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: #1a2634;
+      font-size: 14px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .lieux-map::after {
+      content: "🗺️";
+      position: absolute;
+      right: 8px;
+      bottom: 6px;
+      font-size: 28px;
+      opacity: 0.3;
+    }
+    .lieux-minis {
+      flex: 1.5;
+      display: flex;
+      gap: 6px;
+    }
+    .lieux-mini {
+      flex: 1;
+      background: #eef0f2;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 4px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      cursor: pointer;
+    }
+    .lieux-mini span {
+      background: rgba(0, 0, 0, 0.35);
+      padding: 2px 12px;
+      border-radius: 30px;
+      color: white;
+      backdrop-filter: blur(3px);
+      font-size: 11px;
+    }
+    .lieux-mini.dakar {
+      background-image: url('https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=100&h=100&fit=crop&crop=center');
+    }
+    .lieux-mini.paris {
+      background-image: url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=100&h=100&fit=crop&crop=center');
+    }
+
+    /* Documents */
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .doc-card {
+      background: #f2f4f7;
+      border-radius: 16px;
+      padding: 14px 4px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: #202124;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .doc-card:active {
+      transform: scale(0.95);
+      background: #e5e8ec;
+    }
+    .doc-card i {
+      font-size: 22px;
+      display: block;
+      margin-bottom: 4px;
+      color: #1e1f22;
+    }
+
+    /* Autres collections */
+    .other-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0 12px 0;
+    }
+    .other-item {
+      background: #f2f4f7;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+      font-size: 13px;
+      color: #202124;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .other-item:active {
+      transform: scale(0.95);
+      background: #e5e8ec;
+    }
+    .other-item i {
+      font-size: 18px;
+      color: #3c4043;
+      width: 24px;
+      text-align: center;
+    }
+
+    /* ===== VUE PHOTOS ===== */
+    #photosView {
       display: none;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      gap: 8px;
+      padding-top: 4px;
     }
-    .lightbox.open { display: flex; }
-    .lightbox .lb-toolbar {
+    #photosView.active {
+      display: flex;
+    }
+
+    .sticky-date {
+      background: white;
+      border-radius: 40px;
+      padding: 6px 14px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+      font-weight: 500;
+      font-size: 12px;
+      color: #1e1f22;
+      display: inline-block;
+      align-self: flex-start;
+      margin-bottom: 4px;
+      border: 1px solid #f0f0f0;
+    }
+    .sticky-date i {
+      margin-right: 4px;
+      font-size: 11px;
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+    }
+    .photo-grid .cell {
+      aspect-ratio: 1 / 1;
+      background: #eef0f2;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .photo-grid .cell:active {
+      transform: scale(0.95);
+    }
+    .photo-grid .cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .photo-grid .cell .badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      backdrop-filter: blur(2px);
+    }
+
+    /* ===== VUE DOSSIER (Album individuel) ===== */
+    #albumView {
+      display: none;
+      flex-direction: column;
+      padding-top: 4px;
+    }
+    #albumView.active {
+      display: flex;
+    }
+
+    .album-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 0 16px 0;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 10;
+    }
+    .album-header .back-btn {
+      font-size: 24px;
+      cursor: pointer;
+      color: #1e1f22;
+      padding: 4px;
+    }
+    .album-header h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #202124;
+      flex: 1;
+    }
+    .album-header .add-photo {
+      font-size: 24px;
+      cursor: pointer;
+      color: #1a73e8;
+      padding: 4px;
+    }
+
+    .album-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+      margin-top: 4px;
+    }
+    .album-grid .cell {
+      aspect-ratio: 1 / 1;
+      background: #eef0f2;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .album-grid .cell:active {
+      transform: scale(0.95);
+    }
+    .album-grid .cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .album-grid .cell .badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      backdrop-filter: blur(2px);
+    }
+    .album-grid .add-cell {
+      background: #f2f4f7;
+      border: 2px dashed #dadce0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: #1a73e8;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .album-grid .add-cell:active {
+      transform: scale(0.95);
+      background: #e5e8ec;
+    }
+
+    /* ===== VUE PLEIN ÉCRAN ===== */
+    #fullscreenView {
+      display: none;
       position: absolute;
       top: 0;
       left: 0;
-      right: 0;
-      padding: 16px 28px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 44px;
+      overflow: hidden;
     }
-    .lightbox .lb-toolbar button {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      color: #fff;
-      font-size: 22px;
+    #fullscreenView.active {
+      display: flex;
+    }
+
+    #fullscreenView .fs-close {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-size: 28px;
+      cursor: pointer;
+      z-index: 1001;
+      background: rgba(0, 0, 0, 0.5);
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      cursor: pointer;
-      backdrop-filter: blur(4px);
-    }
-    .lightbox .lb-toolbar button:hover { background: rgba(255,255,255,0.25); }
-    .lightbox .lb-image { max-width: 90vw; max-height: 85vh; object-fit: contain; }
-    .lb-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      padding: 0 12px;
-      pointer-events: none;
-    }
-    .lb-nav button {
-      pointer-events: auto;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.12);
-      border: none;
-      color: #fff;
-      font-size: 26px;
-      cursor: pointer;
-      backdrop-filter: blur(4px);
-    }
-    .lb-nav button:hover { background: rgba(255,255,255,0.3); }
-    .lb-close {
-      position: absolute;
-      top: 16px;
-      right: 20px;
-      background: rgba(0,0,0,0.5);
-      border: none;
-      color: #fff;
-      font-size: 28px;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 1001;
-    }
-
-    /* ===== UPLOAD ZONE ===== */
-    .upload-zone {
-      border: 2px dashed var(--border);
-      border-radius: 12px;
-      padding: 40px;
-      text-align: center;
-      margin: 20px 0;
-      background: var(--bg-hover);
-      transition: border-color 0.3s, background 0.3s;
-      cursor: pointer;
-    }
-    .upload-zone.dragover {
-      border-color: var(--accent);
-      background: var(--bg-active);
-    }
-    .upload-zone i { font-size: 48px; color: var(--text-secondary); margin-bottom: 12px; }
-    .upload-zone p { color: var(--text-secondary); font-size: 16px; }
-    .upload-zone .btn-upload {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 10px 24px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 12px;
-    }
-    .upload-zone .btn-upload:hover { opacity: 0.9; }
-
-    /* ===== AUTH SCREEN ===== */
-    .auth-screen {
-      position: fixed;
-      inset: 0;
-      background: var(--bg-page);
-      z-index: 9999;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
-      gap: 24px;
+      transition: 0.2s;
     }
-    .auth-screen.hidden { display: none; }
-    .auth-card {
-      background: var(--bg-sidebar);
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.15);
-      width: 380px;
-      max-width: 90%;
+    #fullscreenView .fs-close:active {
+      transform: scale(0.9);
     }
-    .auth-card h2 { font-size: 28px; font-weight: 400; margin-bottom: 24px; }
-    .auth-card input {
+    #fullscreenView img {
       width: 100%;
-      padding: 12px 16px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg-page);
-      color: var(--text-primary);
-      margin-bottom: 12px;
-      font-size: 16px;
-    }
-    .auth-card button {
-      width: 100%;
-      padding: 12px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .auth-card button:hover { opacity: 0.9; }
-    .auth-card .toggle-auth {
-      background: transparent;
-      color: var(--accent);
-      border: none;
-      cursor: pointer;
-      margin-top: 12px;
-      font-size: 14px;
-    }
-
-    /* ===== PROGRESS BAR ===== */
-    .upload-progress {
-      height: 4px;
-      background: var(--border);
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 8px 0;
-    }
-    .upload-progress .bar {
       height: 100%;
-      background: var(--accent);
-      width: 0%;
-      transition: width 0.3s;
+      object-fit: contain;
+      padding: 40px;
+    }
+    #fullscreenView .fs-info {
+      position: absolute;
+      bottom: 40px;
+      color: white;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 20px;
+      border-radius: 30px;
+      backdrop-filter: blur(10px);
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .logo-area { width: auto; }
-      .search-wrapper { margin: 0 8px; }
-      .main-content { padding: 16px; }
+    /* ===== BOTTOM NAV ===== */
+ .bottom-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 16px;
+  max-width: 390px;
+  width: auto;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  height: auto;
+  backdrop-filter: none;
+  flex-shrink: 0;
+  z-index: 100;
+  gap: 8px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bottom-nav.hidden {
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+}
+}
+   .nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: white;
+  border-radius: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  padding: 4px;
+  backdrop-filter: blur(4px);
+}
+    .nav-tab {
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-weight: 500;
+      font-size: 14px;
+      color: #3c4043;
+      background: transparent;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.15s;
+      cursor: pointer;
+      white-space: nowrap;
     }
+    .nav-tab i {
+      font-size: 18px;
+    }
+    .nav-tab.active {
+      background: #d3e3fd;
+      color: #1a3a6b;
+    }
+    .nav-tab:active {
+      transform: scale(0.95);
+    }
+    .fab-lens {
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  border: 1px solid #eceef0;
+  font-size: 20px;
+  color: #1e1f22;
+  cursor: pointer;
+  transition: 0.15s;
+  flex-shrink: 0;
+}
+.fab-lens:active {
+  transform: scale(0.92);
+}
     
-    /* ============================================================
-   RESPONSIVE DESIGN - Mobile & Tablette
-   ============================================================ */
 
-/* --- TABLETTES (max-width: 1024px) --- */
-@media (max-width: 1024px) {
-  .sidebar {
-    width: 72px;
-    padding: 16px 4px;
-  }
-  
-  .sidebar-item {
-    padding: 12px 8px;
-    justify-content: center;
-    border-radius: 12px;
-    font-size: 12px;
-    flex-direction: column;
-    gap: 4px;
-    height: 64px;
-    text-align: center;
-  }
-  
-  .sidebar-item i {
-    font-size: 22px;
-    margin: 0;
-  }
-  
-  .sidebar-item span {
-    font-size: 10px;
-    display: block;
-  }
-  
-  .logo-text {
-    display: none;
-  }
-  
-  .logo-area {
-    width: auto;
-    min-width: 48px;
-  }
-  
-  .search-wrapper {
-    margin: 0 12px;
-  }
-  
-  .main-content {
-    padding: 16px 20px 20px 20px;
-  }
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 420px) {
+     .app-container {
+  max-width: 390px;
+  width: 100%;
+  height: 844px;
+  background: #ffffff;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
-
-/* --- MOBILES (max-width: 768px) --- */
-@media (max-width: 768px) {
-  /* Header */
-  .app-header {
-    padding: 0 12px;
-    height: 56px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--bg-header);
-  }
-  
-  .logo-area {
-    min-width: 40px;
-  }
-  
-  .logo-icon {
-    width: 32px;
-    height: 32px;
-  }
-  
-  .logo-icon svg {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .logo-text {
-    display: none;
-  }
-  
-  .search-wrapper {
-    margin: 0 8px;
-    max-width: 100%;
-  }
-  
-  .search-bar {
-    height: 38px;
-    padding: 0 12px;
-    border-radius: 20px;
-  }
-  
-  .search-bar i {
-    font-size: 14px;
-    margin-right: 8px;
-  }
-  
-  .search-bar input {
-    font-size: 14px;
-  }
-  
-  .search-bar input::placeholder {
-    font-size: 13px;
-  }
-  
-  .header-actions {
-    gap: 4px;
-  }
-  
-  .header-actions button {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-  }
-  
-  .avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-  
-  /* Sidebar - Version mobile en bas */
-  .sidebar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 64px;
-    background: var(--bg-sidebar);
-    border-top: 1px solid var(--border);
-    padding: 4px 8px;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .sidebar::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .sidebar-nav {
-    flex-direction: row;
-    padding: 0;
-    gap: 2px;
-    width: 100%;
-    justify-content: space-around;
-  }
-  
-  .sidebar-item {
-    flex: 1 0 auto;
-    flex-direction: column;
-    padding: 4px 6px;
-    height: 56px;
-    border-radius: 12px;
-    gap: 2px;
-    font-size: 10px;
-    min-width: 48px;
-    max-width: 72px;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .sidebar-item i {
-    font-size: 20px;
-    margin: 0;
-  }
-  
-  .sidebar-item span {
-    font-size: 9px;
-    display: block;
-    line-height: 1.2;
-  }
-  
-  .sidebar-item.active {
-    border-radius: 12px;
-  }
-  
-  /* Main Content */
-  .app-layout {
-    flex-direction: column;
-    padding-bottom: 64px; /* Espace pour la sidebar en bas */
-  }
-  
-  .main-content {
-    padding: 12px 12px 80px 12px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  /* Grille photos - mobile */
-  .photo-grid {
-    gap: 3px;
-  }
-  
-  .photo-item {
-    min-height: 100px;
-    max-height: 180px;
-    border-radius: 3px;
-  }
-  
-  .photo-item img {
-    border-radius: 3px;
-  }
-  
-  /* En-tête de jour */
-  .day-header {
-    margin: 16px 0 8px 0;
-    font-size: 13px;
-  }
-  
-  .day-header .checkbox-placeholder {
-    width: 16px;
-    height: 16px;
-  }
-  
-  /* Upload Zone - mobile */
-  .upload-zone {
-    padding: 24px 16px;
-    margin: 12px 0;
-    border-radius: 12px;
-  }
-  
-  .upload-zone i {
-    font-size: 32px;
-  }
-  
-  .upload-zone p {
-    font-size: 14px;
-  }
-  
-  .upload-zone .btn-upload {
-    padding: 8px 20px;
-    font-size: 14px;
-  }
-  
-  /* Lightbox - mobile */
-  .lightbox .lb-toolbar {
-    padding: 12px 16px;
-    gap: 8px;
-    top: 0;
-  }
-  
-  .lightbox .lb-toolbar button {
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-  }
-  
-  .lb-nav button {
-    width: 36px;
-    height: 36px;
-    font-size: 20px;
-  }
-  
-  .lb-close {
-    top: 12px;
-    right: 12px;
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
-  }
-  
-  .lightbox .lb-image {
-    max-width: 95vw;
-    max-height: 80vh;
-  }
-  
-  /* Auth card - mobile */
-  .auth-card {
-    padding: 24px 20px;
-    width: 92%;
-    max-width: 360px;
-  }
-  
-  .auth-card h2 {
-    font-size: 22px;
-  }
-  
-  .auth-card input {
-    padding: 10px 14px;
-    font-size: 15px;
-  }
-  
-  .auth-card button {
-    padding: 10px;
-    font-size: 15px;
-  }
-  
-  /* Progress bar */
-  .upload-progress {
-    height: 3px;
-  }
-  
-  /* Empty state */
-  .main-content .empty-state i {
-    font-size: 36px;
-  }
-  
-  .main-content .empty-state p {
-    font-size: 16px;
-  }
-}
-
-/* --- TRÈS PETITS ÉCRANS (max-width: 480px) --- */
-@media (max-width: 480px) {
-  .app-header {
-    padding: 0 8px;
-    height: 50px;
-  }
-  
-  .logo-icon {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .search-bar {
-    height: 34px;
-    border-radius: 17px;
-    padding: 0 10px;
-  }
-  
-  .search-bar i {
-    font-size: 12px;
-    margin-right: 6px;
-  }
-  
-  .search-bar input {
-    font-size: 12px;
-  }
-  
-  .search-bar input::placeholder {
-    font-size: 11px;
-  }
-  
-  .header-actions button {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-  }
-  
-  .avatar {
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
-  }
-  
-  .sidebar {
-    height: 56px;
-    padding: 2px 4px;
-  }
-  
-  .sidebar-item {
-    height: 48px;
-    padding: 2px 4px;
-    min-width: 40px;
-  }
-  
-  .sidebar-item i {
-    font-size: 16px;
-  }
-  
-  .sidebar-item span {
-    font-size: 8px;
-  }
-  
-  .main-content {
-    padding: 8px 8px 76px 8px;
-  }
-  
-  .photo-grid {
-    gap: 2px;
-  }
-  
-  .photo-item {
-    min-height: 80px;
-    max-height: 150px;
-  }
-  
-  .day-header {
-    font-size: 12px;
-    margin: 12px 0 6px 0;
-  }
-  
-  .upload-zone {
-    padding: 16px 12px;
-  }
-  
-  .upload-zone i {
-    font-size: 28px;
-  }
-  
-  .upload-zone p {
-    font-size: 13px;
-  }
-  
-  .auth-card {
-    padding: 20px 16px;
-  }
-  
-  .auth-card h2 {
-    font-size: 20px;
-  }
-  
-  .photo-overlay .check-circle {
-    width: 22px;
-    height: 22px;
-    font-size: 10px;
-  }
-  
-  .photo-overlay .star-icon {
-    font-size: 18px;
-  }
-}
-
-/* --- ORIENTATION PAYSAGE (landscape) sur mobile --- */
-@media (max-height: 500px) and (orientation: landscape) {
-  .app-header {
-    height: 44px;
-    padding: 0 8px;
-  }
-  
-  .search-bar {
-    height: 30px;
-  }
-  
-  .sidebar {
-    height: 48px;
-  }
-  
-  .sidebar-item {
-    height: 40px;
-  }
-  
-  .sidebar-item i {
-    font-size: 16px;
-  }
-  
-  .sidebar-item span {
-    font-size: 8px;
-  }
-  
-  .main-content {
-    padding: 8px 8px 56px 8px;
-  }
-  
-  .photo-item {
-    min-height: 60px;
-    max-height: 120px;
-  }
-  
-  .day-header {
-    margin: 8px 0 4px 0;
-    font-size: 11px;
-  }
-}
-
-/* --- AMÉLIORATIONS TOUCHES (pour mobile) --- */
-@media (hover: none) and (pointer: coarse) {
-  /* Désactiver les effets hover sur mobile */
-  .sidebar-item:hover {
-    background: transparent;
-  }
-  
-  .photo-item:hover img {
-    transform: none;
-    filter: none;
-  }
-  
-  .photo-overlay {
-    opacity: 1;
-    padding: 6px;
-  }
-  
-  .photo-overlay .check-circle {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-  }
-  
-  .photo-overlay .star-icon {
-    font-size: 26px;
-  }
-  
-  /* Augmenter la zone de clic */
-  .sidebar-item,
-  .header-actions button,
-  .photo-overlay .check-circle,
-  .photo-overlay .star-icon {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  .photo-overlay .check-circle {
-    min-height: 44px;
-    min-width: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-/* --- SCROLLBAR PERSONNALISÉE (mobile) --- */
-@media (max-width: 768px) {
-  ::-webkit-scrollbar {
-    width: 3px;
-    height: 3px;
-  }
-  
-  .main-content {
-    scroll-behavior: smooth;
-  }
-}
-
-/* --- ANIMATIONS DE TRANSITION (mobile) --- */
-@media (max-width: 768px) {
-  .photo-item {
-    transition: transform 0.15s ease;
-  }
-  
-  .photo-item.selected {
-    transform: scale(0.96);
-  }
-  
-  .lightbox {
-    transition: opacity 0.25s ease;
-  }
-  
-  .sidebar {
-    transition: height 0.2s ease;
-  }
-}
+      .nav-tab {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+      .nav-tab i {
+        font-size: 16px;
+      }
+      #fullscreenView {
+        border-radius: 24px;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <!-- ===== AUTHENTIFICATION ===== -->
-  <div class="auth-screen" id="authScreen">
-    <div class="auth-card">
-      <h2 id="authTitle">📸 Connexion</h2>
-      <input type="email" id="authEmail" placeholder="Email" />
-      <input type="password" id="authPassword" placeholder="Mot de passe" />
-      <button id="authButton">Se connecter</button>
-      <button class="toggle-auth" id="authToggle">Créer un compte</button>
-      <div id="authError" style="color:red;font-size:14px;margin-top:8px;"></div>
-    </div>
-  </div>
+<div class="app-container">
 
-  <!-- ===== HEADER ===== -->
-  <header class="app-header">
-    <div class="logo-area">
-      <div class="logo-icon">📸</div>
-      <span class="logo-text">Mon Coffre-Fort</span>
-    </div>
-    <div class="search-wrapper">
-      <div class="search-bar">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="Rechercher dans vos photos" id="searchInput" />
-      </div>
-    </div>
-    <div class="header-actions">
-      <button id="themeToggle"><i class="fas fa-moon"></i></button>
-      <button id="uploadBtn" title="Ajouter des photos"><i class="fas fa-plus-circle"></i></button>
-      <button id="logoutBtn" title="Déconnexion"><i class="fas fa-sign-out-alt"></i></button>
-      <div class="avatar" id="userAvatar">A</div>
-    </div>
-  </header>
+  <!-- CONTENU SCROLLABLE -->
+  <div class="content-area" id="contentArea">
 
-  <!-- ===== LAYOUT ===== -->
-  <div class="app-layout">
-    <aside class="sidebar">
-      <nav class="sidebar-nav">
-        <button class="sidebar-item active" data-tab="photos"><i class="fas fa-images"></i> Photos</button>
-        <button class="sidebar-item" data-tab="upload"><i class="fas fa-upload"></i> Upload</button>
-        <button class="sidebar-item" data-tab="favorites"><i class="fas fa-star"></i> Favoris</button>
-        <button class="sidebar-item" data-tab="albums"><i class="fas fa-folder"></i> Albums</button>
-      </nav>
-    </aside>
-
-    <main class="main-content" id="mainContent">
-      <!-- Zone d'upload (visible par défaut) -->
-      <div id="uploadZone" class="upload-zone">
-        <i class="fas fa-cloud-upload-alt"></i>
-        <p>Glissez vos photos ici ou cliquez pour sélectionner</p>
-        <button class="btn-upload" id="selectFilesBtn">Choisir des fichiers</button>
-        <div class="upload-progress" id="progressContainer" style="display:none;">
-          <div class="bar" id="progressBar"></div>
-        </div>
-        <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display:none;" />
-      </div>
+    <!-- ====== VUE COLLECTIONS ====== -->
+    <div id="collectionsView">
+      <!-- Status Bar -->
       
-      <!-- Grille de photos -->
-      <div id="gridContainer"></div>
-    </main>
-  </div>
 
-  <!-- ===== LIGHTBOX ===== -->
- <!-- ===== LIGHTBOX (version corrigée) ===== -->
-<div class="lightbox" id="lightbox">
-  <button class="lb-close" id="lbClose"><i class="fas fa-times"></i></button>
-  <div class="lb-toolbar">
-    <button><i class="fas fa-share-alt"></i></button>
-    <button><i class="fas fa-star"></i></button>
-    <button><i class="fas fa-trash" id="lbDelete"></i></button>
+      <!-- Header -->
+   <div class="header-actions">
+  <div class="header-left">
+    <i class="fas fa-cloud-slash"></i> AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO
   </div>
-  <!-- 🔧 REMPLACER l'img par un conteneur dynamique -->
-  <div id="lbContainer" style="max-width:90vw;max-height:85vh;display:flex;align-items:center;justify-content:center;">
-    <!-- <img> ou <video> sera injecté ici -->
-  </div>
-  <div class="lb-nav">
-    <button id="lbPrev"><i class="fas fa-chevron-left"></i></button>
-    <button id="lbNext"><i class="fas fa-chevron-right"></i></button>
+  <div class="header-right">
+    
+    <div class="avatar">JD</div>
   </div>
 </div>
 
-  <!-- ============================================================ -->
-  <!-- JAVASCRIPT COMPLET avec R2 + Firebase                          -->
-  <!-- ============================================================ -->
-  <script>
-    (function() {
-      "use strict";
-
-      // ============================================================
-      // 1. CONFIGURATION FIREBASE + R2 (TES IDENTIFIANTS)
-      // ============================================================
-      
-      // --- Firebase ---
-      const firebaseConfig = {
-        apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
-        authDomain: "messagerie-65abc.firebaseapp.com",
-        projectId: "messagerie-65abc",
-        storageBucket: "messagerie-65abc.firebasestorage.app",
-        messagingSenderId: "363641716532",
-        appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
-      };
-      
-      firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      const db = firebase.firestore();
-      
-      // --- Cloudflare R2 (S3 compatible) ---
-      const R2_CONFIG = {
-        accountId: "50a91b74b4a89d07dba22c348adbcbc7",
-        accessKeyId: "23befe80dd05c7d317b3ff7a89870bc6",
-        secretAccessKey: "f8a84406bc1ccdeae3f6d36803bb5a0f27b00e4e9f3bba52d9eb91fea61b9589",
-        bucket: "mon-coffre-fort-photos",
-        endpoint: "https://50a91b74b4a89d07dba22c348adbcbc7.r2.cloudflarestorage.com",
-        publicUrl: "https://mon-coffre-fort-photos.50a91b74b4a89d07dba22c348adbcbc7.r2.cloudflarestorage.com"
-      };
-      
-      // Configuration AWS SDK pour R2
-      AWS.config.update({
-        accessKeyId: R2_CONFIG.accessKeyId,
-        secretAccessKey: R2_CONFIG.secretAccessKey,
-        region: 'auto',
-        endpoint: R2_CONFIG.endpoint,
-        s3ForcePathStyle: true,
-        signatureVersion: 'v4'
-      });
-      
-      const s3 = new AWS.S3();
-
-      // ============================================================
-      // 2. ÉTAT DE L'APPLICATION
-      // ============================================================
-      
-      let currentUser = null;
-      let allMedia = [];
-      let selectedIds = new Set();
-      let currentIndex = 0;
-      let isUploading = false;
-
-      // ============================================================
-      // 3. RÉFÉRENCES DOM
-      // ============================================================
-      
-      const authScreen = document.getElementById('authScreen');
-      const authEmail = document.getElementById('authEmail');
-      const authPassword = document.getElementById('authPassword');
-      const authButton = document.getElementById('authButton');
-      const authToggle = document.getElementById('authToggle');
-      const authTitle = document.getElementById('authTitle');
-      const authError = document.getElementById('authError');
-      
-      const gridContainer = document.getElementById('gridContainer');
-      const uploadZone = document.getElementById('uploadZone');
-      const fileInput = document.getElementById('fileInput');
-      const selectFilesBtn = document.getElementById('selectFilesBtn');
-      const progressBar = document.getElementById('progressBar');
-      const progressContainer = document.getElementById('progressContainer');
-      const searchInput = document.getElementById('searchInput');
-      const themeToggle = document.getElementById('themeToggle');
-      const logoutBtn = document.getElementById('logoutBtn');
-      const uploadBtn = document.getElementById('uploadBtn');
-      const userAvatar = document.getElementById('userAvatar');
-      
-      const lightbox = document.getElementById('lightbox');
-      const lbImage = document.getElementById('lbImage');
-      const lbClose = document.getElementById('lbClose');
-      const lbPrev = document.getElementById('lbPrev');
-      const lbNext = document.getElementById('lbNext');
-      const lbDelete = document.getElementById('lbDelete');
-
-      // ============================================================
-      // 4. AUTHENTIFICATION
-      // ============================================================
-      
-      let isLogin = true;
-      
-      authToggle.addEventListener('click', () => {
-        isLogin = !isLogin;
-        authTitle.textContent = isLogin ? '📸 Connexion' : '📸 Créer un compte';
-        authToggle.textContent = isLogin ? 'Créer un compte' : 'Déjà un compte ? Se connecter';
-        authButton.textContent = isLogin ? 'Se connecter' : 'Créer un compte';
-        authError.textContent = '';
-      });
-      
-      authButton.addEventListener('click', async () => {
-        const email = authEmail.value.trim();
-        const password = authPassword.value.trim();
-        if (!email || !password) {
-          authError.textContent = 'Veuillez remplir tous les champs.';
-          return;
-        }
-        try {
-          if (isLogin) {
-            await auth.signInWithEmailAndPassword(email, password);
-          } else {
-            await auth.createUserWithEmailAndPassword(email, password);
-          }
-        } catch (err) {
-          authError.textContent = err.message;
-        }
-      });
-      
-      // Enter key pour connexion
-      authPassword.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') authButton.click();
-      });
-      
-      // ============================================================
-      // 5. GÉNÉRATION D'URL SIGNÉE POUR R2
-      // ============================================================
-      
-      function getSignedUrl(key, expiresIn = 300) {
-        return new Promise((resolve, reject) => {
-          const params = {
-            Bucket: R2_CONFIG.bucket,
-            Key: key,
-            Expires: expiresIn
-          };
-          s3.getSignedUrl('getObject', params, (err, url) => {
-            if (err) reject(err);
-            else resolve(url);
-          });
-        });
-      }
-      
-      function getUploadUrl(key) {
-        return new Promise((resolve, reject) => {
-          const params = {
-            Bucket: R2_CONFIG.bucket,
-            Key: key,
-            Expires: 300,
-            ContentType: 'application/octet-stream'
-          };
-          s3.getSignedUrl('putObject', params, (err, url) => {
-            if (err) reject(err);
-            else resolve(url);
-          });
-        });
-      }
-
-      // ============================================================
-      // 6. UPLOAD DE FICHIERS VERS R2
-      // ============================================================
-      
-   async function uploadFiles(files) {
-  if (!currentUser) return;
-  if (isUploading) return;
-  
-  const MAX_VIDEO_SIZE = 500 * 1024 * 1024;
-  const MAX_PHOTO_SIZE = 50 * 1024 * 1024;
-  
-  const validFiles = [];
-  for (const file of files) {
-    const isVideo = file.type.startsWith('video/');
-    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_PHOTO_SIZE;
-    
-    if (file.size > maxSize) {
-      alert(`❌ ${file.name} est trop volumineux (max ${maxSize/1024/1024} Mo)`);
-      continue;
-    }
-    validFiles.push(file);
-  }
-  
-  if (validFiles.length === 0) {
-    alert('Aucun fichier valide à uploader');
-    return;
-  }
-  
-  isUploading = true;
-  progressContainer.style.display = 'block';
-  progressBar.style.width = '0%';
-  
-  let uploaded = 0;
-  const total = validFiles.length;
-  
-  for (const file of validFiles) {
-    try {
-      const isVideo = file.type.startsWith('video/');
-      const folder = isVideo ? 'videos' : 'photos';
-      
-      const timestamp = Date.now();
-      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-      const r2Key = `users/${currentUser.uid}/${folder}/${timestamp}_${safeName}`;
-      
-      // 🔧 Upload de la vidéo vers R2
-      const uploadUrl = await getUploadUrl(r2Key);
-      const response = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type || 'application/octet-stream'
-        }
-      });
-      
-      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
-      
-      // 🔧 GÉNÉRER UNE MINIATURE
-      let thumbnailKey = null;
-      if (isVideo) {
-        try {
-          // Générer la miniature
-          const thumbnailDataUrl = await generateVideoThumbnail(file, 400);
-          
-          // Convertir en Blob
-          const blob = await fetch(thumbnailDataUrl).then(r => r.blob());
-          
-          // Upload de la miniature dans R2
-          const thumbKey = `users/${currentUser.uid}/thumbnails/${timestamp}_${safeName}.jpg`;
-          const thumbUploadUrl = await getUploadUrl(thumbKey);
-          
-          await fetch(thumbUploadUrl, {
-            method: 'PUT',
-            body: blob,
-            headers: { 'Content-Type': 'image/jpeg' }
-          });
-          
-          thumbnailKey = thumbKey;
-        } catch (thumbErr) {
-          console.warn('Miniature non générée:', thumbErr);
-          // Pas de miniature, on utilisera un fallback
-        }
-      }
-      
-      // Sauvegarder dans Firestore
-      const mediaData = {
-        userId: currentUser.uid,
-        fileName: file.name,
-        r2Key: r2Key,
-        fileSize: file.size,
-        fileType: file.type,
-        mediaType: isVideo ? 'video' : 'photo',
-        uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        tags: [],
-        album: '',
-        thumbnailKey: thumbnailKey // 🔧 Sauvegarder la référence de la miniature
-      };
-      
-      // 🔧 Si c'est une vidéo, ajouter la durée
-      if (isVideo) {
-        try {
-          const duration = await getVideoDuration(file);
-          mediaData.duration = duration;
-        } catch (e) {
-          mediaData.duration = 0;
-        }
-      }
-      
-      await db.collection('media').add(mediaData);
-      
-      uploaded++;
-      const progress = (uploaded / total) * 100;
-      progressBar.style.width = progress + '%';
-      
-    } catch (err) {
-      console.error('Erreur upload:', err);
-      alert(`❌ Erreur pour ${file.name}: ${err.message}`);
-    }
-  }
-  
-  isUploading = false;
-  progressContainer.style.display = 'none';
-  progressBar.style.width = '0%';
-  loadMedia();
-}
-      // ============================================================
-// 6.2 OBTENIR LA DURÉE D'UNE VIDÉO
-// ============================================================
-
-function getVideoDuration(file) {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const url = URL.createObjectURL(file);
-    video.src = url;
-    
-    video.addEventListener('loadedmetadata', () => {
-      URL.revokeObjectURL(url);
-      resolve(video.duration);
-    });
-    
-    video.addEventListener('error', () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Impossible de lire la durée'));
-    });
-    
-    video.load();
-  });
-}
-      // ============================================================
-      // 7. CHARGEMENT DES MÉDIAS DEPUIS FIRESTORE + R2
-      // ============================================================
-      
-     async function loadMedia() {
-  if (!currentUser) return;
-  
-  try {
-    // Version sans orderBy (pas besoin d'index)
-    const snapshot = await db.collection('media')
-      .where('userId', '==', currentUser.uid)
-      .get();
-    
-    const mediaList = [];
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      try {
-        const url = await getSignedUrl(data.r2Key, 300);
-       // Dans loadMedia(), quand tu crées le média
-mediaList.push({
-  id: doc.id,
-  ...data,
-  url: url,
-  ratio: data.mediaType === 'video' ? 1.78 : 1.33, // 16:9 pour vidéos, 4:3 pour photos
-});
-      } catch (e) {
-        console.warn('Erreur signature pour', data.r2Key, e);
-        mediaList.push({
-          id: doc.id,
-          ...data,
-          url: null,
-          ratio: 1.33
-        });
-      }
-    }
-    
-    // Trier côté client (pas besoin d'index)
-    allMedia = mediaList.sort((a, b) => {
-      const dateA = a.uploadedAt?.toDate?.() || new Date(0);
-      const dateB = b.uploadedAt?.toDate?.() || new Date(0);
-      return dateB - dateA; // plus récent en premier
-    });
-    
-    renderGrid(allMedia);
-    
-    // Mettre à jour le compteur de stockage
-    const totalSize = allMedia.reduce((sum, m) => sum + (m.fileSize || 0), 0);
-    const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
-    document.querySelector('.avatar').title = `${sizeMB} Mo utilisés`;
-    
-  } catch (err) {
-    console.error('Erreur chargement:', err);
-    alert('Erreur lors du chargement: ' + err.message);
-  }
-}
-      
-      // ============================================================
-      // 8. RENDU DE LA GRILLE (justifiée)
-      // ============================================================
-      
-      function renderGrid(mediaList) {
-        gridContainer.innerHTML = '';
-        if (!mediaList || mediaList.length === 0) {
-          gridContainer.innerHTML = `
-            <div style="text-align:center;padding:60px 20px;color:var(--text-secondary);">
-              <i class="fas fa-cloud-upload-alt" style="font-size:48px;margin-bottom:16px;"></i>
-              <p style="font-size:18px;">Aucune photo pour le moment</p>
-              <p style="font-size:14px;">Cliquez sur le bouton + pour importer vos souvenirs</p>
-            </div>
-          `;
-          return;
-        }
-        
-        // Grouper par jour (approximatif)
-        const groups = {};
-        mediaList.forEach(m => {
-          const date = m.uploadedAt ? m.uploadedAt.toDate?.() : new Date();
-          const key = date.toDateString();
-          if (!groups[key]) groups[key] = [];
-          groups[key].push(m);
-        });
-        
-        const sortedKeys = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a));
-        
-        sortedKeys.forEach(key => {
-          const header = document.createElement('div');
-          header.className = 'day-header';
-          const displayDate = new Date(key);
-          const today = new Date();
-          let label = key;
-          if (displayDate.toDateString() === today.toDateString()) label = "Aujourd'hui";
-          else if (displayDate.toDateString() === new Date(today - 86400000).toDateString()) label = 'Hier';
-          else label = displayDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-          header.innerHTML = `<span>${label}</span>`;
-          gridContainer.appendChild(header);
-          
-          const grid = document.createElement('div');
-          grid.className = 'photo-grid';
-          
-          const items = groups[key];
-          items.forEach((media, idx) => {
-            const item = document.createElement('div');
-            item.className = 'photo-item';
-            if (selectedIds.has(media.id)) item.classList.add('selected');
-            
-            // Ajustement flex pour layout justifié
-            const ratio = media.ratio || (media.mediaType === 'video' ? 1.6 : 1.33);
-            item.style.flexGrow = (ratio * 100).toFixed(0);
-            item.style.flexBasis = (200 * ratio).toFixed(0) + 'px';
-            
-            // Image ou placeholder
-            const img = document.createElement('img');
-            if (media.url) {
-              img.src = media.url;
-            } else {
-              img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="14"%3EChargement...%3C/text%3E%3C/svg%3E';
-            }
-            img.alt = media.fileName || 'photo';
-            img.loading = 'lazy';
-            item.appendChild(img);
-            
-            // Overlay
-            const overlay = document.createElement('div');
-            overlay.className = 'photo-overlay';
-            overlay.innerHTML = `
-              <div class="check-circle" data-id="${media.id}">
-                <i class="fas fa-check" style="font-size:12px;opacity:${selectedIds.has(media.id)?1:0};"></i>
-              </div>
-              <div class="star-icon" data-id="${media.id}"><i class="far fa-star"></i></div>
-            `;
-            item.appendChild(overlay);
-            
-            // Click pour lightbox
-            item.addEventListener('click', (e) => {
-              if (e.target.closest('.check-circle') || e.target.closest('.star-icon')) return;
-              const all = allMedia;
-              const idx = all.findIndex(m => m.id === media.id);
-              if (idx !== -1) openLightbox(idx);
-            });
-            
-            // Checkbox
-            const check = overlay.querySelector('.check-circle');
-            check.addEventListener('click', (e) => {
-              e.stopPropagation();
-              const id = media.id;
-              if (selectedIds.has(id)) {
-                selectedIds.delete(id);
-                item.classList.remove('selected');
-                check.querySelector('i').style.opacity = '0';
-              } else {
-                selectedIds.add(id);
-                item.classList.add('selected');
-                check.querySelector('i').style.opacity = '1';
-              }
-            });
-            
-            // Étoile
-            const star = overlay.querySelector('.star-icon');
-            star.addEventListener('click', (e) => {
-              e.stopPropagation();
-              const icon = star.querySelector('i');
-              icon.classList.toggle('fas');
-              icon.classList.toggle('far');
-              icon.style.color = icon.classList.contains('fas') ? '#FCC934' : 'rgba(255,255,255,0.7)';
-            });
-            
-            grid.appendChild(item);
-          });
-          
-          gridContainer.appendChild(grid);
-        });
-      }
-      
-      // ============================================================
-      // 9. LIGHTBOX
-      // ============================================================
-      
-    // ============================================================
-// 9. LIGHTBOX (version corrigée - support vidéo)
-// ============================================================
-
-const lbContainer = document.getElementById('lbContainer');
-
-// ============================================================
-// 9. LIGHTBOX AMÉLIORÉ AVEC SUPPORT VIDÉO
-// ============================================================
-
-function openLightbox(index) {
-  if (allMedia.length === 0) return;
-  currentIndex = index;
-  const media = allMedia[currentIndex];
-  if (!media) return;
-  
-  lbContainer.innerHTML = '';
-  
-  const isVideo = media.mediaType === 'video' || 
-                  (media.fileType && media.fileType.startsWith('video/'));
-  
-  if (isVideo) {
-    // 🔧 Lightbox pour vidéo
-    const videoWrapper = document.createElement('div');
-    videoWrapper.style.cssText = `
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #000;
-    `;
-    
-    const video = document.createElement('video');
-    video.src = media.url || '';
-    video.controls = true;
-    video.autoplay = false;
-    video.playsInline = true;
-    video.style.cssText = `
-      max-width: 90vw;
-      max-height: 85vh;
-      border-radius: 8px;
-      background: #000;
-    `;
-    
-    // 🔧 Charger les sous-titres si disponibles (optionnel)
-    // video.textTracks
-    
-    videoWrapper.appendChild(video);
-    lbContainer.appendChild(videoWrapper);
-    
-    // 🔧 Ajouter la durée dans la toolbar
-    const durationInfo = document.createElement('span');
-    if (media.duration) {
-      durationInfo.textContent = formatDuration(media.duration);
-      durationInfo.style.cssText = `
-        color: white;
-        font-size: 14px;
-        opacity: 0.7;
-        margin-right: auto;
-        padding: 0 12px;
-        font-family: monospace;
-      `;
-      document.querySelector('.lb-toolbar').prepend(durationInfo);
-    }
-    
-  } else {
-    // 🔧 Lightbox pour photo
-    const img = document.createElement('img');
-    img.src = media.url || '';
-    img.alt = media.fileName || 'photo';
-    img.style.cssText = `
-      max-width: 90vw;
-      max-height: 85vh;
-      object-fit: contain;
-      border-radius: 8px;
-    `;
-    lbContainer.appendChild(img);
-  }
-  
-  lightbox.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeLightbox() {
-  lightbox.classList.remove('open');
-  document.body.style.overflow = 'auto';
-  // 🔧 Arrêter la vidéo si elle est en cours
-  const video = lbContainer.querySelector('video');
-  if (video) {
-    video.pause();
-    video.currentTime = 0;
-  }
-}
-
-function navigateLightbox(delta) {
-  if (allMedia.length === 0) return;
-  currentIndex = (currentIndex + delta + allMedia.length) % allMedia.length;
-  openLightbox(currentIndex); // 🔧 On réouvre avec le bon média
-}
-
-// 📌 Mettre à jour les événements existants
-lbClose.addEventListener('click', closeLightbox);
-lbPrev.addEventListener('click', (e) => { e.stopPropagation(); navigateLightbox(-1); });
-lbNext.addEventListener('click', (e) => { e.stopPropagation(); navigateLightbox(1); });
-
-lightbox.addEventListener('click', (e) => {
-  if (e.target === lightbox) closeLightbox();
-});
-
-document.addEventListener('keydown', (e) => {
-  if (!lightbox.classList.contains('open')) return;
-  if (e.key === 'Escape') closeLightbox();
-  if (e.key === 'ArrowLeft') navigateLightbox(-1);
-  if (e.key === 'ArrowRight') navigateLightbox(1);
-  if (e.key === ' ') {
-    e.preventDefault();
-    const video = lbContainer.querySelector('video');
-    if (video) {
-      video.paused ? video.play() : video.pause();
-    }
-  }
-});
-
-      // ============================================================
-      // 10. ÉVÉNEMENTS UPLOAD
-      // ============================================================
-      
-      // Bouton upload dans le header
-      uploadBtn.addEventListener('click', () => {
-        fileInput.click();
-      });
-      
-      // Bouton "Choisir des fichiers"
-      selectFilesBtn.addEventListener('click', () => {
-        fileInput.click();
-      });
-      
-      // Drag & drop
-      uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('dragover');
-      });
-      
-      uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('dragover');
-      });
-      
-      uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) uploadFiles(files);
-      });
-      
-      // Sélection de fichiers
-      fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-          uploadFiles(e.target.files);
-        }
-        fileInput.value = '';
-      });
-
-      // ============================================================
-      // 11. RECHERCHE
-      // ============================================================
-      
-      searchInput.addEventListener('input', function() {
-        const q = this.value.toLowerCase().trim();
-        if (!q) {
-          renderGrid(allMedia);
-          return;
-        }
-        const filtered = allMedia.filter(m => 
-          (m.fileName || '').toLowerCase().includes(q) ||
-          (m.tags || []).some(t => t.toLowerCase().includes(q))
-        );
-        renderGrid(filtered);
-      });
-
-      // ============================================================
-      // 12. THÈME (Dark/Light)
-      // ============================================================
-      
-      function applyTheme(dark) {
-        document.body.classList.toggle('dark', dark);
-        const icon = themeToggle.querySelector('i');
-        icon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
-        localStorage.setItem('photos-theme', dark ? 'dark' : 'light');
-      }
-      
-      const savedTheme = localStorage.getItem('photos-theme');
-      applyTheme(savedTheme === 'dark');
-      
-      themeToggle.addEventListener('click', () => {
-        applyTheme(!document.body.classList.contains('dark'));
-      });
-
-      // ============================================================
-      // 13. GESTION DE L'UTILISATEUR
-      // ============================================================
-      
-      // Déconnexion
-      logoutBtn.addEventListener('click', async () => {
-        await auth.signOut();
-      });
-      
-      // Écouter les changements d'authentification
-      auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          currentUser = user;
-          authScreen.classList.add('hidden');
-          userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'A';
-          
-          // Charger les médias
-          await loadMedia();
-        } else {
-          currentUser = null;
-          authScreen.classList.remove('hidden');
-          gridContainer.innerHTML = '';
-          allMedia = [];
-        }
-      });
-
-      // ============================================================
-      // 14. SIDEBAR NAVIGATION
-      // ============================================================
-      
-      document.querySelectorAll('.sidebar-item').forEach(btn => {
-        btn.addEventListener('click', function() {
-          document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-          this.classList.add('active');
-          
-          const tab = this.dataset.tab;
-          if (tab === 'upload') {
-            uploadZone.style.display = 'block';
-          } else {
-            uploadZone.style.display = 'none';
-          }
-        });
-      });
-      
-      // Par défaut, cacher la zone d'upload
-      uploadZone.style.display = 'none';
-      
-      // ============================================================
-      // 15. RECHARGE PÉRIODIQUE DES URLS SIGNÉES (toutes les 4 min)
-      // ============================================================
-      
-      setInterval(() => {
-        if (currentUser) loadMedia();
-      }, 240000); // 4 minutes
-
-      console.log('🚀 Mon Coffre-Fort Photos prêt !');
-      
-    })();
-    
-    // ============================================================
-// RENDU DE LA GRILLE (version améliorée)
-// ============================================================
-
-function renderGrid(mediaList) {
-  gridContainer.innerHTML = '';
-  if (!mediaList || mediaList.length === 0) {
-    gridContainer.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;color:var(--text-secondary);">
-        <i class="fas fa-cloud-upload-alt" style="font-size:48px;margin-bottom:16px;"></i>
-        <p style="font-size:18px;">Aucune photo ou vidéo</p>
-        <p style="font-size:14px;">Cliquez sur le bouton + pour importer vos souvenirs</p>
+      <!-- Quick Grid -->
+      <div class="quick-grid">
+        <div class="quick-card" onclick="openAlbum('Favoris')"><div class="icon-wrap"><i class="fas fa-star"></i></div><span>Favoris</span></div>
+        <div class="quick-card" onclick="openAlbum('Captures d\'écran')"><div class="icon-wrap"><i class="fas fa-mobile-screen"></i></div><span>Captures d'écran</span></div>
+        <div class="quick-card" onclick="openAlbum('Archive')"><div class="icon-wrap"><i class="fas fa-box-archive"></i></div><span>Archive</span></div>
+        <div class="quick-card" onclick="openAlbum('Corbeille')"><div class="icon-wrap"><i class="fas fa-trash-can"></i></div><span>Corbeille</span></div>
       </div>
-    `;
-    return;
+
+      <!-- Albums -->
+      <div class="section-header">
+        <h3>Albums</h3>
+        <span class="chevron"><i class="fas fa-chevron-right"></i></span>
+      </div>
+      <div class="albums-scroll">
+        <div class="album-card" onclick="openAlbum('Tabaski 2026')">
+          <img src="https://images.unsplash.com/photo-1603565816039-6b7b9e7b5e1a?w=200&h=150&fit=crop&crop=center" alt="Tabaski" />
+          <span class="label">Tabaski 2026</span>
+        </div>
+        <div class="album-card" onclick="openAlbum('Notre Gallerie...')">
+          <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=200&h=150&fit=crop&crop=center" alt="Forêt" />
+          <span class="label">Notre Gallerie...</span>
+        </div>
+        <div class="album-card create" onclick="openAlbum('Nouvel album')">
+          <i class="fas fa-folder-plus"></i> Créer un album
+        </div>
+      </div>
+
+      <!-- Personnes -->
+      <div class="section-header">
+        <h3>Personnes</h3>
+        <span class="chevron"><i class="fas fa-chevron-right"></i></span>
+      </div>
+      <div class="people-scroll">
+        <div class="people-item" onclick="openAlbum('Ida')">
+          <div class="circle"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Ida" /></div>
+          <span class="pname">Ida</span>
+        </div>
+        <div class="people-item" onclick="openAlbum('Jean')">
+          <div class="circle"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face" alt="Jean" /></div>
+          <span class="pname">Jean</span>
+        </div>
+        <div class="people-item" onclick="openAlbum('Marie')">
+          <div class="circle"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" alt="Marie" /></div>
+          <span class="pname">Marie</span>
+        </div>
+        <div class="people-item" onclick="openAlbum('Lucas')">
+          <div class="circle"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face" alt="Lucas" /></div>
+          <span class="pname">Lucas</span>
+        </div>
+      </div>
+
+      <!-- Lieux -->
+      <div class="section-header">
+        <h3>Lieux</h3>
+        <span class="chevron"><i class="fas fa-chevron-right"></i></span>
+      </div>
+      <div class="lieux-container">
+        <div class="lieux-map" onclick="openAlbum('Votre carte')">Votre carte</div>
+        <div class="lieux-mini dakar" onclick="openAlbum('Dakar')"><span>Dakar</span></div>
+        <div class="lieux-mini paris" onclick="openAlbum('Paris')"><span>Paris</span></div>
+      </div>
+
+      <!-- Documents -->
+      <div class="section-header">
+        <h3>Documents</h3>
+        <span class="chevron"><i class="fas fa-chevron-right"></i></span>
+      </div>
+      <div class="doc-grid">
+        <div class="doc-card" onclick="openAlbum('Identité')"><i class="fas fa-id-card"></i> Identité</div>
+        <div class="doc-card" onclick="openAlbum('Infos sur des événements')"><i class="fas fa-ticket"></i> Infos sur des événements</div>
+        <div class="doc-card" onclick="openAlbum('Livres et magazines')"><i class="fas fa-book"></i> Livres et magazines</div>
+        <div class="doc-card" onclick="openAlbum('Notes')"><i class="fas fa-pen"></i> Notes</div>
+      </div>
+
+      <!-- Autres collections -->
+      <div class="section-header" style="margin-top: 4px;">
+        <h3>Autres collections</h3>
+      </div>
+      <div class="other-grid">
+        <div class="other-item" onclick="openAlbum('Favoris')"><i class="fas fa-star"></i> Favoris</div>
+        <div class="other-item" onclick="openAlbum('Captures d\'écran')"><i class="fas fa-mobile-screen"></i> Captures d'écran</div>
+        <div class="other-item" onclick="openAlbum('Moments')"><i class="fas fa-clock"></i> Moments</div>
+        <div class="other-item" onclick="openAlbum('Vidéos')"><i class="fas fa-video"></i> Vidéos</div>
+        <div class="other-item" onclick="openAlbum('Récemment ajoutés')"><i class="fas fa-clock-rotate-left"></i> Récemment ajoutés</div>
+        <div class="other-item" onclick="openAlbum('Autocollants')"><i class="fas fa-stamp"></i> Autocollants</div>
+        <div class="other-item" onclick="openAlbum('Créations')"><i class="fas fa-palette"></i> Créations</div>
+        <div class="other-item" onclick="openAlbum('Archive')"><i class="fas fa-box-archive"></i> Archive</div>
+        <div class="other-item" onclick="openAlbum('Verrouillé')"><i class="fas fa-lock"></i> Verrouillé</div>
+        <div class="other-item" onclick="openAlbum('Corbeille')"><i class="fas fa-trash-can"></i> Corbeille</div>
+      </div>
+      <div style="height: 8px;"></div>
+    </div>
+
+    <!-- ====== VUE PHOTOS ====== -->
+    <div id="photosView">
+      <div class="sticky-date">
+        <i class="far fa-calendar-alt"></i>25–31 mai 2026 / Presqu'île du Cap-Vert
+      </div>
+      <div class="photo-grid" id="photoGrid">
+        <!-- Photos générées par JS -->
+      </div>
+    </div>
+
+    <!-- ====== VUE DOSSIER ====== -->
+    <div id="albumView">
+      <div class="album-header">
+        <span class="back-btn" onclick="closeAlbum()"><i class="fas fa-arrow-left"></i></span>
+        <h2 id="albumTitle">Album</h2>
+        <span class="add-photo" onclick="addPhotoToAlbum()"><i class="fas fa-plus-circle"></i></span>
+      </div>
+      <div class="album-grid" id="albumGrid">
+        <!-- Contenu généré par JS -->
+      </div>
+    </div>
+
+    <!-- ====== VUE PLEIN ÉCRAN ====== -->
+    <div id="fullscreenView">
+      <span class="fs-close" onclick="closeFullscreen()"><i class="fas fa-times"></i></span>
+      <img id="fullscreenImage" src="" alt="Photo" />
+      <div class="fs-info" id="fullscreenInfo">Photo</div>
+    </div>
+  </div>
+
+  <!-- ====== BOTTOM NAV ====== -->
+  <div class="bottom-nav">
+    <div class="nav-tabs">
+      <button class="nav-tab" data-tab="photos"><i class="fas fa-images"></i> Photos</button>
+      <button class="nav-tab active" data-tab="collections"><i class="fas fa-folder-open"></i> Collections</button>
+     </div>
+   </div>
+</div>
+
+<script>
+  // ===== DONNÉES DES DOSSIERS =====
+  const albumData = {
+    'Tabaski 2026': {
+      images: [
+        'https://images.unsplash.com/photo-1603565816039-6b7b9e7b5e1a?w=200&h=200&fit=crop&crop=center',
+        'https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=200&h=200&fit=crop&crop=center',
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=200&fit=crop&crop=center',
+        'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=200&h=200&fit=crop&crop=center'
+      ]
+    },
+    'Notre Gallerie...': {
+      images: [
+        'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=200&h=200&fit=crop&crop=center',
+        'https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=200&h=200&fit=crop&crop=center',
+        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop&crop=center'
+      ]
+    },
+    'Favoris': {
+      images: [
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center',
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=center'
+      ]
+    },
+    'Dakar': {
+      images: [
+        'https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=200&h=200&fit=crop&crop=center',
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=200&fit=crop&crop=center'
+      ]
+    },
+    'Paris': {
+      images: [
+        'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=200&h=200&fit=crop&crop=center',
+        'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=200&h=200&fit=crop&crop=center'
+      ]
+    }
+  };
+
+  // ===== PHOTOS POUR LA GRILLE PRINCIPALE =====
+  const mainPhotos = [
+    { src: 'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=200&h=200&fit=crop&crop=center', video: true, duration: '00:08' },
+    { src: 'https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1601924582970-9238bcb495d9?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=200&h=200&fit=crop&crop=center', video: true, duration: '00:12' },
+    { src: 'https://images.unsplash.com/photo-1580477667995-2b94f01c9516?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=200&h=200&fit=crop&crop=center' },
+    { src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=center' }
+  ];
+
+  // ===== VARIABLES GLOBALES =====
+  let currentAlbum = null;
+  let currentAlbumImages = [];
+
+  // ===== INIT =====
+  function init() {
+    // Charger la grille photos
+    const grid = document.getElementById('photoGrid');
+    grid.innerHTML = '';
+    mainPhotos.forEach(photo => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.innerHTML = `<img src="${photo.src}" alt="Photo" />`;
+      if (photo.video) {
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.innerHTML = `<i class="fas fa-play"></i> ${photo.duration}`;
+        cell.appendChild(badge);
+      }
+      cell.onclick = () => openFullscreen(photo.src, 'Photo');
+      grid.appendChild(cell);
+    });
+  }
+
+  // ===== OUVERTURE DOSSIER =====
+  function openAlbum(title) {
+    currentAlbum = title;
+    const albumView = document.getElementById('albumView');
+    const collectionsView = document.getElementById('collectionsView');
+    const photosView = document.getElementById('photosView');
+    
+    // Cacher les autres vues
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    albumView.classList.add('active');
+    
+    // Titre
+    document.getElementById('albumTitle').textContent = title;
+    
+    // Charger les images
+    const grid = document.getElementById('albumGrid');
+    grid.innerHTML = '';
+    
+    // Si l'album existe déjà, utiliser ses images, sinon créer un nouvel album
+    if (!albumData[title]) {
+      albumData[title] = { images: [] };
+    }
+    
+    currentAlbumImages = albumData[title].images;
+    
+    // Afficher les images
+    currentAlbumImages.forEach((img, index) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.innerHTML = `<img src="${img}" alt="Photo" />`;
+      cell.onclick = () => openFullscreen(img, `${title} - Photo ${index + 1}`);
+      grid.appendChild(cell);
+    });
+    
+    // Ajouter le bouton d'ajout
+    const addCell = document.createElement('div');
+    addCell.className = 'add-cell';
+    addCell.innerHTML = '<i class="fas fa-plus"></i>';
+    addCell.onclick = addPhotoToAlbum;
+    grid.appendChild(addCell);
+  }
+
+  // ===== AJOUTER UNE PHOTO DANS LE DOSSIER =====
+  function addPhotoToAlbum() {
+    if (!currentAlbum || !albumData[currentAlbum]) {
+      alert('Veuillez ouvrir un album d\'abord');
+      return;
+    }
+    
+    // Simuler l'ajout d'une photo (prendre une photo aléatoire depuis la liste principale)
+    const randomPhoto = mainPhotos[Math.floor(Math.random() * mainPhotos.length)].src;
+    albumData[currentAlbum].images.push(randomPhoto);
+    currentAlbumImages = albumData[currentAlbum].images;
+    
+    // Rafraîchir l'affichage
+    const grid = document.getElementById('albumGrid');
+    grid.innerHTML = '';
+    
+    currentAlbumImages.forEach((img, index) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.innerHTML = `<img src="${img}" alt="Photo" />`;
+      cell.onclick = () => openFullscreen(img, `${currentAlbum} - Photo ${index + 1}`);
+      grid.appendChild(cell);
+    });
+    
+    // Ajouter le bouton d'ajout
+    const addCell = document.createElement('div');
+    addCell.className = 'add-cell';
+    addCell.innerHTML = '<i class="fas fa-plus"></i>';
+    addCell.onclick = addPhotoToAlbum;
+    grid.appendChild(addCell);
+  }
+
+  // ===== FERMER DOSSIER =====
+  function closeAlbum() {
+    document.getElementById('albumView').classList.remove('active');
+    document.getElementById('collectionsView').classList.remove('hidden');
+    currentAlbum = null;
+  }
+
+  // ===== PLEIN ÉCRAN =====
+  function openFullscreen(src, info) {
+    const fsView = document.getElementById('fullscreenView');
+    document.getElementById('fullscreenImage').src = src;
+    document.getElementById('fullscreenInfo').textContent = info || 'Photo';
+    fsView.classList.add('active');
+  }
+
+  function closeFullscreen() {
+    document.getElementById('fullscreenView').classList.remove('active');
+  }
+
+  // ===== NAVIGATION BAS =====
+  const navTabs = document.querySelectorAll('.nav-tab');
+  const collectionsView = document.getElementById('collectionsView');
+  const photosView = document.getElementById('photosView');
+  const albumView = document.getElementById('albumView');
+  const fabLens = document.querySelector('.fab-lens');
+
+  function activateTab(tabId) {
+    navTabs.forEach(tab => {
+      const t = tab.dataset.tab;
+      if (t === tabId) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+
+    // Fermer l'album si ouvert
+    albumView.classList.remove('active');
+    currentAlbum = null;
+
+    if (tabId === 'photos') {
+      collectionsView.classList.add('hidden');
+      photosView.classList.add('active');
+    } else if (tabId === 'collections') {
+      collectionsView.classList.remove('hidden');
+      photosView.classList.remove('active');
+    }
+  }
+
+  navTabs.forEach(tab => {
+    tab.addEventListener('click', function(e) {
+      e.preventDefault();
+      const tabId = this.dataset.tab;
+      if (tabId === 'create') {
+        alert('Créer un nouveau contenu (album, montage, etc.)');
+        return;
+      }
+      activateTab(tabId);
+    });
+  });
+
+  fabLens.addEventListener('click', function() {
+    alert('Ouvrir Google Lens / Recherche');
+  });
+
+  // Clavier Échap pour fermer le plein écran
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeFullscreen();
+    }
+  });
+// ===== GESTION DE LA BARRE DE NAVIGATION =====
+let lastScrollY = 0;
+const bottomNav = document.querySelector('.bottom-nav');
+const contentArea = document.querySelector('.content-area');
+
+contentArea.addEventListener('scroll', function() {
+  const currentScrollY = this.scrollTop;
+  
+  // Si on descend (scroll > 50px), cacher la barre
+  if (currentScrollY > 50) {
+    bottomNav.classList.add('hidden');
+  } 
+  // Si on remonte en haut (scroll < 50px), montrer la barre
+  else {
+    bottomNav.classList.remove('hidden');
   }
   
-  // Grouper par jour
-  const groups = {};
-  mediaList.forEach(m => {
-    const date = m.uploadedAt ? m.uploadedAt.toDate?.() : new Date();
-    const key = date.toDateString();
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(m);
-  });
-  
-  const sortedKeys = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a));
-  
-  sortedKeys.forEach(key => {
-    const header = document.createElement('div');
-    header.className = 'day-header';
-    const displayDate = new Date(key);
-    const today = new Date();
-    let label = key;
-    if (displayDate.toDateString() === today.toDateString()) label = "Aujourd'hui";
-    else if (displayDate.toDateString() === new Date(today - 86400000).toDateString()) label = 'Hier';
-    else label = displayDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-    header.innerHTML = `<span>${label}</span>`;
-    gridContainer.appendChild(header);
-    
-    const grid = document.createElement('div');
-    grid.className = 'photo-grid';
-    
-    const items = groups[key];
-    items.forEach((media) => {
-      const item = document.createElement('div');
-      item.className = 'photo-item';
-      if (selectedIds.has(media.id)) item.classList.add('selected');
-      
-      // Ajustement flex
-      const ratio = media.ratio || (media.mediaType === 'video' ? 1.6 : 1.33);
-      item.style.flexGrow = (ratio * 100).toFixed(0);
-      item.style.flexBasis = (200 * ratio).toFixed(0) + 'px';
-      item.style.position = 'relative';
-      
-      // 🔧 Détection du type
-      const isVideo = media.mediaType === 'video' || 
-                      (media.fileType && media.fileType.startsWith('video/'));
-      
-      // Image ou vidéo
-      const mediaElement = document.createElement(isVideo ? 'video' : 'img');
-      if (isVideo) {
-        mediaElement.muted = true;
-        mediaElement.loop = false;
-        mediaElement.preload = 'metadata';
-        mediaElement.playsInline = true;
-        mediaElement.style.objectFit = 'cover';
-        mediaElement.style.width = '100%';
-        mediaElement.style.height = '100%';
-        
-        // 🔧 Essayer de charger la vidéo (peut être lent)
-        if (media.url) {
-          mediaElement.src = media.url;
-          // Essayer de charger la première frame
-          mediaElement.addEventListener('loadeddata', () => {
-            // La vidéo est chargée
-          });
-        }
-        
-        // 🔧 Ajouter un overlay "▶️" sur la vidéo
-        const playOverlay = document.createElement('div');
-        playOverlay.style.cssText = `
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: rgba(0,0,0,0.5);
-          border-radius: 50%;
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 24px;
-          pointer-events: none;
-        `;
-        playOverlay.innerHTML = '<i class="fas fa-play"></i>';
-        item.appendChild(playOverlay);
-        
-        // 🔧 Ajouter badge "VIDEO"
-        const badge = document.createElement('div');
-        badge.style.cssText = `
-          position: absolute;
-          bottom: 8px;
-          right: 8px;
-          background: rgba(0,0,0,0.7);
-          color: white;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 11px;
-          font-weight: 500;
-          pointer-events: none;
-        `;
-        badge.textContent = '🎬';
-        item.appendChild(badge);
-        
-      } else {
-        mediaElement.src = media.url || '';
-        mediaElement.alt = media.fileName || 'photo';
-        mediaElement.loading = 'lazy';
-        mediaElement.style.objectFit = 'cover';
-        mediaElement.style.width = '100%';
-        mediaElement.style.height = '100%';
-      }
-      
-      item.appendChild(mediaElement);
-      
-      // Overlay (comme avant)
-      const overlay = document.createElement('div');
-      overlay.className = 'photo-overlay';
-      overlay.innerHTML = `
-        <div class="check-circle" data-id="${media.id}">
-          <i class="fas fa-check" style="font-size:12px;opacity:${selectedIds.has(media.id)?1:0};"></i>
-        </div>
-        <div class="star-icon" data-id="${media.id}"><i class="far fa-star"></i></div>
-      `;
-      item.appendChild(overlay);
-      
-      // Click pour lightbox
-      item.addEventListener('click', (e) => {
-        if (e.target.closest('.check-circle') || e.target.closest('.star-icon')) return;
-        const idx = allMedia.findIndex(m => m.id === media.id);
-        if (idx !== -1) openLightbox(idx);
-      });
-      
-      // Sélection
-      const check = overlay.querySelector('.check-circle');
-      check.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = media.id;
-        if (selectedIds.has(id)) {
-          selectedIds.delete(id);
-          item.classList.remove('selected');
-          check.querySelector('i').style.opacity = '0';
-        } else {
-          selectedIds.add(id);
-          item.classList.add('selected');
-          check.querySelector('i').style.opacity = '1';
-        }
-      });
-      
-      // Favoris
-      const star = overlay.querySelector('.star-icon');
-      star.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const icon = star.querySelector('i');
-        icon.classList.toggle('fas');
-        icon.classList.toggle('far');
-        icon.style.color = icon.classList.contains('fas') ? '#FCC934' : 'rgba(255,255,255,0.7)';
-      });
-      
-      grid.appendChild(item);
-    });
-    
-    gridContainer.appendChild(grid);
-  });
-}
-    // ============================================================
-// 6.1 GÉNÉRATION DE MINIATURE VIDÉO
-// ============================================================
+  lastScrollY = currentScrollY;
+});
 
-function generateVideoThumbnail(file, maxWidth = 300) {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Créer un objet URL pour la vidéo
-    const url = URL.createObjectURL(file);
-    video.src = url;
-    video.muted = true;
-    video.crossOrigin = 'anonymous';
-    
-    // Attendre que la vidéo soit chargée
-    video.addEventListener('loadedmetadata', () => {
-      // Aller à 1 seconde ou au milieu de la vidéo
-      const seekTime = Math.min(1, video.duration / 2);
-      video.currentTime = seekTime;
-    });
-    
-    video.addEventListener('seeked', () => {
-      try {
-        // Calculer les dimensions
-        const ratio = video.videoWidth / video.videoHeight;
-        let width = maxWidth;
-        let height = width / ratio;
-        
-        if (height > maxWidth) {
-          height = maxWidth;
-          width = height * ratio;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(video, 0, 0, width, height);
-        
-        // Récupérer la miniature en base64
-        const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
-        URL.revokeObjectURL(url);
-        resolve(thumbnail);
-      } catch (err) {
-        reject(err);
+// Afficher la barre au clic sur l'écran
+document.addEventListener('click', function(e) {
+  // Ne pas déclencher si on clique sur la barre elle-même
+  if (!bottomNav.contains(e.target)) {
+    bottomNav.classList.remove('hidden');
+    // La cacher à nouveau après 3 secondes d'inactivité
+    clearTimeout(window.navTimeout);
+    window.navTimeout = setTimeout(() => {
+      if (contentArea.scrollTop > 50) {
+        bottomNav.classList.add('hidden');
       }
-    });
-    
-    video.addEventListener('error', () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Impossible de charger la vidéo'));
-    });
-    
-    // Charger la vidéo
-    video.load();
-  });
-}
-  </script>
+    }, 3000);
+  }
+});
+
+// Réinitialiser le timeout quand on interagit avec la barre
+bottomNav.addEventListener('mouseenter', function() {
+  clearTimeout(window.navTimeout);
+  bottomNav.classList.remove('hidden');
+});
+
+bottomNav.addEventListener('mouseleave', function() {
+  window.navTimeout = setTimeout(() => {
+    if (contentArea.scrollTop > 50) {
+      bottomNav.classList.add('hidden');
+    }
+  }, 2000);
+});
+  // Initialisation
+  init();
+</script>
 
 </body>
 </html>
