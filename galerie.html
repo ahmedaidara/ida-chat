@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>GALERIE IDA</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  
+  <!-- AWS S3 SDK pour R2 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1504.0/aws-sdk.min.js"></script>
+
   <style>
     * {
       margin: 0;
@@ -13,25 +22,99 @@
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     }
 
-   body {
-  background: #ffffff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 12px;
-}
+    body {
+      background: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 12px;
+    }
 
-   .app-container {
-  max-width: 390px;
-  width: 100%;
-  height: 844px;
-  background: #ffffff;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
+    .app-container {
+      max-width: 390px;
+      width: 100%;
+      height: 844px;
+      background: #ffffff;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== AUTH SCREEN ===== */
+    .auth-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.98);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+      border-radius: 44px;
+    }
+    .auth-screen.hidden { display: none; }
+    .auth-card {
+      background: white;
+      padding: 32px 28px;
+      border-radius: 24px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 340px;
+    }
+    .auth-card h2 { 
+      font-size: 24px; 
+      font-weight: 600; 
+      margin-bottom: 20px;
+      color: #1e1f22;
+    }
+    .auth-card input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid #dadce0;
+      border-radius: 12px;
+      background: #f8f9fa;
+      color: #1e1f22;
+      margin-bottom: 12px;
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+    .auth-card input:focus {
+      outline: none;
+      border-color: #1a73e8;
+      background: white;
+    }
+    .auth-card button {
+      width: 100%;
+      padding: 12px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .auth-card button:hover { background: #1557b0; }
+    .auth-card .toggle-auth {
+      background: transparent;
+      color: #1a73e8;
+      border: none;
+      cursor: pointer;
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .auth-card .toggle-auth:hover { text-decoration: underline; }
+    #authError {
+      color: #d93025;
+      font-size: 13px;
+      margin-top: 8px;
+      text-align: center;
+    }
 
     /* ===== CONTENU SCROLLABLE ===== */
     .content-area {
@@ -48,23 +131,6 @@
     .content-area::-webkit-scrollbar-thumb {
       background: #dadce0;
       border-radius: 20px;
-    }
-
-    /* ===== STATUS BAR ===== */
-    .status-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0 4px 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: #1e1f22;
-    }
-    .status-icons {
-      display: flex;
-      gap: 4px;
-      font-size: 13px;
-      color: #3c4043;
     }
 
     /* ===== HEADER ACTIONS ===== */
@@ -112,6 +178,51 @@
       color: #1a3a6b;
       font-size: 14px;
       cursor: pointer;
+    }
+
+    /* ===== UPLOAD ZONE (intégrée dans Collections) ===== */
+    .upload-zone {
+      border: 2px dashed #dadce0;
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+      margin: 8px 0 16px 0;
+      background: #f8f9fa;
+      transition: border-color 0.3s, background 0.3s;
+      cursor: pointer;
+    }
+    .upload-zone.dragover {
+      border-color: #1a73e8;
+      background: #e8f0fe;
+    }
+    .upload-zone i { font-size: 36px; color: #5f6368; margin-bottom: 8px; }
+    .upload-zone p { color: #5f6368; font-size: 14px; }
+    .upload-zone .btn-upload {
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .upload-zone .btn-upload:hover { background: #1557b0; }
+    .upload-progress {
+      height: 3px;
+      background: #dadce0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 10px auto 0;
+      max-width: 300px;
+    }
+    .upload-progress .bar {
+      height: 100%;
+      background: #1a73e8;
+      width: 0%;
+      transition: width 0.3s;
     }
 
     /* ===== VUE COLLECTIONS ===== */
@@ -444,10 +555,14 @@
     .photo-grid .cell:active {
       transform: scale(0.95);
     }
-    .photo-grid .cell img {
+    .photo-grid .cell img,
+    .photo-grid .cell video {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .photo-grid .cell video {
+      background: #000;
     }
     .photo-grid .cell .badge {
       position: absolute;
@@ -462,6 +577,17 @@
       align-items: center;
       gap: 3px;
       backdrop-filter: blur(2px);
+    }
+    .photo-grid .cell .play-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 28px;
+      opacity: 0.7;
+      pointer-events: none;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
 
     /* ===== VUE DOSSIER (Album individuel) ===== */
@@ -597,11 +723,18 @@
     #fullscreenView .fs-close:active {
       transform: scale(0.9);
     }
-    #fullscreenView img {
+    #fullscreenView .fs-media {
       width: 100%;
       height: 100%;
       object-fit: contain;
       padding: 40px;
+    }
+    #fullscreenView .fs-media-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 40px;
+      background: #000;
     }
     #fullscreenView .fs-info {
       position: absolute;
@@ -613,44 +746,70 @@
       border-radius: 30px;
       backdrop-filter: blur(10px);
     }
+    #fullscreenView .fs-toolbar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 12px;
+      z-index: 1001;
+    }
+    #fullscreenView .fs-toolbar button {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background 0.2s;
+    }
+    #fullscreenView .fs-toolbar button:active {
+      transform: scale(0.9);
+    }
+    #fullscreenView .fs-toolbar button:hover {
+      background: rgba(255,255,255,0.3);
+    }
 
     /* ===== BOTTOM NAV ===== */
- .bottom-nav {
-  position: fixed;
-  bottom: 20px;
-  left: 16px;
-  max-width: 390px;
-  width: auto;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0;
-  height: auto;
-  backdrop-filter: none;
-  flex-shrink: 0;
-  z-index: 100;
-  gap: 8px;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  opacity: 1;
-  transform: translateY(0);
-}
+    .bottom-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 16px;
+      max-width: 390px;
+      width: auto;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0;
+      height: auto;
+      backdrop-filter: none;
+      flex-shrink: 0;
+      z-index: 100;
+      gap: 8px;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 1;
+      transform: translateY(0);
+    }
 
-.bottom-nav.hidden {
-  opacity: 0;
-  transform: translateY(20px);
-  pointer-events: none;
-}
-}
-   .nav-tabs {
-  display: flex;
-  gap: 4px;
-  background: white;
-  border-radius: 40px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
-  padding: 4px;
-  backdrop-filter: blur(4px);
-}
+    .bottom-nav.hidden {
+      opacity: 0;
+      transform: translateY(20px);
+      pointer-events: none;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      background: white;
+      border-radius: 40px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
+      padding: 4px;
+      backdrop-filter: blur(4px);
+    }
     .nav-tab {
       padding: 8px 16px;
       border-radius: 30px;
@@ -677,38 +836,37 @@
       transform: scale(0.95);
     }
     .fab-lens {
-  width: 48px;
-  height: 48px;
-  background: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-  border: 1px solid #eceef0;
-  font-size: 20px;
-  color: #1e1f22;
-  cursor: pointer;
-  transition: 0.15s;
-  flex-shrink: 0;
-}
-.fab-lens:active {
-  transform: scale(0.92);
-}
-    
+      width: 48px;
+      height: 48px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+      border: 1px solid #eceef0;
+      font-size: 20px;
+      color: #1e1f22;
+      cursor: pointer;
+      transition: 0.15s;
+      flex-shrink: 0;
+    }
+    .fab-lens:active {
+      transform: scale(0.92);
+    }
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 420px) {
-     .app-container {
-  max-width: 390px;
-  width: 100%;
-  height: 844px;
-  background: #ffffff;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
+      .app-container {
+        max-width: 390px;
+        width: 100%;
+        height: 844px;
+        background: #ffffff;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
       .nav-tab {
         padding: 6px 12px;
         font-size: 13px;
@@ -719,88 +877,380 @@
       #fullscreenView {
         border-radius: 24px;
       }
+      .auth-screen {
+        border-radius: 24px;
+      }
     }
+    
+    /* ===== MODALE POUR AJOUTER À L'ALBUM ===== */
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 44px;
+    backdrop-filter: blur(4px);
+}
+.modal-overlay.active {
+    display: flex;
+}
+.modal-content {
+    background: white;
+    border-radius: 24px;
+    padding: 24px 20px;
+    width: 90%;
+    max-width: 340px;
+    max-height: 80%;
+    overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+}
+.modal-content h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #202124;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.modal-content .album-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.modal-content .album-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f2f4f7;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.modal-content .album-item:active {
+    transform: scale(0.95);
+    background: #e5e8ec;
+}
+.modal-content .album-item i {
+    font-size: 20px;
+    color: #1a73e8;
+    width: 28px;
+    text-align: center;
+}
+.modal-content .album-item span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #202124;
+}
+.modal-content .album-item .check {
+    margin-left: auto;
+    color: #1a73e8;
+    font-size: 16px;
+}
+.modal-content .create-album-btn {
+    width: 100%;
+    padding: 12px;
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.modal-content .create-album-btn:hover {
+    background: #1557b0;
+}
+.modal-content .modal-close {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: #5f6368;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+.modal-content .modal-close:hover {
+    text-decoration: underline;
+}
+.modal-content .new-album-input {
+    display: none;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.modal-content .new-album-input.active {
+    display: flex;
+}
+.modal-content .new-album-input input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid #dadce0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+}
+.modal-content .new-album-input input:focus {
+    border-color: #1a73e8;
+}
+.modal-content .new-album-input button {
+    padding: 10px 18px;
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+}
+    
+    /* ===== MODALE AJOUTER À L'ALBUM ===== */
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 44px;
+    backdrop-filter: blur(4px);
+}
+.modal-overlay.active {
+    display: flex;
+}
+.modal-content {
+    background: white;
+    border-radius: 24px;
+    padding: 24px 20px;
+    width: 90%;
+    max-width: 340px;
+    max-height: 80%;
+    overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+}
+.modal-content h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #202124;
+    margin-bottom: 16px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.modal-content .album-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+.modal-content .album-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f2f4f7;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.modal-content .album-item:active {
+    transform: scale(0.95);
+    background: #e5e8ec;
+}
+.modal-content .album-item i:first-child {
+    font-size: 20px;
+    color: #1a73e8;
+    width: 28px;
+    text-align: center;
+}
+.modal-content .album-item span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #202124;
+    flex: 1;
+}
+.modal-content .album-item .count {
+    color: #5f6368;
+    font-size: 12px;
+    font-weight: 400;
+}
+.modal-content .album-item .arrow {
+    color: #5f6368;
+    font-size: 14px;
+}
+.modal-content .create-album-btn {
+    width: 100%;
+    padding: 12px;
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.modal-content .create-album-btn:hover {
+    background: #1557b0;
+}
+.modal-content .modal-close {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: #5f6368;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+.modal-content .modal-close:hover {
+    text-decoration: underline;
+}
+.modal-content .new-album-input {
+    display: none;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.modal-content .new-album-input.active {
+    display: flex;
+}
+.modal-content .new-album-input input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid #dadce0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    background: white;
+}
+.modal-content .new-album-input input:focus {
+    border-color: #1a73e8;
+}
+.modal-content .new-album-input button {
+    padding: 10px 18px;
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 10px; 
+    cursor: pointer;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.modal-content .new-album-input button:hover {
+    background: #1557b0;
+}
   </style>
 </head>
 <body>
 
 <div class="app-container">
 
+  <!-- ===== AUTH SCREEN ===== -->
+  <div class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <h2 id="authTitle">📸 Connexion</h2>
+      <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
+      <input type="password" id="authPassword" placeholder="Mot de passe" autocomplete="current-password" />
+      <button id="authButton">Se connecter</button>
+      <button class="toggle-auth" id="authToggle">Créer un compte</button>
+      <div id="authError"></div>
+    </div>
+  </div>
+
   <!-- CONTENU SCROLLABLE -->
   <div class="content-area" id="contentArea">
 
     <!-- ====== VUE COLLECTIONS ====== -->
     <div id="collectionsView">
-      <!-- Status Bar -->
-      
-
       <!-- Header -->
-   <div class="header-actions">
-  <div class="header-left">
-    <i class="fas fa-cloud-slash"></i> AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO
-  </div>
-  <div class="header-right">
-    
-    <div class="avatar">JD</div>
+      <div class="header-actions">
+        <div class="header-left" id="userInfo">
+          <i class="fas fa-cloud-slash"></i> <span id="userName">AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO</span>
+        </div>
+        <div class="header-right">
+          <i class="fas fa-plus-circle" id="uploadBtn" title="Ajouter des photos"></i>
+          <i class="fas fa-sign-out-alt" id="logoutBtn" title="Déconnexion"></i>
+          <div class="avatar" id="userAvatar">A</div>
+        </div>
+      </div>
+
+      <!-- Upload Zone -->
+      <div class="upload-zone" id="uploadZone">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p>Ajoutons nos photos et vidéos ici</p>
+        <p style="font-size:12px;color:#5f6368;">ou</p>
+        <button class="btn-upload" id="selectFilesBtn">Ouvrir la galerie</button>
+        <div class="upload-progress" id="progressContainer" style="display:none;">
+          <div class="bar" id="progressBar"></div>
+        </div>
+        <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display:none;" />
+      </div>
+
+      <!-- Quick Grid -->
+     <!-- Quick Grid -->
+<div class="quick-grid">
+<div class="quick-card" onclick="openFavoris()"><div class="icon-wrap"><i class="fas fa-star"></i></div><span>Favoris</span></div>
+<div class="quick-card" onclick="createQuickAlbum()">
+    <div class="icon-wrap"><i class="fas fa-folder-plus"></i></div>
+    <span>Nouvel album</span>
+</div>
+  <div class="quick-card" onclick="openArchive()"><div class="icon-wrap"><i class="fas fa-archive"></i></div><span>Archive</span></div>
+  <div class="quick-card" onclick="openTrash()"><div class="icon-wrap"><i class="fas fa-trash-can"></i></div><span>Corbeille</span></div>
+</div>
+
+      <!-- Albums -->
+     <!-- Albums -->
+<div class="section-header">
+  <h3>Albums</h3>
+  <span class="chevron" onclick="openAlbumsPage()"><i class="fas fa-chevron-right"></i></span>
+</div>
+     <div class="albums-scroll">
+  <div class="album-card create" onclick="openAlbum('Nouvel album')" style="flex:0 0 130px;border-radius:18px;background:white;border:1.5px dashed #dadce0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1a73e8;font-weight:500;font-size:13px;cursor:pointer;height:130px;">
+    <i class="fas fa-folder-plus" style="font-size:28px;margin-bottom:4px;"></i>
+    Créer un album
   </div>
 </div>
 
-      <!-- Quick Grid -->
-      <div class="quick-grid">
-        <div class="quick-card" onclick="openAlbum('Favoris')"><div class="icon-wrap"><i class="fas fa-star"></i></div><span>Favoris</span></div>
-        <div class="quick-card" onclick="openAlbum('Captures d\'écran')"><div class="icon-wrap"><i class="fas fa-mobile-screen"></i></div><span>Captures d'écran</span></div>
-        <div class="quick-card" onclick="openAlbum('Archive')"><div class="icon-wrap"><i class="fas fa-box-archive"></i></div><span>Archive</span></div>
-        <div class="quick-card" onclick="openAlbum('Corbeille')"><div class="icon-wrap"><i class="fas fa-trash-can"></i></div><span>Corbeille</span></div>
-      </div>
-
-      <!-- Albums -->
-      <div class="section-header">
-        <h3>Albums</h3>
-        <span class="chevron"><i class="fas fa-chevron-right"></i></span>
-      </div>
-      <div class="albums-scroll">
-        <div class="album-card" onclick="openAlbum('Tabaski 2026')">
-          <img src="https://images.unsplash.com/photo-1603565816039-6b7b9e7b5e1a?w=200&h=150&fit=crop&crop=center" alt="Tabaski" />
-          <span class="label">Tabaski 2026</span>
-        </div>
-        <div class="album-card" onclick="openAlbum('Notre Gallerie...')">
-          <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=200&h=150&fit=crop&crop=center" alt="Forêt" />
-          <span class="label">Notre Gallerie...</span>
-        </div>
-        <div class="album-card create" onclick="openAlbum('Nouvel album')">
-          <i class="fas fa-folder-plus"></i> Créer un album
-        </div>
-      </div>
-
       <!-- Personnes -->
-      <div class="section-header">
-        <h3>Personnes</h3>
-        <span class="chevron"><i class="fas fa-chevron-right"></i></span>
-      </div>
-      <div class="people-scroll">
-        <div class="people-item" onclick="openAlbum('Ida')">
-          <div class="circle"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Ida" /></div>
-          <span class="pname">Ida</span>
-        </div>
-        <div class="people-item" onclick="openAlbum('Jean')">
-          <div class="circle"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face" alt="Jean" /></div>
-          <span class="pname">Jean</span>
-        </div>
-        <div class="people-item" onclick="openAlbum('Marie')">
-          <div class="circle"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" alt="Marie" /></div>
-          <span class="pname">Marie</span>
-        </div>
-        <div class="people-item" onclick="openAlbum('Lucas')">
-          <div class="circle"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face" alt="Lucas" /></div>
-          <span class="pname">Lucas</span>
-        </div>
-      </div>
+      <!-- Personnes -->
+<div class="section-header">
+  <h3>Personnes</h3>
+  <span class="chevron" onclick="openPersonnesPage()"><i class="fas fa-chevron-right"></i></span>
+</div>
+     <div class="people-scroll">
+  <div class="people-item" onclick="openAlbum('Ida')">
+    <div class="circle" style="background:#aecbfa;display:flex;align-items:center;justify-content:center;font-size:28px;color:#1a3a6b;">👤</div>
+    <span class="pname">Ida</span>
+  </div>
+  <div class="people-item" onclick="openAlbum('Jean')">
+    <div class="circle" style="background:#aecbfa;display:flex;align-items:center;justify-content:center;font-size:28px;color:#1a3a6b;">👤</div>
+    <span class="pname">Aidara</span>
+  </div>
+ 
+</div>
 
       <!-- Lieux -->
-      <div class="section-header">
-        <h3>Lieux</h3>
-        <span class="chevron"><i class="fas fa-chevron-right"></i></span>
-      </div>
+     <!-- Lieux -->
+<div class="section-header">
+  <h3>Lieux</h3>
+  <span class="chevron" onclick="openLieuxPage()"><i class="fas fa-chevron-right"></i></span>
+</div>
       <div class="lieux-container">
         <div class="lieux-map" onclick="openAlbum('Votre carte')">Votre carte</div>
         <div class="lieux-mini dakar" onclick="openAlbum('Dakar')"><span>Dakar</span></div>
@@ -808,10 +1258,11 @@
       </div>
 
       <!-- Documents -->
-      <div class="section-header">
-        <h3>Documents</h3>
-        <span class="chevron"><i class="fas fa-chevron-right"></i></span>
-      </div>
+     <!-- Documents -->
+<div class="section-header">
+  <h3>Documents</h3>
+  <span class="chevron" onclick="openDocumentsPage()"><i class="fas fa-chevron-right"></i></span>
+</div>
       <div class="doc-grid">
         <div class="doc-card" onclick="openAlbum('Identité')"><i class="fas fa-id-card"></i> Identité</div>
         <div class="doc-card" onclick="openAlbum('Infos sur des événements')"><i class="fas fa-ticket"></i> Infos sur des événements</div>
@@ -841,7 +1292,7 @@
     <!-- ====== VUE PHOTOS ====== -->
     <div id="photosView">
       <div class="sticky-date">
-        <i class="far fa-calendar-alt"></i>25–31 mai 2026 / Presqu'île du Cap-Vert
+        <i class="far fa-calendar-alt"></i><span id="dateLabel">Vos souvenirs</span>
       </div>
       <div class="photo-grid" id="photoGrid">
         <!-- Photos générées par JS -->
@@ -863,9 +1314,36 @@
     <!-- ====== VUE PLEIN ÉCRAN ====== -->
     <div id="fullscreenView">
       <span class="fs-close" onclick="closeFullscreen()"><i class="fas fa-times"></i></span>
-      <img id="fullscreenImage" src="" alt="Photo" />
+     <div class="fs-toolbar">
+    <button id="fsFavorite"><i class="far fa-star"></i></button>
+    <button id="fsArchive"><i class="fas fa-archive"></i></button>
+    <button id="fsAddToAlbum"><i class="fas fa-folder-plus"></i></button>
+    <button id="fsDelete"><i class="fas fa-trash"></i></button>
+</div>
+      <div id="fsContainer" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+        <img id="fullscreenImage" src="" alt="Photo" class="fs-media" />
+      </div>
       <div class="fs-info" id="fullscreenInfo">Photo</div>
+          <!-- ====== MODALE AJOUTER À L'ALBUM ====== -->
+    <div class="modal-overlay" id="albumModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-folder-plus" style="color:#1a73e8;"></i> Ajouter à l'album</h3>
+            <div id="albumListContainer" class="album-list">
+                <!-- Albums chargés par JS -->
+            </div>
+            <div class="new-album-input" id="newAlbumInput">
+                <input type="text" id="newAlbumName" placeholder="Nom du nouvel album" />
+                <button onclick="createNewAlbumAndAdd()"><i class="fas fa-plus"></i></button>
+            </div>
+            <button class="create-album-btn" onclick="toggleNewAlbumInput()">
+                <i class="fas fa-plus-circle"></i> Créer un nouvel album
+            </button>
+            <button class="modal-close" onclick="closeAlbumModal()">Annuler</button>
+        </div>
     </div>
+    </div>
+    
+    
   </div>
 
   <!-- ====== BOTTOM NAV ====== -->
@@ -873,197 +1351,661 @@
     <div class="nav-tabs">
       <button class="nav-tab" data-tab="photos"><i class="fas fa-images"></i> Photos</button>
       <button class="nav-tab active" data-tab="collections"><i class="fas fa-folder-open"></i> Collections</button>
-     </div>
-   </div>
+    </div>
+    <div class="fab-lens" id="fabLens"><i class="fas fa-camera"></i></div>
+  </div>
 </div>
 
 <script>
-  // ===== DONNÉES DES DOSSIERS =====
-  const albumData = {
-    'Tabaski 2026': {
-      images: [
-        'https://images.unsplash.com/photo-1603565816039-6b7b9e7b5e1a?w=200&h=200&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=200&h=200&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=200&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=200&h=200&fit=crop&crop=center'
-      ]
-    },
-    'Notre Gallerie...': {
-      images: [
-        'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=200&h=200&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=200&h=200&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop&crop=center'
-      ]
-    },
-    'Favoris': {
-      images: [
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=center'
-      ]
-    },
-    'Dakar': {
-      images: [
-        'https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=200&h=200&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=200&fit=crop&crop=center'
-      ]
-    },
-    'Paris': {
-      images: [
-        'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=200&h=200&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=200&h=200&fit=crop&crop=center'
-      ]
-    }
+  // ============================================================
+  // 1. CONFIGURATION FIREBASE + R2
+  // ============================================================
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
+    authDomain: "messagerie-65abc.firebaseapp.com",
+    projectId: "messagerie-65abc",
+    storageBucket: "messagerie-65abc.firebasestorage.app",
+    messagingSenderId: "363641716532",
+    appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
   };
+  
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  
+  const R2_CONFIG = {
+    accountId: "50a91b74b4a89d07dba22c348adbcbc7",
+    accessKeyId: "23befe80dd05c7d317b3ff7a89870bc6",
+    secretAccessKey: "f8a84406bc1ccdeae3f6d36803bb5a0f27b00e4e9f3bba52d9eb91fea61b9589",
+    bucket: "mon-coffre-fort-photos",
+    endpoint: "https://50a91b74b4a89d07dba22c348adbcbc7.r2.cloudflarestorage.com",
+    publicUrl: "https://mon-coffre-fort-photos.50a91b74b4a89d07dba22c348adbcbc7.r2.cloudflarestorage.com"
+  };
+  
+  AWS.config.update({
+    accessKeyId: R2_CONFIG.accessKeyId,
+    secretAccessKey: R2_CONFIG.secretAccessKey,
+    region: 'auto',
+    endpoint: R2_CONFIG.endpoint,
+    s3ForcePathStyle: true,
+    signatureVersion: 'v4'
+  });
+  
+  const s3 = new AWS.S3();
 
-  // ===== PHOTOS POUR LA GRILLE PRINCIPALE =====
-  const mainPhotos = [
-    { src: 'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=200&h=200&fit=crop&crop=center', video: true, duration: '00:08' },
-    { src: 'https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1601924582970-9238bcb495d9?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=200&h=200&fit=crop&crop=center', video: true, duration: '00:12' },
-    { src: 'https://images.unsplash.com/photo-1580477667995-2b94f01c9516?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=200&h=200&fit=crop&crop=center' },
-    { src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=center' }
-  ];
-
-  // ===== VARIABLES GLOBALES =====
+  // ============================================================
+  // 2. ÉTAT DE L'APPLICATION
+  // ============================================================
+  
+  let currentUser = null;
+  let allMedia = [];
   let currentAlbum = null;
   let currentAlbumImages = [];
+  let currentIndex = 0;
+  let isUploading = false;
+  let albumData = {};
 
-  // ===== INIT =====
-  function init() {
-    // Charger la grille photos
-    const grid = document.getElementById('photoGrid');
-    grid.innerHTML = '';
-    mainPhotos.forEach(photo => {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.innerHTML = `<img src="${photo.src}" alt="Photo" />`;
-      if (photo.video) {
-        const badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.innerHTML = `<i class="fas fa-play"></i> ${photo.duration}`;
-        cell.appendChild(badge);
+  // ============================================================
+  // 3. RÉFÉRENCES DOM
+  // ============================================================
+  
+  const authScreen = document.getElementById('authScreen');
+  const authEmail = document.getElementById('authEmail');
+  const authPassword = document.getElementById('authPassword');
+  const authButton = document.getElementById('authButton');
+  const authToggle = document.getElementById('authToggle');
+  const authTitle = document.getElementById('authTitle');
+  const authError = document.getElementById('authError');
+  
+  const contentArea = document.getElementById('contentArea');
+  const collectionsView = document.getElementById('collectionsView');
+  const photosView = document.getElementById('photosView');
+  const albumView = document.getElementById('albumView');
+  const photoGrid = document.getElementById('photoGrid');
+  const albumGrid = document.getElementById('albumGrid');
+  const albumTitle = document.getElementById('albumTitle');
+  const fullscreenView = document.getElementById('fullscreenView');
+  const fullscreenImage = document.getElementById('fullscreenImage');
+  const fsContainer = document.getElementById('fsContainer');
+  const fullscreenInfo = document.getElementById('fullscreenInfo');
+  const fsFavorite = document.getElementById('fsFavorite');
+  const fsDelete = document.getElementById('fsDelete');
+  const bottomNav = document.querySelector('.bottom-nav');
+  const navTabs = document.querySelectorAll('.nav-tab');
+  const fabLens = document.getElementById('fabLens');
+  const uploadZone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const selectFilesBtn = document.getElementById('selectFilesBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressContainer = document.getElementById('progressContainer');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const userAvatar = document.getElementById('userAvatar');
+  const userName = document.getElementById('userName');
+  const dateLabel = document.getElementById('dateLabel');
+
+  // ============================================================
+  // 4. AUTHENTIFICATION
+  // ============================================================
+  
+  let isLogin = true;
+  
+  authToggle.addEventListener('click', () => {
+    isLogin = !isLogin;
+    authTitle.textContent = isLogin ? '📸 Connexion' : '📸 Créer un compte';
+    authToggle.textContent = isLogin ? 'Créer un compte' : 'Déjà un compte ? Se connecter';
+    authButton.textContent = isLogin ? 'Se connecter' : 'Créer un compte';
+    authError.textContent = '';
+  });
+  
+  authButton.addEventListener('click', async () => {
+    const email = authEmail.value.trim();
+    const password = authPassword.value.trim();
+    if (!email || !password) {
+      authError.textContent = 'Veuillez remplir tous les champs.';
+      return;
+    }
+    try {
+      if (isLogin) {
+        await auth.signInWithEmailAndPassword(email, password);
+      } else {
+        await auth.createUserWithEmailAndPassword(email, password);
       }
-      cell.onclick = () => openFullscreen(photo.src, 'Photo');
-      grid.appendChild(cell);
+    } catch (err) {
+      authError.textContent = err.message;
+    }
+  });
+  
+  authPassword.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') authButton.click();
+  });
+
+  // ============================================================
+  // 5. FONCTIONS R2
+  // ============================================================
+  
+  function getSignedUrl(key, expiresIn = 300) {
+    return new Promise((resolve, reject) => {
+      s3.getSignedUrl('getObject', {
+        Bucket: R2_CONFIG.bucket,
+        Key: key,
+        Expires: expiresIn
+      }, (err, url) => {
+        if (err) reject(err);
+        else resolve(url);
+      });
+    });
+  }
+  
+  function getUploadUrl(key) {
+    return new Promise((resolve, reject) => {
+      s3.getSignedUrl('putObject', {
+        Bucket: R2_CONFIG.bucket,
+        Key: key,
+        Expires: 300,
+        ContentType: 'application/octet-stream'
+      }, (err, url) => {
+        if (err) reject(err);
+        else resolve(url);
+      });
     });
   }
 
-  // ===== OUVERTURE DOSSIER =====
+  // ============================================================
+  // 6. GÉNÉRATION DE MINIATURE VIDÉO
+  // ============================================================
+  
+  function generateVideoThumbnail(file, maxWidth = 300) {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const url = URL.createObjectURL(file);
+      video.src = url;
+      video.muted = true;
+      video.crossOrigin = 'anonymous';
+      
+      video.addEventListener('loadedmetadata', () => {
+        const seekTime = Math.min(1, video.duration / 2);
+        video.currentTime = seekTime;
+      });
+      
+      video.addEventListener('seeked', () => {
+        try {
+          const ratio = video.videoWidth / video.videoHeight;
+          let width = maxWidth;
+          let height = width / ratio;
+          if (height > maxWidth) {
+            height = maxWidth;
+            width = height * ratio;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(video, 0, 0, width, height);
+          const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+          URL.revokeObjectURL(url);
+          resolve(thumbnail);
+        } catch (err) {
+          reject(err);
+        }
+      });
+      
+      video.addEventListener('error', () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Impossible de charger la vidéo'));
+      });
+      
+      video.load();
+    });
+  }
+  
+  function getVideoDuration(file) {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const url = URL.createObjectURL(file);
+      video.src = url;
+      video.addEventListener('loadedmetadata', () => {
+        URL.revokeObjectURL(url);
+        resolve(video.duration);
+      });
+      video.addEventListener('error', () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Impossible de lire la durée'));
+      });
+      video.load();
+    });
+  }
+
+  // ============================================================
+  // 7. UPLOAD FICHIERS
+  // ============================================================
+  
+  async function uploadFiles(files) {
+    if (!currentUser) return;
+    if (isUploading) return;
+    
+    const MAX_VIDEO_SIZE = 500 * 1024 * 1024;
+    const MAX_PHOTO_SIZE = 50 * 1024 * 1024;
+    
+    const validFiles = [];
+    for (const file of files) {
+      const isVideo = file.type.startsWith('video/');
+      const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_PHOTO_SIZE;
+      if (file.size > maxSize) {
+        alert(`❌ ${file.name} est trop volumineux (max ${maxSize/1024/1024} Mo)`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+    
+    if (validFiles.length === 0) {
+      alert('Aucun fichier valide à uploader');
+      return;
+    }
+    
+    isUploading = true;
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    
+    let uploaded = 0;
+    const total = validFiles.length;
+    
+    for (const file of validFiles) {
+      try {
+        const isVideo = file.type.startsWith('video/');
+        const folder = isVideo ? 'videos' : 'photos';
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+        const r2Key = `users/${currentUser.uid}/${folder}/${timestamp}_${safeName}`;
+        
+        const uploadUrl = await getUploadUrl(r2Key);
+        const response = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type || 'application/octet-stream' }
+        });
+        
+        if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+        
+        let thumbnailKey = null;
+        if (isVideo) {
+          try {
+            const thumbnailDataUrl = await generateVideoThumbnail(file, 400);
+            const blob = await fetch(thumbnailDataUrl).then(r => r.blob());
+            const thumbKey = `users/${currentUser.uid}/thumbnails/${timestamp}_${safeName}.jpg`;
+            const thumbUploadUrl = await getUploadUrl(thumbKey);
+            await fetch(thumbUploadUrl, {
+              method: 'PUT',
+              body: blob,
+              headers: { 'Content-Type': 'image/jpeg' }
+            });
+            thumbnailKey = thumbKey;
+          } catch (thumbErr) {
+            console.warn('Miniature non générée:', thumbErr);
+          }
+        }
+        
+       const mediaData = {
+    userId: currentUser.uid,
+    fileName: file.name,
+    r2Key: r2Key,
+    fileSize: file.size,
+    fileType: file.type,
+    mediaType: isVideo ? 'video' : 'photo',
+    uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    tags: [],
+    album: '',
+    thumbnailKey: thumbnailKey,
+    duration: isVideo ? await getVideoDuration(file) : null,
+    isFavorite: false,
+    isDeleted: false,
+    isArchived: false,  // ← AJOUTE CETTE LIGNE
+    archivedAt: null,   // ← AJOUTE CETTE LIGNE
+    deletedAt: null
+};
+        
+        await db.collection('media').add(mediaData);
+        
+        uploaded++;
+        const progress = (uploaded / total) * 100;
+        progressBar.style.width = progress + '%';
+        
+      } catch (err) {
+        console.error('Erreur upload:', err);
+        alert(`❌ Erreur pour ${file.name}: ${err.message}`);
+      }
+    }
+    
+    isUploading = false;
+    progressContainer.style.display = 'none';
+    progressBar.style.width = '0%';
+    loadMedia();
+  }
+
+  // ============================================================
+  // 8. CHARGEMENT DES MÉDIAS
+  // ============================================================
+  
+  async function loadMedia() {
+    if (!currentUser) return;
+    
+    try {
+      const snapshot = await db.collection('media')
+    .where('userId', '==', currentUser.uid)
+    .where('isDeleted', '==', false)
+    .where('isArchived', '==', false)  // ← AJOUTE CETTE LIGNE
+    .get();
+      
+      const mediaList = [];
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        try {
+          const url = await getSignedUrl(data.r2Key, 300);
+          mediaList.push({
+            id: doc.id,
+            ...data,
+            url: url,
+            ratio: data.mediaType === 'video' ? 1.78 : 1.33
+          });
+        } catch (e) {
+          console.warn('Erreur signature pour', data.r2Key, e);
+          mediaList.push({
+            id: doc.id,
+            ...data,
+            url: null,
+            ratio: 1.33
+          });
+        }
+      }
+      
+      allMedia = mediaList.sort((a, b) => {
+        const dateA = a.uploadedAt?.toDate?.() || new Date(0);
+        const dateB = b.uploadedAt?.toDate?.() || new Date(0);
+        return dateB - dateA;
+      });
+      
+      renderPhotoGrid(allMedia);
+      
+      // Mettre à jour la date
+      if (allMedia.length > 0) {
+        const latest = allMedia[0];
+        const date = latest.uploadedAt?.toDate?.() || new Date();
+        dateLabel.textContent = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      } else {
+        dateLabel.textContent = 'Vos souvenirs';
+      }
+      
+      const totalSize = allMedia.reduce((sum, m) => sum + (m.fileSize || 0), 0);
+      const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+      userAvatar.title = `${sizeMB} Mo utilisés`;
+      
+    } catch (err) {
+      console.error('Erreur chargement:', err);
+    }
+  }
+
+  // ============================================================
+  // 9. RENDU DE LA GRILLE PHOTOS
+  // ============================================================
+  
+  function renderPhotoGrid(mediaList) {
+    photoGrid.innerHTML = '';
+    if (!mediaList || mediaList.length === 0) {
+      photoGrid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#5f6368;">
+          <i class="fas fa-cloud-upload-alt" style="font-size:36px;display:block;margin-bottom:12px;"></i>
+          <p style="font-size:14px;">Aucun souvenir pour le moment</p>
+          <p style="font-size:12px;">Importez vos photos et vidéos</p>
+        </div>
+      `;
+      return;
+    }
+    
+    mediaList.forEach((media) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      
+      const isVideo = media.mediaType === 'video' || 
+                      (media.fileType && media.fileType.startsWith('video/'));
+      
+      if (isVideo) {
+        const video = document.createElement('video');
+        video.src = media.url || '';
+        video.muted = true;
+        video.preload = 'metadata';
+        video.playsInline = true;
+        video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        cell.appendChild(video);
+        
+        const playOverlay = document.createElement('div');
+        playOverlay.className = 'play-overlay';
+        playOverlay.innerHTML = '<i class="fas fa-play"></i>';
+        cell.appendChild(playOverlay);
+        
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.innerHTML = `<i class="fas fa-play"></i> ${media.duration ? formatDuration(media.duration) : ''}`;
+        cell.appendChild(badge);
+        
+        cell.onclick = () => openFullscreen(media, 'video');
+      } else {
+        const img = document.createElement('img');
+        img.src = media.url || '';
+        img.alt = media.fileName || 'photo';
+        img.loading = 'lazy';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        cell.appendChild(img);
+        
+        cell.onclick = () => openFullscreen(media, 'image');
+      }
+      
+      photoGrid.appendChild(cell);
+    });
+  }
+  
+  function formatDuration(seconds) {
+    if (!seconds) return '';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // ============================================================
+  // 10. GESTION DES ALBUMS (locaux pour l'instant)
+  // ============================================================
+  
+  // Album data par défaut
+const defaultAlbumData = {
+    'Mes photos': { images: [] },
+    'Vidéos': { images: [] }
+};  
+  Object.assign(albumData, defaultAlbumData);
+  
   function openAlbum(title) {
     currentAlbum = title;
-    const albumView = document.getElementById('albumView');
-    const collectionsView = document.getElementById('collectionsView');
-    const photosView = document.getElementById('photosView');
-    
-    // Cacher les autres vues
     collectionsView.classList.add('hidden');
     photosView.classList.remove('active');
     albumView.classList.add('active');
     
-    // Titre
-    document.getElementById('albumTitle').textContent = title;
+    albumTitle.textContent = title;
     
-    // Charger les images
-    const grid = document.getElementById('albumGrid');
-    grid.innerHTML = '';
-    
-    // Si l'album existe déjà, utiliser ses images, sinon créer un nouvel album
     if (!albumData[title]) {
       albumData[title] = { images: [] };
     }
     
     currentAlbumImages = albumData[title].images;
+    renderAlbumGrid();
+  }
+  
+  function renderAlbumGrid() {
+    albumGrid.innerHTML = '';
     
-    // Afficher les images
     currentAlbumImages.forEach((img, index) => {
       const cell = document.createElement('div');
       cell.className = 'cell';
       cell.innerHTML = `<img src="${img}" alt="Photo" />`;
-      cell.onclick = () => openFullscreen(img, `${title} - Photo ${index + 1}`);
-      grid.appendChild(cell);
+      cell.onclick = () => {
+        // Ouvrir en plein écran avec l'image de l'album
+        const fakeMedia = { url: img, fileName: `${currentAlbum} - Photo ${index + 1}`, mediaType: 'photo' };
+        openFullscreen(fakeMedia, 'image');
+      };
+      albumGrid.appendChild(cell);
     });
     
-    // Ajouter le bouton d'ajout
     const addCell = document.createElement('div');
     addCell.className = 'add-cell';
     addCell.innerHTML = '<i class="fas fa-plus"></i>';
     addCell.onclick = addPhotoToAlbum;
-    grid.appendChild(addCell);
+    albumGrid.appendChild(addCell);
   }
-
-  // ===== AJOUTER UNE PHOTO DANS LE DOSSIER =====
+  
   function addPhotoToAlbum() {
     if (!currentAlbum || !albumData[currentAlbum]) {
       alert('Veuillez ouvrir un album d\'abord');
       return;
     }
     
-    // Simuler l'ajout d'une photo (prendre une photo aléatoire depuis la liste principale)
-    const randomPhoto = mainPhotos[Math.floor(Math.random() * mainPhotos.length)].src;
-    albumData[currentAlbum].images.push(randomPhoto);
+    // Utiliser une image aléatoire des médias chargés ou une image par défaut
+    let randomImage;
+    if (allMedia.length > 0) {
+      const randomMedia = allMedia[Math.floor(Math.random() * allMedia.length)];
+      randomImage = randomMedia.url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center';
+    } else {
+      randomImage = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center';
+    }
+    
+    albumData[currentAlbum].images.push(randomImage);
     currentAlbumImages = albumData[currentAlbum].images;
-    
-    // Rafraîchir l'affichage
-    const grid = document.getElementById('albumGrid');
-    grid.innerHTML = '';
-    
-    currentAlbumImages.forEach((img, index) => {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.innerHTML = `<img src="${img}" alt="Photo" />`;
-      cell.onclick = () => openFullscreen(img, `${currentAlbum} - Photo ${index + 1}`);
-      grid.appendChild(cell);
-    });
-    
-    // Ajouter le bouton d'ajout
-    const addCell = document.createElement('div');
-    addCell.className = 'add-cell';
-    addCell.innerHTML = '<i class="fas fa-plus"></i>';
-    addCell.onclick = addPhotoToAlbum;
-    grid.appendChild(addCell);
+    renderAlbumGrid();
   }
-
-  // ===== FERMER DOSSIER =====
+  
   function closeAlbum() {
-    document.getElementById('albumView').classList.remove('active');
-    document.getElementById('collectionsView').classList.remove('hidden');
+    albumView.classList.remove('active');
+    collectionsView.classList.remove('hidden');
     currentAlbum = null;
   }
 
-  // ===== PLEIN ÉCRAN =====
-  function openFullscreen(src, info) {
-    const fsView = document.getElementById('fullscreenView');
-    document.getElementById('fullscreenImage').src = src;
-    document.getElementById('fullscreenInfo').textContent = info || 'Photo';
-    fsView.classList.add('active');
+  // ============================================================
+  // 11. PLEIN ÉCRAN
+  // ============================================================
+  
+  let currentFullscreenMedia = null;
+  
+  function openFullscreen(media, type) {
+    currentFullscreenMedia = media;
+    fsContainer.innerHTML = '';
+    
+    if (type === 'video' || media.mediaType === 'video') {
+      const video = document.createElement('video');
+      video.src = media.url || '';
+      video.controls = true;
+      video.autoplay = false;
+      video.playsInline = true;
+      video.className = 'fs-media-video';
+      video.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
+      fsContainer.appendChild(video);
+      fullscreenInfo.textContent = media.fileName || 'Vidéo';
+    } else {
+      const img = document.createElement('img');
+      img.src = media.url || '';
+      img.alt = media.fileName || 'Photo';
+      img.className = 'fs-media';
+      img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+      fsContainer.appendChild(img);
+      fullscreenInfo.textContent = media.fileName || 'Photo';
+    }
+    
+    // Mettre à jour le favori
+    const favIcon = fsFavorite.querySelector('i');
+    if (media.isFavorite) {
+      favIcon.className = 'fas fa-star';
+      favIcon.style.color = '#FCC934';
+    } else {
+      favIcon.className = 'far fa-star';
+      favIcon.style.color = 'white';
+    }
+    
+    fullscreenView.classList.add('active');
+    document.body.style.overflow = 'hidden';
   }
-
+  
   function closeFullscreen() {
-    document.getElementById('fullscreenView').classList.remove('active');
+    fullscreenView.classList.remove('active');
+    document.body.style.overflow = 'auto';
+    // Arrêter la vidéo
+    const video = fsContainer.querySelector('video');
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+    }
+  }
+  
+  // Favori en plein écran
+ // Favori en plein écran
+fsFavorite.addEventListener('click', async () => {
+    if (!currentFullscreenMedia || !currentFullscreenMedia.id) return;
+    const media = currentFullscreenMedia;
+    const icon = fsFavorite.querySelector('i');
+    const isFav = icon.classList.contains('fas');
+    
+    // Mettre à jour localement
+    icon.classList.toggle('fas');
+    icon.classList.toggle('far');
+    icon.style.color = icon.classList.contains('fas') ? '#FCC934' : 'white';
+    media.isFavorite = !isFav;
+    
+    try {
+        await db.collection('media').doc(media.id).update({ isFavorite: media.isFavorite });
+        // Recharger les favoris si la page est ouverte
+        if (document.getElementById('favorisView') && document.getElementById('favorisView').style.display === 'flex') {
+            loadFavoris();
+        }
+        // Recharger la grille principale pour mettre à  our l'étoile
+        renderPhotoGrid(allMedia);
+    } catch (err) {
+        console.error('Erreur favori:', err);
+    }
+});
+  
+  // Suppression en plein écran
+ // Suppression en plein écran - MET À LA CORBEILLE
+fsDelete.addEventListener('click', async () => {
+    if (!currentFullscreenMedia || !currentFullscreenMedia.id) return;
+    if (!confirm(`Supprimer "${currentFullscreenMedia.fileName || 'ce fichier'}" ?`)) return;
+    await deleteToTrash(currentFullscreenMedia.id);
+    closeFullscreen();
+});
+    // Archive en plein écran
+  const fsArchive = document.getElementById('fsArchive');
+  if (fsArchive) {
+      fsArchive.addEventListener('click', async () => {
+          if (!currentFullscreenMedia || !currentFullscreenMedia.id) return;
+          if (!confirm(`Archiver "${currentFullscreenMedia.fileName || 'ce fichier'}" ?`)) return;
+          await archiveMedia(currentFullscreenMedia.id);
+          closeFullscreen();
+      });
   }
 
-  // ===== NAVIGATION BAS =====
-  const navTabs = document.querySelectorAll('.nav-tab');
-  const collectionsView = document.getElementById('collectionsView');
-  const photosView = document.getElementById('photosView');
-  const albumView = document.getElementById('albumView');
-  const fabLens = document.querySelector('.fab-lens');
+  // Ajouter à l'album en plein écran
+  const fsAddToAlbum = document.getElementById('fsAddToAlbum');
+  if (fsAddToAlbum) {
+      fsAddToAlbum.addEventListener('click', () => {
+          if (!currentFullscreenMedia) return;
+          openAlbumModal(currentFullscreenMedia);
+      });
+  }
+  // Fermer avec Échap
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeFullscreen();
+    }
+  });
 
+  // ============================================================
+  // 12. NAVIGATION BAS
+  // ============================================================
+  
   function activateTab(tabId) {
     navTabs.forEach(tab => {
       const t = tab.dataset.tab;
@@ -1073,92 +2015,1184 @@
         tab.classList.remove('active');
       }
     });
-
-    // Fermer l'album si ouvert
+    
     albumView.classList.remove('active');
     currentAlbum = null;
-
+    
     if (tabId === 'photos') {
       collectionsView.classList.add('hidden');
       photosView.classList.add('active');
+      if (allMedia.length === 0) loadMedia();
     } else if (tabId === 'collections') {
       collectionsView.classList.remove('hidden');
       photosView.classList.remove('active');
     }
   }
-
+  
   navTabs.forEach(tab => {
     tab.addEventListener('click', function(e) {
       e.preventDefault();
       const tabId = this.dataset.tab;
-      if (tabId === 'create') {
-        alert('Créer un nouveau contenu (album, montage, etc.)');
-        return;
-      }
       activateTab(tabId);
     });
   });
-
+  
   fabLens.addEventListener('click', function() {
-    alert('Ouvrir Google Lens / Recherche');
+    fileInput.click();
   });
 
-  // Clavier Échap pour fermer le plein écran
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      closeFullscreen();
+  // ============================================================
+  // 13. GESTION DE LA BARRE DE NAVIGATION (scroll)
+  // ============================================================
+  
+  let lastScrollY = 0;
+  
+  contentArea.addEventListener('scroll', function() {
+    const currentScrollY = this.scrollTop;
+    if (currentScrollY > 50) {
+      bottomNav.classList.add('hidden');
+    } else {
+      bottomNav.classList.remove('hidden');
+    }
+    lastScrollY = currentScrollY;
+  });
+  
+  document.addEventListener('click', function(e) {
+    if (!bottomNav.contains(e.target)) {
+      bottomNav.classList.remove('hidden');
+      clearTimeout(window.navTimeout);
+      window.navTimeout = setTimeout(() => {
+        if (contentArea.scrollTop > 50) {
+          bottomNav.classList.add('hidden');
+        }
+      }, 3000);
     }
   });
-// ===== GESTION DE LA BARRE DE NAVIGATION =====
-let lastScrollY = 0;
-const bottomNav = document.querySelector('.bottom-nav');
-const contentArea = document.querySelector('.content-area');
-
-contentArea.addEventListener('scroll', function() {
-  const currentScrollY = this.scrollTop;
   
-  // Si on descend (scroll > 50px), cacher la barre
-  if (currentScrollY > 50) {
-    bottomNav.classList.add('hidden');
-  } 
-  // Si on remonte en haut (scroll < 50px), montrer la barre
-  else {
-    bottomNav.classList.remove('hidden');
-  }
-  
-  lastScrollY = currentScrollY;
-});
-
-// Afficher la barre au clic sur l'écran
-document.addEventListener('click', function(e) {
-  // Ne pas déclencher si on clique sur la barre elle-même
-  if (!bottomNav.contains(e.target)) {
-    bottomNav.classList.remove('hidden');
-    // La cacher à nouveau après 3 secondes d'inactivité
+  bottomNav.addEventListener('mouseenter', function() {
     clearTimeout(window.navTimeout);
+    bottomNav.classList.remove('hidden');
+  });
+  
+  bottomNav.addEventListener('mouseleave', function() {
     window.navTimeout = setTimeout(() => {
       if (contentArea.scrollTop > 50) {
         bottomNav.classList.add('hidden');
       }
-    }, 3000);
-  }
-});
+    }, 2000);
+  });
 
-// Réinitialiser le timeout quand on interagit avec la barre
-bottomNav.addEventListener('mouseenter', function() {
-  clearTimeout(window.navTimeout);
-  bottomNav.classList.remove('hidden');
-});
-
-bottomNav.addEventListener('mouseleave', function() {
-  window.navTimeout = setTimeout(() => {
-    if (contentArea.scrollTop > 50) {
-      bottomNav.classList.add('hidden');
+  // ============================================================
+  // 14. ÉVÉNEMENTS UPLOAD
+  // ============================================================
+  
+  uploadBtn.addEventListener('click', () => fileInput.click());
+  selectFilesBtn.addEventListener('click', () => fileInput.click());
+  
+  uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+  
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+  });
+  
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) uploadFiles(e.dataTransfer.files);
+  });
+  
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      uploadFiles(e.target.files);
     }
-  }, 2000);
-});
-  // Initialisation
-  init();
+    fileInput.value = '';
+  });
+
+  // ============================================================
+  // 15. GESTION UTILISATEUR
+  // ============================================================
+  
+  logoutBtn.addEventListener('click', async () => {
+    await auth.signOut();
+  });
+  
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      currentUser = user;
+      authScreen.classList.add('hidden');
+      userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'A';
+      userName.textContent = `AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO`;
+      await loadMedia();
+    } else {
+      currentUser = null;
+      authScreen.classList.remove('hidden');
+      photoGrid.innerHTML = '';
+      allMedia = [];
+    }
+  });
+
+  // ============================================================
+  // 16. RECHARGE PÉRIODIQUE DES URLS SIGNÉES
+  // ============================================================
+  
+  setInterval(() => {
+    if (currentUser) loadMedia();
+  }, 240000);
+
+  console.log('📸 GALERIE IDA - Coffre-Fort Photos prêt !');
+  
+  // ============================================================
+// 17. OUVERTURE DES PAGES DÉTAILLÉES (Albums, Personnes, Lieux, Documents)
+// ============================================================
+// ============================================================
+// 17. OUVERTURE DES PAGES DÉTAILLÉES (Albums, Personnes, Lieux, Documents)
+// ============================================================
+
+// Fonction pour ouvrir une page détaillée
+function openDetailPage(title, items, type) {
+    // Cacher la vue collections
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    
+    // Créer ou afficher la vue détail
+    let detailView = document.getElementById('detailView');
+    if (!detailView) {
+        detailView = document.createElement('div');
+        detailView.id = 'detailView';
+        detailView.style.cssText = `
+            display: none;
+            flex-direction: column;
+            padding-top: 4px;
+            position: relative;
+        `;
+        document.getElementById('contentArea').appendChild(detailView);
+    }
+    
+    detailView.style.display = 'flex';
+    detailView.classList.add('active');
+    
+    // Construire les cartes selon le type
+    let cardsHtml = '';
+    
+    if (type === 'albums') {
+        // Cartes albums avec images
+       const albumImages = {
+    'Tabaski 2026': '',
+    'Notre Gallerie...': '',
+    'Créer un album': ''
+};
+        
+        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px;">`;
+        items.forEach(item => {
+            const imgSrc = albumImages[item] || '';
+            if (item === 'Créer un album') {
+                cardsHtml += `
+                    <div style="background:white;border:1.5px dashed #dadce0;border-radius:18px;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1a73e8;font-weight:500;font-size:13px;cursor:pointer;transition:all 0.15s;" onclick="openAlbumDetail('${item}')">
+                        <i class="fas fa-folder-plus" style="font-size:28px;margin-bottom:4px;"></i>
+                        <span>${item}</span>
+                    </div>
+                `;
+            } else {
+                cardsHtml += `
+                    <div style="background:#f1f3f4;border-radius:18px;overflow:hidden;position:relative;height:140px;cursor:pointer;transition:transform 0.15s;" onclick="openAlbumDetail('${item}')"
+
+ onmouseenter="this.style.transform='scale(0.97)'" onmouseleave="this.style.transform='scale(1)'">
+                        <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${item}" />
+                        <span style="position:absolute;bottom:10px;left:10px;color:white;font-weight:600;font-size:14px;text-shadow:0 1px 8px rgba(0,0,0,0.6);background:rgba(0,0,0,0.25);padding:3px 12px 3px 8px;border-radius:20px;backdrop-filter:blur(2px);">${item}</span>
+                    </div>
+                `;
+            }
+        });
+        cardsHtml += `</div>`;
+        
+    } else if (type === 'personnes') {
+        // Cartes personnes avec avatars
+        const personneImages = {
+    'Ida': '',
+    'Aidara': ''
+    
+};
+        
+        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:4px;">`;
+        items.forEach(item => {
+            const imgSrc = personneImages[item] || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face';
+            cardsHtml += `
+                <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;" onclick="openAlbumDetail('${item}')">
+                    <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                        <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${item}" />
+                    </div>
+                    <span style="font-size:12px;font-weight:500;margin-top:6px;color:#202124;">${item}</span>
+                </div>
+            `;
+        });
+        cardsHtml += `</div>`;
+        
+    } else if (type === 'lieux') {
+        // Cartes lieux avec images
+        const lieuxImages = {
+            'Votre carte': 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=200&h=150&fit=crop&crop=center',
+            'Dakar': 'https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=200&h=150&fit=crop&crop=center',
+            'Paris': 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=200&h=150&fit=crop&crop=center'
+        };
+        
+        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px;">`;
+        items.forEach(item => {
+            const imgSrc = lieuxImages[item] || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=150&fit=crop&crop=center';
+            cardsHtml += `
+                <div style="background:#f1f3f4;border-radius:18px;overflow:hidden;position:relative;height:120px;cursor:pointer;transition:transform 0.15s;" onclick="openAlbumDetail('${item}')" onmouseenter="this.style.transform='scale(0.97)'" onmouseleave="this.style.transform='scale(1)'">
+                    <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${item}" />
+                    <span style="position:absolute;bottom:10px;left:10px;color:white;font-weight:600;font-size:14px;text-shadow:0 1px 8px rgba(0,0,0,0.6);background:rgba(0,0,0,0.25);padding:3px 12px 3px 8px;border-radius:20px;backdrop-filter:blur(2px);">${item}</span>
+                </div>
+            `;
+        });
+        cardsHtml += `</div>`;
+        
+    } else if (type === 'documents') {
+        // Cartes documents avec icônes
+        const docIcons = {
+            'Identité': 'fa-id-card',
+            'Infos sur des événements': 'fa-ticket',
+            'Livres et magazines': 'fa-book',
+            'Notes': 'fa-pen'
+        };
+        
+        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px;">`;
+        items.forEach(item => {
+            const icon = docIcons[item] || 'fa-file';
+            cardsHtml += `
+                <div style="background:#f2f4f7;border-radius:16px;padding:20px 4px 14px 4px;text-align:center;font-size:11px;font-weight:500;color:#202124;cursor:pointer;transition:all 0.15s;" onclick="openAlbumDetail('${item}')" onmouseenter="this.style.background='#e5e8ec'" onmouseleave="this.style.background='#f2f4f7'">
+                    <i class="fas ${icon}" style="font-size:28px;display:block;margin-bottom:6px;color:#1a73e8;"></i>
+                    <span>${item}</span>
+                </div>
+            `;
+        });
+        cardsHtml += `</div>`;
+    }
+    
+    // Construire la page
+    detailView.innerHTML = `
+        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
+            <span class="back-btn" onclick="closeDetailPage()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">${title}</h2>
+        </div>
+        <div id="detailContent" style="display:flex;flex-direction:column;gap:12px;padding-bottom:20px;">
+            ${cardsHtml}
+        </div>
+    `;
+    
+    // Cacher les autres vues
+    albumView.classList.remove('active');
+}
+
+// Fonction pour fermer la page détaillée
+function closeDetailPage() {
+    const detailView = document.getElementById('detailView');
+    if (detailView) {
+        detailView.style.display = 'none';
+        detailView.classList.remove('active');
+    }
+    collectionsView.classList.remove('hidden');
+    photosView.classList.remove('active');
+}
+
+// Fonction pour obtenir l'icône selon le type d'item
+function getIconForPageType(title, item) {
+    // Albums
+    if (title === 'Albums') return 'folder';
+    if (item.includes('Tabaski')) return 'mosque';
+    if (item.includes('Gallerie')) return 'images';
+    if (item.includes('Créer')) return 'plus-circle';
+    
+    // Personnes
+    if (title === 'Personnes') return 'user';
+    
+    // Lieux
+    if (title === 'Lieux') return 'map-pin';
+    if (item === 'Votre carte') return 'map';
+    if (item === 'Dakar') return 'location-dot';
+    if (item === 'Paris') return 'location-dot';
+    
+    // Documents
+    if (title === 'Documents') return 'file';
+    if (item === 'Identité') return 'id-card';
+    if (item.includes('événements')) return 'ticket';
+    if (item.includes('Livres')) return 'book';
+    if (item === 'Notes') return 'pen';
+    
+    return 'circle';
+}
+
+// ============================================================
+// 18. DONNÉES POUR LES PAGES DÉTAILLÉES
+// ============================================================
+
+// Données des albums
+const albumsList = [
+    { name: 'Tabaski 2026', icon: 'mosque' },
+    { name: 'Notre Gallerie...', icon: 'images' },
+    { name: 'Créer un album', icon: 'plus-circle' }
+];
+
+// Données des personnes
+const personnesList = ['Ida', 'Jean', 'Marie', 'Lucas'];
+
+// Données des lieux
+const lieuxList = ['Votre carte', 'Dakar', 'Paris'];
+
+// Données des documents
+const documentsList = ['Identité', 'Infos sur des événements', 'Livres et magazines', 'Notes'];
+
+// ============================================================
+// 19. FONCTIONS D'OUVERTURE SPÉCIFIQUES
+// ============================================================
+
+// ============================================================
+// 19. FONCTIONS D'OUVERTURE SPÉCIFIQUES
+// ============================================================
+
+function openAlbumsPage() {
+    openDetailPage('Albums', ['Tabaski 2026', 'Notre Gallerie...', 'Créer un album'], 'albums');
+}
+
+function openPersonnesPage() {
+    openDetailPage('Personnes', ['Ida', 'Jean', 'Marie', 'Lucas'], 'personnes');
+}
+
+function openLieuxPage() {
+    openDetailPage('Lieux', ['Votre carte', 'Dakar', 'Paris'], 'lieux');
+}
+
+function openDocumentsPage() {
+    openDetailPage('Documents', ['Identité', 'Infos sur des événements', 'Livres et magazines', 'Notes'], 'documents');
+}
+
+  // ============================================================
+// 20. OUVERTURE D'UN ALBUM DEPUIS LA PAGE DÉTAIL
+// ============================================================
+
+function openAlbumDetail(albumName) {
+    // Fermer la page détail
+    const detailView = document.getElementById('detailView');
+    if (detailView) {
+        detailView.style.display = 'none';
+        detailView.classList.remove('active');
+    }
+    
+    // Ouvrir l'album comme avant
+    openAlbum(albumName);
+}
+  
+// Fonction générique pour obtenir l'icône (utilisée dans openDetailPage)
+function getIconForItem(title, item) {
+    if (title === 'Albums') {
+        if (item.includes('Tabaski')) return 'mosque';
+        if (item.includes('Gallerie')) return 'images';
+        if (item.includes('Créer')) return 'plus-circle';
+        return 'folder';
+    }
+    if (title === 'Personnes') return 'user';
+    if (title === 'Lieux') {
+        if (item === 'Votre carte') return 'map';
+        if (item === 'Dakar' || item === 'Paris') return 'location-dot';
+        return 'map-pin';
+    }
+    if (title === 'Documents') {
+        if (item === 'Identité') return 'id-card';
+        if (item.includes('événements')) return 'ticket';
+        if (item.includes('Livres')) return 'book';
+        if (item === 'Notes') return 'pen';
+        return 'file';
+    }
+    return 'circle';
+}
+  // ============================================================
+// 21. GESTION DE LA CORBEILLE
+// ============================================================
+
+let corbeilleItems = [];
+let selectedCorbeille = new Set();
+
+// Fonction pour supprimer un média (le mettre à la corbeille)
+async function deleteToTrash(mediaId) {
+    if (!currentUser) return;
+    try {
+        // Marquer comme supprimé dans Firestore
+        await db.collection('media').doc(mediaId).update({
+            deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isDeleted: true
+        });
+        
+        // Recharger la liste
+        loadMedia();
+        // Recharger la corbeille si elle est ouverte
+        if (document.getElementById('trashView') && document.getElementById('trashView').style.display === 'flex') {
+            loadTrash();
+        }
+    } catch (err) {
+        console.error('Erreur suppression:', err);
+        alert('Erreur lors de la suppression');
+    }
+}
+
+// Fonction pour charger la corbeille
+async function loadTrash() {
+    if (!currentUser) return;
+    try {
+        const snapshot = await db.collection('media')
+            .where('userId', '==', currentUser.uid)
+            .where('isDeleted', '==', true)
+            .get();
+        
+        corbeilleItems = [];
+        for (const doc of snapshot.docs) {
+            const data = doc.data();
+            try {
+                const url = await getSignedUrl(data.r2Key, 300);
+                corbeilleItems.push({
+                    id: doc.id,
+                    ...data,
+                    url: url
+                });
+            } catch (e) {
+                corbeilleItems.push({
+                    id: doc.id,
+                    ...data,
+                    url: null
+                });
+            }
+        }
+        renderTrashGrid();
+    } catch (err) {
+        console.error('Erreur chargement corbeille:', err);
+    }
+}
+
+// Fonction pour afficher la corbeille
+function openTrash() {
+    // Cacher les autres vues
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    albumView.classList.remove('active');
+    
+    // Créer ou afficher la vue corbeille
+    let trashView = document.getElementById('trashView');
+    if (!trashView) {
+        trashView = document.createElement('div');
+        trashView.id = 'trashView';
+        trashView.style.cssText = `
+            display: none;
+            flex-direction: column;
+            padding-top: 4px;
+            position: relative;
+        `;
+        document.getElementById('contentArea').appendChild(trashView);
+    }
+    
+    trashView.style.display = 'flex';
+    trashView.classList.add('active');
+    
+    // Construire la page corbeille
+    trashView.innerHTML = `
+        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
+            <span class="back-btn" onclick="closeTrash()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">🗑️ Corbeille</h2>
+            <span style="font-size:14px;color:#5f6368;" id="trashCount">0 éléments</span>
+        </div>
+        <div id="trashGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:4px;"></div>
+        <div id="trashActions" style="display:none;position:sticky;bottom:0;background:white;padding:12px 0;gap:12px;margin-top:12px;border-top:1px solid #dadce0;">
+            <div style="display:flex;gap:12px;justify-content:center;">
+                <button onclick="restoreSelected()" style="background:#1a73e8;color:white;border:none;padding:10px 24px;border-radius:30px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-undo"></i> Récupérer
+                </button>
+                <button onclick="deleteSelected()" style="background:#d93025;color:white;border:none;padding:10px 24px;border-radius:30px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-trash"></i> Supprimer définitivement
+                </button>
+            </div>
+            <div style="text-align:center;font-size:12px;color:#5f6368;margin-top:4px;">
+                <span id="selectedCount">0 sélectionné(s)</span>
+            </div>
+        </div>
+    `;
+    
+    // Charger la corbeille
+    loadTrash();
+}
+
+// Fonction pour fermer la corbeille
+function closeTrash() {
+    const trashView = document.getElementById('trashView');
+    if (trashView) {
+        trashView.style.display = 'none';
+        trashView.classList.remove('active');
+    }
+    collectionsView.classList.remove('hidden');
+    selectedCorbeille.clear();
+}
+
+// Fonction pour afficher la grille de la corbeille
+function renderTrashGrid() {
+    const grid = document.getElementById('trashGrid');
+    const count = document.getElementById('trashCount');
+    const actions = document.getElementById('trashActions');
+    
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    count.textContent = `${corbeilleItems.length} éléments`;
+    
+    if (corbeilleItems.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#5f6368;">
+                <i class="fas fa-trash" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.3;"></i>
+                <p style="font-size:16px;">La corbeille est vide</p>
+                <p style="font-size:13px;">Les éléments supprimés apparaîtront ici</p>
+            </div>
+        `;
+        actions.style.display = 'none';
+        return;
+    }
+    
+    actions.style.display = 'flex';
+    actions.style.flexDirection = 'column';
+    actions.style.alignItems = 'center';
+    
+    corbeilleItems.forEach((media) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.cssText = 'aspect-ratio:1/1;background:#eef0f2;border-radius:6px;overflow:hidden;position:relative;cursor:pointer;';
+        if (selectedCorbeille.has(media.id)) {
+            cell.style.outline = '3px solid #1a73e8';
+            cell.style.outlineOffset = '-3px';
+        }
+        
+        const isVideo = media.mediaType === 'video' || (media.fileType && media.fileType.startsWith('video/'));
+        
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.src = media.url || '';
+            video.muted = true;
+            video.preload = 'metadata';
+            video.playsInline = true;
+            video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            cell.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            img.src = media.url || '';
+            img.alt = media.fileName || 'photo';
+            img.loading = 'lazy';
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            cell.appendChild(img);
+        }
+        
+        // Clic pour sélectionner/déselectionner
+        cell.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = media.id;
+            if (selectedCorbeille.has(id)) {
+                selectedCorbeille.delete(id);
+                cell.style.outline = 'none';
+            } else {
+                selectedCorbeille.add(id);
+                cell.style.outline = '3px solid #1a73e8';
+                cell.style.outlineOffset = '-3px';
+            }
+            updateSelectedCount();
+        });
+        
+        // Badge "sélectionné"
+        const badge = document.createElement('div');
+        badge.style.cssText = `
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: ${selectedCorbeille.has(media.id) ? '#1a73e8' : 'rgba(0,0,0,0.5)'};
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            pointer-events: none;
+        `;
+        badge.innerHTML = selectedCorbeille.has(media.id) ? '<i class="fas fa-check"></i>' : '';
+        cell.appendChild(badge);
+        
+        grid.appendChild(cell);
+    });
+    
+    updateSelectedCount();
+}
+
+// Fonction pour mettre à jour le compteur de sélection
+function updateSelectedCount() {
+    const countSpan = document.getElementById('selectedCount');
+    if (countSpan) {
+        countSpan.textContent = `${selectedCorbeille.size} sélectionné(s)`;
+    }
+}
+
+// Fonction pour récupérer les éléments sélectionnés
+async function restoreSelected() {
+    if (selectedCorbeille.size === 0) {
+        alert('Sélectionnez des éléments à récupérer');
+        return;
+    }
+    
+    if (!confirm(`Récupérer ${selectedCorbeille.size} élément(s) ?`)) return;
+    
+    for (const id of selectedCorbeille) {
+        try {
+            await db.collection('media').doc(id).update({
+                isDeleted: false,
+                deletedAt: null
+            });
+        } catch (err) {
+            console.error('Erreur récupération:', err);
+        }
+    }
+    
+    selectedCorbeille.clear();
+    loadTrash();
+    loadMedia();
+}
+
+// Fonction pour supprimer définitivement les éléments sélectionnés
+async function deleteSelected() {
+    if (selectedCorbeille.size === 0) {
+        alert('Sélectionnez des éléments à supprimer définitivement');
+        return;
+    }
+    
+    if (!confirm(`⚠️ Supprimer définitivement ${selectedCorbeille.size} élément(s) ? Cette action est irréversible !`)) return;
+    
+    for (const id of selectedCorbeille) {
+        try {
+            await db.collection('media').doc(id).delete();
+        } catch (err) {
+            console.error('Erreur suppression définitive:', err);
+        }
+    }
+    
+    selectedCorbeille.clear();
+    loadTrash();
+    loadMedia();
+}
+  
+  // ============================================================
+// 22. GESTION DES FAVORIS
+// ============================================================
+
+let favorisItems = [];
+
+// Fonction pour afficher la page Favoris
+function openFavoris() {
+    // Cacher les autres vues
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    albumView.classList.remove('active');
+    
+    // Créer ou afficher la vue favoris
+    let favorisView = document.getElementById('favorisView');
+    if (!favorisView) {
+        favorisView = document.createElement('div');
+        favorisView.id = 'favorisView';
+        favorisView.style.cssText = `
+            display: none;
+            flex-direction: column;
+            padding-top: 4px;
+            position: relative;
+        `;
+        document.getElementById('contentArea').appendChild(favorisView);
+    }
+    
+    favorisView.style.display = 'flex';
+    favorisView.classList.add('active');
+    
+    // Construire la page favoris
+    favorisView.innerHTML = `
+        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
+            <span class="back-btn" onclick="closeFavoris()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">⭐ Favoris</h2>
+            <span style="font-size:14px;color:#5f6368;" id="favorisCount">0 éléments</span>
+        </div>
+        <div id="favorisGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:4px;"></div>
+    `;
+    
+    // Charger les favoris
+    loadFavoris();
+}
+
+// Fonction pour fermer les favoris
+function closeFavoris() {
+    const favorisView = document.getElementById('favorisView');
+    if (favorisView) {
+        favorisView.style.display = 'none';
+        favorisView.classList.remove('active');
+    }
+    collectionsView.classList.remove('hidden');
+}
+
+// Fonction pour charger les favoris
+async function loadFavoris() {
+    if (!currentUser) return;
+    try {
+        const snapshot = await db.collection('media')
+            .where('userId', '==', currentUser.uid)
+            .where('isDeleted', '==', false)
+            .where('isFavorite', '==', true)
+            .get();
+        
+        favorisItems = [];
+        for (const doc of snapshot.docs) {
+            const data = doc.data();
+            try {
+                const url = await getSignedUrl(data.r2Key, 300);
+                favorisItems.push({
+                    id: doc.id,
+                    ...data,
+                    url: url
+                });
+            } catch (e) {
+                favorisItems.push({
+                    id: doc.id,
+                    ...data,
+                    url: null
+                });
+            }
+        }
+        renderFavorisGrid();
+    } catch (err) {
+        console.error('Erreur chargement favoris:', err);
+    }
+}
+
+// Fonction pour afficher la grille des favoris
+function renderFavorisGrid() {
+    const grid = document.getElementById('favorisGrid');
+    const count = document.getElementById('favorisCount');
+    
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    count.textContent = `${favorisItems.length} éléments`;
+    
+    if (favorisItems.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#5f6368;">
+                <i class="fas fa-star" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.3;color:#FCC934;"></i>
+                <p style="font-size:16px;">Aucun favori</p>
+                <p style="font-size:13px;">Ajoutez des étoiles à vos photos préférées</p>
+            </div>
+        `;
+        return;
+    }
+    
+    favorisItems.forEach((media) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.cssText = 'aspect-ratio:1/1;background:#eef0f2;border-radius:6px;overflow:hidden;position:relative;cursor:pointer;';
+        
+        const isVideo = media.mediaType === 'video' || (media.fileType && media.fileType.startsWith('video/'));
+        
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.src = media.url || '';
+            video.muted = true;
+            video.preload = 'metadata';
+            video.playsInline = true;
+            video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            cell.appendChild(video);
+            
+            const playOverlay = document.createElement('div');
+            playOverlay.className = 'play-overlay';
+            playOverlay.innerHTML = '<i class="fas fa-play"></i>';
+            cell.appendChild(playOverlay);
+            
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.innerHTML = `<i class="fas fa-play"></i> ${media.duration ? formatDuration(media.duration) : ''}`;
+            cell.appendChild(badge);
+        } else {
+            const img = document.createElement('img');
+            img.src = media.url || '';
+            img.alt = media.fileName || 'photo';
+            img.loading = 'lazy';
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            cell.appendChild(img);
+        }
+        
+        // Badge étoile en haut à droite
+        const starBadge = document.createElement('div');
+        starBadge.style.cssText = `
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.6);
+            color: #FCC934;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+        `;
+        starBadge.innerHTML = '<i class="fas fa-star"></i>';
+        cell.appendChild(starBadge);
+        
+        // Clic pour ouvrir en plein écran
+        cell.addEventListener('click', () => {
+            openFullscreen(media, isVideo ? 'video' : 'image');
+        });
+        
+        grid.appendChild(cell);
+    });
+}
+  
+  // ============================================================
+// 23. GESTION DE LA MODALE AJOUTER À L'ALBUM
+// ============================================================
+
+let currentModalMedia = null;
+let showNewAlbumInput = false;
+
+// Fonction pour ouvrir la modale
+function openAlbumModal(media) {
+    currentModalMedia = media;
+    const modal = document.getElementById('albumModal');
+    modal.classList.add('active');
+    renderAlbumList();
+}
+
+// Fonction pour fermer la modale
+function closeAlbumModal() {
+    document.getElementById('albumModal').classList.remove('active');
+    document.getElementById('newAlbumInput').classList.remove('active');
+    showNewAlbumInput = false;
+    currentModalMedia = null;
+}
+
+// Fonction pour afficher la liste des albums
+// Fonction pour afficher la liste des albums
+function renderAlbumList() {
+    const container = document.getElementById('albumListContainer');
+    const albumNames = Object.keys(albumData);
+    
+    if (albumNames.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:20px;color:#5f6368;font-size:14px;">
+                <i class="fas fa-folder-open" style="font-size:24px;display:block;margin-bottom:8px;color:#1a73e8;"></i>
+                Aucun album
+                <br><span style="font-size:12px;">Créez un album ci-dessous</span>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = albumNames.map(name => `
+        <div class="album-item" onclick="addToAlbum('${name}')" 
+             style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f2f4f7;border-radius:12px;cursor:pointer;transition:all 0.15s;">
+            <i class="fas fa-folder" style="font-size:20px;color:#1a73e8;width:28px;text-align:center;"></i>
+            <span style="font-size:14px;font-weight:500;color:#202124;flex:1;">${name}</span>
+            <span style="color:#1a73e8;font-size:14px;">${albumData[name].images.length} photos</span>
+            <i class="fas fa-chevron-right" style="color:#5f6368;font-size:14px;"></i>
+        </div>
+    `).join('');
+}
+
+// Fonction pour ajouter un média à un album
+async function addToAlbum(albumName) {
+    if (!currentModalMedia) return;
+    
+    // Ajouter l'image à l'album local
+    if (!albumData[albumName]) {
+        albumData[albumName] = { images: [] };
+    }
+    
+    // Utiliser l'URL du média
+    const imageUrl = currentModalMedia.url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center';
+    albumData[albumName].images.push(imageUrl);
+    
+    // Mettre à jour Firestore avec le nom de l'album
+    if (currentModalMedia.id) {
+        try {
+            await db.collection('media').doc(currentModalMedia.id).update({
+                album: albumName
+            });
+        } catch (err) {
+            console.error('Erreur mise à jour album:', err);
+        }
+    }
+    
+    // Fermer la modale
+    closeAlbumModal();
+    
+    // Recharger l'album si ouvert
+    if (currentAlbum === albumName) {
+        currentAlbumImages = albumData[albumName].images;
+        renderAlbumGrid();
+    }
+    
+    alert(`✅ Ajouté à l'album "${albumName}"`);
+}
+
+// Fonction pour basculer l'affichage du champ nouvel album
+function toggleNewAlbumInput() {
+    const input = document.getElementById('newAlbumInput');
+    showNewAlbumInput = !showNewAlbumInput;
+    if (showNewAlbumInput) {
+        input.classList.add('active');
+        document.getElementById('newAlbumName').focus();
+    } else {
+        input.classList.remove('active');
+    }
+}
+
+// Fonction pour créer un nouvel album et y ajouter le média
+// Fonction pour créer un nouvel album et y ajouter le média
+async function createNewAlbumAndAdd() {
+    const input = document.getElementById('newAlbumName');
+    const name = input.value.trim();
+    
+    if (!name) {
+        alert('Veuillez entrer un nom d\'album');
+        return;
+    }
+    
+    if (albumData[name]) {
+        alert('Cet album existe déjà');
+        return;
+    }
+    
+    // Créer le nouvel album
+    albumData[name] = { images: [] };
+    
+    // Ajouter l'image du média actuel
+    if (currentModalMedia) {
+        const imageUrl = currentModalMedia.url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center';
+        albumData[name].images.push(imageUrl);
+        
+        // Mettre à jour Firestore
+        if (currentModalMedia.id) {
+            try {
+                await db.collection('media').doc(currentModalMedia.id).update({
+                    album: name
+                });
+            } catch (err) {
+                console.error('Erreur mise à jour album:', err);
+            }
+        }
+    }
+    
+    // Réinitialiser le champ
+    input.value = '';
+    document.getElementById('newAlbumInput').classList.remove('active');
+    showNewAlbumInput = false;
+    
+    // Fermer la modale
+    closeAlbumModal();
+    
+    alert(`✅ Album "${name}" créé avec succès !`);
+    
+    // Si un album est ouvert, le recharger
+    if (currentAlbum === name) {
+        currentAlbumImages = albumData[name].images;
+        renderAlbumGrid();
+    }
+}
+
+// Fonction pour archiver un média
+async function archiveMedia(mediaId) {
+    if (!mediaId) return;
+    try {
+        await db.collection('media').doc(mediaId).update({
+            isArchived: true,
+            archivedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert('📦 Fichier archivé');
+        loadMedia();
+        if (document.getElementById('favorisView') && document.getElementById('favorisView').style.display === 'flex') {
+            loadFavoris();
+        }
+    } catch (err) {
+        console.error('Erreur archive:', err);
+        alert('Erreur lors de l\'archivage');
+    }
+}
+  
+  // ============================================================
+// 24. GESTION DE L'ARCHIVE
+// ============================================================
+
+let archiveItems = [];
+
+function openArchive() {
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    albumView.classList.remove('active');
+    
+    let archiveView = document.getElementById('archiveView');
+    if (!archiveView) {
+        archiveView = document.createElement('div');
+        archiveView.id = 'archiveView';
+        archiveView.style.cssText = `
+            display: none;
+            flex-direction: column;
+            padding-top: 4px;
+            position: relative;
+        `;
+        document.getElementById('contentArea').appendChild(archiveView);
+    }
+    
+    archiveView.style.display = 'flex';
+    archiveView.classList.add('active');
+    
+    archiveView.innerHTML = `
+        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
+            <span class="back-btn" onclick="closeArchive()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">📦 Archive</h2>
+            <span style="font-size:14px;color:#5f6368;" id="archiveCount">0 éléments</span>
+        </div>
+        <div id="archiveGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:4px;"></div>
+    `;
+    
+    loadArchive();
+}
+
+function closeArchive() {
+    const archiveView = document.getElementById('archiveView');
+    if (archiveView) {
+        archiveView.style.display = 'none';
+        archiveView.classList.remove('active');
+    }
+    collectionsView.classList.remove('hidden');
+}
+
+async function loadArchive() {
+    if (!currentUser) return;
+    try {
+        const snapshot = await db.collection('media')
+            .where('userId', '==', currentUser.uid)
+            .where('isDeleted', '==', false)
+            .where('isArchived', '==', true)
+            .get();
+        
+        archiveItems = [];
+        for (const doc of snapshot.docs) {
+            const data = doc.data();
+            try {
+                const url = await getSignedUrl(data.r2Key, 300);
+                archiveItems.push({ id: doc.id, ...data, url: url });
+            } catch (e) {
+                archiveItems.push({ id: doc.id, ...data, url: null });
+            }
+        }
+        renderArchiveGrid();
+    } catch (err) {
+        console.error('Erreur chargement archive:', err);
+    }
+}
+
+function renderArchiveGrid() {
+    const grid = document.getElementById('archiveGrid');
+    const count = document.getElementById('archiveCount');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    count.textContent = `${archiveItems.length} éléments`;
+    
+    if (archiveItems.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#5f6368;">
+                <i class="fas fa-archive" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.3;"></i>
+                <p style="font-size:16px;">Archive vide</p>
+                <p style="font-size:13px;">Les éléments archivés apparaîtront ici</p>
+            </div>
+        `;
+        return;
+    }
+    
+    archiveItems.forEach((media) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.cssText = 'aspect-ratio:1/1;background:#eef0f2;border-radius:6px;overflow:hidden;position:relative;cursor:pointer;';
+        
+        const isVideo = media.mediaType === 'video' || (media.fileType && media.fileType.startsWith('video/'));
+        
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.src = media.url || '';
+            video.muted = true;
+            video.preload = 'metadata';
+            video.playsInline = true;
+            video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            cell.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            img.src = media.url || '';
+            img.alt = media.fileName || 'photo';
+            img.loading = 'lazy';
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            cell.appendChild(img);
+        }
+        
+        // Badge archive
+        const badge = document.createElement('div');
+        badge.style.cssText = `
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+        `;
+        badge.innerHTML = '📦';
+        cell.appendChild(badge);
+        
+        cell.addEventListener('click', () => {
+            openFullscreen(media, isVideo ? 'video' : 'image');
+        });
+        
+        grid.appendChild(cell);
+    });
+}
+  
+  // Fonction pour créer un album rapidement
+function createQuickAlbum() {
+    const name = prompt('Nom du nouvel album :');
+    if (!name || name.trim() === '') return;
+    const albumName = name.trim();
+    if (albumData[albumName]) {
+        alert('Cet album existe déjà');
+        return;
+    }
+    albumData[albumName] = { images: [] };
+    alert(`✅ Album "${albumName}" créé !`);
+    
+    // Si la modale est ouverte, rafraîchir la liste
+    if (document.getElementById('albumModal').classList.contains('active')) {
+        renderAlbumList();
+    }
+}
 </script>
 
 </body>
