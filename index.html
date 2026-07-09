@@ -2679,10 +2679,12 @@ function listenToMessages() {
     
     // Variable pour suivre le premier chargement
     let isFirstSnapshot = true;
-    
-    unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
-        .orderBy('timestamp', 'asc')
-        .onSnapshot(snapshot => {
+     let userScrolledUp = false; // ← AJOUTER CETTE LIGNE
+    let scrollTimeout = null;   // ← AJOUTER CETTE LIGNE
+   unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
+    .orderBy('timestamp', 'desc')
+    .limit(50)
+    .onSnapshot(snapshot => {
              if (isFirstSnapshot) { afficherTousLesMessages(snapshot); }
             // ================== ====================== ====================
             // BLOQUER LES NOTIFICATIONS AU PREMIER CHARGEMENT
@@ -2690,6 +2692,8 @@ function listenToMessages() {
             if (isFirstSnapshot) {
                 // On affiche juste les messages sans notifications
                 isFirstSnapshot = false;
+                  scrollToLatestMessage(); // ← Scroller en bas
+
                 console.log("📱 Premier chargement - Aucune notification envoyée");
                 // On continue pour afficher les messages
             }
@@ -2700,6 +2704,7 @@ function listenToMessages() {
            // Forcer l'affichage des messages existants avant de traiter les changements
 if (isFirstSnapshot) {
     const msgArea = document.getElementById('msg-area');
+  
     msgArea.innerHTML = '';
     let lastDateStr = "";
     
@@ -10035,7 +10040,20 @@ function afficherTousLesMessages(snapshot) {
         msgArea.scrollTop = msgArea.scrollHeight;
     }, 100);
 }
-      
+      // ========== AFFICHER LES DERNIERS MESSAGES EN BAS ==========
+function scrollToLatestMessage() {
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        // Attendre un peu que les messages soient chargés
+        setTimeout(() => {
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }, 200);
+    }
+}
+
+// Appeler cette fonction après l'affichage des messages
+// Dans la fonction listenToMessages(), après l'appel à afficherTousLesMessages()
+// Ajouter : scrollToLatestMessage();
       // ========== NOTIFICATION INSTANTANÉE (SANS TELEGRAM) ==========
 function notifierInstantane(expediteurId) {
     // Met à jour le statut en temps réel
@@ -11139,6 +11157,306 @@ function ouvrirProfil() {
         });
     }, 100);
 }
+      
+      // ============================================================
+// 🚀 SOLUTION ULTIME - SCROLL INTELLIGENT SANS FORÇAGE
+// ============================================================
+
+(function() {
+    console.log("🔥 ACTIVATION DU SCROLL INTELLIGENT");
+    
+    // === VARIABLES GLOBALES ===
+    let userScrolledUp = false;
+    let isFirstLoad = true;
+    let forceScrollTimeout = null;
+    let lastScrollTop = 0;
+    let userInteracted = false;
+    
+    // === RÉFÉRENCES ===
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) {
+        console.error("❌ msg-area non trouvé");
+        return;
+    }
+    
+    // === 1. CRÉER LE BOUTON "REVENIR EN BAS" ===
+    const scrollBtn = document.createElement('div');
+    scrollBtn.id = 'scroll-to-bottom-btn';
+    scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
+    scrollBtn.style.cssText = `
+        position: absolute;
+        bottom: 80px;
+        right: 15px;
+        background: #0095f6;
+        color: white;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 149, 246, 0.4);
+        z-index: 999;
+        font-size: 1.2rem;
+        border: none;
+        transition: all 0.3s ease;
+    `;
+    scrollBtn.onmouseover = () => scrollBtn.style.transform = 'scale(1.1)';
+    scrollBtn.onmouseout = () => scrollBtn.style.transform = 'scale(1)';
+    scrollBtn.onclick = function() {
+        msgArea.scrollTo({
+            top: msgArea.scrollHeight,
+            behavior: 'smooth'
+        });
+        userScrolledUp = false;
+        this.style.display = 'none';
+    };
+    document.querySelector('.app-container').appendChild(scrollBtn);
+    
+    // === 2. DÉTECTER LE SCROLL UTILISATEUR ===
+    msgArea.addEventListener('scroll', function() {
+        const distanceFromBottom = this.scrollHeight - this.scrollTop - this.clientHeight;
+        
+        // L'utilisateur a scrollé vers le haut
+        if (distanceFromBottom > 100) {
+            userScrolledUp = true;
+            userInteracted = true;
+        } else if (distanceFromBottom < 30) {
+            userScrolledUp = false;
+            scrollBtn.style.display = 'none';
+        }
+        
+        // Afficher le bouton si on est remonté
+        if (distanceFromBottom > 200) {
+            scrollBtn.style.display = 'flex';
+        } else {
+            scrollBtn.style.display = 'none';
+        }
+        
+        // Mémoriser la position
+        lastScrollTop = this.scrollTop;
+    }, { passive: true });
+    
+    // === 3. INTERCEPTER LA FONCTION ORIGINALE DE SCROLL ===
+    const originalScrollTo = Element.prototype.scrollTo;
+    Element.prototype.scrollTo = function(x, y) {
+        // Si c'est le msg-area et qu'on essaye de scroller en bas
+        if (this === msgArea && y !== undefined) {
+            // Si l'utilisateur a scrollé vers le haut, on bloque
+            if (userScrolledUp || userInteracted) {
+                console.log("🚫 Scroll bloqué - l'utilisateur est en haut");
+                return;
+            }
+        }
+        return originalScrollTo.call(this, x, y);
+    };
+    
+    // === 4. INTERCEPTER scrollTop ===
+    let _scrollTop = 0;
+    Object.defineProperty(msgArea, 'scrollTop', {
+        get: function() {
+            return this._scrollTop || 0;
+        },
+        set: function(value) {
+            const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
+            
+            // Si l'utilisateur est en haut ET qu'on essaye de forcer
+            if (userScrolledUp && !isAtBottom) {
+                console.log("🚫 scrollTop bloqué");
+                return;
+            }
+            
+            this._scrollTop = value;
+            // Appliquer le scroll réel
+            this.scrollTo(0, value);
+        }
+    });
+    
+    // === 5. SURCHARGER LA FONCTION D'AFFICHAGE DES MESSAGES ===
+    // Sauvegarder la fonction originale
+    const originalAfficherTousLesMessages = window.afficherTousLesMessages;
+    
+    window.afficherTousLesMessages = function(snapshot) {
+        // Appeler l'originale
+        if (originalAfficherTousLesMessages) {
+            originalAfficherTousLesMessages(snapshot);
+        }
+        
+        // Scroll intelligent
+        setTimeout(() => {
+            if (!userScrolledUp) {
+                msgArea.scrollTop = msgArea.scrollHeight;
+            } else {
+                // Restaurer la position
+                if (lastScrollTop > 0) {
+                    msgArea.scrollTop = lastScrollTop;
+                }
+            }
+        }, 100);
+    };
+    
+    // === 6. SURCHARGER listenToMessages ===
+    const originalListenToMessages = window.listenToMessages;
+    
+    window.listenToMessages = function() {
+        if (originalListenToMessages) {
+            originalListenToMessages();
+        }
+        
+        // Écouter les ajouts de messages
+        if (currentUser && targetUser) {
+            if (window._scrollListener) {
+                window._scrollListener();
+            }
+            
+            window._scrollListener = db.collection('chats').doc(CHAT_ID).collection('messages')
+                .where('senderId', '==', targetUser.id)
+                .onSnapshot((snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            // Nouveau message reçu
+                            setTimeout(() => {
+                                // Ne scroller que si l'utilisateur est en bas
+                                const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
+                                if (isAtBottom && !userScrolledUp) {
+                                    msgArea.scrollTop = msgArea.scrollHeight;
+                                } else {
+                                    // Afficher le bouton "Nouveau message" si on est en haut
+                                    const distanceFromBottom = msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight;
+                                    if (distanceFromBottom > 200) {
+                                        scrollBtn.style.display = 'flex';
+                                    }
+                                }
+                            }, 200);
+                        }
+                    });
+                });
+        }
+    };
+    
+    // === 7. FORCER LE PREMIER CHARGEMENT ===
+    setTimeout(() => {
+        if (currentUser && targetUser) {
+            // Forcer le scroll en bas au premier chargement
+            setTimeout(() => {
+                msgArea.scrollTop = msgArea.scrollHeight;
+                userScrolledUp = false;
+                scrollBtn.style.display = 'none';
+                console.log("✅ Premier chargement - Scroll en bas");
+            }, 500);
+        }
+    }, 1000);
+    
+    // === 8. RÉINITIALISER QUAND ON CHANGE D'UTILISATEUR ===
+    const originalSelectUser = window.selectUser;
+    window.selectUser = function(userKey) {
+        // Réinitialiser
+        userScrolledUp = false;
+        userInteracted = false;
+        lastScrollTop = 0;
+        
+        if (originalSelectUser) {
+            originalSelectUser(userKey);
+        }
+        
+        // Scroller en bas après connexion
+        setTimeout(() => {
+            msgArea.scrollTop = msgArea.scrollHeight;
+            scrollBtn.style.display = 'none';
+        }, 1000);
+    };
+    
+    // === 9. COMMANDE POUR DÉBLOQUER ===
+    window.unlockScroll = function() {
+        userScrolledUp = false;
+        userInteracted = false;
+        msgArea.scrollTop = msgArea.scrollHeight;
+        scrollBtn.style.display = 'none';
+        console.log("🔓 Scroll débloqué");
+    };
+    
+    // === 10. COMMANDE POUR FORCER LE SCROLL EN BAS ===
+    window.goToBottom = function() {
+        userScrolledUp = false;
+        userInteracted = false;
+        msgArea.scrollTo({
+            top: msgArea.scrollHeight,
+            behavior: 'smooth'
+        });
+        setTimeout(() => {
+            scrollBtn.style.display = 'none';
+        }, 500);
+        console.log("⬇️ Scroll en bas");
+    };
+    
+    // === 11. BOUTON FLOTTANT "NOUVEAU MESSAGE" ===
+    // Créer un bouton supplémentaire pour les nouveaux messages
+    const newMsgBtn = document.createElement('div');
+    newMsgBtn.id = 'new-msg-bubble-btn';
+    newMsgBtn.innerHTML = '💬 Nouveau message';
+    newMsgBtn.style.cssText = `
+        position: absolute;
+        bottom: 140px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #0095f6;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: none;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 149, 246, 0.4);
+        z-index: 998;
+        animation: fadeInUp 0.3s ease;
+    `;
+    newMsgBtn.onclick = function() {
+        msgArea.scrollTo({
+            top: msgArea.scrollHeight,
+            behavior: 'smooth'
+        });
+        userScrolledUp = false;
+        this.style.display = 'none';
+        scrollBtn.style.display = 'none';
+    };
+    document.querySelector('.app-container').appendChild(newMsgBtn);
+    
+    // Afficher le bouton quand un nouveau message arrive et qu'on est en haut
+    function showNewMessageButton() {
+        const distanceFromBottom = msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight;
+        if (distanceFromBottom > 200 && userScrolledUp) {
+            newMsgBtn.style.display = 'block';
+        } else {
+            newMsgBtn.style.display = 'none';
+        }
+    }
+    
+    // Ajouter l'observation
+    const observer = new MutationObserver(() => {
+        showNewMessageButton();
+    });
+    observer.observe(msgArea, { childList: true, subtree: true });
+    
+    // === 12. STYLES D'ANIMATION ===
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    console.log("✅ SCROLL INTELLIGENT ACTIVÉ");
+    console.log("💡 Commandes disponibles :");
+    console.log("   - goToBottom()    → Scroller en bas");
+    console.log("   - unlockScroll()  → Débloquer le scroll");
+    console.log("   - forceScrollToBottom() → Forcer le scroll en bas");
+})();
+      
+      
     </script>
   
    
