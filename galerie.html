@@ -1155,6 +1155,156 @@
 .modal-content .new-album-input button:hover {
     background: #1557b0;
 }
+    
+    /* ===== BOTTOM SHEET POUR SÉLECTIONNER DES PHOTOS ===== */
+.photo-selector-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 3000;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    border-radius: 44px;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+}
+.photo-selector-overlay.active {
+    display: flex;
+}
+.photo-selector-sheet {
+    background: white;
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-height: 85%;
+    padding: 20px 16px 30px 16px;
+    animation: slideUp 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.photo-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+}
+.photo-selector-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #202124;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.photo-selector-header h3 span {
+    font-size: 14px;
+    font-weight: 400;
+    color: #5f6368;
+}
+.photo-selector-close {
+    font-size: 24px;
+    cursor: pointer;
+    color: #5f6368;
+    padding: 4px;
+}
+.photo-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    overflow-y: auto;
+    flex: 1;
+    padding: 12px 0;
+}
+.photo-selector-grid .cell {
+    aspect-ratio: 1 / 1;
+    background: #eef0f2;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 2px solid transparent;
+}
+.photo-selector-grid .cell.selected {
+    border-color: #1a73e8;
+    border-width: 3px;
+}
+.photo-selector-grid .cell img,
+.photo-selector-grid .cell video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.photo-selector-grid .cell .check-mark {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #1a73e8;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.photo-selector-grid .cell.selected .check-mark {
+    display: flex;
+}
+.photo-selector-footer {
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.photo-selector-footer button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+}
+.btn-add-selected {
+    background: #1a73e8;
+    color: white;
+}
+.btn-add-selected:hover {
+    background: #1557b0;
+}
+.btn-add-selected:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.btn-cancel-select {
+    background: #f2f4f7;
+    color: #3c4043;
+}
+.btn-cancel-select:hover {
+    background: #e5e8ec;
+}
+.photo-selector-footer .selected-count {
+    display: flex;
+    align-items: center;
+    color: #5f6368;
+    font-size: 13px;
+    padding: 0 8px;
+}
   </style>
 </head>
 <body>
@@ -1176,9 +1326,9 @@
   <!-- CONTENU SCROLLABLE -->
   <div class="content-area" id="contentArea">
 
-    <!-- ====== VUE COLLECTIONS ====== -->
-    <div id="collectionsView">
-      <!-- Header -->
+    <!-- ====== VUE COLLECTIONS  ====== -->
+<!-- ====== VUE COLLECTIONS ====== -->
+<div id="collectionsView" class="hidden">      <!-- Header -->
       <div class="header-actions">
         <div class="header-left" id="userInfo">
           <i class="fas fa-cloud-slash"></i> <span id="userName">AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO</span>
@@ -1216,15 +1366,13 @@
 
       <!-- Albums -->
      <!-- Albums -->
+<!-- Albums -->
 <div class="section-header">
   <h3>Albums</h3>
   <span class="chevron" onclick="openAlbumsPage()"><i class="fas fa-chevron-right"></i></span>
 </div>
-     <div class="albums-scroll">
-  <div class="album-card create" onclick="openAlbum('Nouvel album')" style="flex:0 0 130px;border-radius:18px;background:white;border:1.5px dashed #dadce0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1a73e8;font-weight:500;font-size:13px;cursor:pointer;height:130px;">
-    <i class="fas fa-folder-plus" style="font-size:28px;margin-bottom:4px;"></i>
-    Créer un album
-  </div>
+<div class="albums-scroll" id="albumsScroll">
+  <!-- Les albums seront chargés dynamiquement par JavaScript -->
 </div>
 
       <!-- Personnes -->
@@ -1289,8 +1437,9 @@
       <div style="height: 8px;"></div>
     </div>
 
-    <!-- ====== VUE PHOTOS ====== -->
-    <div id="photosView">
+<!-- ====== VUE PHOTOS ====== -->
+    <div id="photosView" class="active">
+
       <div class="sticky-date">
         <i class="far fa-calendar-alt"></i><span id="dateLabel">Vos souvenirs</span>
       </div>
@@ -1349,10 +1498,35 @@
   <!-- ====== BOTTOM NAV ====== -->
   <div class="bottom-nav">
     <div class="nav-tabs">
-      <button class="nav-tab" data-tab="photos"><i class="fas fa-images"></i> Photos</button>
-      <button class="nav-tab active" data-tab="collections"><i class="fas fa-folder-open"></i> Collections</button>
+      <button class="nav-tab active" data-tab="photos"><i class="fas fa-images"></i> Photos</button>
+      <button class="nav-tab" data-tab="collections"><i class="fas fa-folder-open"></i> Collections</button>
     </div>
     <div class="fab-lens" id="fabLens"><i class="fas fa-camera"></i></div>
+  </div>
+    <!-- ====== BOTTOM SHEET SÉLECTION DE PHOTOS ====== -->
+  <div class="photo-selector-overlay" id="photoSelector">
+    <div class="photo-selector-sheet">
+      <div class="photo-selector-header">
+        <h3>
+          <i class="fas fa-images" style="color:#1a73e8;"></i> 
+          Sélectionner des photos
+          <span id="selectorAlbumName"></span>
+        </h3>
+        <span class="photo-selector-close" onclick="closePhotoSelector()">
+          <i class="fas fa-times"></i>
+        </span>
+      </div>
+      <div class="photo-selector-grid" id="photoSelectorGrid">
+        <!-- Photos chargées par JS -->
+      </div>
+      <div class="photo-selector-footer">
+        <span class="selected-count" id="selectorSelectedCount">0 sélectionnée(s)</span>
+        <button class="btn-cancel-select" onclick="closePhotoSelector()">Annuler</button>
+        <button class="btn-add-selected" id="btnAddSelected" disabled onclick="addSelectedPhotosToAlbum()">
+          <i class="fas fa-plus"></i> Ajouter
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1859,26 +2033,154 @@ const defaultAlbumData = {
     addCell.onclick = addPhotoToAlbum;
     albumGrid.appendChild(addCell);
   }
-  
-  function addPhotoToAlbum() {
+  // Variable pour stocker l'album cible lors de la sélection
+let targetAlbumForSelection = null;
+let selectedPhotosForAlbum = new Set();
+
+function addPhotoToAlbum() {
     if (!currentAlbum || !albumData[currentAlbum]) {
-      alert('Veuillez ouvrir un album d\'abord');
-      return;
+        alert('Veuillez ouvrir un album d\'abord');
+        return;
     }
     
-    // Utiliser une image aléatoire des médias chargés ou une image par défaut
-    let randomImage;
-    if (allMedia.length > 0) {
-      const randomMedia = allMedia[Math.floor(Math.random() * allMedia.length)];
-      randomImage = randomMedia.url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center';
-    } else {
-      randomImage = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center';
+    targetAlbumForSelection = currentAlbum;
+    selectedPhotosForAlbum = new Set();
+    openPhotoSelector();
+}
+
+function openPhotoSelector() {
+    const overlay = document.getElementById('photoSelector');
+    const grid = document.getElementById('photoSelectorGrid');
+    const albumNameSpan = document.getElementById('selectorAlbumName');
+    const countSpan = document.getElementById('selectorSelectedCount');
+    const addBtn = document.getElementById('btnAddSelected');
+    
+    // Afficher le nom de l'album
+    albumNameSpan.textContent = `→ ${targetAlbumForSelection}`;
+    
+    // Réinitialiser la sélection
+    selectedPhotosForAlbum = new Set();
+    updateSelectorUI();
+    
+    // Charger les photos disponibles (celles qui ne sont pas déjà dans l'album)
+    const existingImages = albumData[targetAlbumForSelection]?.images || [];
+    const availablePhotos = allMedia.filter(media => {
+        // Ne montrer que les photos (pas les vidéos pour simplifier)
+        // et celles qui ne sont pas déjà dans l'album
+        return media.mediaType === 'photo' && !existingImages.includes(media.url);
+    });
+    
+    if (availablePhotos.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#5f6368;">
+                <i class="fas fa-images" style="font-size:36px;display:block;margin-bottom:12px;opacity:0.3;"></i>
+                <p style="font-size:14px;">Aucune photo disponible</p>
+                <p style="font-size:12px;">Toutes vos photos sont déjà dans cet album</p>
+                <button onclick="closePhotoSelector()" style="margin-top:12px;background:#1a73e8;color:white;border:none;padding:8px 24px;border-radius:20px;cursor:pointer;">OK</button>
+            </div>
+        `;
+        countSpan.textContent = '0 sélectionnée(s)';
+        addBtn.disabled = true;
+        overlay.classList.add('active');
+        return;
     }
     
-    albumData[currentAlbum].images.push(randomImage);
-    currentAlbumImages = albumData[currentAlbum].images;
+    grid.innerHTML = '';
+    availablePhotos.forEach((media) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.mediaId = media.id;
+        
+        const img = document.createElement('img');
+        img.src = media.url || '';
+        img.alt = media.fileName || 'photo';
+        img.loading = 'lazy';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        cell.appendChild(img);
+        
+        // Check mark
+        const checkMark = document.createElement('div');
+        checkMark.className = 'check-mark';
+        checkMark.innerHTML = '<i class="fas fa-check"></i>';
+        cell.appendChild(checkMark);
+        
+        cell.addEventListener('click', () => {
+            const id = media.id;
+            if (selectedPhotosForAlbum.has(id)) {
+                selectedPhotosForAlbum.delete(id);
+                cell.classList.remove('selected');
+            } else {
+                selectedPhotosForAlbum.add(id);
+                cell.classList.add('selected');
+            }
+            updateSelectorUI();
+        });
+        
+        grid.appendChild(cell);
+    });
+    
+    overlay.classList.add('active');
+    updateSelectorUI();
+}
+
+function updateSelectorUI() {
+    const countSpan = document.getElementById('selectorSelectedCount');
+    const addBtn = document.getElementById('btnAddSelected');
+    const count = selectedPhotosForAlbum.size;
+    countSpan.textContent = count === 0 ? '0 sélectionnée(s)' : `${count} sélectionnée(s)`;
+    addBtn.disabled = count === 0;
+    addBtn.textContent = count === 0 ? 'Ajouter' : `Ajouter (${count})`;
+}
+
+function closePhotoSelector() {
+    document.getElementById('photoSelector').classList.remove('active');
+    selectedPhotosForAlbum = new Set();
+    targetAlbumForSelection = null;
+}
+
+async function addSelectedPhotosToAlbum() {
+    if (selectedPhotosForAlbum.size === 0) return;
+    if (!targetAlbumForSelection || !albumData[targetAlbumForSelection]) return;
+    
+    const albumName = targetAlbumForSelection;
+    const album = albumData[albumName];
+    
+    // Ajouter chaque photo sélectionnée
+    let addedCount = 0;
+    for (const mediaId of selectedPhotosForAlbum) {
+        const media = allMedia.find(m => m.id === mediaId);
+        if (media && media.url) {
+            // Vérifier si l'image n'est pas déjà dans l'album
+            if (!album.images.includes(media.url)) {
+                album.images.push(media.url);
+                addedCount++;
+            }
+            
+            // Mettre à jour Firestore
+            try {
+                await db.collection('media').doc(mediaId).update({
+                    album: albumName
+                });
+            } catch (err) {
+                console.error('Erreur mise à jour album dans Firestore:', err);
+            }
+        }
+    }
+    
+    // Mettre à jour l'affichage
+    currentAlbumImages = album.images;
     renderAlbumGrid();
-  }
+    renderAlbumsScroll();
+    
+    // Fermer le sélecteur
+    closePhotoSelector();
+    
+    if (addedCount > 0) {
+        alert(`✅ ${addedCount} photo(s) ajoutée(s) à l'album "${albumName}"`);
+    } else {
+        alert('ℹ️ Les photos sélectionnées étaient déjà dans cet album');
+    }
+}
   
   function closeAlbum() {
     albumView.classList.remove('active');
@@ -2119,24 +2421,26 @@ fsDelete.addEventListener('click', async () => {
     await auth.signOut();
   });
   
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      currentUser = user;
-      authScreen.classList.add('hidden');
-      userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'A';
-      userName.textContent = `AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO`;
-      await loadMedia();
-    } else {
-      currentUser = null;
-      authScreen.classList.remove('hidden');
-      photoGrid.innerHTML = '';
-      allMedia = [];
-    }
-  });
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    currentUser = user;
+    authScreen.classList.add('hidden');
+    userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'A';
+    userName.textContent = `AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO`;
+    await loadMedia();
+    renderAlbumsScroll(); // ← AJOUTEZ CETTE LIGNE
+    activateTab('photos');
+  } else {
+    currentUser = null;
+    authScreen.classList.remove('hidden');
+    photoGrid.innerHTML = '';
+    allMedia = [];
+  }
+});
 
   // ============================================================
-  // 16. RECHARGE PÉRIODIQUE DES URLS SIGNÉES
-  // ============================================================
+  // 16. RECHARGE PÉRIODIQUE DES URLS  
+  // ======================================== ====================
   
   setInterval(() => {
     if (currentUser) loadMedia();
@@ -3175,8 +3479,60 @@ function renderArchiveGrid() {
         grid.appendChild(cell);
     });
 }
-  
+  // ============================================================
+// 25. CHARGEMENT DYNAMIQUE DES ALBUMS
+// ============================================================
+
+function renderAlbumsScroll() {
+    const container = document.getElementById('albumsScroll');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    // Récupérer tous les noms d'albums (sauf ceux par défaut si vous voulez les exclure)
+    const albumNames = Object.keys(albumData);
+    
+    // Afficher les albums existants
+    albumNames.forEach(name => {
+        if (name === 'Mes photos' || name === 'Vidéos') return; // Ignorer les albums par défaut si vous voulez
+        
+        const card = document.createElement('div');
+        card.className = 'album-card';
+        card.style.cssText = 'flex:0 0 130px;border-radius:18px;background:#f1f3f4;overflow:hidden;position:relative;height:130px;cursor:pointer;transition:transform 0.15s;';
+        card.onclick = () => openAlbum(name);
+        
+        // Si l'album a des images, afficher la première
+        const images = albumData[name].images || [];
+        if (images.length > 0) {
+            card.innerHTML = `
+                <img src="${images[0]}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />
+                <span class="label">${name}</span>
+            `;
+        } else {
+            card.innerHTML = `
+                <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f1f3f4;color:#5f6368;">
+                    <i class="fas fa-folder" style="font-size:32px;margin-bottom:4px;color:#1a73e8;"></i>
+                    <span style="font-size:12px;font-weight:500;">${name}</span>
+                </div>
+            `;
+        }
+        
+        container.appendChild(card);
+    });
+    
+    // Ajouter le bouton "Créer un album"
+    const createCard = document.createElement('div');
+    createCard.className = 'album-card create';
+    createCard.style.cssText = 'flex:0 0 130px;border-radius:18px;background:white;border:1.5px dashed #dadce0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1a73e8;font-weight:500;font-size:13px;cursor:pointer;height:130px;';
+    createCard.innerHTML = `
+        <i class="fas fa-folder-plus" style="font-size:28px;margin-bottom:4px;"></i>
+        Créer un album
+    `;
+    createCard.onclick = createQuickAlbum;
+    container.appendChild(createCard);
+}
   // Fonction pour créer un album rapidement
+// Fonction pour créer un album rapidement
 function createQuickAlbum() {
     const name = prompt('Nom du nouvel album :');
     if (!name || name.trim() === '') return;
@@ -3188,6 +3544,9 @@ function createQuickAlbum() {
     albumData[albumName] = { images: [] };
     alert(`✅ Album "${albumName}" créé !`);
     
+    // Rafraîchir la liste des albums
+    renderAlbumsScroll();
+    
     // Si la modale est ouverte, rafraîchir la liste
     if (document.getElementById('albumModal').classList.contains('active')) {
         renderAlbumList();
@@ -3196,4 +3555,4 @@ function createQuickAlbum() {
 </script>
 
 </body>
-</html>
+</html> 
