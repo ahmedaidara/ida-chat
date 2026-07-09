@@ -1996,7 +1996,7 @@ const defaultAlbumData = {
 };  
   Object.assign(albumData, defaultAlbumData);
   
-  function openAlbum(title) {
+function openAlbum(title) {
     currentAlbum = title;
     collectionsView.classList.add('hidden');
     photosView.classList.remove('active');
@@ -2005,12 +2005,12 @@ const defaultAlbumData = {
     albumTitle.textContent = title;
     
     if (!albumData[title]) {
-      albumData[title] = { images: [] };
+        albumData[title] = { images: [] };
     }
     
-    currentAlbumImages = albumData[title].images;
+    currentAlbumImages = albumData[title].images || [];
     renderAlbumGrid();
-  }
+}
   
   function renderAlbumGrid() {
     albumGrid.innerHTML = '';
@@ -2037,7 +2037,7 @@ const defaultAlbumData = {
 let targetAlbumForSelection = null;
 let selectedPhotosForAlbum = new Set();
 
-function addPhotoToAlbum() {
+async function addPhotoToAlbum() {
     if (!currentAlbum || !albumData[currentAlbum]) {
         alert('Veuillez ouvrir un album d\'abord');
         return;
@@ -2144,26 +2144,40 @@ async function addSelectedPhotosToAlbum() {
     
     const albumName = targetAlbumForSelection;
     const album = albumData[albumName];
+    const albumId = album.id;
     
     // Ajouter chaque photo sélectionnée
     let addedCount = 0;
+    const newImages = [...album.images];
+    
     for (const mediaId of selectedPhotosForAlbum) {
         const media = allMedia.find(m => m.id === mediaId);
         if (media && media.url) {
-            // Vérifier si l'image n'est pas déjà dans l'album
-            if (!album.images.includes(media.url)) {
-                album.images.push(media.url);
+            if (!newImages.includes(media.url)) {
+                newImages.push(media.url);
                 addedCount++;
             }
             
-            // Mettre à jour Firestore
+            // Mettre à jour le média avec le nom de l'album
             try {
                 await db.collection('media').doc(mediaId).update({
                     album: albumName
                 });
             } catch (err) {
-                console.error('Erreur mise à jour album dans Firestore:', err);
+                console.error('Erreur mise à jour média:', err);
             }
+        }
+    }
+    
+    // Sauvegarder dans Firestore
+    if (albumId && addedCount > 0) {
+        try {
+            await db.collection('albums').doc(albumId).update({
+                images: newImages
+            });
+            album.images = newImages;
+        } catch (err) {
+            console.error('Erreur sauvegarde album:', err);
         }
     }
     
@@ -2428,13 +2442,15 @@ auth.onAuthStateChanged(async (user) => {
     userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'A';
     userName.textContent = `AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO`;
     await loadMedia();
-    renderAlbumsScroll(); // ← AJOUTEZ CETTE LIGNE
+    await loadAlbumsFromFirestore(); // ← CHARGER LES ALBUMS
+    renderAlbumsScroll();
     activateTab('photos');
   } else {
     currentUser = null;
     authScreen.classList.remove('hidden');
     photoGrid.innerHTML = '';
     allMedia = [];
+    albumData = {};
   }
 });
 
@@ -3482,26 +3498,22 @@ function renderArchiveGrid() {
   // ============================================================
 // 25. CHARGEMENT DYNAMIQUE DES ALBUMS
 // ============================================================
-
 function renderAlbumsScroll() {
     const container = document.getElementById('albumsScroll');
     if (!container) return;
     
     container.innerHTML = '';
     
-    // Récupérer tous les noms d'albums (sauf ceux par défaut si vous voulez les exclure)
+    // Récupérer tous les noms d'albums
     const albumNames = Object.keys(albumData);
     
     // Afficher les albums existants
     albumNames.forEach(name => {
-        if (name === 'Mes photos' || name === 'Vidéos') return; // Ignorer les albums par défaut si vous voulez
-        
         const card = document.createElement('div');
         card.className = 'album-card';
         card.style.cssText = 'flex:0 0 130px;border-radius:18px;background:#f1f3f4;overflow:hidden;position:relative;height:130px;cursor:pointer;transition:transform 0.15s;';
         card.onclick = () => openAlbum(name);
         
-        // Si l'album a des images, afficher la première
         const images = albumData[name].images || [];
         if (images.length > 0) {
             card.innerHTML = `
@@ -3531,9 +3543,10 @@ function renderAlbumsScroll() {
     createCard.onclick = createQuickAlbum;
     container.appendChild(createCard);
 }
-  // Fonction pour créer un album rapidement
+  // Fonction pour créer un album  rapidement
 // Fonction pour créer un album rapidement
-function createQuickAlbum() {
+// Fonction pour créer un album rapidement
+async function createQuickAlbum() {
     const name = prompt('Nom du nouvel album :');
     if (!name || name.trim() === '') return;
     const albumName = name.trim();
@@ -3541,15 +3554,64 @@ function createQuickAlbum() {
         alert('Cet album existe déjà');
         return;
     }
-    albumData[albumName] = { images: [] };
-    alert(`✅ Album "${albumName}" créé !`);
     
-    // Rafraîchir la liste des albums
-    renderAlbumsScroll();
+    // Créer l'album dans Firestore
+    try {
+        await db.collection('albums').add({
+            userId: currentUser.uid,
+            name: albumName,
+            images: [],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        albumData[albumName] = { images: [] };
+        alert(`✅ Album "${albumName}" créé !`);
+        
+        // Rafraîchir la liste des albums
+        await loadAlbumsFromFirestore();
+        renderAlbumsScroll();
+        
+        // Si la modale est ouverte, rafraîchir la liste
+        if (document.getElementById('albumModal').classList.contains('active')) {
+            renderAlbumList();
+        }
+    } catch (err) {
+        console.error('Erreur création album:', err);
+        alert('Erreur lors de la création de l\'album');
+    }
+}
+  
+  // ============================================================
+// CHARGEMENT DES ALBUMS DEPUIS FIRESTORE
+// ============================================================
+
+async function loadAlbumsFromFirestore() {
+    if (!currentUser) return;
     
-    // Si la modale est ouverte, rafraîchir la liste
-    if (document.getElementById('albumModal').classList.contains('active')) {
-        renderAlbumList();
+    try {
+        const snapshot = await db.collection('albums')
+            .where('userId', '==', currentUser.uid)
+            .get();
+        
+        // Réinitialiser albumData
+        albumData = {};
+        
+        for (const doc of snapshot.docs) {
+            const data = doc.data();
+            albumData[data.name] = {
+                id: doc.id,
+                images: data.images || []
+            };
+        }
+        
+        // Si on est dans un album, mettre à jour currentAlbumImages
+        if (currentAlbum && albumData[currentAlbum]) {
+            currentAlbumImages = albumData[currentAlbum].images;
+        }
+        
+        renderAlbumsScroll();
+    } catch (err) {
+        console.error('Erreur chargement albums:', err);
     }
 }
 </script>
