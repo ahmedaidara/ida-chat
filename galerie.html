@@ -2062,20 +2062,21 @@ function openPhotoSelector() {
     selectedPhotosForAlbum = new Set();
     updateSelectorUI();
     
-    // Charger les photos disponibles (celles qui ne sont pas déjà dans l'album)
+    // Charger les médias disponibles (photos ET vidéos) qui ne sont pas déjà dans l'album
     const existingImages = albumData[targetAlbumForSelection]?.images || [];
-    const availablePhotos = allMedia.filter(media => {
-        // Ne montrer que les photos (pas les vidéos pour simplifier)
-        // et celles qui ne sont pas déjà dans l'album
-        return media.mediaType === 'photo' && !existingImages.includes(media.url);
+    const availableMedia = allMedia.filter(media => {
+        // Inclure les photos ET les vidéos
+        return (media.mediaType === 'photo' || media.mediaType === 'video' || 
+                (media.fileType && (media.fileType.startsWith('image/') || media.fileType.startsWith('video/')))) 
+                && !existingImages.includes(media.url);
     });
     
-    if (availablePhotos.length === 0) {
+    if (availableMedia.length === 0) {
         grid.innerHTML = `
             <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#5f6368;">
                 <i class="fas fa-images" style="font-size:36px;display:block;margin-bottom:12px;opacity:0.3;"></i>
-                <p style="font-size:14px;">Aucune photo disponible</p>
-                <p style="font-size:12px;">Toutes vos photos sont déjà dans cet album</p>
+                <p style="font-size:14px;">Aucun média disponible</p>
+                <p style="font-size:12px;">Tous vos médias sont déjà dans cet album</p>
                 <button onclick="closePhotoSelector()" style="margin-top:12px;background:#1a73e8;color:white;border:none;padding:8px 24px;border-radius:20px;cursor:pointer;">OK</button>
             </div>
         `;
@@ -2086,17 +2087,46 @@ function openPhotoSelector() {
     }
     
     grid.innerHTML = '';
-    availablePhotos.forEach((media) => {
+    availableMedia.forEach((media) => {
         const cell = document.createElement('div');
         cell.className = 'cell';
         cell.dataset.mediaId = media.id;
         
-        const img = document.createElement('img');
-        img.src = media.url || '';
-        img.alt = media.fileName || 'photo';
-        img.loading = 'lazy';
-        img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-        cell.appendChild(img);
+        const isVideo = media.mediaType === 'video' || (media.fileType && media.fileType.startsWith('video/'));
+        
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.src = media.url || '';
+            video.muted = true;
+            video.preload = 'metadata';
+            video.playsInline = true;
+            video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            cell.appendChild(video);
+            
+            // Badge vidéo
+            const badge = document.createElement('div');
+            badge.style.cssText = `
+                position: absolute;
+                top: 4px;
+                left: 4px;
+                background: rgba(0,0,0,0.6);
+                color: white;
+                font-size: 9px;
+                padding: 2px 8px;
+                border-radius: 10px;
+                pointer-events: none;
+                backdrop-filter: blur(2px);
+            `;
+            badge.innerHTML = '<i class="fas fa-play"></i> Vidéo';
+            cell.appendChild(badge);
+        } else {
+            const img = document.createElement('img');
+            img.src = media.url || '';
+            img.alt = media.fileName || 'photo';
+            img.loading = 'lazy';
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            cell.appendChild(img);
+        }
         
         // Check mark
         const checkMark = document.createElement('div');
@@ -2794,12 +2824,10 @@ async function loadTrash() {
 
 // Fonction pour afficher la corbeille
 function openTrash() {
-    // Cacher les autres vues
     collectionsView.classList.add('hidden');
     photosView.classList.remove('active');
     albumView.classList.remove('active');
     
-    // Créer ou afficher la vue corbeille
     let trashView = document.getElementById('trashView');
     if (!trashView) {
         trashView = document.createElement('div');
@@ -2816,7 +2844,6 @@ function openTrash() {
     trashView.style.display = 'flex';
     trashView.classList.add('active');
     
-    // Construire la page corbeille
     trashView.innerHTML = `
         <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
             <span class="back-btn" onclick="closeTrash()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;">
@@ -2824,6 +2851,9 @@ function openTrash() {
             </span>
             <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">🗑️ Corbeille</h2>
             <span style="font-size:14px;color:#5f6368;" id="trashCount">0 éléments</span>
+            <span class="add-photo" onclick="addFromCurrentView('trash')" style="font-size:24px;cursor:pointer;color:#1a73e8;padding:4px;">
+                <i class="fas fa-plus-circle"></i>
+            </span>
         </div>
         <div id="trashGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:4px;"></div>
         <div id="trashActions" style="display:none;position:sticky;bottom:0;background:white;padding:12px 0;gap:12px;margin-top:12px;border-top:1px solid #dadce0;">
@@ -2841,7 +2871,6 @@ function openTrash() {
         </div>
     `;
     
-    // Charger la corbeille
     loadTrash();
 }
 
@@ -3013,14 +3042,11 @@ async function deleteSelected() {
 
 let favorisItems = [];
 
-// Fonction pour afficher la page Favoris
 function openFavoris() {
-    // Cacher les autres vues
     collectionsView.classList.add('hidden');
     photosView.classList.remove('active');
     albumView.classList.remove('active');
     
-    // Créer ou afficher la vue favoris
     let favorisView = document.getElementById('favorisView');
     if (!favorisView) {
         favorisView = document.createElement('div');
@@ -3037,7 +3063,6 @@ function openFavoris() {
     favorisView.style.display = 'flex';
     favorisView.classList.add('active');
     
-    // Construire la page favoris
     favorisView.innerHTML = `
         <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
             <span class="back-btn" onclick="closeFavoris()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;">
@@ -3045,11 +3070,13 @@ function openFavoris() {
             </span>
             <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">⭐ Favoris</h2>
             <span style="font-size:14px;color:#5f6368;" id="favorisCount">0 éléments</span>
+            <span class="add-photo" onclick="addFromCurrentView('favoris')" style="font-size:24px;cursor:pointer;color:#1a73e8;padding:4px;">
+                <i class="fas fa-plus-circle"></i>
+            </span>
         </div>
         <div id="favorisGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:4px;"></div>
     `;
     
-    // Charger les favoris
     loadFavoris();
 }
 
