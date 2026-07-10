@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyeur de Chat 🔥</title>
+    <!-- Firestore SDK (même version que votre site) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0f0c29, #302b63, #24243e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 40px;
+            padding: 40px 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 25px 50px -8px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            transition: 0.3s;
+        }
+        .icon {
+            font-size: 4.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        h1 {
+            color: #fff;
+            font-weight: 600;
+            font-size: 2rem;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+        .sub {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 18px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            border-radius: 60px;
+            padding: 12px 20px;
+            margin-bottom: 30px;
+            color: #fff;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .stats span {
+            color: #a78bfa;
+        }
+        .danger-btn {
+            background: #dc2626;
+            border: none;
+            padding: 18px 24px;
+            width: 100%;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #7f1d1d;
+            transition: all 0.08s linear;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            letter-spacing: 0.3px;
+            margin-bottom: 18px;
+        }
+        .danger-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #7f1d1d;
+        }
+        .danger-btn:disabled {
+            opacity: 0.5;
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #7f1d1d;
+            pointer-events: none;
+        }
+        .secondary-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 12px;
+            width: 100%;
+            border-radius: 40px;
+            color: rgba(255,255,255,0.7);
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .secondary-btn:hover {
+            background: rgba(255,255,255,0.12);
+        }
+        #status {
+            margin: 18px 0 12px 0;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            min-height: 24px;
+        }
+        .progress-bg {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 20px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #a78bfa, #ec4899);
+            border-radius: 20px;
+            transition: width 0.3s ease;
+        }
+        .footer {
+            margin-top: 25px;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div class="card" id="appCard">
+    <span class="icon">🧹</span>
+    <h1>Nettoyeur <br>de Chat</h1>
+    <div class="sub">⚠️ Supprime définitivement tous les messages du chat <strong>ida_aidara</strong></div>
+
+    <div class="stats">
+        <span>📦 Messages</span>
+        <span id="countDisplay">0</span>
+    </div>
+
+    <button class="danger-btn" id="deleteBtn">
+        <span>🗑️</span> Effacer tout
+    </button>
+
+    <div id="status">🔍 Prêt à analyser ...</div>
+
+    <div class="progress-bg" id="progressBg">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <button class="secondary-btn" id="refreshBtn">⟳ Recompter les messages</button>
+    <div class="footer">Action irréversible • Firestore</div>
+</div>
+
+<script>
+    // ========== CONFIGURATION FIREBASE (EXACTEMENT LA MÊME QUE VOTRE SITE) ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
+        authDomain: "messagerie-65abc.firebaseapp.com",
+        projectId: "messagerie-65abc",
+        storageBucket: "messagerie-65abc.firebasestorage.app",
+        messagingSenderId: "363641716532",
+        appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
+    };
+
+    // Initialisation Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ID du chat (identique à votre code)
+    const CHAT_ID = "chat_ida_aidara";
+
+    // Éléments DOM
+    const deleteBtn = document.getElementById('deleteBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const statusDiv = document.getElementById('status');
+    const countDisplay = document.getElementById('countDisplay');
+    const progressBg = document.getElementById('progressBg');
+    const progressFill = document.getElementById('progressFill');
+
+    let isLoading = false;
+    let totalMessages = 0;
+
+    // ========== COMPTER LES MESSAGES ==========
+    async function compterMessages() {
+        try {
+            statusDiv.innerText = '⏳ Comptage des messages...';
+            const snapshot = await db.collection('chats').doc(CHAT_ID).collection('messages').get();
+            totalMessages = snapshot.size;
+            countDisplay.innerText = totalMessages;
+            statusDiv.innerText = totalMessages === 0 ? '✅ Aucun message à supprimer.' : `📨 ${totalMessages} message(s) trouvé(s).`;
+            deleteBtn.disabled = (totalMessages === 0);
+            return totalMessages;
+        } catch (err) {
+            console.error("Erreur comptage :", err);
+            statusDiv.innerText = '❌ Erreur lors du comptage. Voir console.';
+            return 0;
+        }
+    }
+
+    // ========== SUPPRIMER TOUT ==========
+    async function supprimerTout() {
+        if (isLoading) return;
+        if (totalMessages === 0) {
+            statusDiv.innerText = '⚠️ Aucun message à supprimer.';
+            return;
+        }
+
+        // Confirmation forte
+        const confirmation = confirm(`⚠️ ATTENTION : Vous allez supprimer définitivement ${totalMessages} message(s) du chat.\n\nCette action est IRRÉVERSIBLE.\n\nCliquez sur OK pour confirmer la suppression.`);
+        if (!confirmation) {
+            statusDiv.innerText = '⛔ Suppression annulée.';
+            return;
+        }
+
+        // Deuxième sécurité (un peu plus "sûre")
+        const secondCheck = confirm(`🗑️ DERNIÈRE CHANCE : Êtes-vous certain de vouloir effacer TOUS les messages (${totalMessages}) ?`);
+        if (!secondCheck) {
+            statusDiv.innerText = '⛔ Suppression annulée.';
+            return;
+        }
+
+        // Lancer la suppression
+        isLoading = true;
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<span>⏳</span> Suppression en cours...';
+        statusDiv.innerText = `⏳ Suppression de ${totalMessages} messages...`;
+        progressBg.style.display = 'block';
+        progressFill.style.width = '0%';
+
+        try {
+            // Récupérer tous les messages
+            const snapshot = await db.collection('chats').doc(CHAT_ID).collection('messages').get();
+            const batchSize = 200; // Firestore limite à 500 par batch, on prend 200 pour être safe
+            const docs = snapshot.docs;
+            let processed = 0;
+
+            for (let i = 0; i < docs.length; i += batchSize) {
+                const batch = db.batch();
+                const chunk = docs.slice(i, i + batchSize);
+                chunk.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                processed += chunk.length;
+                const percent = Math.round((processed / docs.length) * 100);
+                progressFill.style.width = percent + '%';
+                statusDiv.innerText = `⏳ Suppression en cours... ${processed}/${docs.length} (${percent}%)`;
+            }
+
+            // Mise à jour finale
+            totalMessages = 0;
+            countDisplay.innerText = '0';
+            statusDiv.innerText = '✅ TOUS les messages ont été supprimés avec succès !';
+            progressFill.style.width = '100%';
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<span>✅</span> Terminé';
+
+        } catch (err) {
+            console.error("Erreur lors de la suppression :", err);
+            statusDiv.innerText = '❌ Erreur lors de la suppression. Voir console.';
+            deleteBtn.innerHTML = '<span>⚠️</span> Erreur';
+        } finally {
+            isLoading = false;
+            setTimeout(() => {
+                deleteBtn.disabled = (totalMessages === 0);
+                deleteBtn.innerHTML = '<span>🗑️</span> Effacer tout';
+                progressBg.style.display = 'none';
+                if (totalMessages === 0) {
+                    statusDiv.innerText = '✅ Chat vidé. Aucun message.';
+                }
+            }, 800);
+        }
+    }
+
+    // ========== ÉVÉNEMENTS ==========
+    deleteBtn.addEventListener('click', supprimerTout);
+
+    refreshBtn.addEventListener('click', async () => {
+        await compterMessages();
+        deleteBtn.disabled = (totalMessages === 0);
+        deleteBtn.innerHTML = '<span>🗑️</span> Effacer tout';
+        progressFill.style.width = '0%';
+        progressBg.style.display = 'none';
+    });
+
+    // ========== CHARGEMENT INITIAL ==========
+    window.addEventListener('load', async () => {
+        await compterMessages();
+        deleteBtn.disabled = (totalMessages === 0);
+        statusDiv.innerText = totalMessages === 0 ? '✅ Aucun message.' : `📨 ${totalMessages} message(s) trouvé(s). Prêt à supprimer.`;
+    });
+
+    console.log("🧹 Nettoyeur de chat chargé. ID du chat :", CHAT_ID);
+</script>
+
+</body>
+</html>
