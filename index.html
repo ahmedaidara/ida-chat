@@ -2775,9 +2775,9 @@ function activerSuiviStatuts() {
             `;
         }
     } else if (data.type === 'whiteboard') {
-        afficherWb(msgId, data);
-        return;
-    } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+    afficherWb(msgId, data);
+    return;  // ← GARDE LE return MAIS NE PAS SCROLLER ICI
+} else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
         // Code Morpion simplifié (tu peux garder le même que dans afficherTousLesMessages)
         const game = data.gameData;
         const isMyTurn = game.turn === currentUser.id;
@@ -10219,7 +10219,7 @@ function afficherTousLesMessages(snapshot) {
     
     // --- ÉTAPE 4 : SCROLLER EN BAS APRÈS AFFICHAGE ---
     setTimeout(() => {
-        msgArea.scrollTop = msgArea.scrollHeight;
+         
     }, 100);
 }
       // ========== AFFICHER LES DERNIERS MESSAGES EN BAS ==========
@@ -10349,7 +10349,7 @@ function afficherWb(msgId, data) {
 
     // Ne pas scroller si l'utilisateur est en train de dessiner
     if (!wb.drawing) {
-        msgArea.scrollTop = msgArea.scrollHeight;
+         
     }
 }
 
@@ -10357,12 +10357,39 @@ function afficherWb(msgId, data) {
 function genererCarteWb(msgId, data) {
     const linesCount = data.whiteboardData?.lines?.length || 0;
     const senderName = data.senderName || 'inconnu';
+    
+    // === VÉRIFIER SI L'UTILISATEUR EST LE PROPRIÉTAIRE ===
+    const isOwner = data.senderId === currentUser?.id;
 
     return `
         <div class="wb-card" data-wb-id="${msgId}">
             <div class="wb-header">
                 <span>🎨 Dessin</span>
-                <span style="font-size:0.6rem;opacity:0.6;">En direct-Ida au carré</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size:0.6rem;opacity:0.6;">En direct</span>
+                    ${isOwner ? `
+                        <button onclick="supprimerTableauBlanc('${msgId}')" 
+                            style="
+                                background: none;
+                                border: none;
+                                color: #ff4444;
+                                cursor: pointer;
+                                font-size: 0.9rem;
+                                padding: 2px 6px;
+                                border-radius: 6px;
+                                transition: all 0.2s;
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            "
+                            onmouseover="this.style.background='rgba(255,68,68,0.15)'; this.style.transform='scale(1.1)'"
+                            onmouseout="this.style.background='none'; this.style.transform='scale(1)'"
+                            title="Supprimer ce tableau"
+                        >
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    ` : ''}
+                </div>
             </div>
             <div class="wb-canvas-box">
                 <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
@@ -10370,9 +10397,47 @@ function genererCarteWb(msgId, data) {
             <div class="wb-tools" id="wb-tools-${msgId}">
                 ${genererOutilsWb(msgId)}
             </div>
-            
         </div>
     `;
+}
+      
+      
+      async function supprimerTableauBlanc(msgId) {
+    if (!msgId) {
+        showTempNotification("❌ Tableau introuvable");
+        return;
+    }
+    
+    if (!confirm("🗑️ Supprimer ce tableau blanc ?")) {
+        return;
+    }
+    
+    try {
+        // Supprimer de Firestore
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).delete();
+        
+        // Supprimer du DOM
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        if (row) {
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '0';
+            row.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                row.remove();
+                showTempNotification("🗑️ Tableau supprimé");
+            }, 300);
+        }
+        
+        // Nettoyer l'écoute
+        if (wb && wb.unsubscribe) {
+            wb.unsubscribe();
+            wb.unsubscribe = null;
+        }
+        
+    } catch (error) {
+        console.error("Erreur:", error);
+        showTempNotification("❌ Erreur lors de la suppression");
+    }
 }
 
 // ========== GÉNÉRER LES OUTILS ==========
@@ -10941,530 +11006,109 @@ setTimeout(function() {
 console.log("✅ SYNCHRONISATION TEMPS RÉEL ACTIVÉE POUR LE TABLEAU BLANC");
       
       // ============================================================
-// ⚡ MÉTHODE ULTIME - BLOQUE TOUT SCROLL AUTO ⚡
-// ============================================================
-
-// 1. FORCER LE SCROLL À RESTER À SA POSITION
-(function() {
-    console.log("🔥 ACTIVATION DU VERROU DE SCROLL ULTIME");
-    
-    // Stocker la position du scroll
-    let savedScrollPosition = 0;
-    let isForcingScroll = false;
-    
-    // Sauvegarder la position actuelle
-    function saveScrollPosition() {
-        const msgArea = document.getElementById('msg-area');
-        if (msgArea) {
-            savedScrollPosition = msgArea.scrollTop;
-        }
-    }
-    
-    // Restaurer la position
-    function restoreScrollPosition() {
-        const msgArea = document.getElementById('msg-area');
-        if (msgArea && !isForcingScroll) {
-            msgArea.scrollTop = savedScrollPosition;
-        }
-    }
-    
-    // Observer TOUS les changements dans le DOM
-    const observer = new MutationObserver(function(mutations) {
-        const msgArea = document.getElementById('msg-area');
-        if (!msgArea) return;
-        
-        // Si on n'est pas en train de forcer, on sauvegarde et on restore
-        if (!isForcingScroll) {
-            // Sauvegarder avant le changement
-            const currentPos = msgArea.scrollTop;
-            
-            // Après un court délai, restaurer
-            clearTimeout(window._scrollRestoreTimeout);
-            window._scrollRestoreTimeout = setTimeout(() => {
-                if (msgArea.scrollTop !== currentPos && !isForcingScroll) {
-                    msgArea.scrollTop = currentPos;
-                    console.log("🔄 Scroll restauré à:", currentPos);
-                }
-            }, 10);
-        }
-    });
-    
-    // Démarrer l'observation
-    const msgArea = document.getElementById('msg-area');
-    if (msgArea) {
-        observer.observe(msgArea, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            characterData: true
-        });
-    }
-    
-    // 2. INTERCEPTER TOUTES LES TENTATIVES DE SCROLL
-    const originalScrollTo = window.scrollTo;
-    window.scrollTo = function(x, y) {
-        // Bloquer si on est dans le msg-area
-        const msgArea = document.getElementById('msg-area');
-        if (msgArea && y !== undefined && y > 0) {
-            // Autoriser seulement si l'utilisateur est en bas
-            const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
-            if (!isAtBottom) {
-                console.log("🚫 Scroll bloqué par la méthode ultime");
-                return;
-            }
-        }
-        return originalScrollTo.call(this, x, y);
-    };
-    
-    // 3. INTERCEPTER scrollTop
-    Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
-        get: function() {
-            return this._scrollTop || 0;
-        },
-        set: function(value) {
-            const msgArea = document.getElementById('msg-area');
-            if (this === msgArea || this === document.documentElement) {
-                // Vérifier si c'est un scroll forcé ou volontaire
-                const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
-                const isUserAction = window._isUserScrolling || false;
-                
-                if (!isAtBottom && !isUserAction) {
-                    console.log("🚫 scrollTop bloqué par la méthode ultime");
-                    return;
-                }
-            }
-            this._scrollTop = value;
-            if (this === msgArea) {
-                // Appliquer le scroll
-                if (this._scrollTop !== undefined) {
-                    this.scrollTo(0, this._scrollTop);
-                }
-            }
-        }
-    });
-    
-    // 4. DÉTECTER LE SCROLL UTILISATEUR
-    document.addEventListener('scroll', function(e) {
-        window._isUserScrolling = true;
-        clearTimeout(window._userScrollTimeout);
-        window._userScrollTimeout = setTimeout(() => {
-            window._isUserScrolling = false;
-        }, 200);
-    }, { passive: true, capture: true });
-    
-    // 5. BLOQUER LE SCROLL AUTO DE FIREBASE
-    // Intercepter tous les appels à scrollTop = ...
-    const originalScrollTopSetter = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop')?.set;
-    if (originalScrollTopSetter) {
-        Object.defineProperty(Element.prototype, 'scrollTop', {
-            set: function(value) {
-                const msgArea = document.getElementById('msg-area');
-                if (this === msgArea) {
-                    const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
-                    if (!isAtBottom && !window._isUserScrolling) {
-                        console.log("🚫 scrollTop intercepté par la méthode ultime");
-                        return;
-                    }
-                }
-                if (this._scrollTop !== value) {
-                    this._scrollTop = value;
-                    if (this === msgArea) {
-                        this.scrollTo(0, value);
-                    }
-                }
-            },
-            get: function() {
-                return this._scrollTop || 0;
-            }
-        });
-    }
-    
-    // 6. FORCER LA POSITION DU SCROLL TOUTES LES 100ms
-    setInterval(function() {
-        const msgArea = document.getElementById('msg-area');
-        if (msgArea && !window._isUserScrolling) {
-            const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
-            if (!isAtBottom && msgArea._scrollTop !== undefined && msgArea._scrollTop !== msgArea.scrollTop) {
-                // Restaurer seulement si c'était un scroll forcé
-                msgArea.scrollTo(0, msgArea._scrollTop);
-            }
-        }
-    }, 100);
-    
-    console.log("✅ VERROU ULTIME ACTIVÉ - Plus aucun scroll auto !");
-})();
-
-// 7. COMMANDE POUR DÉBLOQUER TEMPORAIREMENT (optionnel)
-window.forceScrollToBottom = function() {
-    const msgArea = document.getElementById('msg-area');
-    if (msgArea) {
-        window._isUserScrolling = true;
-        msgArea.scrollTo(0, msgArea.scrollHeight);
-        setTimeout(() => {
-            window._isUserScrolling = false;
-        }, 500);
-    }
-};
-
-// 8. COMMANDE POUR RÉACTIVER LE SCROLL AUTO (optionnel)
-window.enableAutoScroll = function() {
-    location.reload(); // Le plus radical
-};
-
-console.log("💡 Utilise forceScrollToBottom() pour défiler en bas manuellement");
-      // ========== OUVRIR LE PROFIL (SANS SE DÉCONNECTER) ==========
-function ouvrirProfil() {
-    // Afficher une petite info ou menu
-    showTempNotification(`👤 ${currentUser.name} · ${targetUser.name}`);
-    
-    // Ou ouvrir un petit menu avec les infos
-    const menu = document.createElement('div');
-    menu.style.cssText = `
-        position: fixed;
-        top: 60px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--bg-main);
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 20px;
-        z-index: 9999;
-        min-width: 250px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-        animation: fadeIn 0.2s ease-out;
-    `;
-    
-    menu.innerHTML = `
-        <div style="text-align:center; margin-bottom:15px;">
-            <div style="font-size:3rem; margin-bottom:5px;">👤</div>
-            <div style="font-weight:bold; font-size:1.1rem;">${currentUser.name}</div>
-            <div style="font-size:0.8rem; color:var(--text-muted);">Conversation avec ${targetUser.name}</div>
-        </div>
-        <div style="border-top:1px solid var(--border-color); padding-top:10px;">
-            <button onclick="this.parentElement.parentElement.remove()" style="
-                width:100%;
-                padding:8px;
-                background:#0095f6;
-                color:white;
-                border:none;
-                border-radius:10px;
-                cursor:pointer;
-                font-weight:bold;
-            ">✖ Fermer</button>
-        </div>
-    `;
-    
-    document.body.appendChild(menu);
-    
-    // Fermer en cliquant ailleurs
-    setTimeout(() => {
-        document.addEventListener('click', function fermer(e) {
-            if (!menu.contains(e.target) && e.target.closest('.header-left') !== document.querySelector('.header-left')) {
-                menu.remove();
-                document.removeEventListener('click', fermer);
-            }
-        });
-    }, 100);
-}
+ 
       
       // ============================================================
-// 🚀 SOLUTION ULTIME - SCROLL INTELLIGENT SANS FORÇAGE
+// 🗑️ ICÔNE SUPPRIMER DANS L'EN-TÊTE DU TABLEAU BLANC
 // ============================================================
 
-(function() {
-    console.log("🔥 ACTIVATION DU SCROLL INTELLIGENT");
-    
-    // === VARIABLES GLOBALES ===
-    let userScrolledUp = false;
-    let isFirstLoad = true;
-    let forceScrollTimeout = null;
-    let lastScrollTop = 0;
-    let userInteracted = false;
-    
-    // === RÉFÉRENCES ===
-    const msgArea = document.getElementById('msg-area');
-    if (!msgArea) {
-        console.error("❌ msg-area non trouvé");
+// === 1. FONCTION POUR SUPPRIMER LE TABLEAU ===
+async function supprimerTableauBlanc(msgId) {
+    if (!msgId) {
+        showTempNotification("❌ Tableau introuvable");
         return;
     }
     
-    // === 1. CRÉER LE BOUTON "REVENIR EN BAS" ===
-    const scrollBtn = document.createElement('div');
-    scrollBtn.id = 'scroll-to-bottom-btn';
-    scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
-    scrollBtn.style.cssText = `
-        position: absolute;
-        bottom: 80px;
-        right: 15px;
-        background: #0095f6;
-        color: white;
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0, 149, 246, 0.4);
-        z-index: 999;
-        font-size: 1.2rem;
-        border: none;
-        transition: all 0.3s ease;
-    `;
-    scrollBtn.onmouseover = () => scrollBtn.style.transform = 'scale(1.1)';
-    scrollBtn.onmouseout = () => scrollBtn.style.transform = 'scale(1)';
-    scrollBtn.onclick = function() {
-        msgArea.scrollTo({
-            top: msgArea.scrollHeight,
-            behavior: 'smooth'
-        });
-        userScrolledUp = false;
-        this.style.display = 'none';
-    };
-    document.querySelector('.app-container').appendChild(scrollBtn);
-    
-    // === 2. DÉTECTER LE SCROLL UTILISATEUR ===
-    msgArea.addEventListener('scroll', function() {
-        const distanceFromBottom = this.scrollHeight - this.scrollTop - this.clientHeight;
-        
-        // L'utilisateur a scrollé vers le haut
-        if (distanceFromBottom > 100) {
-            userScrolledUp = true;
-            userInteracted = true;
-        } else if (distanceFromBottom < 30) {
-            userScrolledUp = false;
-            scrollBtn.style.display = 'none';
-        }
-        
-        // Afficher le bouton si on est remonté
-        if (distanceFromBottom > 200) {
-            scrollBtn.style.display = 'flex';
-        } else {
-            scrollBtn.style.display = 'none';
-        }
-        
-        // Mémoriser la position
-        lastScrollTop = this.scrollTop;
-    }, { passive: true });
-    
-    // === 3. INTERCEPTER LA FONCTION ORIGINALE DE SCROLL ===
-    const originalScrollTo = Element.prototype.scrollTo;
-    Element.prototype.scrollTo = function(x, y) {
-        // Si c'est le msg-area et qu'on essaye de scroller en bas
-        if (this === msgArea && y !== undefined) {
-            // Si l'utilisateur a scrollé vers le haut, on bloque
-            if (userScrolledUp || userInteracted) {
-                console.log("🚫 Scroll bloqué - l'utilisateur est en haut");
-                return;
-            }
-        }
-        return originalScrollTo.call(this, x, y);
-    };
-    
-    // === 4. INTERCEPTER scrollTop ===
-    let _scrollTop = 0;
-    Object.defineProperty(msgArea, 'scrollTop', {
-        get: function() {
-            return this._scrollTop || 0;
-        },
-        set: function(value) {
-            const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
-            
-            // Si l'utilisateur est en haut ET qu'on essaye de forcer
-            if (userScrolledUp && !isAtBottom) {
-                console.log("🚫 scrollTop bloqué");
-                return;
-            }
-            
-            this._scrollTop = value;
-            // Appliquer le scroll réel
-            this.scrollTo(0, value);
-        }
-    });
-    
-    // === 5. SURCHARGER LA FONCTION D'AFFICHAGE DES MESSAGES ===
-    // Sauvegarder la fonction originale
-    const originalAfficherTousLesMessages = window.afficherTousLesMessages;
-    
-    window.afficherTousLesMessages = function(snapshot) {
-        // Appeler l'originale
-        if (originalAfficherTousLesMessages) {
-            originalAfficherTousLesMessages(snapshot);
-        }
-        
-        // Scroll intelligent
-        setTimeout(() => {
-            if (!userScrolledUp) {
-                msgArea.scrollTop = msgArea.scrollHeight;
-            } else {
-                // Restaurer la position
-                if (lastScrollTop > 0) {
-                    msgArea.scrollTop = lastScrollTop;
-                }
-            }
-        }, 100);
-    };
-    
-    // === 6. SURCHARGER listenToMessages ===
-    const originalListenToMessages = window.listenToMessages;
-    
-    window.listenToMessages = function() {
-        if (originalListenToMessages) {
-            originalListenToMessages();
-        }
-        
-        // Écouter les ajouts de messages
-        if (currentUser && targetUser) {
-            if (window._scrollListener) {
-                window._scrollListener();
-            }
-            
-            window._scrollListener = db.collection('chats').doc(CHAT_ID).collection('messages')
-                .where('senderId', '==', targetUser.id)
-                .onSnapshot((snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        if (change.type === 'added') {
-                            // Nouveau message reçu
-                            setTimeout(() => {
-                                // Ne scroller que si l'utilisateur est en bas
-                                const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
-                                if (isAtBottom && !userScrolledUp) {
-                                    msgArea.scrollTop = msgArea.scrollHeight;
-                                } else {
-                                    // Afficher le bouton "Nouveau message" si on est en haut
-                                    const distanceFromBottom = msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight;
-                                    if (distanceFromBottom > 200) {
-                                        scrollBtn.style.display = 'flex';
-                                    }
-                                }
-                            }, 200);
-                        }
-                    });
-                });
-        }
-    };
-    
-    // === 7. FORCER LE PREMIER CHARGEMENT ===
-    setTimeout(() => {
-        if (currentUser && targetUser) {
-            // Forcer le scroll en bas au premier chargement
-            setTimeout(() => {
-                msgArea.scrollTop = msgArea.scrollHeight;
-                userScrolledUp = false;
-                scrollBtn.style.display = 'none';
-                console.log("✅ Premier chargement - Scroll en bas");
-            }, 500);
-        }
-    }, 1000);
-    
-    // === 8. RÉINITIALISER QUAND ON CHANGE D'UTILISATEUR ===
-    const originalSelectUser = window.selectUser;
-    window.selectUser = function(userKey) {
-        // Réinitialiser
-        userScrolledUp = false;
-        userInteracted = false;
-        lastScrollTop = 0;
-        
-        if (originalSelectUser) {
-            originalSelectUser(userKey);
-        }
-        
-        // Scroller en bas après connexion
-        setTimeout(() => {
-            msgArea.scrollTop = msgArea.scrollHeight;
-            scrollBtn.style.display = 'none';
-        }, 1000);
-    };
-    
-    // === 9. COMMANDE POUR DÉBLOQUER ===
-    window.unlockScroll = function() {
-        userScrolledUp = false;
-        userInteracted = false;
-        msgArea.scrollTop = msgArea.scrollHeight;
-        scrollBtn.style.display = 'none';
-        console.log("🔓 Scroll débloqué");
-    };
-    
-    // === 10. COMMANDE POUR FORCER LE SCROLL EN BAS ===
-    window.goToBottom = function() {
-        userScrolledUp = false;
-        userInteracted = false;
-        msgArea.scrollTo({
-            top: msgArea.scrollHeight,
-            behavior: 'smooth'
-        });
-        setTimeout(() => {
-            scrollBtn.style.display = 'none';
-        }, 500);
-        console.log("⬇️ Scroll en bas");
-    };
-    
-    // === 11. BOUTON FLOTTANT "NOUVEAU MESSAGE" ===
-    // Créer un bouton supplémentaire pour les nouveaux messages
-    const newMsgBtn = document.createElement('div');
-    newMsgBtn.id = 'new-msg-bubble-btn';
-    newMsgBtn.innerHTML = '💬 Nouveau message';
-    newMsgBtn.style.cssText = `
-        position: absolute;
-        bottom: 140px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #0095f6;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        display: none;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0, 149, 246, 0.4);
-        z-index: 998;
-        animation: fadeInUp 0.3s ease;
-    `;
-    newMsgBtn.onclick = function() {
-        msgArea.scrollTo({
-            top: msgArea.scrollHeight,
-            behavior: 'smooth'
-        });
-        userScrolledUp = false;
-        this.style.display = 'none';
-        scrollBtn.style.display = 'none';
-    };
-    document.querySelector('.app-container').appendChild(newMsgBtn);
-    
-    // Afficher le bouton quand un nouveau message arrive et qu'on est en haut
-    function showNewMessageButton() {
-        const distanceFromBottom = msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight;
-        if (distanceFromBottom > 200 && userScrolledUp) {
-            newMsgBtn.style.display = 'block';
-        } else {
-            newMsgBtn.style.display = 'none';
-        }
+    if (!confirm("🗑️ Supprimer ce tableau blanc ?")) {
+        return;
     }
     
-     const observer = new MutationObserver(() => {
-        showNewMessageButton();
-    });
-    observer.observe(msgArea, { childList: true, subtree: true });
-    
-    // === 12. STYLES D'ANIMATION ===
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    try {
+        // Supprimer de Firestore
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).delete();
+        
+        // Supprimer du DOM
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        if (row) {
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '0';
+            row.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                row.remove();
+                showTempNotification("🗑️ Tableau supprimé");
+            }, 300);
         }
-    `;
-    document.head.appendChild(style);
+        
+        // Nettoyer l'écoute
+        if (wb && wb.unsubscribe) {
+            wb.unsubscribe();
+            wb.unsubscribe = null;
+        }
+        
+    } catch (error) {
+        console.error("Erreur:", error);
+        showTempNotification("❌ Erreur lors de la suppression");
+    }
+}
+
+// === 2. MODIFIER LA FONCTION QUI GÉNÈRE LA CARTE ===
+const originalGenererCarte = window.genererCarteWb;
+
+window.genererCarteWb = function(msgId, data) {
+    // Vérifier si le tableau appartient à l'utilisateur connecté
+    const isOwner = data.senderId === currentUser?.id;
+    const senderName = data.senderName || 'inconnu';
+    const linesCount = data.whiteboardData?.lines?.length || 0;
     
-    console.log("✅ SCROLL INTELLIGENT ACTIVÉ");
-    console.log("💡 Commandes disponibles :");
-    console.log("   - goToBottom()    → Scroller en bas");
-    console.log("   - unlockScroll()  → Débloquer le scroll");
-    console.log("   - forceScrollToBottom() → Forcer le scroll en bas");
-})();
-      
-      
+    // === CRÉER LA CARTE AVEC L'ICÔNE DANS L'EN-TÊTE ===
+    return `
+        <div class="wb-card" data-wb-id="${msgId}" style="position: relative;">
+            <div class="wb-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid rgba(168, 0, 255, 0.1);">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    🎨 Dessin
+                    <span style="font-size:0.55rem; background:rgba(168,0,255,0.1); padding:2px 8px; border-radius:10px; color:#a800ff; opacity:0.7;">${linesCount} traits</span>
+                </span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    ${isOwner ? `
+                        <!-- ✅ BOUTON SUPPRIMER DANS L'EN-TÊTE -->
+                        <button onclick="supprimerTableauBlanc('${msgId}')" 
+                            style="
+                                background: none;
+                                border: none;
+                                color: #ff4444;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                padding: 2px 6px;
+                                border-radius: 6px;
+                                transition: all 0.2s;
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            "
+                            onmouseover="this.style.background='rgba(255,68,68,0.15)'; this.style.transform='scale(1.1)'"
+                            onmouseout="this.style.background='none'; this.style.transform='scale(1)'"
+                            onmousedown="this.style.transform='scale(0.9)'"
+                            onmouseup="this.style.transform='scale(1.1)'"
+                            title="Supprimer ce tableau"
+                        >
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    ` : `
+                        <span style="font-size:0.55rem; opacity:0.4;">par ${senderName}</span>
+                    `}
+                </div>
+            </div>
+            <div class="wb-canvas-box">
+                <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
+            </div>
+            <div class="wb-tools" id="wb-tools-${msgId}">
+                ${typeof genererOutilsWb === 'function' ? genererOutilsWb(msgId) : ''}
+            </div>
+        </div>
+    `;
+};
+
+console.log("✅ Icône 🗑️ ajoutée dans l'en-tête du tableau !");
     </script>
   
    
