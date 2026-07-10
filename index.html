@@ -1456,6 +1456,23 @@ input, textarea {
     max-width: 100% !important;
     overflow-x: hidden !important;
 }
+      /* --- COMPORTEMENT DE SCROLL NORMAL --- */
+.messages-area {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    height: 100%;
+}
+
+/* --- Les messags --- */
+.messages-area {
+    display: flex;
+    flex-direction: column;
+}
+
+.message-row {
+    flex-shrink: 0;
+} 
     </style>
 </head>
 <body>
@@ -2673,16 +2690,174 @@ function activerSuiviStatuts() {
         }
     });
 }
-    // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION CORRIGÉE ==========
+    // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION COR RIGÉE ==========
+      
+      function ajouterMessageDOM(msgId, data) {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+    
+    const isSent = data.senderId === currentUser.id;
+    const row = document.createElement('div');
+    row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+    row.setAttribute('data-id', msgId);
+    
+    const isGiant = isOnlyEmojis(data.text);
+    let customStyle = '';
+    if (data.bubbleStyle) {
+        customStyle = data.bubbleStyle;
+    } else if (data.messageStyle) {
+        customStyle = data.messageStyle;
+    } else if (isSent) {
+        const defaultStyle = localStorage.getItem('default_bubble_style');
+        if (defaultStyle && defaultStyle !== 'none') {
+            customStyle = defaultStyle;
+        }
+    }
+    
+    let codedClass = '';
+    if (data.isCoded === true) {
+        codedClass = 'coded';
+    }
+    
+    let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+        onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
+        oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
+        ondblclick="handleDoubleTap(event, '${msgId}')"
+        ontouchstart="demarrerAppuiLong(event, '${msgId}')"
+        ontouchend="annulerAppuiLong()"
+        ontouchmove="annulerAppuiLong()"
+        onmousedown="demarrerAppuiLong(event, '${msgId}')"
+        onmouseup="annulerAppuiLong()"
+        onmouseleave="annulerAppuiLong()">`;
+    
+    if (data.replyToText) {
+        bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+    }
+    
+    // Gérer les différents types de messages
+    if (data.type === 'text') {
+        let displayText = data.text;
+        if (data.isCoded === true) {
+            const originalMessage = data.originalText || data.text;
+            displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+            bubbleHtml += displayText;
+        } else {
+            displayText = formatText(escapeHTML(displayText));
+            displayText = displayText.replace(/\n/g, '<br>');
+            bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
+        }
+    } else if (data.type === 'image') {
+        bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+    } else if (data.type === 'drawing') {
+        bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+    } else if (data.type === 'video') {
+        const videoUrl = data.mediaUrl || data.fileUrl || "";
+        bubbleHtml += `
+            <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+                <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
+            </div>
+        `;
+    } else if (data.type === 'audio') {
+        const audioId = `audio_${msgId}`;
+        if (!data.isEphemeralAudio) {
+            bubbleHtml += `
+                <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
+                    <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                    <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
+                    <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
+                    <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
+                        <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
+                    </div>
+                    <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
+                </div>
+            `;
+        }
+    } else if (data.type === 'whiteboard') {
+        afficherWb(msgId, data);
+        return;
+    } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+        // Code Morpion simplifié (tu peux garder le même que dans afficherTousLesMessages)
+        const game = data.gameData;
+        const isMyTurn = game.turn === currentUser.id;
+        const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
+        
+        let cardHtml = `
+            <div class="morpion-card" style="margin: 5px 0;">
+                <div class="morpion-header">
+                    <span>🎮 MORPION </span>
+                    <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
+                </div>
+                <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
+                    ${game.status === 'finished' ? (game.winner === 'nul' ? "🎯 Match nul !" : `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`) : (isMyTurn ? "⚡ À ton tour !" : `⏳ ${targetUser.name} réfléchit...`)}
+                </div>
+                <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
+        `;
+        
+        for (let i = 0; i < 9; i++) {
+            const cellValue = game.board[i] || "";
+            const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
+            const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
+            cardHtml += `
+                <div class="morpion-cell ${cellClass} ${isWinCell}" 
+                     data-cell-index="${i}" 
+                     onclick="jouerCoupMorpion('${msgId}', ${i})"
+                     style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
+                    ${cellValue}
+                </div>
+            `;
+        }
+        
+        cardHtml += `</div></div>`;
+        bubbleHtml += cardHtml;
+    }
+    
+    // HEURE ET STATUT
+    const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+    
+    let checkMark = '<span>✓</span>';
+    if (data.status === 'read') {
+        checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+    } else if (data.status === 'delivered') {
+        checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+    } else {
+        checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+    }
+    
+    const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+    bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+    
+    if (data.reactions && Object.keys(data.reactions).length > 0) {
+        bubbleHtml += `<div class="applied-reactions">`;
+        Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+        bubbleHtml += `</div>`;
+    }
+    
+    bubbleHtml += `</div>`;
+    row.innerHTML = bubbleHtml;
+    
+    if (blurModeActive) {
+        const bubble = row.querySelector('.message-bubble');
+        if (bubble) {
+            bubble.classList.add('blur-active');
+            attachBlurEvents(bubble);
+        }
+    }
+    
+    // Ajouter le message à la fin (en bas)
+    msgArea.appendChild(row);
+}
+      
 function listenToMessages() {
     if(unsubscribeMessages) unsubscribeMessages();
     
-    // Variable pour suivre le premier chargement
+    // Variable pour suivre le premier chargement 
     let isFirstSnapshot = true;
      let userScrolledUp = false; // ← AJOUTER CETTE LIGNE
     let scrollTimeout = null;   // ← AJOUTER CETTE LIGNE
    unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
-    .orderBy('timestamp', 'desc')
+    .orderBy('timestamp', 'asc')
     .limit(50)
     .onSnapshot(snapshot => {
              if (isFirstSnapshot) { afficherTousLesMessages(snapshot); }
@@ -3332,7 +3507,7 @@ function ecouterStatutsEnTempsReel() {
         
         function cancelReply() { replyToId = null; document.getElementById('reply-preview').style.display = 'none'; }
         
-     async function sendTextMessage() {
+   async function sendTextMessage() {
     if (messageEnCoursEdition) {
         await confirmerModification();
         return;
@@ -3340,6 +3515,7 @@ function ecouterStatutsEnTempsReel() {
     const input = document.getElementById('chat-in');
     let text = input.value.trim();
     if(!text) return;
+
 
     if (modeTraductionActif && langueTraduction) {
         const texteTraduit = await traduireTexte(text, langueTraduction);
@@ -9841,13 +10017,10 @@ document.addEventListener('keydown', function(e) {
       
       
       // ============================================================
-// ✅ FONCTION POUR AFFICHER TOUS LES MESSAGES
-// ============================================================
 function afficherTousLesMessages(snapshot) {
     const msgArea = document.getElementById('msg-area');
     if (!msgArea) return;
     
-    // Si pas de messages
     if (snapshot.empty) {
         msgArea.innerHTML = `
             <div style="text-align:center; color:var(--text-muted); padding:40px;">
@@ -9859,18 +10032,30 @@ function afficherTousLesMessages(snapshot) {
         return;
     }
     
-    // Vider la zone
     msgArea.innerHTML = '';
     
     let lastDateStr = "";
+    let messages = [];
     
+    // --- ÉTAPE 1 : RÉCUPÉRER TOUS LES MESSAGES DANS UN TABLEAU ---
     snapshot.forEach(doc => {
         const data = doc.data();
         const msgId = doc.id;
-        
+        messages.push({ id: msgId, data: data });
+    });
+    
+    // --- ÉTAPE 2 : TRIER PAR DATE CROISSANTE (PLUS ANCIEN → PLUS RÉCENT) ---
+    messages.sort((a, b) => {
+        const dateA = a.data.timestamp ? a.data.timestamp.toDate() : new Date(0);
+        const dateB = b.data.timestamp ? b.data.timestamp.toDate() : new Date(0);
+        return dateA - dateB;
+    });
+    
+    // --- ÉTAPE 3 : AFFICHER LES MESSAGES DANS L'ORDRE ---
+    messages.forEach(({ id: msgId, data }) => {
         // Ajouter le séparateur de date
         if (data.timestamp) {
-            const dateObj = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+            const dateObj = data.timestamp.toDate();
             const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
             if (dateStr !== lastDateStr) {
                 const sep = document.createElement('div');
@@ -9900,10 +10085,8 @@ function afficherTousLesMessages(snapshot) {
         }
         
         let codedClass = '';
-        let lockBadge = '';
         if (data.isCoded === true) {
             codedClass = 'coded';
-            lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
         }
         
         let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
@@ -9962,10 +10145,9 @@ function afficherTousLesMessages(snapshot) {
                 `;
             }
         } else if (data.type === 'whiteboard') {
-    // Afficher le tableau blanc
-    afficherWb(msgId, data);
-} else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
-            // MORPION - code simplifié
+            afficherWb(msgId, data);
+            return;
+        } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
             const game = data.gameData;
             const isMyTurn = game.turn === currentUser.id;
             const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
@@ -10035,7 +10217,7 @@ function afficherTousLesMessages(snapshot) {
         msgArea.appendChild(row);
     });
     
-    // Scroll
+    // --- ÉTAPE 4 : SCROLLER EN BAS APRÈS AFFICHAGE ---
     setTimeout(() => {
         msgArea.scrollTop = msgArea.scrollHeight;
     }, 100);
@@ -10595,180 +10777,7 @@ function creerTableauBlanc() {
         });
 }
       
-      // ============================================================
-// ⚡ MÉTHODE ULTIME - BLOQUE TOUT SCROLL AUTO ⚡
-// ============================================================
-
-// 1. FORCER LE SCROLL À RESTER À SA POSITION
-(function() {
-    console.log("🔥 ACTIVATION DU VERROU DE SCROLL ULTIME");
-    
-    // Stocker la position du scroll
-    let savedScrollPosition = 0;
-    let isForcingScroll = false;
-    
-    // Sauvegarder la position actuelle
-    function saveScrollPosition() {
-        const msgArea = document.getElementById('msg-area');
-        if (msgArea) {
-            savedScrollPosition = msgArea.scrollTop;
-        }
-    }
-    
-    // Restaurer la position
-    function restoreScrollPosition() {
-        const msgArea = document.getElementById('msg-area');
-        if (msgArea && !isForcingScroll) {
-            msgArea.scrollTop = savedScrollPosition;
-        }
-    }
-    
-    // Observer TOUS les changements dans le DOM
-    const observer = new MutationObserver(function(mutations) {
-        const msgArea = document.getElementById('msg-area');
-        if (!msgArea) return;
-        
-        // Si on n'est pas en train de forcer, on sauvegarde et on restore
-        if (!isForcingScroll) {
-            // Sauvegarder avant le changement
-            const currentPos = msgArea.scrollTop;
-            
-            // Après un court délai, restaurer
-            clearTimeout(window._scrollRestoreTimeout);
-            window._scrollRestoreTimeout = setTimeout(() => {
-                if (msgArea.scrollTop !== currentPos && !isForcingScroll) {
-                    msgArea.scrollTop = currentPos;
-                    console.log("🔄 Scroll restauré à:", currentPos);
-                }
-            }, 10);
-        }
-    });
-    
-    // Démarrer l'observation
-    const msgArea = document.getElementById('msg-area');
-    if (msgArea) {
-        observer.observe(msgArea, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            characterData: true
-        });
-    }
-    
-    // 2. INTERCEPTER TOUTES LES TENTATIVES DE SCROLL
-    const originalScrollTo = window.scrollTo;
-    window.scrollTo = function(x, y) {
-        // Bloquer si on est dans le msg-area
-        const msgArea = document.getElementById('msg-area');
-        if (msgArea && y !== undefined && y > 0) {
-            // Autoriser seulement si l'utilisateur est en bas
-            const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
-            if (!isAtBottom) {
-                console.log("🚫 Scroll bloqué par la méthode ultime");
-                return;
-            }
-        }
-        return originalScrollTo.call(this, x, y);
-    };
-    
-    // 3. INTERCEPTER scrollTop
-    Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
-        get: function() {
-            return this._scrollTop || 0;
-        },
-        set: function(value) {
-            const msgArea = document.getElementById('msg-area');
-            if (this === msgArea || this === document.documentElement) {
-                // Vérifier si c'est un scroll forcé ou volontaire
-                const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
-                const isUserAction = window._isUserScrolling || false;
-                
-                if (!isAtBottom && !isUserAction) {
-                    console.log("🚫 scrollTop bloqué par la méthode ultime");
-                    return;
-                }
-            }
-            this._scrollTop = value;
-            if (this === msgArea) {
-                // Appliquer le scroll
-                if (this._scrollTop !== undefined) {
-                    this.scrollTo(0, this._scrollTop);
-                }
-            }
-        }
-    });
-    
-    // 4. DÉTECTER LE SCROLL UTILISATEUR
-    document.addEventListener('scroll', function(e) {
-        window._isUserScrolling = true;
-        clearTimeout(window._userScrollTimeout);
-        window._userScrollTimeout = setTimeout(() => {
-            window._isUserScrolling = false;
-        }, 200);
-    }, { passive: true, capture: true });
-    
-    // 5. BLOQUER LE SCROLL AUTO DE FIREBASE
-    // Intercepter tous les appels à scrollTop = ...
-    const originalScrollTopSetter = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop')?.set;
-    if (originalScrollTopSetter) {
-        Object.defineProperty(Element.prototype, 'scrollTop', {
-            set: function(value) {
-                const msgArea = document.getElementById('msg-area');
-                if (this === msgArea) {
-                    const isAtBottom = (this.scrollHeight - this._scrollTop - this.clientHeight) < 50;
-                    if (!isAtBottom && !window._isUserScrolling) {
-                        console.log("🚫 scrollTop intercepté par la méthode ultime");
-                        return;
-                    }
-                }
-                if (this._scrollTop !== value) {
-                    this._scrollTop = value;
-                    if (this === msgArea) {
-                        this.scrollTo(0, value);
-                    }
-                }
-            },
-            get: function() {
-                return this._scrollTop || 0;
-            }
-        });
-    }
-    
-    // 6. FORCER LA POSITION DU SCROLL TOUTES LES 100ms
-    setInterval(function() {
-        const msgArea = document.getElementById('msg-area');
-        if (msgArea && !window._isUserScrolling) {
-            const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
-            if (!isAtBottom && msgArea._scrollTop !== undefined && msgArea._scrollTop !== msgArea.scrollTop) {
-                // Restaurer seulement si c'était un scroll forcé
-                msgArea.scrollTo(0, msgArea._scrollTop);
-            }
-        }
-    }, 100);
-    
-    console.log("✅ VERROU ULTIME ACTIVÉ - Plus aucun scroll auto !");
-})();
-
-// 7. COMMANDE POUR DÉBLOQUER TEMPORAIREMENT (optionnel)
-window.forceScrollToBottom = function() {
-    const msgArea = document.getElementById('msg-area');
-    if (msgArea) {
-        window._isUserScrolling = true;
-        msgArea.scrollTo(0, msgArea.scrollHeight);
-        setTimeout(() => {
-            window._isUserScrolling = false;
-        }, 500);
-    }
-};
-
-// 8. COMMANDE POUR RÉACTIVER LE SCROLL AUTO (optionnel) 
-window.enableAutoScroll = function() {
-    location.reload(); // Le plus radical
-};
-
-console.log("💡 Utilise forceScrollToBottom() pour défiler en bas manuellement");
-      
-      // ============================================================
+ 
 // ⚡ FORCER LA SYNCHRONISATION EN TEMPS RÉEL DU TABLEAU ⚡
 // ============================================================
 
@@ -11433,8 +11442,7 @@ function ouvrirProfil() {
         }
     }
     
-    // Ajouter l'observation
-    const observer = new MutationObserver(() => {
+     const observer = new MutationObserver(() => {
         showNewMessageButton();
     });
     observer.observe(msgArea, { childList: true, subtree: true });
