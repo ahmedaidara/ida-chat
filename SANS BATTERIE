@@ -55,8 +55,20 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background: #000; color: #fff; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
 
-        .app-container { width: 100%; max-width: 450px; height: 100vh; background: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; position: relative; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); }
-        @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
+.app-container { 
+    width: 100%; 
+    max-width: 450px; 
+    height: 100vh; 
+    height: 100dvh;  /* ← AJOUTE CETTE LIGNE (dynamic viewport height) */
+    background: var(--bg-main); 
+    color: var(--text-main); 
+    display: flex; 
+    flex-direction: column; 
+    position: relative; 
+    border-left: 1px solid var(--border-color); 
+    border-right: 1px solid var(--border-color); 
+    overflow: hidden;  /* ← AJOUTE CETTE LIGNE */
+}        @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
 
         /* ÉCRAN DE SÉLECTION */
         #login-screen { position: absolute; inset: 0; background: linear-gradient(135deg, #4f5bd5, #962fbf, #d62976, #feda75); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; padding: 20px; text-align: center; }
@@ -81,11 +93,23 @@
 
         /* ZONE MESSAGES */
         .messages-area { flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-chat); display: flex; flex-direction: column; gap: 10px; position: relative; background-size: cover; background-position: center; }
-        .message-row { display: flex; width: 100%; margin-bottom: 2px; position: relative; }
-        .message-row.sent { justify-content: flex-end; }
-        .message-row.received { justify-content: flex-start; }
+       .message-row { 
+    display: flex; 
+    width: 100%; 
+    margin-bottom: 4px; 
+    padding: 0 0px;  /* ← METS 0 ou supprime cette ligne */
+    position: relative; 
+}
+       .message-row.sent { 
+    justify-content: flex-end; 
+    padding-right: 4px;  /* ← CHANGE 14px → 4px (petit espace à droite) */
+}
+       .message-row.received { 
+    justify-content: flex-start; 
+    padding-left: 4px;   /* ← CHANGE 14px → 4px (petit espace à gauche) */
+}
         
-        .message-bubble { max-width: 70%; padding: 10px 16px; border-radius: 22px; font-size: 0.95rem; line-height: 1.4; position: relative; cursor: pointer; user-select: none; transition: transform 0.1s; animation: fadeIn 0.2s ease-out; display: flex; flex-direction: column; gap: 4px; }
+        .message-bubble { max-width: 70%; padding: 6px 10px; border-radius: 22px; font-size: 0.85rem; line-height: 1.4; position: relative; cursor: pointer; user-select: none; transition: transform 0.1s; animation: fadeIn 0.2s ease-out; display: flex; flex-direction: column; gap: 4px; }
         .sent .message-bubble { background: var(--bubble-sent); color: var(--bubble-sent-text); border-bottom-right-radius: 4px; }
         .received .message-bubble { background: var(--bubble-received); color: var(--text-main); border-bottom-left-radius: 4px; }
       
@@ -122,7 +146,7 @@
         .message-bubble.watercolor { background: linear-gradient(135deg, #667eea, #764ba2, #f093fb) !important; filter: blur(0.3px) !important; color: white !important; border-radius: 25px 8px 25px 8px !important; }
         .message-bubble.retro { background: #2d2d2d !important; color: #00ff00 !important; font-family: 'Courier New', monospace !important; border: 2px solid #00ff00 !important; box-shadow: 3px 3px 0px #00ff00 !important; }
         
-        .msg-meta { font-size: 0.7rem; opacity: 0.7; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
+        .msg-meta { font-size: 0.6rem; opacity: 0.7; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
         .sent .msg-meta { color: #fff; }
         .received .msg-meta { color: var(--text-muted); }
         .status-tick { color: #0095f6; font-weight: bold; }
@@ -999,6 +1023,456 @@ input, textarea {
 }
 @keyframes pulseTurn { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
 @keyframes winPop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+      
+      /* ========== BOUTON FLOATTANT NOUVEAU MESSAGE ========== */
+.new-message-floating-btn {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0095f6;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 149, 246, 0.4);
+    cursor: pointer;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    animation: slideUpNewMsg 0.3s ease-out;
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.new-message-floating-btn:hover {
+    transform: translateX(-50%) scale(1.05);
+}
+
+.new-message-floating-btn i {
+    font-size: 1rem;
+}
+
+@keyframes slideUpNewMsg {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.new-message-count {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    padding: 0px 8px;
+    font-size: 0.75rem;
+    line-height: 20px;
+    min-width: 20px;
+    text-align: center;
+}
+      
+      /* ===== TABLEAU BLANC DANS LE CHAT (COMME MORPION) ===== */
+.whiteboard-card {
+    width: 100%;
+    max-width: 320px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    color: var(--text-main);
+    margin: 2px 0;
+}
+[data-theme="dark"] .whiteboard-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.whiteboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 4px;
+}
+.wb-canvas-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid rgba(255,255,255,0.1);
+    aspect-ratio: 16/10;
+    touch-action: none;
+}
+.wb-canvas-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    background: #ffffff;
+    touch-action: none;
+}
+.wb-tools-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 2px 2px 2px;
+    justify-content: center;
+    align-items: center;
+}
+.wb-tool-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+.wb-tool-btn:hover {
+    transform: scale(1.1);
+    background: rgba(168,0,255,0.15);
+}
+.wb-tool-btn.active {
+    border-color: #a800ff;
+    background: rgba(168,0,255,0.2);
+    box-shadow: 0 0 10px rgba(168,0,255,0.2);
+}
+.wb-color-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+.wb-color-btn:hover {
+    transform: scale(1.15);
+}
+.wb-color-btn.active {
+    border-color: #ffffff;
+    box-shadow: 0 0 8px rgba(168,0,255,0.4);
+}
+.wb-size-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    transition: all 0.2s ease;
+}
+.wb-size-btn:hover {
+    transform: scale(1.1);
+    background: rgba(168,0,255,0.15);
+}
+.wb-size-btn.active {
+    border-color: #a800ff;
+    background: rgba(168,0,255,0.2);
+}
+.wb-size-preview {
+    display: inline-block;
+    border-radius: 50%;
+    background: currentColor;
+}
+.wb-actions {
+    display: flex;
+    gap: 4px;
+    padding-top: 4px;
+    justify-content: center;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+.wb-actions button {
+    padding: 3px 12px;
+    border-radius: 14px;
+    border: none;
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.wb-actions button:hover {
+    transform: scale(1.05);
+}
+.wb-clear-btn {
+    background: rgba(255,68,68,0.15);
+    color: #ff4444;
+}
+.wb-close-btn {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-muted);
+}
+.wb-separator {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.06);
+    margin: 0 2px;
+}
+      /* ===== TABLEAU BLANC - CARTE AVEC DIMENSIONS FIXES ET OMBRES ===== */
+.wb-card {
+    width: 350px;
+    max-width: 280px;
+    height: 450px;
+    background: var(--bg-main);
+    border-radius: 20px;
+    padding: 12px;
+    border: 2px solid rgba(168, 0, 255, 0.25);
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.15),
+        0 8px 30px rgba(168, 0, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    margin: 4px 0;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    flex-shrink: 0;
+}
+.wb-canvas-box {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    flex: 1;
+    min-height: 0;
+    touch-action: none;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.wb-card:hover {
+    box-shadow: 
+        0 6px 25px rgba(0, 0, 0, 0.2),
+        0 12px 40px rgba(168, 0, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+[data-theme="dark"] .wb-card {
+    background: rgba(20, 20, 30, 0.95);
+    border-color: rgba(168, 0, 255, 0.35);
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.4),
+        0 8px 30px rgba(168, 0, 255, 0.1);
+}
+
+.wb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(168, 0, 255, 0.1);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    min-height: 24px;
+}
+
+.wb-header span:first-child {
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wb-canvas-box {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    flex: 1;
+    min-height: 0;
+    touch-action: none;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .wb-canvas-box {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.wb-canvas-box canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    background: #ffffff;
+    touch-action: none;
+}
+
+.wb-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 2px 4px 2px;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+[data-theme="dark"] .wb-tools {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.wb-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.06);
+    background: var(--bg-main);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.wb-btn:hover {
+    transform: scale(1.1);
+    border-color: #a800ff;
+    box-shadow: 0 2px 8px rgba(168, 0, 255, 0.15);
+}
+
+.wb-btn.active {
+    border-color: #a800ff;
+    background: rgba(168, 0, 255, 0.12);
+    box-shadow: 0 0 12px rgba(168, 0, 255, 0.15);
+}
+
+.wb-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.wb-color:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.wb-color.active {
+    border-color: #a800ff;
+    box-shadow: 0 0 12px rgba(168, 0, 255, 0.3), 0 0 0 2px var(--bg-main);
+}
+
+.wb-separator {
+    width: 1px;
+    height: 22px;
+    background: rgba(0, 0, 0, 0.06);
+    margin: 0 3px;
+}
+
+[data-theme="dark"] .wb-separator {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.wb-actions {
+    display: flex;
+    gap: 6px;
+    padding-top: 6px;
+    justify-content: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+    min-height: 30px;
+}
+
+[data-theme="dark"] .wb-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.wb-actions button {
+    padding: 4px 14px;
+    border-radius: 16px;
+    border: none;
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wb-actions button:hover {
+    transform: scale(1.04);
+}
+
+.wb-clear {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+.wb-clear:hover {
+    background: rgba(255, 68, 68, 0.2);
+}
+      
+      /* ===== BLOQUER TOUT DÉBORDEMENT ===== */
+* {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.app-container {
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.chat-input-bar {
+    overflow: hidden !important;
+}
+
+.input-box-container {
+    overflow: hidden !important;
+    max-width: 100% !important;
+}
+
+.chat-input {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+      /* --- COMPORTEMENT DE SCROLL NORMAL --- */
+.messages-area {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    height: 100%;
+}
+
+/* --- Les messags --- */
+.messages-area {
+    display: flex;
+    flex-direction: column;
+}
+
+.message-row {
+    flex-shrink: 0;
+} 
     </style>
 </head>
 <body>
@@ -1025,7 +1499,7 @@ input, textarea {
         </div>
 
         <div class="chat-header">
-            <div class="header-left" onclick="logout()">
+            <div class="header-left" onclick="ouvrirProfil()">
                 <i class="fa-solid fa-arrow-left"></i>
                 <div style="position: relative;">
                     <div class="header-avatar" id="header-av">--</div>
@@ -1036,12 +1510,11 @@ input, textarea {
                 <div class="header-info">
                     <div class="h-name" id="header-display-name">
                         Correspondant
-                        <span id="other-mood-emoji" style="margin-left: 8px; font-size: 1rem; display: inline-block;">😊</span>
+                        <span id="other-mood-emoji" style="margin-left: 8px; font-size: 1rem; display: inline-block;">😊</span> 
                     </div>
                     <div class="h-status" id="header-status-text">
                         En ligne
-                        <span class="battery-indicator" id="battery-indicator">
-                            <span class="battery-icon" id="battery-icon">🔋</span>
+                             <span class="battery-icon" id="battery-icon">🔋</span>
                             <span class="battery-percent" id="battery-percent">--%</span>
                         </span>
                     </div>
@@ -1083,7 +1556,12 @@ input, textarea {
         </div>
         <div class="live-bar" id="live-bar"></div>
         <div class="messages-area" id="msg-area"></div>
- 
+ <!-- Bouton flottant "Nouveau message" -->
+<div class="new-message-floating-btn" id="new-msg-floating-btn" onclick="scrollToBottom()">
+    <i class="fa-regular fa-comment"></i>
+    <span id="new-msg-text">📩 Nouveau message</span>
+    <span class="new-message-count" id="new-msg-count">1</span>
+</div>
        
 
         <div class="typing-indicator" id="typing-ind">
@@ -1138,7 +1616,11 @@ input, textarea {
             <div class="tool-item" onclick="togglePanel('emoji-panel'); closeToolsPanel();"><i class="fa-regular fa-face-smile" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Émojis</span></div>
           <div class="tool-item" onclick="creerSessionMorpion()" style="cursor: pointer;">
     <i class="fa-solid fa-gamepad" style="font-size: 2rem; color: #a800ff;"></i>
-    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Morpion Pro</span>
+    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Morpion</span>
+</div>
+          <div class="tool-item" onclick="creerTableauBlanc(); closeToolsPanel();" style="cursor: pointer;">
+    <i class="fa-solid fa-paintbrush" style="font-size: 1.8rem; color: #ff6b6b;"></i>
+    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Dessin en direct</span>
 </div>
             <div class="tool-item" onclick="toggleTheme(); closeToolsPanel();"><i class="fa-solid fa-moon" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Thème</span></div>
         </div>
@@ -1380,7 +1862,7 @@ input, textarea {
 <div class="secret-page" id="secret-page">
     <div class="secret-header">
         <i class="fa-solid fa-arrow-left" onclick="closeSecretPage()"></i>
-        <h3><i class="fa-solid fa-lock"></i> Carnet Secret 🔒</h3>
+        <h3><i class="fa-solid fa-lock"></i> Messages 🔒</h3>
         <i class="fa-solid fa-trash" onclick="clearSecretChat()" style="color:#ff4444;"></i>
     </div>
     
@@ -1672,13 +2154,13 @@ setTimeout(() => {
 // ==================== CONFIGURATION TELEGRAM ====================
 const TELEGRAM_BOT_TOKEN_AIDARA = "8818466564:AAHhfYo-tufycGw5CJGt8F9YyEm2SgHYvSE";
 const TELEGRAM_CHAT_ID_AIDARA = "7399263012";
-const TELEGRAM_BOT_TOKEN_IDA = "8921495493:AAEa1oO9gTh-Lk_QLa5MA65UXllbsLSUoZE";
-const TELEGRAM_CHAT_ID_IDA = "6515818320";
+const TELEGRAM_BOT_TOKEN_IDA = "8776078913:AAEQ5sbo0i1VtGuuYYCClWGHddsHkMjgmII";
+const TELEGRAM_CHAT_ID_IDA = "6765547978";
 
 // Anti-doublons
 const notifiedMessages = new Set();
 
-// ==================== FONCTION UNIQUE ====================
+// ==================== FONCTION UNIQUE =============  ======
 async function sendTelegramNotification(senderId) {
     if (!senderId || !currentUser) return;
 
@@ -1765,6 +2247,8 @@ async function demanderPermissionNotifications() {
         let typingTimeout = null;
         let selectedMessageId = null;
         let replyToId = null;
+      let messageStatusListeners = [];  // ← AJOUTE ICI
+let lastReadUpdate = null;        // ← AJOUTE ICI
         
         let mediaRecorder = null;
         let audioChunks = [];
@@ -1843,6 +2327,133 @@ async function demanderPermissionNotifications() {
             }, 2000);
         }
 // ========== FONCTION POUR DEMANDER LES NOTIFICATIONS ==========
+      
+      // ========== METTRE À JOUR LE STATUT D'UN MESSAGE ==========
+function updateMessageStatus(messageId, newStatus) {
+    const messageRow = document.querySelector(`[data-id="${messageId}"]`);
+    if (!messageRow) return;
+    const isSent = messageRow.classList.contains('sent');
+    if (!isSent) return;
+    const bubble = messageRow.querySelector('.message-bubble');
+    if (!bubble) return;
+    const msgMeta = bubble.querySelector('.msg-meta');
+    if (!msgMeta) return;
+    let timeText = msgMeta.textContent;
+    timeText = timeText.replace(/✓/g, '').replace(/✓✓/g, '').trim();
+    let statusHtml = '';
+    if (newStatus === 'read') {
+        statusHtml = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+    } else if (newStatus === 'delivered') {
+        statusHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+    } else {
+        statusHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+    }
+    const modifiedTag = msgMeta.innerHTML.includes('modifié') ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+    msgMeta.innerHTML = `${timeText} ${statusHtml}${modifiedTag}`;
+}
+
+// ========== ÉCOUTER LES CHANGEMENTS DE STATUT ==========
+function listenToMessageStatus() {
+    if (!currentUser) return;
+    messageStatusListeners.forEach(unsub => unsub());
+    messageStatusListeners = [];
+    const listener = db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', currentUser.id)
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'modified') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    if (data.status) {
+                        updateMessageStatus(msgId, data.status);
+                    }
+                }
+            });
+        });
+    messageStatusListeners.push(listener);
+}
+
+// ========== MARQUER LES MESSAGES COMME LUS ==========
+function markMessagesAsRead() {
+    if (!currentUser || !targetUser) return;
+    
+    const now = Date.now();
+    if (lastReadUpdate && (now - lastReadUpdate) < 2000) return;
+    lastReadUpdate = now;
+    
+    console.log("📖 Marquage des messages de", targetUser.name, "comme lus...");
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .where('status', '!=', 'read')
+        .get()
+        .then(snapshot => {
+            if (snapshot.empty) {
+                console.log("✅ Aucun message à marquer");
+                return;
+            }
+            
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => {
+                batch.update(doc.ref, { 
+                    status: 'read',
+                    readAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            
+            return batch.commit().then(() => {
+                console.log(`✅ ${snapshot.size} messages marqués comme LUS`);
+            });
+        })
+        .catch(err => console.error("Erreur marquage lu:", err));
+}
+
+      
+      // ========== DÉTECTER L'ACTIVITÉ UTILISATEUR ==========
+function detecterActivitePourMarquerLu() {
+    let timeoutMarquage = null;
+    
+    const marquer = () => {
+        if (timeoutMarquage) clearTimeout(timeoutMarquage);
+        timeoutMarquage = setTimeout(() => {
+            markMessagesAsRead();
+        }, 1000);
+    };
+    
+    // Événements qui indiquent que l'utilisateur est actif
+    const events = ['click', 'touchstart', 'scroll', 'keydown', 'focus'];
+    events.forEach(event => {
+        document.addEventListener(event, marquer);
+    });
+    
+    // Quand la page redevient visible
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            markMessagesAsRead();
+        }
+    });
+}
+
+// Appeler cette fonction après la connxon
+// Dans selectUser(), ajoute : detecterActivitePourMarquerLu();
+      
+// ========== VÉRIFIER LA LIVRAISON D'UN MESSAGE ==========
+async function checkMessageDelivery(messageId) {
+    try {
+        const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageId).get();
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (data.status === 'sent') {
+            await doc.ref.update({ 
+                status: 'delivered',
+                deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log(`📨 Message ${messageId} marqué comme délivré`);
+        }
+    } catch(err) {
+        console.error("Erreur vérification livraison:", err);
+    }
+}
 // ========== FONCTION POUR DEMANDER LES NOTIFICATIONS ==========
 async function demanderPermissionNotifications() {
     console.log("🔔 Tentative d'activation des notifications...");
@@ -1915,10 +2526,10 @@ async function enregistrerTokenPush() {
         function selectUser(userKey) {
             if(userKey === 'ida') {
                 currentUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
-                targetUser = { id: 'aidara', name: 'Ahmed Said Aidara', full: 'Aidara' };
+                targetUser = { id: 'aidara', name: 'Mon Roi', full: 'Aidara' };
             } else {
                 currentUser = { id: 'aidara', name: 'Ahmed Said Aidara', full: 'Aidara' };
-                targetUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
+                targetUser = { id: 'ida', name: 'Ma Reine', full: 'Ida' };
             }
           
            localStorage.setItem('lastUser', userKey);
@@ -1941,6 +2552,16 @@ async function enregistrerTokenPush() {
            localStorage.setItem('lastUser', userKey);
           activerMarquageMessagesLus();
 ecouterMessagesSupprimes();
+          listenToMessageStatus();                    // ← AJOUTE ICI
+setTimeout(markMessagesAsRead, 1000);      // ← AJOUTE ICI
+              activerSuiviStatuts();
+              setTimeout(marquerMessagesCommeLus, 2000);
+
+ // Démarrer la mise à jour de sa batterie
+    demarrerMiseAJourBatterie();
+    
+    // Écouter la batterie de l'autre
+    ecouterStatutAutreAvecHorodatage();
         }
 
         function logout() {
@@ -1948,29 +2569,535 @@ ecouterMessagesSupprimes();
             if(unsubscribeTyping) unsubscribeTyping();
             document.getElementById('login-screen').style.display = 'flex';
         }
+// ========== ÉCOUTE EN TEMPS RÉEL DES STATUTS DE LECTURE ==========
+function ecouterStatutsTempsReel() {
+    if (!currentUser || !targetUser) return;
+    
+    // Nettoyer les anciens listeners
+    if (window._statutListener) {
+        window._statutListener();
+        window._statutListener = null;
+    }
+    
+    console.log("👀 Écoute des statuts en temps réel activée");
+    
+    // Écouter TOUS les messages du chat
+    window._statutListener = db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id) // Messages de l'AUTRE utilisateur
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'modified') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    
+                    // Si le statut a changé vers 'read'
+                    if (data.status === 'read') {
+                        console.log(`📖 Message ${msgId} marqué comme LU en temps réel`);
+                        updateMessageStatus(msgId, 'read');
+                        
+                        // Mettre à jour l'icône dans l'interface
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const tickElement = messageRow.querySelector('.status-tick');
+                            if (tickElement) {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+                            }
+                        }
+                    } 
+                    else if (data.status === 'delivered') {
+                        console.log(`📨 Message ${msgId} marqué comme DÉLIVRÉ en temps réel`);
+                        updateMessageStatus(msgId, 'delivered');
+                        
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const tickElement = messageRow.querySelector('.status-tick');
+                            if (tickElement) {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
+                            }
+                        }
+                    }
+                }
+            });
+        }, (error) => {
+            console.error("Erreur écoute statuts:", error);
+        });
+}
 
-        // ========== ÉCOUTE DES MESSAGES (FIRESTORE) ==========
+// ========== FONCTION POUR MARQUER LES MESSAGES COMME LUS ==========
+function marquerTousMessagesCommeLus() {
+    if (!currentUser || !targetUser) return;
+    
+    console.log("📖 Marquage des messages de", targetUser.name, "comme lus...");
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .where('status', '!=', 'read')
+        .get()
+        .then((snapshot) => {
+            if (snapshot.empty) {
+                console.log("✅ Aucun message à marquer comme lu");
+                return;
+            }
+            
+            const batch = db.batch();
+            let count = 0;
+            
+            snapshot.docs.forEach((doc) => {
+                batch.update(doc.ref, { 
+                    status: 'read',
+                    readAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                count++;
+            });
+            
+            return batch.commit().then(() => {
+                console.log(`✅ ${count} messages marqués comme LUS`);
+            });
+        })
+        .catch((err) => {
+            console.error("❌ Erreur marquage:", err);
+        });
+}
+
+// ========== DÉTECTER QUAND L'UTILISATEUR EST ACTIF ==========
+function detecterActiviteUtilisateur() {
+    // Marquer comme lu quand l'utilisateur interagit avec le chat
+    const events = ['click', 'touchstart', 'scroll', 'focus', 'keydown'];
+    
+    events.forEach(event => {
+        document.addEventListener(event, function marquer() {
+            marquerTousMessagesCommeLus();
+            // Supprimer l'écouteur après 5 secondes pour éviter trop d'appels
+            setTimeout(() => {
+                document.removeEventListener(event, marquer);
+            }, 1000);
+        }, { once: true });
+    });
+}
+
+// ========== FONCTION PRINCIPALE À APPELER DANS selectUser ==========
+function activerSuiviStatuts() {
+    // 1. Écouter les statuts en temps réel
+    ecouterStatutsTempsReel();
+    
+    // 2. Marquer les messages comme lus au chargement
+    setTimeout(marquerTousMessagesCommeLus, 1000);
+    
+    // 3. Détecter l'activité pour marquer en temps réel
+    detecterActiviteUtilisateur();
+    
+    // 4. Marquer quand l'utilisateur revient sur la page
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            console.log("👀 Page visible - Marquage des messages comme lus");
+            marquerTousMessagesCommeLus();
+        }
+    });
+}
+    // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION COR RIGÉE ==========
+      
+      function ajouterMessageDOM(msgId, data) {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+    
+    const isSent = data.senderId === currentUser.id;
+    const row = document.createElement('div');
+    row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+    row.setAttribute('data-id', msgId);
+    
+    const isGiant = isOnlyEmojis(data.text);
+    let customStyle = '';
+    if (data.bubbleStyle) {
+        customStyle = data.bubbleStyle;
+    } else if (data.messageStyle) {
+        customStyle = data.messageStyle;
+    } else if (isSent) {
+        const defaultStyle = localStorage.getItem('default_bubble_style');
+        if (defaultStyle && defaultStyle !== 'none') {
+            customStyle = defaultStyle;
+        }
+    }
+    
+    let codedClass = '';
+    if (data.isCoded === true) {
+        codedClass = 'coded';
+    }
+    
+    let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+        onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
+        oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
+        ondblclick="handleDoubleTap(event, '${msgId}')"
+        ontouchstart="demarrerAppuiLong(event, '${msgId}')"
+        ontouchend="annulerAppuiLong()"
+        ontouchmove="annulerAppuiLong()"
+        onmousedown="demarrerAppuiLong(event, '${msgId}')"
+        onmouseup="annulerAppuiLong()"
+        onmouseleave="annulerAppuiLong()">`;
+    
+    if (data.replyToText) {
+        bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+    }
+    
+    // Gérer les différents types de messages
+    if (data.type === 'text') {
+        let displayText = data.text;
+        if (data.isCoded === true) {
+            const originalMessage = data.originalText || data.text;
+            displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+            bubbleHtml += displayText;
+        } else {
+            displayText = formatText(escapeHTML(displayText));
+            displayText = displayText.replace(/\n/g, '<br>');
+            bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
+        }
+    } else if (data.type === 'image') {
+        bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+    } else if (data.type === 'drawing') {
+        bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+    } else if (data.type === 'video') {
+        const videoUrl = data.mediaUrl || data.fileUrl || "";
+        bubbleHtml += `
+            <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+                <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
+            </div>
+        `;
+    } else if (data.type === 'audio') {
+        const audioId = `audio_${msgId}`;
+        if (!data.isEphemeralAudio) {
+            bubbleHtml += `
+                <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
+                    <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                    <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
+                    <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
+                    <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
+                        <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
+                    </div>
+                    <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
+                </div>
+            `;
+        }
+    } else if (data.type === 'whiteboard') {
+    afficherWb(msgId, data);
+    return;  // ← GARDE LE return MAIS NE PAS SCROLLER ICI
+} else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+        // Code Morpion simplifié (tu peux garder le même que dans afficherTousLesMessages)
+        const game = data.gameData;
+        const isMyTurn = game.turn === currentUser.id;
+        const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
+        
+        let cardHtml = `
+            <div class="morpion-card" style="margin: 5px 0;">
+                <div class="morpion-header">
+                    <span>🎮 MORPION </span>
+                    <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
+                </div>
+                <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
+                    ${game.status === 'finished' ? (game.winner === 'nul' ? "🎯 Match nul !" : `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`) : (isMyTurn ? "⚡ À ton tour !" : `⏳ ${targetUser.name} réfléchit...`)}
+                </div>
+                <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
+        `;
+        
+        for (let i = 0; i < 9; i++) {
+            const cellValue = game.board[i] || "";
+            const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
+            const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
+            cardHtml += `
+                <div class="morpion-cell ${cellClass} ${isWinCell}" 
+                     data-cell-index="${i}" 
+                     onclick="jouerCoupMorpion('${msgId}', ${i})"
+                     style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
+                    ${cellValue}
+                </div>
+            `;
+        }
+        
+        cardHtml += `</div></div>`;
+        bubbleHtml += cardHtml;
+    }
+    
+    // HEURE ET STATUT
+    const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+    
+    let checkMark = '<span>✓</span>';
+    if (data.status === 'read') {
+        checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+    } else if (data.status === 'delivered') {
+        checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+    } else {
+        checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+    }
+    
+    const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+    bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+    
+    if (data.reactions && Object.keys(data.reactions).length > 0) {
+        bubbleHtml += `<div class="applied-reactions">`;
+        Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+        bubbleHtml += `</div>`;
+    }
+    
+    bubbleHtml += `</div>`;
+    row.innerHTML = bubbleHtml;
+    
+    if (blurModeActive) {
+        const bubble = row.querySelector('.message-bubble');
+        if (bubble) {
+            bubble.classList.add('blur-active');
+            attachBlurEvents(bubble);
+        }
+    }
+    
+    // Ajouter le message à la fin (en bas)
+    msgArea.appendChild(row);
+}
+      
 function listenToMessages() {
     if(unsubscribeMessages) unsubscribeMessages();
+    
+    // Variable pour suivre le premier chargement 
+    let isFirstSnapshot = true;
+     let userScrolledUp = false; // ← AJOUTER CETTE LIGNE
+    let scrollTimeout = null;   // ← AJOUTER CETTE LIGNE
    unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
     .orderBy('timestamp', 'asc')
-    // .limitToLast(60)  // ← COMMENTÉ ou SUPPRIMÉ - charge TOUS les messages 
+    .limit(50)
     .onSnapshot(snapshot => {
-          snapshot.docChanges().forEach(change => {
-        if (change.type === 'added') {
-            const msg = change.doc.data();
-            if (msg.senderId !== currentUser?.id) {
-                sendTelegramNotification(msg.senderId);
+             if (isFirstSnapshot) { afficherTousLesMessages(snapshot); }
+            // ================== ====================== ====================
+            // BLOQUER LES NOTIFICATIONS AU PREMIER CHARGEMENT
+            // ============================================================
+            if (isFirstSnapshot) {
+                // On affiche juste les messages sans notifications
+                isFirstSnapshot = false;
+                  scrollToLatestMessage(); // ← Scroller en bas
+
+                console.log("📱 Premier chargement - Aucune notification envoyée");
+                // On continue pour afficher les messages
+            }
+            
+            // ============================================================
+            // TRAITEMENT DES CHANGEMENTS
+            // ============================================================
+           // Forcer l'affichage des messages existants avant de traiter les changements
+if (isFirstSnapshot) {
+    const msgArea = document.getElementById('msg-area');
+  
+    msgArea.innerHTML = '';
+    let lastDateStr = "";
+    
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const msgId = doc.id;
+        
+        if(data.timestamp) {
+            const dateObj = data.timestamp.toDate();
+            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+            if(dateStr !== lastDateStr) {
+                const sep = document.createElement('div');
+                sep.className = 'date-separator';
+                sep.innerText = dateStr;
+                msgArea.appendChild(sep);
+                lastDateStr = dateStr;
+            } 
+        }
+        
+        const row = document.createElement('div');
+        const isSent = data.senderId === currentUser.id;
+        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+        row.setAttribute('data-id', msgId);
+        
+        const isGiant = isOnlyEmojis(data.text);
+        let customStyle = '';
+        if (data.bubbleStyle) {
+            customStyle = data.bubbleStyle;
+        } else if (data.messageStyle) {
+            customStyle = data.messageStyle;
+        } else if (isSent) {
+            const defaultStyle = localStorage.getItem('default_bubble_style');
+            if (defaultStyle && defaultStyle !== 'none') {
+                customStyle = defaultStyle;
             }
         }
-                    // === NOUVEAU BLOC POUR LES MODIFICATIONS EN TEMPS RÉEL ===
-        else if (change.type === 'modified') {
-            const data = change.doc.data();
-            const msgId = change.doc.id;
+        
+        let codedClass = '';
+        if (data.isCoded === true) {
+            codedClass = 'coded';
+        }
+        
+        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+            onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
+            oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
+            ondblclick="handleDoubleTap(event, '${msgId}')"
+            ontouchstart="demarrerAppuiLong(event, '${msgId}')"
+            ontouchend="annulerAppuiLong()"
+            ontouchmove="annulerAppuiLong()"
+            onmousedown="demarrerAppuiLong(event, '${msgId}')"
+            onmouseup="annulerAppuiLong()"
+            onmouseleave="annulerAppuiLong()">`;
+        
+        if (data.replyToText) {
+            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+        }
+        
+        if (data.type === 'text') {
+            let displayText = data.text;
+            if (data.isCoded === true) {
+                const originalMessage = data.originalText || data.text;
+                displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+                bubbleHtml += displayText;
+            } else {
+                displayText = formatText(escapeHTML(displayText));
+                displayText = displayText.replace(/\n/g, '<br>');
+                bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
+            }
+        } else if (data.type === 'image') {
+            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+        } else if (data.type === 'drawing') {
+            bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+        } else if (data.type === 'video') {
+            const videoUrl = data.mediaUrl || data.fileUrl || "";
+            bubbleHtml += `
+                <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+                    <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
+                </div>
+            `;
+        } else if (data.type === 'audio') {
+            const audioId = `audio_${msgId}`;
+            if (data.isEphemeralAudio) {
+                // ... garde ton code existant pour audio éphémère
+            } else {
+                bubbleHtml += `
+                    <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
+                        <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
+                        <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
+                        <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
+                            <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
+                        </div>
+                        <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
+                    </div>
+                `;
+            }
+        }
+        
+        const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+        
+        let checkMark = '<span>✓</span>';
+        if (data.status === 'read') {
+            checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+        } else if (data.status === 'delivered') {
+            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+        } else {
+            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+        }
+        
+        const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+        
+        if(data.reactions && Object.keys(data.reactions).length > 0) {
+            bubbleHtml += `<div class="applied-reactions">`;
+            Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+            bubbleHtml += `</div>`;
+        }
+        
+        bubbleHtml += `</div>`;
+        row.innerHTML = bubbleHtml;
+        
+        if (blurModeActive) {
+            const bubble = row.querySelector('.message-bubble');
+            if (bubble) {
+                bubble.classList.add('blur-active');
+                attachBlurEvents(bubble);
+            }
+        }
+        msgArea.appendChild(row);
+    });
+    
+    // Forcer le scroll seulement si l'utilisateur est en bas
+const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
+if (isAtBottom) {
+    msgArea.scrollTop = msgArea.scrollHeight;
+}
+}
+
+// ET GARDE TON CODE EXISTANT POUR LES CHANGEMENTS
+snapshot.docChanges().forEach(change => {
+    const data = change.doc.data();
+    const msgId = change.doc.id;
+    
+    // ============================================================
+    // 1. MESSAGE AJOUTÉ (NOUVEAU MESSAGE)
+    // ============================================================
+    if (change.type === 'added') {
+        // Bloque les notifications au premier chargement
+        if (data.senderId !== currentUser?.id && !isFirstSnapshot) {
+            const now = new Date();
+            const msgTime = data.timestamp?.toDate() || new Date(0);
+            const diffSeconds = (now - msgTime) / 1000;
+            if (diffSeconds < 5) {
+                sendTelegramNotification(data.senderId);
+            }
+        }
+        
+        // Marquer comme "delivered" si le message vient de l'autre 
+       // VERSION CORRIGÉE
+if (msg.senderId === targetUser?.id) {
+    const msgRef = change.doc.ref;
+    // Si le statut est 'sent' → le mettre en 'delivered'
+    if (msg.status === 'sent') {
+        msgRef.update({ 
+            status: 'delivered',
+            deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => console.error("Erreur mise à jour delivered:", err));
+    }
+}
+    }
+    
+    // ============================================================
+    // 2. MESSAGE MODIFIÉ (MISE À JOUR DU STATUT OU DU TEXTE)
+    // ============================================================
+    else if (change.type === 'modified') {
+        // 🔥 PARTIE 1 : MISE À JOUR DU STATUT (COCHES) 🔥
+        if (data.status) {
+            const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+            if (messageRow) {
+                const isSent = messageRow.classList.contains('sent');
+                if (isSent) {
+                    const bubble = messageRow.querySelector('.message-bubble');
+                    if (bubble) {
+                        const msgMeta = bubble.querySelector('.msg-meta');
+                        if (msgMeta) {
+                            // Extraire l'heure (sans les icônes)
+                            let timeText = msgMeta.textContent;
+                            timeText = timeText.replace(/[✓✓✓]/g, '').replace(/✓/g, '').trim();
+                            
+                            // Déterminer le statut
+                            let statusHtml = '';
+                            if (data.status === 'read') {
+                                statusHtml = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                            } else if (data.status === 'delivered') {
+                                statusHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                            } else {
+                                statusHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+                            }
+                            
+                            // Ajouter "modifié" si présent
+                            const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+                            msgMeta.innerHTML = `${timeText} ${statusHtml}${modifiedTag}`;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 🔥 PARTIE 2 : MISE À JOUR DU MORPION (si présent) 🔥
+        if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
             const existingRow = document.querySelector(`[data-id="${msgId}"]`);
-            
-            if (existingRow && data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
-                // Mettre à jour l'affichage du Morpion
+            if (existingRow) {
                 const card = existingRow.querySelector('.morpion-card');
                 if (card) {
                     const game = data.gameData;
@@ -2002,32 +3129,29 @@ function listenToMessages() {
                         headerSpan.textContent = `🏆 ${game.scores.X || 0} - ${game.scores.O || 0}`;
                     }
                     
-                    // Mettre à jour les 9 cases
+                    // Mettre à jour les cases
                     for (let i = 0; i < 9; i++) {
                         const cell = card.querySelector(`.morpion-cell[data-cell-index="${i}"]`);
                         if (cell) {
                             const value = game.board[i] || "";
                             cell.textContent = value;
-                            
                             cell.classList.remove('x', 'o', 'taken');
                             if (value === "X") {
                                 cell.classList.add('x', 'taken');
                             } else if (value === "O") {
                                 cell.classList.add('o', 'taken');
                             }
-                            
                             if (game.winningLine && game.winningLine.includes(i)) {
                                 cell.classList.add('win-cell');
                             } else {
                                 cell.classList.remove('win-cell');
                             }
-                            
                             const peutCliquer = (game.status === 'active' && isMyTurn && !value);
                             cell.style.cursor = peutCliquer ? 'pointer' : 'not-allowed';
                         }
                     }
                     
-                    // Mettre à jour l'oerlay
+                    // Mettre à jour l'overlay
                     const grid = card.querySelector('.morpion-grid');
                     if (grid) {
                         if (game.status !== 'active' || !isMyTurn) {
@@ -2039,36 +3163,79 @@ function listenToMessages() {
                 }
             }
         }
-    });
-      
-      
-      function ecouterChangementsStyle() {
-    if (!currentUser) return;
+    }
+});
+            // ========== ÉCOUTE EN TEMPS RÉEL DES STATUTS ==========
+function ecouterStatutsEnTempsReel() {
+    if (!currentUser || !targetUser) return;
     
+    // Écouter les messages de l'autre personne
     db.collection('chats').doc(CHAT_ID).collection('messages')
-        .where('bubbleStyle', '!=', null)
-        .onSnapshot(snapshot => {
-            snapshot.docChanges().forEach(change => {
+        .where('senderId', '==', targetUser.id)
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
                 if (change.type === 'modified') {
                     const data = change.doc.data();
                     const msgId = change.doc.id;
-                    const newStyle = data.bubbleStyle;
                     
-                    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
-                    if (messageRow && messageRow.classList.contains('sent')) {
-                        const bubble = messageRow.querySelector('.message-bubble');
-                        if (bubble && newStyle) {
-                            const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-                            allStyles.forEach(style => bubble.classList.remove(style));
-                            bubble.classList.add(newStyle);
+                    // SI le statut est 'read' → mettre les coches en BLEU
+                    if (data.status === 'read') {
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const tickElement = messageRow.querySelector('.status-tick');
+                            if (tickElement) {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+                            }
+                            // Mettre à jour aussi le message original
+                            updateMessageStatus(msgId, 'read');
+                        }
+                    }
+                    // SI le statut est 'delivered' → mettre les coches en GRIS
+                    else if (data.status === 'delivered') {
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const tickElement = messageRow.querySelector('.status-tick');
+                            if (tickElement) {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
+                            }
                         }
                     }
                 }
             });
         });
 }
+            // ============================================================
+            // FONCTION POUR ÉCOUTER LES CHANGEMENTS DE STYLE
+            // ============================================================
+            function ecouterChangementsStyle() {
+                if (!currentUser) return;
+                
+                db.collection('chats').doc(CHAT_ID).collection('messages')
+                    .where('bubbleStyle', '!=', null)
+                    .onSnapshot(snapshot => {
+                        snapshot.docChanges().forEach(change => {
+                            if (change.type === 'modified') {
+                                const data = change.doc.data();
+                                const msgId = change.doc.id;
+                                const newStyle = data.bubbleStyle;
+                                
+                                const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                                if (messageRow && messageRow.classList.contains('sent')) {
+                                    const bubble = messageRow.querySelector('.message-bubble');
+                                    if (bubble && newStyle) {
+                                        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                                        allStyles.forEach(style => bubble.classList.remove(style));
+                                        bubble.classList.add(newStyle);
+                                    }
+                                }
+                            }
+                        });
+                    });
+            }
             
-            // ========== AFFICHAGE DES MESSAGES (CODE ORIGINAL) ==========
+            // ============================================================
+            // AFFICHAGE DES MESSAGES (CODE ORIGINAL)
+            // ============================================================
             const msgArea = document.getElementById('msg-area');
             
             let lastDateStr = "";
@@ -2076,9 +3243,8 @@ function listenToMessages() {
             snapshot.forEach(doc => {
                 const data = doc.data();
                 const msgId = doc.id;
-              if(document.querySelector(`[data-id="${msgId}"]`)) return;
+                if(document.querySelector(`[data-id="${msgId}"]`)) return;
 
-                  
                 if(data.timestamp) {
                     const dateObj = data.timestamp.toDate();
                     const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -2098,186 +3264,185 @@ function listenToMessages() {
                 
                 const isGiant = isOnlyEmojis(data.text);
                 let customStyle = '';
-// 🔥 Vérifier d'abord le style personnalisé du message
-if (data.bubbleStyle) {
-    customStyle = data.bubbleStyle;
-} else if (data.messageStyle) {
-    customStyle = data.messageStyle;
-} else if (isSent) {
-    const defaultStyle = localStorage.getItem('default_bubble_style');
-    if (defaultStyle && defaultStyle !== 'none') {
-        customStyle = defaultStyle;
-    }
-}
+                // 🔥 Vérifier d'abord le style personnalisé du message
+                if (data.bubbleStyle) {
+                    customStyle = data.bubbleStyle;
+                } else if (data.messageStyle) {
+                    customStyle = data.messageStyle;
+                } else if (isSent) {
+                    const defaultStyle = localStorage.getItem('default_bubble_style');
+                    if (defaultStyle && defaultStyle !== 'none') {
+                        customStyle = defaultStyle;
+                    }
+                }
                 
-               let codedClass = '';
-let lockBadge = '';
-if (data.isCoded === true) {
-    codedClass = 'coded';
-    lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
-    // Ajouter un attribut data-coded sur la bulle pour détecter les messages codés
-}
+                let codedClass = '';
+                let lockBadge = '';
+                if (data.isCoded === true) {
+                    codedClass = 'coded';
+                    lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
+                    // Ajouter un attribut data-coded sur la bulle pour détecter les messages codés
+                }
                 
-             let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
-    onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
-    oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
-    ondblclick="handleDoubleTap(event, '${msgId}')"
-    ontouchstart="demarrerAppuiLong(event, '${msgId}')"
-    ontouchend="annulerAppuiLong()"
-    ontouchmove="annulerAppuiLong()"
-    onmousedown="demarrerAppuiLong(event, '${msgId}')"
-    onmouseup="annulerAppuiLong()"
-    onmouseleave="annulerAppuiLong()">`;
+                let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+                    onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
+                    oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
+                    ondblclick="handleDoubleTap(event, '${msgId}')"
+                    ontouchstart="demarrerAppuiLong(event, '${msgId}')"
+                    ontouchend="annulerAppuiLong()"
+                    ontouchmove="annulerAppuiLong()"
+                    onmousedown="demarrerAppuiLong(event, '${msgId}')"
+                    onmouseup="annulerAppuiLong()"
+                    onmouseleave="annulerAppuiLong()">`;
                 
                 if (data.replyToText) {
                     bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
                 }
                 
-               if (data.type === 'text') {
-    let displayText = data.text;
-    if (data.isCoded === true) {
-        const originalMessage = data.originalText || data.text;
-        displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
-        bubbleHtml += displayText;
-    } else {
-        displayText = formatText(escapeHTML(displayText));
-        displayText = displayText.replace(/\n/g, '<br>');
-        bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
-    }
-} 
-else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
-    // ========== AFFICHAGE DU MORPION ==========
-    const game = data.gameData;
-    const isMyTurn = game.turn === currentUser.id;
-    const amIPlayerX = game.players.X === currentUser.id;
-    const amIPlayerO = game.players.O === currentUser.id;
-    
-    // Déterminer si c'est le tour du joueur actuel
-    let statusText = "";
-    if (game.status === 'finished') {
-        if (game.winner === 'nul') {
-            statusText = "🎯 Match nul !";
-        } else {
-            statusText = `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
-        }
-    } else {
-        statusText = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
-    }
+                if (data.type === 'text') {
+                    let displayText = data.text;
+                    if (data.isCoded === true) {
+                        const originalMessage = data.originalText || data.text;
+                        displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+                        bubbleHtml += displayText;
+                    } else {
+                        displayText = formatText(escapeHTML(displayText));
+                        displayText = displayText.replace(/\n/g, '<br>');
+                        bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
+                    }
+                } 
+                else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+                    // ========== AFFICHAGE DU MORPION ==========
+                    const game = data.gameData;
+                    const isMyTurn = game.turn === currentUser.id;
+                    const amIPlayerX = game.players.X === currentUser.id;
+                    const amIPlayerO = game.players.O === currentUser.id;
+                    
+                    // Déterminer si c'est le tour du joueur actuel
+                    let statusText = "";
+                    if (game.status === 'finished') {
+                        if (game.winner === 'nul') {
+                            statusText = "🎯 Match nul !";
+                        } else {
+                            statusText = `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
+                        }
+                    } else {
+                        statusText = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
+                    }
 
-    // Blocage graphique si ce n'est pas le tour du joueur ou si la partie est finie
-    const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
+                    // Blocage graphique si ce n'est pas le tour du joueur ou si la partie est finie
+                    const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
 
-    let cardHtml = `
-        <div class="morpion-card" style="margin: 5px 0;">
-            <div class="morpion-header">
-                <span>🎮 MORPION </span>
-                <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
-            </div>
-            <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
-                ${statusText}
-            </div>
-            <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
-    `;
+                    let cardHtml = `
+                        <div class="morpion-card" style="margin: 5px 0;">
+                            <div class="morpion-header">
+                                <span>🎮 MORPION </span>
+                                <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
+                            </div>
+                            <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
+                                ${statusText}
+                            </div>
+                            <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
+                    `;
 
-    // Génération des 9 cases
-    for (let i = 0; i < 9; i++) {
-        const cellValue = game.board[i] || "";
-        const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
-        const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
-        
-        cardHtml += `
-            <div class="morpion-cell ${cellClass} ${isWinCell}" 
-                 data-cell-index="${i}" 
-                 onclick="jouerCoupMorpion('${msgId}', ${i})"
-                 style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
-                ${cellValue}
-            </div>
-        `;
-    }
+                    // Génération des 9 cases
+                    for (let i = 0; i < 9; i++) {
+                        const cellValue = game.board[i] || "";
+                        const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
+                        const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
+                        
+                        cardHtml += `
+                            <div class="morpion-cell ${cellClass} ${isWinCell}" 
+                                 data-cell-index="${i}" 
+                                 onclick="jouerCoupMorpion('${msgId}', ${i})"
+                                 style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
+                                ${cellValue}
+                            </div>
+                        `;
+                    }
 
-    cardHtml += `
-            </div>
-        </div>
-    `;
-    
-    bubbleHtml += cardHtml;
-} 
-else if (data.type === 'image') {
-    // Affichage IMAGE
-    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
-    
-} else if (data.type === 'drawing') {
-    // Affichage DESSIN
-    bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
-    
-} else if (data.type === 'video') {
-    // ✅ NOUVEAU : Affichage VIDÉO - CORRECTION SUPABASE
-    const videoUrl = data.mediaUrl || data.fileUrl || "";
-    bubbleHtml += `
-        <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
-            <video 
-                src="${videoUrl}" 
-                controls 
-                playsinline 
-                preload="metadata" 
-                style="width: 100%; display: block; object-fit: cover;"
-                poster=""
-            >
-                Votre navigateur ne supporte pas la lecture vidéo
-            </video>
-        </div>
-    `;
-    
-} else if (data.type === 'audio') {
-    if (data.isEphemeralAudio) {
-        const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
-        const isDestroyed = data.destroyed;
-        if (isDestroyed) {
-            bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
-        } else {
-            bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
-            if (alreadyPlayed) {
-                bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;"><i class="fa-solid fa-head-side-headphones"></i><span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span></div>`;
-            } else {
-                bubbleHtml += `<div style="padding:5px;"><audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio><small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique</small></div>`;
-            }
-        }
-    } else {
-        // ✅ NOUVEAU CODE POUR AUDIO NORMAL (CORRIGÉ)
-        const audioId = `audio_${msgId}`;
-        bubbleHtml += `
-            <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
-                <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
-                    <i class="fa-solid fa-play"></i>
-                </button>
-                <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
-                <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
-                <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
-                    <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
-                </div>
-                <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
-            </div>
-        `;
-    }
-}
-                   
+                    cardHtml += `
+                            </div>
+                        </div>
+                    `;
+                    
+                    bubbleHtml += cardHtml;
+                } 
+                else if (data.type === 'image') {
+                    // Affichage IMAGE
+                    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+                    
+                } else if (data.type === 'drawing') {
+                    // Affichage DESSIN
+                    bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+                    
+                } else if (data.type === 'video') {
+                    // ✅ NOUVEAU : Affichage VIDÉO - CORRECTION SUPABASE
+                    const videoUrl = data.mediaUrl || data.fileUrl || "";
+                    bubbleHtml += `
+                        <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+                            <video 
+                                src="${videoUrl}" 
+                                controls 
+                                playsinline 
+                                preload="metadata" 
+                                style="width: 100%; display: block; object-fit: cover;"
+                                poster=""
+                            >
+                                Votre navigateur ne supporte pas la lecture vidéo
+                            </video>
+                        </div>
+                    `;
+                    
+                } else if (data.type === 'audio') {
+                    if (data.isEphemeralAudio) {
+                        const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
+                        const isDestroyed = data.destroyed;
+                        if (isDestroyed) {
+                            bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
+                        } else {
+                            bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
+                            if (alreadyPlayed) {
+                                bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;"><i class="fa-solid fa-head-side-headphones"></i><span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span></div>`;
+                            } else {
+                                bubbleHtml += `<div style="padding:5px;"><audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio><small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique</small></div>`;
+                            }
+                        }
+                    } else {
+                        // ✅ NOUVEAU CODE POUR AUDIO NORMAL (CORRIGÉ)
+                        const audioId = `audio_${msgId}`;
+                        bubbleHtml += `
+                            <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
+                                <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
+                                    <i class="fa-solid fa-play"></i>
+                                </button>
+                                <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
+                                <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
+                                <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
+                                    <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
+                                </div>
+                                <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
+                            </div>
+                        `;
+                    }
+                }
                 
-               const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-// --- BLOC DE COCHES FORMAT WHATSAPP AJOUTÉ ICI ---
-let checkMark = '<span>✓</span>'; // Un seul trait gris par défaut
-if (data.status === 'read') {
-    // Deux traits bleus (lu)
-    checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-} else if (data.status === 'delivered') {
-    // Deux traits grises (reçu)
-    checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-} else {
-    // Un trait gris (envoyé)
-    checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
-}
-// ------------------------------------------------ 
-const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
-bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+                // --- BLOC DE COCHES FORMAT WHATSAPP AJOUTÉ ICI ---
+                let checkMark = '<span>✓</span>'; // Un seul trait gris par défaut
+                if (data.status === 'read') {
+                    // Deux traits bleus (lu)
+                    checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                } else if (data.status === 'delivered') {
+                    // Deux traits grises (reçu)
+                    checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                } else {
+                    // Un trait gris (envoyé)
+                    checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+                }
+                // ------------------------------------------------ 
+                const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+                bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
                 
                 if(data.reactions && Object.keys(data.reactions).length > 0) {
                     bubbleHtml += `<div class="applied-reactions">`;
@@ -2301,7 +3466,6 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
             msgArea.scrollTop = msgArea.scrollHeight;
         });
 }
-
 
 
  
@@ -2347,7 +3511,7 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
         
         function cancelReply() { replyToId = null; document.getElementById('reply-preview').style.display = 'none'; }
         
-      async function sendTextMessage() {
+   async function sendTextMessage() {
     if (messageEnCoursEdition) {
         await confirmerModification();
         return;
@@ -2355,6 +3519,7 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
     const input = document.getElementById('chat-in');
     let text = input.value.trim();
     if(!text) return;
+
 
     if (modeTraductionActif && langueTraduction) {
         const texteTraduit = await traduireTexte(text, langueTraduction);
@@ -2413,17 +3578,20 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
     stopTypingNotify();
     clearLiveTyping();
 
-    // ==========================================================
-    // CRUCIAL : Génération de l'ID Firebase en amont pour éviter le bug de modification !
-    // ==========================================================
+    // ✅ ENVOI RAPIDE - SANS ATTENDRE LE RETOUR FIREBASE
     const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
     
-    try {
-        await messageRef.set(msgData);
-        console.log("✅ Message envoyé avec ID prédéfini :", messageRef.id);
-    } catch(err) {
+    // 🔥 ENVOI EN ARRIÈRE-PLAN (ne bloque pas l'interface)
+    messageRef.set(msgData).then(() => {
+        // Mise à jour du statut en arrière-plan
+        setTimeout(() => {
+            checkMessageDelivery(messageRef.id);
+        }, 3000);
+    }).catch(err => {
         console.error("Erreur envoi message :", err);
-    }
+    });
+    
+    console.log("✅ Message envoyé avec ID :", messageRef.id);
 }
         
         function generateMask(length) {
@@ -2436,35 +3604,61 @@ bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modi
         }
         
         // ========== TYPING INDICATOR ==========
-       function handleTyping() {
+     // ========== GESTION DE LA TYPING (CORRIGÉE) ==========
+function handleTyping() {
     const input = document.getElementById('chat-in');
     const hasText = input.value.trim().length > 0;
     toggleSendBtn(hasText);
-    
-    // 👇 AJOUTEZ CETTE LIGNE 👇
     autoResizeTextarea();
-    
-    db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: true });
+    if (currentUser) {
+        db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id)
+            .set({ 
+                isTyping: hasText,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .catch(err => console.error("Erreur typing:", err));
+    }
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(stopTypingNotify, 2000);
+    if (hasText) {
+        typingTimeout = setTimeout(stopTypingNotify, 2000);
+    } else {
+        stopTypingNotify();
+    }
     sendLiveTypingUpdate();
 }
         
-        function stopTypingNotify() {
-            if(currentUser) db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id).set({ isTyping: false });
-        }
+       // ========== ARRÊTER LA TYPING (CORRIGÉE) ==========
+function stopTypingNotify() {
+    if (currentUser) {
+        db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id)
+            .set({ isTyping: false })
+            .catch(err => console.error("Erreur stop typing:", err));
+    }
+    document.getElementById('typing-ind').style.display = 'none';
+}
         
-        function listenToTyping() {
-            unsubscribeTyping = db.collection('chats').doc(CHAT_ID).collection('typing').doc(targetUser.id)
-                .onSnapshot(doc => {
-                    if(doc.exists && doc.data().isTyping) {
-                        document.getElementById('typing-txt').innerText = `${targetUser.name} écrit...`;
-                        document.getElementById('typing-ind').style.display = 'flex';
-                    } else {
-                        document.getElementById('typing-ind').style.display = 'none';
-                    }
-                });
-        }
+     // ========== ÉCOUTE DE LA TYPING (CORRIGÉE) ========== 
+function listenToTyping() {
+    if (!currentUser || !targetUser) return;
+    const otherUserId = targetUser.id;
+    if (unsubscribeTyping) {
+        unsubscribeTyping();
+        unsubscribeTyping = null;
+    }
+    unsubscribeTyping = db.collection('chats').doc(CHAT_ID).collection('typing').doc(otherUserId)
+        .onSnapshot(doc => {
+            if (doc.exists && doc.data().isTyping === true) {
+                document.getElementById('typing-txt').innerText = `${targetUser.name} écrit...`;
+                document.getElementById('typing-ind').style.display = 'flex';
+            } else {
+                document.getElementById('typing-ind').style.display = 'none';
+            }
+        }, (error) => {
+            console.error("Erreur d'écoute typing:", error);
+        });
+      ecouterStatutsEnTempsReel();
+
+}
         
         // ========== MESSAGES MÉDIAS ==========
         function triggerImageUpload() { document.getElementById('img-file').click(); }
@@ -3726,53 +4920,39 @@ function detecterFrancaisRapide(texte) {
         }
         
         // ========== BATTERIE ==========
-        async function getBatteryLevel() {
-            if ('getBattery' in navigator) {
-                try {
-                    const battery = await navigator.getBattery();
-                    updateBatteryAndSync(battery);
-                    battery.addEventListener('levelchange', () => updateBatteryAndSync(battery));
-                    battery.addEventListener('chargingchange', () => updateBatteryAndSync(battery));
-                } catch(e) { console.log("Battery API error"); }
+       
+// Fonction pour nettoyer les anciens appareils
+async function nettoyerAnciensAppareils() {
+    if (!currentUser) return;
+    
+    try {
+        const doc = await db.collection('users').doc(currentUser.id).get();
+        if (doc.exists && doc.data().devices) {
+            let devices = doc.data().devices;
+            if (devices.length > 5) {
+                // Trier par date et garder les 5 plus récents
+                devices.sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                devices = devices.slice(0, 5);
+                
+                await db.collection('users').doc(currentUser.id).update({
+                    devices: devices
+                });
+                console.log(`🧹 Nettoyé: ${doc.data().devices.length - 5} anciens appareils supprimés`);
             }
         }
+    } catch(e) {
+        console.error("Erreur nettoyage appareils:", e);
+    }
+}
         
-        async function updateBatteryAndSync(battery) {
-            const level = Math.floor(battery.level * 100);
-            currentBatteryLevel = level;
-            isCharging = battery.charging;
-            await db.collection('users').doc(currentUser.id).set({
-                battery: { level: level, charging: battery.charging, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }
-            }, { merge: true });
-            updateBatteryDisplay(level, battery.charging);
-        }
-        
-        function updateBatteryDisplay(level, charging) {
-            const percentSpan = document.getElementById('battery-percent');
-            const iconSpan = document.getElementById('battery-icon');
-            if (!percentSpan) return;
-            percentSpan.textContent = level + '%';
-            if (charging) { iconSpan.innerHTML = '⚡'; percentSpan.className = 'battery-percent battery-charging'; }
-            else if (level <= 15) { iconSpan.innerHTML = '🪫'; percentSpan.className = 'battery-percent battery-low'; }
-            else if (level <= 30) { iconSpan.innerHTML = '🔋'; percentSpan.className = 'battery-percent battery-medium'; }
-            else { iconSpan.innerHTML = '🔋'; percentSpan.className = 'battery-percent battery-high'; }
-        }
-        
-        function listenToOtherUserBattery() {
-            if (!targetUser) return;
-            db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
-                if (doc.exists && doc.data().battery) {
-                    const b = doc.data().battery;
-                    const percentSpan = document.getElementById('battery-percent');
-                    const iconSpan = document.getElementById('battery-icon');
-                    if (percentSpan) percentSpan.textContent = b.level + '%';
-                    if (b.charging) { if(iconSpan) iconSpan.innerHTML = '⚡'; }
-                    else if (b.level <= 15) { if(iconSpan) iconSpan.innerHTML = '🪫'; }
-                    else { if(iconSpan) iconSpan.innerHTML = '🔋'; }
-                }
-            });
-        }
-        
+       
+
+// Exposer la fonction dans la console
+         
         // ========== STATUT D'HUMEUR ==========
         function toggleMoodPanel() {
             const panel = document.getElementById('mood-panel');
@@ -3980,7 +5160,13 @@ function detecterFrancaisRapide(texte) {
         if(localStorage.getItem('bubbleColor')) document.documentElement.style.setProperty('--bubble-sent', localStorage.getItem('bubbleColor'));
         
         // Raccourci Entrée
-        document.getElementById('chat-in').addEventListener('keydown', (e) => { if(e.key === 'Enter') sendTextMessage(); });
+      document.getElementById('chat-in').addEventListener('keydown', (e) => { 
+    if(e.key === 'Enter' && !e.shiftKey) { 
+        e.preventDefault(); 
+        // Ne fait rien - Entrée seul = saut de ligne (déjà géré par textarea)
+        // Pour envoyer, il faut cliquer sur le bouton ✈️
+    } 
+});
         
         // Nettoyage des menus au clic ailleurs
         document.addEventListener('click', function(e) {
@@ -7381,10 +8567,2689 @@ if (zoneChatMorpion) {
     nettoyerStyleMorpion(); // Application immédiate
 }
       
+      // ============================================================
+// FIX ULTIME : STATUTS EN TEMPS RÉEL (100% FONCTIONNEL)
+// ============================================================
+
+// 1. Quand l'utilisateur ouvre le chat, marquer tous les messages comme "read"
+function markAllAsRead() {
+    if (!currentUser || !targetUser) return;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .where('status', '!=', 'read')
+        .get()
+        .then(snapshot => {
+            if (snapshot.empty) return;
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => {
+                batch.update(doc.ref, { 
+                    status: 'read',
+                    readAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            return batch.commit();
+        })
+        .catch(err => console.error("Erreur marquage lu:", err));
+}
+
+// 2. Écouter les changements de statut en temps réel
+function listenStatus() {
+    if (!currentUser) return;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', currentUser.id)
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'modified') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    
+                    // Chercher le message dans le DOM
+                    const row = document.querySelector(`.message-row[data-id="${msgId}"]`);
+                    if (!row) return;
+                    
+                    const meta = row.querySelector('.msg-meta');
+                    if (!meta) return;
+                    
+                    // Garder l'heure uniquement
+                    let timeText = meta.textContent;
+                    timeText = timeText.replace(/[✓✓✓]/g, '').replace(/✓/g, '').trim();
+                    
+                    // Appliquer le bon statut
+                    let checkHtml = '';
+                    if (data.status === 'read') {
+                        checkHtml = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                    } else if (data.status === 'delivered') {
+                        checkHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+                    } else {
+                        checkHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+                    }
+                    
+                    meta.innerHTML = timeText + ' ' + checkHtml;
+                    console.log(`🔄 Statut du message ${msgId} : ${data.status}`);
+                }
+            });
+        });
+}
+
+// 3. Activer automatiquement
+const originalSelect = window.selectUser;
+window.selectUser = function(user) {
+    originalSelect(user);
+    setTimeout(() => {
+        markAllAsRead();
+        listenStatus();
+    }, 1000);
+};
+
+// Si déjà connecté
+setTimeout(() => {
+    if (currentUser) {
+        markAllAsRead();
+        listenStatus();
+    }
+}, 2000);
+
+// 4. FORCER le marquage "read" quand on voit les messages (scroll ou clique)
+document.addEventListener('scroll', function() {
+    if (currentUser) markAllAsRead();
+});
+
+console.log("✅ Statuts en temps réel activés !");
+      
+      // =========================================================================
+// SOLUTION ULTRA-RAPIDE : MARQUAGE INSTANTANÉ AVEC CACHE LOCAL
+// =========================================================================
+
+// 1. Cache local des statuts de lecture
+const STATUTS_CACHE = {
+    messages: {},
+    lastUpdate: 0,
+    
+    // Sauvegarder un statut
+    set(msgId, status) {
+        this.messages[msgId] = {
+            status: status,
+            time: Date.now()
+        };
+        this._save();
+    },
+    
+    // Récupérer un statut
+    get(msgId) {
+        const entry = this.messages[msgId];
+        if (entry && (Date.now() - entry.time) < 60000) { // 1 minute de cache
+            return entry.status;
+        }
+        return null;
+    },
+    
+    // Sauvegarder dans localStorage
+    _save() {
+        try {
+            localStorage.setItem('chat_statuts_cache', JSON.stringify({
+                messages: this.messages,
+                lastUpdate: Date.now()
+            }));
+        } catch(e) {}
+    },
+    
+    // Charger depuis localStorage
+    load() {
+        try {
+            const data = localStorage.getItem('chat_statuts_cache');
+            if (data) {
+                const parsed = JSON.parse(data);
+                this.messages = parsed.messages || {};
+                this.lastUpdate = parsed.lastUpdate || 0;
+            }
+        } catch(e) {}
+    }
+};
+
+// Charger le cache au démarrage
+STATUTS_CACHE.load();
+
+// 2. MARQUAGE INSTANTANÉ (sans attendre Firebase)
+function marquerMessagesInstantanement() {
+    if (!currentUser || !targetUser) return;
+    
+    console.log("⚡ Marquage INSTANTANÉ des messages...");
+    
+    // Récupérer TOUS les messages de l'autre personne
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .orderBy('timestamp', 'desc')
+        .limit(50) // Les 50 derniers messages seulement pour la vitesse
+        .get()
+        .then(snapshot => {
+            if (snapshot.empty) return;
+            
+            const batch = db.batch();
+            const toUpdate = [];
+            
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                // Marquer comme lu si pas déjà lu
+                if (data.status !== 'read') {
+                    batch.update(doc.ref, { 
+                        status: 'read',
+                        readAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    toUpdate.push(doc.id);
+                    
+                    // Mettre en cache immédiatement
+                    STATUTS_CACHE.set(doc.id, 'read');
+                }
+            });
+            
+            // Mettre à jour l'interface IMMÉDIATEMENT (avant même Firebase)
+            toUpdate.forEach(msgId => {
+                const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                if (messageRow && messageRow.classList.contains('sent')) {
+                    const tickElement = messageRow.querySelector('.status-tick');
+                    if (tickElement) {
+                        tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+                    }
+                    updateMessageStatus(msgId, 'read');
+                }
+            });
+            
+            // Sauvegarder en base (en arrière-plan)
+            if (toUpdate.length > 0) {
+                batch.commit().then(() => {
+                    console.log(`✅ ${toUpdate.length} messages marqués LUS`);
+                }).catch(err => console.error("Erreur batch:", err));
+            }
+        })
+        .catch(err => console.error("Erreur marquage:", err));
+}
+
+// 3. AFFICHER LES STATUTS DEPUIS LE CACHE (très rapide)
+function afficherStatutsDepuisCache() {
+    if (!currentUser) return;
+    
+    document.querySelectorAll('.message-row.sent[data-id]').forEach(row => {
+        const msgId = row.getAttribute('data-id');
+        const cachedStatus = STATUTS_CACHE.get(msgId);
+        
+        if (cachedStatus === 'read') {
+            const tickElement = row.querySelector('.status-tick');
+            if (tickElement) {
+                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+            }
+            updateMessageStatus(msgId, 'read');
+        }
+    });
+}
+
+// 4. ÉCOUTE EN TEMPS RÉEL (optimisée)
+function ecouterStatutsOptimise() {
+    if (!currentUser || !targetUser) return;
+    
+    if (window._statutListener) {
+        window._statutListener();
+        window._statutListener = null;
+    }
+    
+    window._statutListener = db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('senderId', '==', targetUser.id)
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'modified') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    
+                    // Mettre à jour le cache
+                    if (data.status) {
+                        STATUTS_CACHE.set(msgId, data.status);
+                    }
+                    
+                    // Mettre à jour l'interface
+                    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                    if (messageRow && messageRow.classList.contains('sent')) {
+                        const tickElement = messageRow.querySelector('.status-tick');
+                        if (tickElement) {
+                            if (data.status === 'read') {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
+                            } else if (data.status === 'delivered') {
+                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
+                            }
+                        }
+                        updateMessageStatus(msgId, data.status);
+                    }
+                }
+            });
+        });
+}
+
+// 5. FONCTION PRINCIPALE (appelée UNE SEULE fois)
+function activerMarquageUltraRapide() {
+    if (!currentUser || !targetUser) return;
+    
+    console.log("🚀 Activation du marquage ULTRA-RAPIDE");
+    
+    // ÉTAPE 1 : Afficher les statuts depuis le CACHE (0ms - instantané)
+    afficherStatutsDepuisCache();
+    
+    // ÉTAPE 2 : Mettre à jour depuis Firebase (en arrière-plan)
+    setTimeout(() => {
+        marquerMessagesInstantanement();
+    }, 100);
+    
+    // ÉTAPE 3 : Écouter en temps réel
+    setTimeout(() => {
+        ecouterStatutsOptimise();
+    }, 500);
+    
+    // ÉTAPE 4 : Rafraîchir périodiquement (toutes les 5 secondes)
+    if (window._rafraichissementInterval) {
+        clearInterval(window._rafraichissementInterval);
+    }
+    window._rafraichissementInterval = setInterval(() => {
+        if (currentUser && targetUser) {
+            marquerMessagesInstantanement();
+        }
+    }, 5000);
+}
+
+// 6. DÉTECTION D'ACTIVITÉ (rapide)
+function detecterActiviteRapide() {
+    let dernierMarquage = 0;
+    
+    const marquer = () => {
+        const now = Date.now();
+        if (now - dernierMarquage > 2000) { // Max toutes les 2 secondes
+            dernierMarquage = now;
+            marquerMessagesInstantanement();
+        }
+    };
+    
+    const events = ['click', 'touchstart', 'scroll', 'keydown', 'focus'];
+    events.forEach(event => {
+        document.addEventListener(event, marquer, { passive: true });
+    });
+    
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            setTimeout(marquerMessagesInstantanement, 200);
+        }
+    });
+}
+
+// 7. SURCHARGER selectUser
+const originalSelectUser2 = window.selectUser;
+window.selectUser = function(userKey) {
+    originalSelectUser2(userKey);
+    
+    setTimeout(() => {
+        activerMarquageUltraRapide();
+        detecterActiviteRapide();
+    }, 500);
+};
+
+// 8. INITIALISATION AU CHARGEMENT
+setTimeout(() => {
+    if (currentUser && targetUser) {
+        console.log("🔄 Démarrage rapide - utilisateur déjà connecté");
+        activerMarquageUltraRapide();
+        detecterActiviteRapide();
+    }
+}, 300);
+
+// 9. FORCER APRÈS CHARGEMENT COMPLET
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        if (currentUser && targetUser) {
+            console.log("📱 Chargement complet - Marquage final");
+            marquerMessagesInstantanement();
+        }
+    }, 1000);
+});
+
+// 10. VIDER LE CACHE SI TROP VIEUX (plus de 10 minutes)
+const CACHE_AGE_MAX = 10 * 60 * 1000; // 10 minutes
+if (STATUTS_CACHE.lastUpdate && (Date.now() - STATUTS_CACHE.lastUpdate) > CACHE_AGE_MAX) {
+    STATUTS_CACHE.messages = {};
+    STATUTS_CACHE._save();
+    console.log("🧹 Cache des statuts vidé (trop vieux)");
+}
+
+console.log("✅ Marquage ULTRA-RAPIDE activé !");
+      
+      // =========================================================================
+// =========================================================================
+// STATUT EN LIGNE/HORS LIGNE AVEC HEURE EXACTE DE DÉCONNEXION (CORRIGÉ)
+// =========================================================================
+
+// 1. État global du statut (Concerne uniquement l'utilisateur local)
+const STATUT_UTILISATEUR = {
+    estActif: false,
+    derniereAction: Date.now(),
+    ecranVisible: true,
+    pingInterval: null,
+    statutListener: null,
+    heureDeconnexion: null
+};
+
+// 2. Fonction pour mettre à jour mon statut dans Firestore
+function mettreAJourStatutUtilisateur(estEnLigne, type = 'manuel') {
+    if (!currentUser) return;
+    
+    const userRef = db.collection('users').doc(currentUser.id);
+    const maintenant = firebase.firestore.FieldValue.serverTimestamp();
+    const maintenantDate = new Date();
+    
+    if (!estEnLigne) {
+        STATUT_UTILISATEUR.heureDeconnexion = maintenantDate;
+        console.log(`⏰ Ma déconnexion sauvegardée: ${maintenantDate.toLocaleTimeString()}`);
+    } else {
+        STATUT_UTILISATEUR.heureDeconnexion = null;
+    }
+    
+    userRef.set({
+        online: estEnLigne,
+        lastSeen: maintenant,
+        lastSeenExact: maintenantDate.toISOString(),
+        heureDeconnexion: STATUT_UTILISATEUR.heureDeconnexion ? STATUT_UTILISATEUR.heureDeconnexion.toISOString() : null,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        lastActivity: maintenant,
+        statusType: type
+    }, { merge: true }).then(() => {
+        console.log(`📊 Mon statut mis à jour: ${estEnLigne ? '🟢 EN LIGNE' : '⚪ HORS LIGNE'} (${type})`);
+    }).catch(err => console.error("Erreur mise à jour statut:", err));
+}
+
+// 3. Détection de mes actions (Envoie les données à Firestore, SANS toucher à l'écran)
+function detecterActiviteEcran() {
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            console.log("📱 Mon écran est en arrière-plan → Hors ligne");
+            STATUT_UTILISATEUR.ecranVisible = false;
+            mettreAJourStatutUtilisateur(false, 'background');
+        } else {
+            console.log("📱 Mon écran est visible → En ligne");
+            STATUT_UTILISATEUR.ecranVisible = true;
+            STATUT_UTILISATEUR.derniereAction = Date.now();
+            mettreAJourStatutUtilisateur(true, 'visible');
+        }
+    });
+    
+    window.addEventListener('beforeunload', function() {
+        mettreAJourStatutUtilisateur(false, 'depart');
+    });
+    
+    let tempsInactivite = Date.now();
+    let estInactif = false;
+    
+    const resetInactivite = () => {
+        tempsInactivite = Date.now();
+        STATUT_UTILISATEUR.derniereAction = Date.now();
+        
+        if (STATUT_UTILISATEUR.ecranVisible && !document.hidden && estInactif) {
+            estInactif = false;
+            mettreAJourStatutUtilisateur(true, 'actif');
+        }
+    };
+    
+    // Écouter mes mouvements
+    const events = ['click', 'touchstart', 'scroll', 'keydown', 'mousemove', 'focus'];
+    events.forEach(event => {
+        document.addEventListener(event, resetInactivite, { passive: true });
+    });
+    
+    // Vérifier mon inactivité toutes les 5 secondes
+    setInterval(() => {
+        const now = Date.now();
+        const diff = now - tempsInactivite;
+        
+        if (diff > 30000 && STATUT_UTILISATEUR.ecranVisible && !document.hidden && !estInactif) {
+            estInactif = true;
+            console.log("⏳ Je suis inactif depuis 30s → Hors ligne");
+            mettreAJourStatutUtilisateur(false, 'inactif');
+        }
+    }, 5000);
+    
+    // Mon Ping périodique
+    STATUT_UTILISATEUR.pingInterval = setInterval(() => {
+        if (!document.hidden && STATUT_UTILISATEUR.ecranVisible) {
+            const diff = Date.now() - STATUT_UTILISATEUR.derniereAction;
+            if (diff < 30000) {
+                mettreAJourStatutUtilisateur(true, 'ping');
+            }
+        }
+    }, 10000);
+}
+
+// ========== ÉCOUTER LE STATUT DE L'AUTRE (AVEC DERNIER APPAREIL) ==========
+function ecouterStatutAutreAvecHorodatage() {
+    if (!currentUser || !targetUser) return;
+    
+    console.log(`👀 Écoute du statut de ${targetUser.name}...`);
+    
+    if (window._statutListener) {
+        window._statutListener();
+        window._statutListener = null;
+    }
+    
+    const statusSpan = document.getElementById('header-status-text');
+    if (!statusSpan) return;
+    
+    window._statutListener = db.collection('users').doc(targetUser.id)
+        .onSnapshot((doc) => {
+            if (!doc.exists) {
+                statusSpan.innerHTML = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
+                return;
+            }
+            
+            const data = doc.data();
+            
+            // STATUT UNIQUEMENT - PAS DE BATTERIE
+            const estEnLigne = data.online === true;
+            
+            let heureDeconnexion = null;
+            if (data.heureDeconnexion) {
+                heureDeconnexion = new Date(data.heureDeconnexion);
+            } else if (data.lastSeen) {
+                heureDeconnexion = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
+            }
+            
+            let estVraimentEnLigne = false;
+            if (estEnLigne && data.lastSeen) {
+                const lastSeenDate = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
+                const diffSecondes = (Date.now() - lastSeenDate.getTime()) / 1000;
+                if (diffSecondes < 35) {
+                    estVraimentEnLigne = true;
+                }
+            }
+            
+            let statutHtml = '';
+            if (estVraimentEnLigne) {
+                statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
+            } else if (heureDeconnexion) {
+                const h = heureDeconnexion.getHours().toString().padStart(2, '0');
+                const m = heureDeconnexion.getMinutes().toString().padStart(2, '0');
+                statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
+            } else {
+                statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
+            }
+            
+            // 🔥 AUCUNE BATTERIE - SEULEMENT LE STATUT
+            statusSpan.innerHTML = statutHtml;
+            
+            // MOOD
+            if (data.mood) {
+                const otherMoodSpan = document.getElementById('other-mood-emoji');
+                if (otherMoodSpan) otherMoodSpan.textContent = data.mood.emoji || '😊';
+            }
+            
+        }, (error) => {
+            console.error("Erreur écoute statut:", error);
+        });
+}
+function afficherStatutAutre(statusSpan, enLigne, heureDeconnexion) {
+    if (!statusSpan) return;
+    
+    let statutHtml = '';
+    if (enLigne) {
+        statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
+    } else if (heureDeconnexion) {
+        const h = heureDeconnexion.getHours().toString().padStart(2, '0');
+        const m = heureDeconnexion.getMinutes().toString().padStart(2, '0');
+        statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
+    } else {
+        statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
+    }
+    
+    // 🔥 AUCUNE BATTERIE
+    statusSpan.innerHTML = statutHtml;
+}
+// 5. Fonction pour forcer mon statut initial
+function forcerStatutEnLigneSiVisible() {
+    if (!currentUser) return;
+    if (!document.hidden) {
+        mettreAJourStatutUtilisateur(true, 'force');
+    } else {
+        mettreAJourStatutUtilisateur(false, 'force_background');
+    }
+}
+
+// 6. Activer le système
+function activerSystemeStatutComplet() {
+    if (!currentUser || !targetUser) return;
+    
+    detecterActiviteEcran();
+    
+    setTimeout(() => {
+        forcerStatutEnLigneSiVisible();
+    }, 500);
+    
+    setTimeout(() => {
+        ecouterStatutAutreAvecHorodatage();
+    }, 1000);
+}
+
+// 7. Surcharger selectUser
+const originalSelectUser6 = window.selectUser;
+window.selectUser = function(userKey) {
+    if (originalSelectUser6) {
+        originalSelectUser6(userKey);
+    }
+    setTimeout(() => {
+        activerSystemeStatutComplet();
+    }, 1500);
+};
+
+// 8. Initialisation automatique
+setTimeout(() => {
+    if (currentUser && targetUser) {
+        activerSystemeStatutComplet();
+    }
+}, 1000);
+
+// 9. Nettoyage lors des changements
+function nettoyerSystemeStatut() {
+    if (window._statutListener) {
+        window._statutListener();
+        window._statutListener = null;
+    }
+    if (STATUT_UTILISATEUR.pingInterval) {
+        clearInterval(STATUT_UTILISATEUR.pingInterval);
+        STATUT_UTILISATEUR.pingInterval = null;
+    }
+}
+      
+      // Écouter les informations de statut et de batterie de l'autre utilisateur en temps réel
+function écouterBatterieCorrespondant() {
+    // Déterminer l'ID de l'autre utilisateur
+    const autreUserId = currentUser.id === 'ida' ? 'aidara' : 'ida';
+
+    // Remplacer 'users' par le nom exact de votre collection de profils si nécessaire
+    db.collection('users').doc(autreUserId).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // Récupérer le niveau de batterie (ex: 85)
+            const batteryLevel = data.batteryLevel || 0;
+            const isCharging = data.isCharging || false;
+
+            // Mettre à jour le texte du pourcentage
+            const percentEl = document.getElementById('battery-percent');
+            if (percentEl) percentEl.innerText = batteryLevel + '%';
+
+            // Mettre à jour l'icône et la couleur en fonction du niveau
+            const iconEl = document.getElementById('battery-icon');
+            if (iconEl) {
+                // Réinitialiser les classes de couleur
+                iconEl.className = 'battery-icon';
+                
+                if (isCharging) {
+                    iconEl.innerText = '⚡🔋';
+                    iconEl.classList.add('battery-charging');
+                } else {
+                    if (batteryLevel <= 20) {
+                        iconEl.innerText = '🪫';
+                        iconEl.classList.add('battery-low');
+                    } else if (batteryLevel <= 50) {
+                        iconEl.innerText = '🔋';
+                        iconEl.classList.add('battery-medium');
+                    } else {
+                        iconEl.innerText = '🔋';
+                        iconEl.classList.add('battery-high');
+                    }
+                }
+            }
+        }
+    });
+}
+      
+      
+  // ========== METTRE À JOUR SA PROPRE BATTERIE ==========
+async function mettreAJourMaBatterie() {
+    if (!currentUser) return;
+
+    try {
+        if (navigator.getBattery) {
+            const battery = await navigator.getBattery();
+            
+            // Générer un ID d'appareil unique
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            
+            const deviceInfo = {
+                deviceId: deviceId,
+                battery: {
+                    level: Math.round(battery.level * 100),
+                    charging: battery.charging
+                },
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+                userAgent: navigator.userAgent.substring(0, 50),
+                platform: navigator.platform || 'unknown'
+            };
+            
+            // Sauvegarder dans Firestore
+            await db.collection('users').doc(currentUser.id).set({
+                battery: {
+                    level: Math.round(battery.level * 100),
+                    charging: battery.charging,
+                    deviceId: deviceId,
+                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                },
+                devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo),
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+                online: true,
+                batteryLevel: Math.round(battery.level * 100),
+                isCharging: battery.charging
+            }, { merge: true });
+            
+            // Nettoyer les anciens appareils (garder 5 max)
+            nettoyerAnciensAppareils();
+            
+            console.log(`🔋 Batterie mise à jour: ${Math.round(battery.level * 100)}%`);
+            
+        } else {
+            console.log("⚠️ API Batterie non disponible");
+        }
+    } catch (error) {
+        console.error("Erreur batterie:", error);
+    }
+}
+
+// ========== NETTOYER LES ANCIENS APPAREILS ==========
+async function nettoyerAnciensAppareils() {
+    if (!currentUser) return;
+    
+    try {
+        const doc = await db.collection('users').doc(currentUser.id).get();
+        if (doc.exists && doc.data().devices) {
+            let devices = doc.data().devices;
+            if (devices.length > 5) {
+                devices.sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                devices = devices.slice(0, 5);
+                
+                await db.collection('users').doc(currentUser.id).update({
+                    devices: devices
+                });
+                console.log(`🧹 ${doc.data().devices.length - 5} anciens appareils supprimés`);
+            }
+        }
+    } catch(e) {
+        console.error("Erreur nettoyage:", e);
+    }
+}
+
+// ========== FORCER LA MISE À JOUR (APPELÉE RÉGULIÈREMENT) ==========
+function demarrerMiseAJourBatterie() {
+    // Mettre à jour immédiatement
+    mettreAJourMaBatterie();
+    
+    // Puis toutes les 30 secondes
+    setInterval(() => {
+        mettreAJourMaBatterie();
+    }, 30000);
+    
+    // Écouter les changements de batterie
+    if (navigator.getBattery) {
+        navigator.getBattery().then(battery => {
+            battery.addEventListener('levelchange', mettreAJourMaBatterie);
+            battery.addEventListener('chargingchange', mettreAJourMaBatterie);
+        });
+    }
+}
+      
+      function afficherStatutAutre(statusSpan, enLigne, heureDeconnexion, batterie) {
+    if (!statusSpan) return;
+    
+    // --- STATUT ---
+    let statutHtml = '';
+    if (enLigne) {
+        statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
+    } else if (heureDeconnexion) {
+        const h = heureDeconnexion.getHours().toString().padStart(2, '0');
+        const m = heureDeconnexion.getMinutes().toString().padStart(2, '0');
+        statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
+    } else {
+        statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
+    }
+    
+    // --- BATTERIE DE L'AUTRE ---
+    let batteryHtml = '';
+    if (batterie) {
+        const level = batterie.level || 0;
+        const charging = batterie.charging || false;
+        const icon = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+        const colorClass = charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high'));
+        
+        batteryHtml = `
+            <span class="battery-indicator" id="battery-indicator">
+                <span class="battery-icon" id="battery-icon">${icon}</span>
+                <span class="battery-percent ${colorClass}" id="battery-percent">${level}%</span>
+            </span>
+        `;
+    } else {
+        batteryHtml = `
+            <span class="battery-indicator" id="battery-indicator">
+                <span class="battery-icon" id="battery-icon">🔋</span>
+                <span class="battery-percent" id="battery-percent">--%</span>
+            </span>
+        `;
+    }
+    
+    // --- AFFICHAGE FINAL - --
+    statusSpan.innerHTML = statutHtml + batteryHtml;
+}
+       
+      // =========================================================================
+// BOUTON FLOATING "NOUVEAU MESSAGE" (DÉFILEMENT INTELLIGENT)
+// =========================================================================
+
+// État du bouton flottant
+let newMessageCount = 0;
+let isAtBottom = true;
+let isButtonVisible = false;
+let unreadMessages = [];
+
+// Détecter si l'utilisateur est en bas de la conversation
+function detecterPositionDefilement() {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return true;
+    
+    // Marge de 100px pour considérer qu'on est "en bas"
+    const tolerance = 150;
+    const atBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < tolerance;
+    isAtBottom = atBottom;
+    
+    // Si l'utilisateur scrolle en bas, cacher le bouton et réinitialiser le compteur
+    if (atBottom && isButtonVisible) {
+        cacherBoutonNouveauMessage();
+    }
+    
+    return atBottom;
+}
+
+// Afficher le bouton flottant
+function afficherBoutonNouveauMessage(compteur) {
+    const btn = document.getElementById('new-msg-floating-btn');
+    const countSpan = document.getElementById('new-msg-count');
+    const textSpan = document.getElementById('new-msg-text');
+    
+    if (!btn) return;
+    
+    // Mettre à jour le compteur
+    newMessageCount = compteur || newMessageCount + 1;
+    
+    // Mettre à jour le texte
+    if (newMessageCount === 1) {
+        textSpan.textContent = '📩 Nouveau message';
+    } else {
+        textSpan.textContent = `📩 ${newMessageCount} nouveaux messages`;
+    }
+    
+    // Mettre à jour le badge
+    if (countSpan) {
+        countSpan.textContent = newMessageCount;
+    }
+    
+    // Afficher le bouton avec animation
+    btn.style.display = 'flex';
+    isButtonVisible = true;
+    
+    // Cacher automatiquement après 8 secondes si l'utilisateur ne clique pas
+    clearTimeout(window._newMsgTimeout);
+    window._newMsgTimeout = setTimeout(() => {
+        if (isButtonVisible && !isAtBottom) {
+            // Réduire le compteur mais garder le bouton visible
+            // (l'utilisateur a vu la notification mais n'a pas cliqué)
+        }
+    }, 8000);
+}
+
+// Cacher le bouton flottant
+function cacherBoutonNouveauMessage() {
+    const btn = document.getElementById('new-msg-floating-btn');
+    if (!btn) return;
+    
+    btn.style.display = 'none';
+    isButtonVisible = false;
+    newMessageCount = 0;
+    
+    // Réinitialiser les messages non lus
+    unreadMessages = [];
+    
+    clearTimeout(window._newMsgTimeout);
+}
+
+// Défiler en bas de la conversation
+function scrollToBottom() {
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        msgArea.scrollTo({
+            top: msgArea.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+    
+    // Cacher le bouton après le défilement
+    setTimeout(() => {
+        cacherBoutonNouveauMessage();
+        isAtBottom = true;
+    }, 300);
+}
+
+// AJOUTER CETTE FONCTION DANS L'ÉCOUTEUR DE MESSAGES (listenToMessages)
+// POUR DÉTECTER L'ARRIVÉE DE NOUVEAUX MESSAGES
+
+// ========== FONCTION MODIFIÉE POUR DÉTECTER LES NOUVEAUX MESSAGES ==========
+// À AJOUTER DANS listenToMessages(), à l'intérieur du traitement des 'added'
+
+/*
+// Dans la partie snapshot.docChanges().forEach(change => {
+//   if (change.type === 'added') {
+//     
+//     // AJOUTER CE BLOC APRÈS l'affichage du message :
+//     
+//     // Vérifier si le message vient de l'autre utilisateur
+//     if (data.senderId !== currentUser.id) {
+//         // Vérifier si l'utilisateur est en bas de la conversation
+//         const estEnBas = detecterPositionDefilement();
+//         
+//         if (!estEnBas) {
+//             // L'utilisateur est en haut → afficher le bouton
+//             afficherBoutonNouveauMessage();
+//         } else {
+//             // L'utilisateur est en bas → défiler automatiquement
+//             setTimeout(scrollToBottom, 100);
+//         }
+//     }
+//     
+//   }
+// });
+*/
+
+// ========== ÉCOUTE LES ÉVÉNEMENTS DE DÉFILEMENT ==========
+function initNewMessageButton() {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+    
+    // Détecter le défilement pour cacher le bouton
+    msgArea.addEventListener('scroll', function() {
+        const atBottom = detecterPositionDefilement();
+        if (atBottom && isButtonVisible) {
+            // L'utilisateur a scrollé en bas → cacher le bouton
+            cacherBoutonNouveauMessage();
+        }
+    }, { passive: true });
+    
+    // Détecter le redimensionnement (clavier mobile, etc.)
+    window.addEventListener('resize', function() {
+        detecterPositionDefilement();
+    }, { passive: true });
+}
+
+// ========== SURCHARGER LA FONCTION D'ÉCOUTE DE MESSAGES ==========
+// Pour intégrer la détection des nouveaux messages
+
+// Sauvegarder l'ancienne fonction
+const originalListenToMessages = window.listenToMessages;
+
+// Redéfinir la fonction pour inclure la détection des nouveaux messages
+window.listenToMessages = function() {
+    if (originalListenToMessages) {
+        // Appeler l'originale
+        originalListenToMessages();
+    }
+    
+    // Si l'écoute est déjà active, on ajoute un second listener dédié aux nouveaux messages
+    if (currentUser && targetUser) {
+        // Écouter UNIQUEMENT les nouveaux messages de l'autre personne
+        if (window._newMsgListener) {
+            window._newMsgListener();
+        }
+        
+        window._newMsgListener = db.collection('chats').doc(CHAT_ID).collection('messages')
+            .where('senderId', '==', targetUser.id)
+            .orderBy('timestamp', 'desc')
+            .limitToLast(5) // Ne prendre que les derniers pour éviter la surcharge
+            .onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const data = change.doc.data();
+                        const msgId = change.doc.id;
+                                // === DÉTECTION DES TABLEAUX BLANCS ===
+        if (data.type === 'whiteboard') {
+            afficherCarteTableauBlanc(msgId, data);
+            return; // On arrête ici pour ne pas afficher deux fois
+        }
+                        // Vérifier que c'est vraiment un nouveau message (pas dans le DOM)
+                        const existing = document.querySelector(`[data-id="${msgId}"]`);
+                        if (existing) return;
+                        
+                        // Vérifier si le message est de l'autre personne
+                        if (data.senderId === targetUser.id) {
+                            // Attendre que le message soit affiché avant de décider
+                            setTimeout(() => {
+                                const estEnBas = detecterPositionDefilement();
+                                
+                                if (!estEnBas) {
+                                    // L'utilisateur est en haut → afficher le bouton
+                                    // Vérifier que le message est bien affiché
+                                    const msgInDom = document.querySelector(`[data-id="${msgId}"]`);
+                                    if (msgInDom) {
+                                        afficherBoutonNouveauMessage();
+                                    }
+                                } else {
+                                    // L'utilisateur est en bas → défiler
+                                    setTimeout(scrollToBottom, 200);
+                                }
+                            }, 300);
+                        }
+                    }
+                });
+            });
+    }
+};
+
+// ========== INITIALISATION ==========
+setTimeout(() => {
+    initNewMessageButton();
+    
+    // Si déjà connecté, activer
+    if (currentUser && targetUser) {
+        window.listenToMessages();
+    }
+}, 500);
+
+console.log("✅ Bouton flottant 'Nouveau message' activé !");
+      
+      
+      
+      // ========== OUVERTURE DU CARNET SECRET EN IFRAME ==========
+function openSecretPageInIframe() {
+    const code = prompt("🔒 CARNET SECRET\n\nEntrez le code d'accès :");
+    
+    if (code === null) return;
+    
+    if (code === "0507") {
+        // Créer l'overlay pour l'iframe
+        const overlay = document.createElement('div');
+        overlay.id = 'secret-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            animation: fadeInOverlay 0.3s ease;
+        `;
+        
+        // Header de l'iframe
+        const header = document.createElement('div');
+        header.style.cssText = `
+            background: linear-gradient(135deg, #1a0a2e, #2d1b69);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #a800ff;
+            flex-shrink: 0;
+        `;
+        header.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <i class="fa-solid fa-lock" style="color:#ffd700; font-size:1.2rem;"></i>
+                <span style="color:white; font-weight:700; font-size:1rem;">📖 Carnet Secret</span>
+                <span style="color:rgba(255,255,255,0.4); font-size:0.7rem;">🔒 Privé</span>
+            </div>
+            <button onclick="closeSecretIframe()" style="
+                background:rgba(255,255,255,0.1);
+                border:none;
+                color:white;
+                padding:8px 16px;
+                border-radius:20px;
+                cursor:pointer;
+                font-size:0.85rem;
+                transition:all 0.3s;
+            " onmouseover="this.style.background='rgba(255,0,0,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                <i class="fa-solid fa-xmark"></i> Fermer
+            </button>
+        `;
+        
+        // Iframe
+        const iframe = document.createElement('iframe');
+        iframe.id = 'secret-iframe';
+        iframe.src = 'secret.html';
+        iframe.style.cssText = `
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: #0a0a0a;
+        `;
+        
+        overlay.appendChild(header);
+        overlay.appendChild(iframe);
+        document.body.appendChild(overlay);
+        
+        // Empêcher le scroll
+        document.body.style.overflow = 'hidden';
+        
+        // Ajouter l'animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOverlay {
+                from { opacity: 0; transform: scale(0.95); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+    } else {
+        alert("❌ Code incorrect !");
+    }
+}
+
+// Fermer l'iframe
+function closeSecretIframe() {
+    const overlay = document.getElementById('secret-overlay');
+    if (overlay) {
+        overlay.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        overlay.style.opacity = '0';
+        overlay.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            overlay.remove();
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
+
+// Modifier le bouton existant
+document.addEventListener('DOMContentLoaded', function() {
+    const secretBtn = document.getElementById('secret-notebook-btn');
+    if (secretBtn) {
+        secretBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openSecretPageInIframe();
+        };
+    }
+});
+      
+      // ========== FONCTION POUR RÉCUPÉRER L'UTILISATEUR ==========
+function getChatUser() {
+    if (currentUser && targetUser) {
+        return {
+            currentUser: currentUser,
+            targetUser: targetUser
+        };
+    }
+    return null;
+}
+
+// Exposer la fonction au niveau global
+window.getChatUser = getChatUser;
+      
+      // ========== CARNET SECRET - GESTION IFRAME ==========
+
+// Fonction pour ouvrir le carnet secret en iframe
+function openSecretPageInIframe() {
+    // Créer l'overlay pour l'iframe
+    const overlay = document.createElement('div');
+    overlay.id = 'secret-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.88);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        animation: fadeInOverlay 0.3s ease;
+    `;
+    
+    // Header avec barre de contrôle
+    const header = document.createElement('div');
+    header.style.cssText = `
+        background: linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e);
+        background-size: 200% 200%;
+        animation: gradientMove 4s ease infinite;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #a800ff;
+        flex-shrink: 0;
+        min-height: 56px;
+        z-index: 10;
+    `;
+    header.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-lock" style="color:#ffd700; font-size:1.2rem; animation: lockPulse 2s ease infinite;"></i>
+            <span style="color:white; font-weight:700; font-size:1rem; letter-spacing:0.5px;">📖 Carnet Secret</span>
+            <span style="color:rgba(255,255,255,0.3); font-size:0.65rem; letter-spacing:1px; border-left:1px solid rgba(255,255,255,0.1); padding-left:8px;">🔒 Privé</span>
+        </div>
+        <button onclick="closeSecretIframe()" style="
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        " onmouseover="this.style.background='rgba(255,0,0,0.25)'; this.style.borderColor='#ff4444';" 
+        onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+            <i class="fa-solid fa-xmark"></i> Fermer
+        </button>
+    `;
+    
+    // Iframe
+    const iframe = document.createElement('iframe');
+    iframe.id = 'secret-iframe';
+    iframe.src = 'secret.html';
+    iframe.style.cssText = `
+        flex: 1;
+        width: 100%;
+        border: none;
+        background: #0a0a0a;
+        display: block;
+    `;
+    
+    // Assemblage
+    overlay.appendChild(header);
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+    
+    // Désactiver le scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Ajouter les animations manquantes
+    const styleAnim = document.createElement('style');
+    styleAnim.textContent = `
+        @keyframes fadeInOverlay {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes lockPulse {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 0px transparent; }
+            50% { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        }
+        #secret-overlay {
+            animation: fadeInOverlay 0.3s ease;
+        }
+    `;
+    document.head.appendChild(styleAnim);
+}
+
+// Fonction pour fermer l'iframe
+function closeSecretIframe() {
+    const overlay = document.getElementById('secret-overlay');
+    if (overlay) {
+        overlay.style.transition = 'all 0.3s ease';
+        overlay.style.opacity = '0';
+        overlay.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            overlay.remove();
+            document.body.style.overflow = '';
+        }, 350);
+    }
+}
+
+// ========== FONCTION POUR RÉCUPÉRER L'UTILISATEUR ==========
+// Cette fonction permet au fichier secret.html de récupérer les infos de l'utilisateur connecté
+window.getChatUser = function() {
+    if (typeof currentUser !== 'undefined' && currentUser && typeof targetUser !== 'undefined' && targetUser) {
+        return {
+            currentUser: currentUser,
+            targetUser: targetUser
+        };
+    }
+    return null;
+};
+
+// ========== GESTION DU BOUTON CARNET SECRET ==========
+// Cette fonction est appelée quand on clique sur le bouton 🔒 dans les paramètres
+function openSecretNotebook() {
+    // Demander le code d'accès
+    const code = prompt("🔒 CARNET SECRET\n\nEntrez le code d'accès pour ouvrir votre conversation privée :");
+    
+    // Si l'utilisateur annule
+    if (code === null) return;
+    
+    // Vérifier le code
+    if (code === "0507") {
+        // Ouvrir l'iframe
+        openSecretPageInIframe();
+    } else {
+        // Code incorrect
+        alert("❌ Code incorrect ! Veuillez réessayer.");
+        // Réessayer automatiquement
+        setTimeout(() => {
+            openSecretNotebook();
+        }, 500);
+    }
+}
+
+// ========== MODIFICATION DU BOUTON EXISTANT ==========
+// Attendre que le DOM soit chargé pour modifier le comportement du bouton
+document.addEventListener('DOMContentLoaded', function() {
+    // Trouver le bouton du carnet secret (par son ID ou sa classe)
+    const secretBtn = document.getElementById('secret-notebook-btn');
+    
+    if (secretBtn) {
+        // Supprimer les anciens écouteurs (s'il y en a)
+        const newBtn = secretBtn.cloneNode(true);
+        secretBtn.parentNode.replaceChild(newBtn, secretBtn);
+        
+        // Ajouter le nouvel écouteur
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openSecretNotebook();
+        });
+        
+        console.log('🔒 Bouton Carnet Secret initialisé avec succès');
+    } else {
+        console.warn('⚠️ Bouton Carnet Secret non trouvé - vérifiez l\'ID "secret-notebook-btn"');
+    }
+});
+
+// ========== TOUCHE ÉCHAP POUR FERMER L'IFRAME ==========
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const overlay = document.getElementById('secret-overlay');
+        if (overlay) {
+            closeSecretIframe();
+        }
+    }
+});
+      
+      
+      // ============================================================
+function afficherTousLesMessages(snapshot) {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+    
+    if (snapshot.empty) {
+        msgArea.innerHTML = `
+            <div style="text-align:center; color:var(--text-muted); padding:40px;">
+                <i class="fa-regular fa-comment" style="font-size:3rem; margin-bottom:10px;"></i>
+                <p>Aucun message</p>
+                <p style="font-size:0.8rem; opacity:0.5;">💬 Envoyez votre premier message</p>
+            </div>
+        `;
+        return;
+    }
+    
+    msgArea.innerHTML = '';
+    
+    let lastDateStr = "";
+    let messages = [];
+    
+    // --- ÉTAPE 1 : RÉCUPÉRER TOUS LES MESSAGES DANS UN TABLEAU ---
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const msgId = doc.id;
+        messages.push({ id: msgId, data: data });
+    });
+    
+    // --- ÉTAPE 2 : TRIER PAR DATE CROISSANTE (PLUS ANCIEN → PLUS RÉCENT) ---
+    messages.sort((a, b) => {
+        const dateA = a.data.timestamp ? a.data.timestamp.toDate() : new Date(0);
+        const dateB = b.data.timestamp ? b.data.timestamp.toDate() : new Date(0);
+        return dateA - dateB;
+    });
+    
+    // --- ÉTAPE 3 : AFFICHER LES MESSAGES DANS L'ORDRE ---
+    messages.forEach(({ id: msgId, data }) => {
+        // Ajouter le séparateur de date
+        if (data.timestamp) {
+            const dateObj = data.timestamp.toDate();
+            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+            if (dateStr !== lastDateStr) {
+                const sep = document.createElement('div');
+                sep.className = 'date-separator';
+                sep.innerText = dateStr;
+                msgArea.appendChild(sep);
+                lastDateStr = dateStr;
+            }
+        }
+        
+        const row = document.createElement('div');
+        const isSent = data.senderId === currentUser.id;
+        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+        row.setAttribute('data-id', msgId);
+        
+        const isGiant = isOnlyEmojis(data.text);
+        let customStyle = '';
+        if (data.bubbleStyle) {
+            customStyle = data.bubbleStyle;
+        } else if (data.messageStyle) {
+            customStyle = data.messageStyle;
+        } else if (isSent) {
+            const defaultStyle = localStorage.getItem('default_bubble_style');
+            if (defaultStyle && defaultStyle !== 'none') {
+                customStyle = defaultStyle;
+            }
+        }
+        
+        let codedClass = '';
+        if (data.isCoded === true) {
+            codedClass = 'coded';
+        }
+        
+        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+            onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
+            oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
+            ondblclick="handleDoubleTap(event, '${msgId}')"
+            ontouchstart="demarrerAppuiLong(event, '${msgId}')"
+            ontouchend="annulerAppuiLong()"
+            ontouchmove="annulerAppuiLong()"
+            onmousedown="demarrerAppuiLong(event, '${msgId}')"
+            onmouseup="annulerAppuiLong()"
+            onmouseleave="annulerAppuiLong()">`;
+        
+        if (data.replyToText) {
+            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+        }
+        
+        // TEXTE
+        if (data.type === 'text') {
+            let displayText = data.text;
+            if (data.isCoded === true) {
+                const originalMessage = data.originalText || data.text;
+                displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
+                bubbleHtml += displayText;
+            } else {
+                displayText = formatText(escapeHTML(displayText));
+                displayText = displayText.replace(/\n/g, '<br>');
+                bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
+            }
+        } else if (data.type === 'image') {
+            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+        } else if (data.type === 'drawing') {
+            bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
+        } else if (data.type === 'video') {
+            const videoUrl = data.mediaUrl || data.fileUrl || "";
+            bubbleHtml += `
+                <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+                    <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
+                </div>
+            `;
+        } else if (data.type === 'audio') {
+            const audioId = `audio_${msgId}`;
+            if (!data.isEphemeralAudio) {
+                bubbleHtml += `
+                    <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
+                        <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
+                        <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
+                        <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
+                            <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
+                        </div>
+                        <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
+                    </div>
+                `;
+            }
+        } else if (data.type === 'whiteboard') {
+            afficherWb(msgId, data);
+            return;
+        } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+            const game = data.gameData;
+            const isMyTurn = game.turn === currentUser.id;
+            const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
+            
+            let cardHtml = `
+                <div class="morpion-card" style="margin: 5px 0;">
+                    <div class="morpion-header">
+                        <span>🎮 MORPION </span>
+                        <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
+                    </div>
+                    <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
+                        ${game.status === 'finished' ? (game.winner === 'nul' ? "🎯 Match nul !" : `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`) : (isMyTurn ? "⚡ À ton tour !" : `⏳ ${targetUser.name} réfléchit...`)}
+                    </div>
+                    <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
+            `;
+            
+            for (let i = 0; i < 9; i++) {
+                const cellValue = game.board[i] || "";
+                const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
+                const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
+                cardHtml += `
+                    <div class="morpion-cell ${cellClass} ${isWinCell}" 
+                         data-cell-index="${i}" 
+                         onclick="jouerCoupMorpion('${msgId}', ${i})"
+                         style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
+                        ${cellValue}
+                    </div>
+                `;
+            }
+            
+            cardHtml += `</div></div>`;
+            bubbleHtml += cardHtml;
+        }
+        
+        // HEURE ET STATUT
+        const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+        
+        let checkMark = '<span>✓</span>';
+        if (data.status === 'read') {
+            checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+        } else if (data.status === 'delivered') {
+            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+        } else {
+            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
+        }
+        
+        const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+        
+        // RÉACTIONS
+        if (data.reactions && Object.keys(data.reactions).length > 0) {
+            bubbleHtml += `<div class="applied-reactions">`;
+            Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
+            bubbleHtml += `</div>`;
+        }
+        
+        bubbleHtml += `</div>`;
+        row.innerHTML = bubbleHtml;
+        
+        if (blurModeActive) {
+            const bubble = row.querySelector('.message-bubble');
+            if (bubble) {
+                bubble.classList.add('blur-active');
+                attachBlurEvents(bubble);
+            }
+        }
+        msgArea.appendChild(row);
+    });
+    
+    // --- ÉTAPE 4 : SCROLLER EN BAS APRÈS AFFICHAGE ---
+    setTimeout(() => {
+         
+    }, 100);
+}
+      // ========== AFFICHER LES DERNIERS MESSAGES EN BAS ==========
+function scrollToLatestMessage() {
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        // Attendre un peu que les messages soient chargés
+        setTimeout(() => {
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }, 200);
+    }
+}
+
+// Appeler cette fonction après l'affichage des messages
+// Dans la fonction listenToMessages(), après l'appel à afficherTousLesMessages()
+// Ajouter : scrollToLatestMessage();
+      // ========== NOTIFICATION INSTANTANÉE (SANS TELEGRAM) ==========
+function notifierInstantane(expediteurId) {
+    // Met à jour le statut en temps réel
+    if (expediteurId !== currentUser.id) {
+        // Marquer comme délivré immédiatement
+        const messages = document.querySelectorAll('.message-row.received');
+        messages.forEach(row => {
+            const meta = row.querySelector('.msg-meta');
+            if (meta && !meta.querySelector('.status-tick')) {
+                const timeStr = meta.textContent.trim();
+                meta.innerHTML = `${timeStr} <span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
+            }
+        });
+    }
+}
+      
+      
+// ============================================================
+// TABLEAU BLANC SIMPLIFIÉ (VERSION COMPLÈTE ET FONCTIONNELLE)
+// ============================================================
+// ============================================================
+// 🚀 TABLEAU BLANC ULTRA RAPIDE (OPTIMISÉ)
+// ============================================================
+
+let wb = {
+    msgId: null,
+    canvas: null,
+    ctx: null,
+    drawing: false,
+    color: '#000000',
+    size: 4,
+    eraser: false,
+    lastX: 0,
+    lastY: 0,
+    unsubscribe: null,
+    lines: [],           // Stockage local des lignes
+    isSyncing: false,    // Empêche les boucles
+    syncTimeout: null,
+    lastSyncTime: 0
+};
+
+const WB_COLORS = ['#000000', '#ff0000', '#ff6b00', '#ffd700', '#00cc44', '#0095f6', '#a800ff', '#ff00ff', '#ffffff'];
+const WB_SIZES = [2, 4, 6, 10, 16];
+
+// ========== CRÉER UN TABLEAU BLANC ==========
+function creerTableauBlanc() {
+    if (!currentUser || !targetUser) {
+        showTempNotification("❌ Connecte-toi d'abord");
+        return;
+    }
+
+    const msgData = {
+        text: null,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: "whiteboard",
+        whiteboardData: {
+            lines: [],
+            color: '#000000',
+            size: 4,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        }
+    };
+
+    db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData)
+        .then(docRef => {
+            wb.msgId = docRef.id;
+            wb.lines = [];
+            showTempNotification("🎨 Tableau créé !");
+            afficherWb(docRef.id, msgData);
+        })
+        .catch(err => {
+            console.error("Erreur création tableau:", err);
+            showTempNotification("❌ Erreur création");
+        });
+}
+
+// ========== AFFICHER LE TABLEAU ==========
+function afficherWb(msgId, data) {
+    if (document.querySelector(`[data-id="${msgId}"]`)) return;
+
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+
+    const row = document.createElement('div');
+    const isSent = data.senderId === currentUser.id;
+    row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+    row.setAttribute('data-id', msgId);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.style.padding = '0';
+    bubble.style.background = 'transparent';
+    bubble.style.boxShadow = 'none';
+    bubble.style.borderRadius = '0';
+
+    const cardHtml = genererCarteWb(msgId, data);
+    bubble.innerHTML = cardHtml;
+    row.appendChild(bubble);
+    msgArea.appendChild(row);
+
+    setTimeout(() => {
+        const canvas = document.getElementById(`wb-canvas-${msgId}`);
+        if (canvas) {
+            initialiserWb(msgId, canvas);
+        }
+    }, 200);
+
+    // Ne pas scroller si l'utilisateur est en train de dessiner
+    if (!wb.drawing) {
+         
+    }
+}
+
+// ========== GÉNÉRER LA CARTE ==========
+function genererCarteWb(msgId, data) {
+    const linesCount = data.whiteboardData?.lines?.length || 0;
+    const senderName = data.senderName || 'inconnu';
+    
+    // === VÉRIFIER SI L'UTILISATEUR EST LE PROPRIÉTAIRE ===
+    const isOwner = data.senderId === currentUser?.id;
+
+    return `
+        <div class="wb-card" data-wb-id="${msgId}">
+            <div class="wb-header">
+                <span>🎨 Dessin</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size:0.6rem;opacity:0.6;">En direct</span>
+                    ${isOwner ? `
+                        <button onclick="supprimerTableauBlanc('${msgId}')" 
+                            style="
+                                background: none;
+                                border: none;
+                                color: #ff4444;
+                                cursor: pointer;
+                                font-size: 0.9rem;
+                                padding: 2px 6px;
+                                border-radius: 6px;
+                                transition: all 0.2s;
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            "
+                            onmouseover="this.style.background='rgba(255,68,68,0.15)'; this.style.transform='scale(1.1)'"
+                            onmouseout="this.style.background='none'; this.style.transform='scale(1)'"
+                            title="Supprimer ce tableau"
+                        >
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="wb-canvas-box">
+                <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
+            </div>
+            <div class="wb-tools" id="wb-tools-${msgId}">
+                ${genererOutilsWb(msgId)}
+            </div>
+        </div>
+    `;
+}
+      
+      
+      async function supprimerTableauBlanc(msgId) {
+    if (!msgId) {
+        showTempNotification("❌ Tableau introuvable");
+        return;
+    }
+    
+    if (!confirm("🗑️ Supprimer ce tableau blanc ?")) {
+        return;
+    }
+    
+    try {
+        // Supprimer de Firestore
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).delete();
+        
+        // Supprimer du DOM
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        if (row) {
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '0';
+            row.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                row.remove();
+                showTempNotification("🗑️ Tableau supprimé");
+            }, 300);
+        }
+        
+        // Nettoyer l'écoute
+        if (wb && wb.unsubscribe) {
+            wb.unsubscribe();
+            wb.unsubscribe = null;
+        }
+        
+    } catch (error) {
+        console.error("Erreur:", error);
+        showTempNotification("❌ Erreur lors de la suppression");
+    }
+}
+
+// ========== GÉNÉRER LES OUTILS ==========
+function genererOutilsWb(msgId) {
+    let html = '';
+
+    WB_COLORS.forEach(color => {
+        const isWhite = color === '#ffffff';
+        const isActive = color === '#000000' ? 'active' : '';
+        html += `<button class="wb-color ${isActive}" data-msg="${msgId}" data-color="${color}" 
+            style="background:${color}; border-color:${isWhite ? '#ddd' : 'transparent'};"
+            onclick="wbSetColor('${msgId}', '${color}', this)"></button>`;
+    });
+
+    html += `<span class="wb-separator"></span>`;
+
+    WB_SIZES.forEach(size => {
+        const isActive = size === 4 ? 'active' : '';
+        const ps = Math.min(size, 14);
+        html += `<button class="wb-btn ${isActive}" data-msg="${msgId}" data-size="${size}" onclick="wbSetSize('${msgId}', ${size}, this)">
+            <span style="display:inline-block;width:${ps}px;height:${ps}px;border-radius:50%;background:#000;"></span>
+        </button>`;
+    });
+
+    html += `<span class="wb-separator"></span>`;
+
+    html += `<button class="wb-btn" data-msg="${msgId}" onclick="wbToggleEraser('${msgId}', this)" title="Gomme">
+        <i class="fa-solid fa-eraser"></i>
+    </button>`;
+
+    return html;
+}
+
+// ========== INITIALISER LE CANVAS ==========
+function initialiserWb(msgId, canvas) {
+    const wrapper = canvas.parentElement;
+    const rect = wrapper.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    wb.canvas = canvas;
+    wb.ctx = ctx;
+    wb.msgId = msgId;
+    wb.lines = [];
+
+    // Événements
+    canvas.addEventListener('mousedown', (e) => wbStart(e, msgId));
+    canvas.addEventListener('mousemove', (e) => wbMove(e, msgId));
+    canvas.addEventListener('mouseup', () => wbStop(msgId));
+    canvas.addEventListener('mouseleave', () => wbStop(msgId));
+    canvas.addEventListener('touchstart', (e) => wbStartTouch(e, msgId), { passive: false });
+    canvas.addEventListener('touchmove', (e) => wbMoveTouch(e, msgId), { passive: false });
+    canvas.addEventListener('touchend', () => wbStop(msgId), { passive: false });
+
+    // Charger les lignes existantes depuis Firestore
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+    docRef.get().then(doc => {
+        if (doc.exists && doc.data().whiteboardData?.lines) {
+            wb.lines = doc.data().whiteboardData.lines || [];
+            dessinerToutesLesLignes(msgId);
+        }
+    });
+
+    // Écouter en temps réel (mais OPTIMISÉ)
+    ecouterWbOptimise(msgId);
+}
+
+// ========== ÉCOUTE OPTIMISÉE ==========
+function ecouterWbOptimise(msgId) {
+    if (wb.unsubscribe) wb.unsubscribe();
+
+    wb.unsubscribe = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot((doc) => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            if (!data.whiteboardData) return;
+
+            const newLines = data.whiteboardData.lines || [];
+            
+            // Ne mettre à jour que si le nombre de lignes a changé
+            if (newLines.length !== wb.lines.length) {
+                wb.lines = newLines;
+                // Redessiner uniquement si ce n'est pas nous qui dessinons
+                if (!wb.drawing) {
+                    dessinerToutesLesLignes(msgId);
+                }
+            }
+        });
+}
+
+// ========== DESSINER TOUTES LES LIGNES ==========
+function dessinerToutesLesLignes(msgId) {
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    wb.lines.forEach(line => {
+        ctx.beginPath();
+        ctx.moveTo(line.x1, line.y1);
+        ctx.lineTo(line.x2, line.y2);
+        ctx.strokeStyle = line.color || '#000000';
+        ctx.lineWidth = line.size || 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+    });
+}
+
+// ========== FONCTIONS DE DESSIN OPTIMISÉES ==========
+function wbStart(e, msgId) {
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    wb.drawing = true;
+    wb.canvas = canvas;
+    wb.ctx = canvas.getContext('2d');
+    wb.msgId = msgId;
+    wb.lastX = e.clientX - rect.left;
+    wb.lastY = e.clientY - rect.top;
+    
+    // Dessiner un point
+    const size = wb.eraser ? wb.size * 2 : wb.size;
+    wb.ctx.beginPath();
+    wb.ctx.arc(wb.lastX, wb.lastY, size / 2, 0, Math.PI * 2);
+    wb.ctx.fillStyle = wb.eraser ? '#ffffff' : wb.color;
+    wb.ctx.fill();
+}
+
+function wbMove(e, msgId) {
+    if (!wb.drawing) return;
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Dessiner localement (instantané)
+    const size = wb.eraser ? wb.size * 2 : wb.size;
+    wb.ctx.beginPath();
+    wb.ctx.moveTo(wb.lastX, wb.lastY);
+    wb.ctx.lineTo(x, y);
+    wb.ctx.strokeStyle = wb.eraser ? '#ffffff' : wb.color;
+    wb.ctx.lineWidth = size;
+    wb.ctx.lineCap = 'round';
+    wb.ctx.lineJoin = 'round';
+    wb.ctx.stroke();
+
+    // Sauvegarder dans le buffer local
+    const line = {
+        x1: wb.lastX, y1: wb.lastY,
+        x2: x, y2: y,
+        color: wb.eraser ? '#ffffff' : wb.color,
+        size: size
+    };
+    wb.lines.push(line);
+
+    wb.lastX = x;
+    wb.lastY = y;
+
+    // Sauvegarder sur Firestore (mais en RALENTI avec throttle)
+    sauvegarderWbThrottle(msgId);
+}
+
+function wbStartTouch(e, msgId) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    wb.drawing = true;
+    wb.canvas = canvas;
+    wb.ctx = canvas.getContext('2d');
+    wb.msgId = msgId;
+    wb.lastX = touch.clientX - rect.left;
+    wb.lastY = touch.clientY - rect.top;
+
+    const size = wb.eraser ? wb.size * 2 : wb.size;
+    wb.ctx.beginPath();
+    wb.ctx.arc(wb.lastX, wb.lastY, size / 2, 0, Math.PI * 2);
+    wb.ctx.fillStyle = wb.eraser ? '#ffffff' : wb.color;
+    wb.ctx.fill();
+}
+
+function wbMoveTouch(e, msgId) {
+    e.preventDefault();
+    if (!wb.drawing) return;
+    const touch = e.touches[0];
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    const size = wb.eraser ? wb.size * 2 : wb.size;
+    wb.ctx.beginPath();
+    wb.ctx.moveTo(wb.lastX, wb.lastY);
+    wb.ctx.lineTo(x, y);
+    wb.ctx.strokeStyle = wb.eraser ? '#ffffff' : wb.color;
+    wb.ctx.lineWidth = size;
+    wb.ctx.lineCap = 'round';
+    wb.ctx.lineJoin = 'round';
+    wb.ctx.stroke();
+
+    const line = {
+        x1: wb.lastX, y1: wb.lastY,
+        x2: x, y2: y,
+        color: wb.eraser ? '#ffffff' : wb.color,
+        size: size
+    };
+    wb.lines.push(line);
+
+    wb.lastX = x;
+    wb.lastY = y;
+
+    sauvegarderWbThrottle(msgId);
+}
+
+function wbStop(msgId) {
+    wb.drawing = false;
+    // Sauvegarder une dernière fois
+    if (msgId) {
+        sauvegarderWbForce(msgId);
+    }
+}
+
+// ========== SAUVEGARDE AVEC THROTTLE (RÉDUIT LES REQUÊTES) ==========
+let wbThrottleTimer = null;
+let wbThrottleLines = [];
+
+function sauvegarderWbThrottle(msgId) {
+    if (!msgId) return;
+    
+    clearTimeout(wbThrottleTimer);
+    wbThrottleTimer = setTimeout(() => {
+        sauvegarderWbForce(msgId);
+    }, 300); // Sauvegarde toutes les 300ms
+}
+
+function sauvegarderWbForce(msgId) {
+    if (!msgId || wb.isSyncing) return;
+    
+    wb.isSyncing = true;
+    
+    // Prendre uniquement les nouvelles lignes (les 20 dernières maximum)
+    const linesToSave = wb.lines;  // ← Pas de limite, sauvegarde TOUT
+    
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+    docRef.update({
+        'whiteboardData.lines': linesToSave,
+        'whiteboardData.color': wb.color,
+        'whiteboardData.size': wb.size,
+        'whiteboardData.lastUpdate': firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(err => {
+        console.error("Erreur sauvegarde:", err);
+    }).finally(() => {
+        wb.isSyncing = false;
+    });
+}
+
+// ========== OUTILS ==========
+function wbSetColor(msgId, color, btn) {
+    wb.color = color;
+    wb.eraser = false;
+
+    document.querySelectorAll(`#wb-tools-${msgId} .wb-color`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll(`#wb-tools-${msgId} .wb-btn`).forEach(b => b.classList.remove('active'));
+}
+
+function wbSetSize(msgId, size, btn) {
+    wb.size = size;
+    document.querySelectorAll(`#wb-tools-${msgId} .wb-btn`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function wbToggleEraser(msgId, btn) {
+    wb.eraser = !wb.eraser;
+    btn.classList.toggle('active');
+
+    if (wb.eraser) {
+        document.querySelectorAll(`#wb-tools-${msgId} .wb-color`).forEach(b => b.classList.remove('active'));
+    }
+}
+
+// ========== EFFACER ==========
+function effacerWb(msgId) {
+    if (!confirm("🗑️ Effacer tout le dessin ?")) return;
+
+    wb.lines = [];
+    
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.parentElement.getBoundingClientRect();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+    }
+
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+    docRef.update({ 'whiteboardData.lines': [] }).then(() => {
+        showTempNotification("🗑️ Tableau effacé");
+    }).catch(err => {
+        console.error("Erreur effacement:", err);
+        showTempNotification("❌ Erreur");
+    });
+}
+
+console.log("✅ Tableau Blanc OPTIMISÉ chargé !");
+
+// ========== DÉTECTER L'ARRIVÉE D'UN TABLEAU BLANC ==========
+// Cette fonction est appelée automatiquement quand un message "whiteboard" arrive
+function verifierWb(data, msgId) {
+    if (data.type === 'whiteboard') {
+        if (!document.querySelector(`[data-id="${msgId}"]`)) {
+            afficherWb(msgId, data);
+        }
+    }
+}
+
+console.log("✅ Tableau Blanc chargé !");
+      
+      
+      // ===== SAUT DE LIGNE PAR ENTRÉE =====
+const inputChat = document.getElementById('chat-in');
+
+inputChat.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        // On stoppe le comportement par défaut (qui pourrait soumettre un formulaire ou déclencher un envoi)
+        e.preventDefault(); 
+        
+        // On récupère la position actuelle du curseur
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        
+        // On insère le saut de ligne (\n) à l'endroit exact du curseur
+        this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
+        
+        // On remet le curseur juste après le saut de ligne qu'on vient de créer
+        this.selectionStart = this.selectionEnd = start + 1;
+    }
+});
+      
+      
+      // ========== CRÉER UN TABLEAU BLANC ==========
+function creerTableauBlanc() {
+    if (!currentUser || !targetUser) {
+        showTempNotification("❌ Connecte-toi d'abord");
+        return;
+    }
+
+    const msgData = {
+        text: null,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [currentUser.id],
+        type: "whiteboard",
+        whiteboardData: {
+            lines: [],
+            color: '#000000',
+            size: 4,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        }
+    };
+
+    db.collection('chats').doc(CHAT_ID).collection('messages').add(msgData)
+        .then(docRef => {
+            showTempNotification("🎨 Tableau créé !");
+            // Afficher directement le tableau
+            afficherWb(docRef.id, msgData);
+        })
+        .catch(err => {
+            console.error("Erreur création tableau:", err);
+            showTempNotification("❌ Erreur création");
+        });
+}
+      
+ 
+// ⚡ FORCER LA SYNCHRONISATION EN TEMPS RÉEL DU TABLEAU ⚡
+// ============================================================
+
+// 1. ÉCOUTEUR DÉDIÉ POUR LE TABLEAU BLANC
+function ecouterTableauBlancTempsReel(msgId) {
+    if (!msgId) return;
+    
+    console.log("👀 Écoute du tableau en temps réel:", msgId);
+    
+    // Nettoyer l'ancien écouteur
+    if (window._wbListener) {
+        window._wbListener();
+        window._wbListener = null;
+    }
+    
+    window._wbListener = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot(function(doc) {
+            if (!doc.exists) return;
+            
+            const data = doc.data();
+            if (!data.whiteboardData) return;
+            
+            const wbData = data.whiteboardData;
+            
+            // Mettre à jour le canvas en temps réel
+            const canvas = document.getElementById(`wb-canvas-${msgId}`);
+            if (!canvas) return;
+            
+            // Forcer le redessin
+            dessinerLignesWbTempsReel(msgId, wbData.lines);
+            
+            console.log("🔄 Tableau mis à jour en temps réel");
+        }, function(error) {
+            console.error("Erreur écoute tableau:", error);
+        });
+}
+
+// 2. VERSION FORCÉE DE DESSIN
+function dessinerLignesWbTempsReel(msgId, lines) {
+    const canvas = document.getElementById(`wb-canvas-${msgId}`);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // Effacer et redessiner TOUT
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    if (lines && lines.length > 0) {
+        lines.forEach(line => {
+            ctx.beginPath();
+            ctx.moveTo(line.x1, line.y1);
+            ctx.lineTo(line.x2, line.y2);
+            ctx.strokeStyle = line.color || '#000000';
+            ctx.lineWidth = line.size || 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        });
+    }
+}
+
+// 3. MODIFIER LA FONCTION INITIALISERWb
+const originalInitialiserWb = initialiserWb;
+initialiserWb = function(msgId, canvas) {
+    // Appeler l'originale
+    originalInitialiserWb(msgId, canvas);
+    
+    // AJOUTER L'ÉCOUTEUR TEMPS RÉEL
+    setTimeout(function() {
+        ecouterTableauBlancTempsReel(msgId);
+    }, 500);
+};
+
+// 4. MODIFIER AFFICHERWB POUR ACTIVER L'ÉCOUTE
+const originalAfficherWb = afficherWb;
+afficherWb = function(msgId, data) {
+    // Appeler l'originale
+    originalAfficherWb(msgId, data);
+    
+    // Attendre que le canvas soit créé puis écouter
+    setTimeout(function() {
+        ecouterTableauBlancTempsReel(msgId);
+    }, 1000);
+};
+
+// 5. FORCER LA MISE À JOUR QUAND UN TRAIT EST AJOUTÉ
+const originalSauvegarderTraitWb = sauvegarderTraitWb;
+sauvegarderTraitWb = function(msgId, x1, y1, x2, y2) {
+    if (!msgId) return;
+
+    const line = {
+        x1, y1, x2, y2,
+        color: wb.eraser ? '#ffffff' : wb.color,
+        size: wb.eraser ? wb.size * 2 : wb.size
+    };
+
+    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+    docRef.update({
+        'whiteboardData.lines': firebase.firestore.FieldValue.arrayUnion(line),
+        'whiteboardData.color': wb.color,
+        'whiteboardData.size': wb.size,
+        'whiteboardData.lastUpdate': firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function() {
+        // Après la sauvegarde, forcer la mise à jour locale
+        const canvas = document.getElementById(`wb-canvas-${msgId}`);
+        if (canvas && !wb.drawing) {
+            // Redessiner TOUT depuis Firestore
+            docRef.get().then(function(doc) {
+                if (doc.exists && doc.data().whiteboardData) {
+                    dessinerLignesWbTempsReel(msgId, doc.data().whiteboardData.lines);
+                }
+            });
+        }
+    }).catch(function(err) {
+        console.error("Erreur sauvegarde:", err);
+    });
+};
+
+// 6. AJOUTER UN ÉCOUTEUR GLOBAL POUR TOUS LES TABLEAUX
+function ecouterTousLesTableaux() {
+    if (!currentUser) return;
+    
+    console.log("🔍 Recherche des tableaux blancs existants...");
+    
+    // Chercher tous les messages de type whiteboard
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('type', '==', 'whiteboard')
+        .onSnapshot(function(snapshot) {
+            snapshot.docChanges().forEach(function(change) {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+                    const msgId = change.doc.id;
+                    
+                    console.log("🎨 Nouveau tableau détecté:", msgId);
+                    
+                    // Vérifier si le tableau est déjà affiché
+                    if (!document.querySelector(`[data-id="${msgId}"]`)) {
+                        afficherWb(msgId, data);
+                    }
+                }
+            });
+        });
+}
+
+// 7. APPELER L'ÉCOUTEUR GLOBAL AU DÉMARRAGE
+setTimeout(function() {
+    if (currentUser) {
+        ecouterTousLesTableaux();
+        console.log("✅ Écoute globale des tableaux activée");
+    }
+}, 2000);
+
+console.log("✅ SYNCHRONISATION TEMPS RÉEL ACTIVÉE POUR LE TABLEAU BLANC");
+      
+      // ============================================================
+ 
+      
+      // ============================================================
+// 🗑️ ICÔNE SUPPRIMER DANS L'EN-TÊTE DU TABLEAU BLANC
+// ============================================================
+
+// === 1. FONCTION POUR SUPPRIMER LE TABLEAU ===
+async function supprimerTableauBlanc(msgId) {
+    if (!msgId) {
+        showTempNotification("❌ Tableau introuvable");
+        return;
+    }
+    
+    if (!confirm("🗑️ Supprimer ce tableau blanc ?")) {
+        return;
+    }
+    
+    try {
+        // Supprimer de Firestore
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).delete();
+        
+        // Supprimer du DOM
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        if (row) {
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '0';
+            row.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                row.remove();
+                showTempNotification("🗑️ Tableau supprimé");
+            }, 300);
+        }
+        
+        // Nettoyer l'écoute
+        if (wb && wb.unsubscribe) {
+            wb.unsubscribe();
+            wb.unsubscribe = null;
+        }
+        
+    } catch (error) {
+        console.error("Erreur:", error);
+        showTempNotification("❌ Erreur lors de la suppression");
+    }
+}
+
+// === 2. MODIFIER LA FONCTION QUI GÉNÈRE LA CARTE ===
+const originalGenererCarte = window.genererCarteWb;
+
+window.genererCarteWb = function(msgId, data) {
+    // Vérifier si le tableau appartient à l'utilisateur connecté
+    const isOwner = data.senderId === currentUser?.id;
+    const senderName = data.senderName || 'inconnu';
+    const linesCount = data.whiteboardData?.lines?.length || 0;
+    
+    // === CRÉER LA CARTE AVEC L'ICÔNE DANS L'EN-TÊTE ===
+    return `
+        <div class="wb-card" data-wb-id="${msgId}" style="position: relative;">
+            <div class="wb-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid rgba(168, 0, 255, 0.1);">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    🎨 Dessin
+                    <span style="font-size:0.55rem; background:rgba(168,0,255,0.1); padding:2px 8px; border-radius:10px; color:#a800ff; opacity:0.7;">${linesCount} traits</span>
+                </span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    ${isOwner ? `
+                        <!-- ✅ BOUTON SUPPRIMER DANS L'EN-TÊTE -->
+                        <button onclick="supprimerTableauBlanc('${msgId}')" 
+                            style="
+                                background: none;
+                                border: none;
+                                color: #ff4444;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                padding: 2px 6px;
+                                border-radius: 6px;
+                                transition: all 0.2s;
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            "
+                            onmouseover="this.style.background='rgba(255,68,68,0.15)'; this.style.transform='scale(1.1)'"
+                            onmouseout="this.style.background='none'; this.style.transform='scale(1)'"
+                            onmousedown="this.style.transform='scale(0.9)'"
+                            onmouseup="this.style.transform='scale(1.1)'"
+                            title="Supprimer ce tableau"
+                        >
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    ` : `
+                        <span style="font-size:0.55rem; opacity:0.4;">par ${senderName}</span>
+                    `}
+                </div>
+            </div>
+            <div class="wb-canvas-box">
+                <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
+            </div>
+            <div class="wb-tools" id="wb-tools-${msgId}">
+                ${typeof genererOutilsWb === 'function' ? genererOutilsWb(msgId) : ''}
+            </div>
+        </div>
+    `;
+};
+
+console.log("✅ Icône 🗑️ ajoutée dans l'en-tête du tableau !");
+      
+      
+      // ============================================================
+// 🧹 NETTOYEUR RADICAL - DÉSACTIVE TOUTES LES ANCIENNES FONCTIONS
+// ============================================================
+
+(function() {
+    console.log("🧹 NETTOYAGE EN COURS...");
+
+    // 1️⃣ LISTE DES ANCIENNES FONCTIONS À SUPPRIMER
+    const anciennesFonctions = [
+        'getBatteryLevel',
+        'updateBatteryAndSync',
+        'updateBatteryDisplay',
+        'listenToOtherUserBattery',
+        'afficherStatutAutre',
+        'mettreAJourStatutUtilisateur',
+        'detecterActiviteEcran',
+        'forcerStatutEnLigneSiVisible',
+        'activerSystemeStatutComplet',
+        'ecouterStatutsTempsReel',
+        'marquerTousMessagesCommeLus',
+        'detecterActiviteUtilisateur',
+        'activerSuiviStatuts',
+        'ecouterStatutsOptimise',
+        'ecouterStatutAutreAvecHorodatage',
+        'ecouterBatterieCorrespondant',
+        'afficherStatutAutre'
+    ];
+
+    // 2️⃣ SUPPRIME CHAQUE FONCTION
+    anciennesFonctions.forEach(nom => {
+        if (typeof window[nom] !== 'undefined') {
+            window[nom] = function() {
+                console.log(`🚫 Bloqué: ${nom}() est désactivée`);
+                return Promise.resolve ? Promise.resolve() : null;
+            };
+            console.log(`✅ Désactivée: ${nom}`);
+        }
+    });
+
+    // 3️⃣ DÉSACTIVE LES ANCIENS INTERVALLES
+    if (window.batteryInterval) {
+        clearInterval(window.batteryInterval);
+        window.batteryInterval = null;
+        console.log("✅ Intervalle batterie nettoyé");
+    }
+
+    // 4️⃣ DÉSACTIVE LES ANCIENS LISTENERS FIRESTORE
+    if (window._statutListener) {
+        try { window._statutListener(); } catch(e) {}
+        window._statutListener = null;
+        console.log("✅ Listener statut nettoyé");
+    }
+
+    if (window._batterieListener) {
+        try { window._batterieListener(); } catch(e) {}
+        window._batterieListener = null;
+        console.log("✅ Listener batterie nettoyé");
+    }
+
+    // 5️⃣ NETTOIE LES SETINTERVAL RESTANTS
+    const maxId = setInterval(() => {}, 0);
+    for (let i = 0; i < maxId; i++) {
+        clearInterval(i);
+    }
+    console.log("✅ Tous les intervalles nettoyés");
+
+    // 6️⃣ FORCE LE RE-DÉMARRAGE DU SYSTÈME DE BATTERIE
+    setTimeout(function() {
+        if (typeof currentUser !== 'undefined' && currentUser && typeof targetUser !== 'undefined' && targetUser) {
+            console.log("🔄 Redémarrage du système de batterie...");
+            demarrerMiseAJourBatterie();
+            ecouterBatterieAutre();
+            ecouterStatutAutre();
+        }
+    }, 500);
+
+    console.log("🧹 NETTOYAGE TERMINÉ !");
+})();
+      
+      // ============================================================
+// 🔋 SYSTÈME DE BATTERIE ULTIME - VERSION FINALE
+// ============================================================
+
+// 1️⃣ METTRE À JOUR MA BATTERIE
+async function mettreAJourMaBatterie() {
+    if (!currentUser) return;
+    try {
+        if (!navigator.getBattery) return;
+        const battery = await navigator.getBattery();
+        const niveau = Math.round(battery.level * 100);
+        const enCharge = battery.charging;
+        
+        await db.collection('users').doc(currentUser.id).set({
+            batteryLevel: niveau,
+            isCharging: enCharge,
+            lastBatteryUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+            online: true,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        
+        console.log(`🔋 Ma batterie: ${niveau}%`);
+    } catch(e) { console.error("Erreur batterie:", e); }
+}
+
+// 2️⃣ DÉMARRER LA MISE À JOUR
+function demarrerMiseAJourBatterie() {
+    mettreAJourMaBatterie();
+    setInterval(mettreAJourMaBatterie, 10000);
+    if (navigator.getBattery) {
+        navigator.getBattery().then(b => {
+            b.addEventListener('levelchange', mettreAJourMaBatterie);
+            b.addEventListener('chargingchange', mettreAJourMaBatterie);
+        });
+    }
+}
+
+// 3️⃣ ÉCOUTER LA BATTERIE DE L'AUTRE
+function ecouterBatterieAutre() {
+    if (!currentUser || !targetUser) return;
+    if (window._batterieListener) {
+        window._batterieListener();
+        window._batterieListener = null;
+    }
+    
+    console.log(`👀 Écoute batterie de ${targetUser.name}...`);
+    
+    window._batterieListener = db.collection('users').doc(targetUser.id)
+        .onSnapshot((doc) => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            
+            let niveau = data.batteryLevel || 0;
+            let enCharge = data.isCharging || false;
+            
+            // Fallback si pas trouvé
+            if (niveau === 0) {
+                if (data.battery?.level) {
+                    niveau = data.battery.level;
+                    enCharge = data.battery.charging || false;
+                } else if (data.devices?.length > 0) {
+                    const dernier = data.devices.sort((a,b) => 
+                        new Date(b.lastUpdate) - new Date(a.lastUpdate)
+                    )[0];
+                    if (dernier?.battery) {
+                        niveau = dernier.battery.level || 0;
+                        enCharge = dernier.battery.charging || false;
+                    }
+                }
+            }
+            
+            afficherBatterie(niveau, enCharge);
+        });
+}
+
+// 4️⃣ AFFICHER LA BATTERIE
+function afficherBatterie(niveau, enCharge) {
+    const statusSpan = document.getElementById('header-status-text');
+    if (!statusSpan) return;
+    
+    niveau = Math.min(100, Math.max(0, niveau));
+    
+    let icone = '🔋';
+    let classe = 'battery-high';
+    
+    if (enCharge) {
+        icone = '⚡';
+        classe = 'battery-charging';
+    } else if (niveau <= 15) {
+        icone = '🪫';
+        classe = 'battery-low';
+    } else if (niveau <= 30) {
+        icone = '🔋';
+        classe = 'battery-medium';
+    }
+    
+    // Supprimer l'ancienne batterie
+    let contenu = statusSpan.innerHTML;
+    contenu = contenu.replace(/<span class="battery-indicator".*?<\/span>/, '');
+    
+    // Ajouter la nouvelle
+    contenu += `
+        <span class="battery-indicator" style="display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 0.7rem; background: var(--input-bg); padding: 2px 6px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <span class="battery-icon" style="font-size: 0.75rem;">${icone}</span>
+            <span class="battery-percent ${classe}" style="font-weight: 600;">${niveau}%</span>
+        </span>
+    `;
+    
+    statusSpan.innerHTML = contenu;
+}
+
+// 5️⃣ ÉCOUTER LE STATUT EN LIGNE
+function ecouterStatutAutre() {
+    if (!currentUser || !targetUser) return;
+    if (window._statutListener) {
+        window._statutListener();
+        window._statutListener = null;
+    }
+    
+    const statusSpan = document.getElementById('header-status-text');
+    if (!statusSpan) return;
+    
+    window._statutListener = db.collection('users').doc(targetUser.id)
+        .onSnapshot((doc) => {
+            if (!doc.exists) {
+                statusSpan.innerHTML = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
+                return;
+            }
+            
+            const data = doc.data();
+            const estEnLigne = data.online === true;
+            
+            let statutHtml = '';
+            if (estEnLigne) {
+                statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
+            } else {
+                const lastSeen = data.lastSeen?.toDate?.() || data.lastSeen;
+                if (lastSeen) {
+                    const h = lastSeen.getHours().toString().padStart(2, '0');
+                    const m = lastSeen.getMinutes().toString().padStart(2, '0');
+                    statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
+                } else {
+                    statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
+                }
+            }
+            
+            // Garder la batterie si elle existe
+            const batterieExistante = statusSpan.querySelector('.battery-indicator');
+            if (batterieExistante) {
+                statusSpan.innerHTML = statutHtml + batterieExistante.outerHTML;
+            } else {
+                statusSpan.innerHTML = statutHtml;
+            }
+            
+            // Mood
+            if (data.mood) {
+                const otherMoodSpan = document.getElementById('other-mood-emoji');
+                if (otherMoodSpan) otherMoodSpan.textContent = data.mood.emoji || '😊';
+            }
+        });
+}
+
+// 6️⃣ ACTIVER LE SYSTÈME
+function activerSystemeBatterie() {
+    if (!currentUser || !targetUser) {
+        console.log("⏳ Attente de connexion...");
+        setTimeout(activerSystemeBatterie, 500);
+        return;
+    }
+    
+    console.log("🚀 Activation batterie...");
+    demarrerMiseAJourBatterie();
+    setTimeout(ecouterBatterieAutre, 300);
+    setTimeout(ecouterStatutAutre, 600);
+}
+
+// 7️⃣ LANCER AUTOMATIQUEMENT
+setTimeout(activerSystemeBatterie, 1000);
+
+console.log("✅ SYSTÈME DE BATTERIE ULTIME ACTIVÉ !");
+      
+      
       
     </script>
   
+   
+</body>   
   
-</body>
-  
-</html> 
+</html>    
+              
