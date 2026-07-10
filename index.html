@@ -9165,7 +9165,7 @@ function detecterActiviteEcran() {
 }
 
 // ========== ÉCOUTER LE STATUT DE L'AUTRE (AVEC DERNIER APPAREIL) ==========
-// ========== ÉCOUTER LE STATUT DE L'AUTRE (AVEC BATTERIE RÉELLE) ==========
+// ========== ÉCOUTER LE STATUT DE L'AUTRE AVEC BATTERIE RÉELLE ==========
 function ecouterStatutAutreAvecHorodatage() {
     if (!currentUser || !targetUser) return;
     
@@ -9193,7 +9193,7 @@ function ecouterStatutAutreAvecHorodatage() {
             // ============================================================
             const estEnLigne = data.online === true;
             
-            // Récupérer l'heure de déconnexion
+            // Heure de déconnexion
             let heureDeconnexion = null;
             if (data.heureDeconnexion) {
                 heureDeconnexion = new Date(data.heureDeconnexion);
@@ -9212,23 +9212,21 @@ function ecouterStatutAutreAvecHorodatage() {
             }
             
             // ============================================================
-            // 2. RÉCUPÉRER LA BATTERIE DU DERNIER APPAREIL UTILISÉ
+            // 2. 🔥 RÉCUPÉRER LA BATTERIE DE L'AUTRE (PAS LA TIENNE) 🔥
             // ============================================================
             let batterie = null;
-            let dernierAppareilId = null;
             
             // === ÉTAPE 1 : Chercher dans la liste des appareils ===
             if (data.devices && Array.isArray(data.devices) && data.devices.length > 0) {
-                // Trier les appareils par date de dernière mise à jour (le plus récent en premier)
+                // Trier par date de dernière mise à jour (le plus récent en premier)
                 const devicesSorted = [...data.devices].sort((a, b) => {
                     const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
                     const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
                     return dateB - dateA;
                 });
                 
-                // Prendre le dernier appareil utilisé
+                // Prendre le DERNIER appareil utilisé
                 const dernier = devicesSorted[0];
-                dernierAppareilId = dernier.deviceId || 'inconnu';
                 
                 if (dernier && dernier.battery) {
                     batterie = {
@@ -9237,7 +9235,7 @@ function ecouterStatutAutreAvecHorodatage() {
                         deviceId: dernier.deviceId || 'inconnu',
                         lastUpdate: dernier.lastUpdate || new Date()
                     };
-                    console.log(`📱 Dernier appareil: ${dernierAppareilId} → ${batterie.level}%`);
+                    console.log(`📱 Batterie de ${targetUser.name} (dernier appareil): ${batterie.level}%`);
                 }
             }
             
@@ -9252,9 +9250,8 @@ function ecouterStatutAutreAvecHorodatage() {
                 console.log(`📱 Fallback batterie: ${batterie.level}%`);
             }
             
-            // === ÉTAPE 3 : Fallback ultime (batterie de l'API) ===
+            // === ÉTAPE 3 : Fallback ultime ===
             if (!batterie) {
-                // Essayer de récupérer depuis le champ batteryLevel
                 const level = data.batteryLevel || 0;
                 const isCharging = data.isCharging || false;
                 if (level > 0) {
@@ -9268,8 +9265,13 @@ function ecouterStatutAutreAvecHorodatage() {
                 }
             }
             
+            // Si toujours pas de batterie, afficher "--%"
+            if (!batterie) {
+                batterie = { level: 0, charging: false };
+            }
+            
             // ============================================================
-            // 3. AFFICHAGE FINAL
+            // 3. 🔥 AFFICHAGE FINAL (BATTERIE DE L'AUTRE) 🔥
             // ============================================================
             
             // === STATUT ===
@@ -9284,33 +9286,18 @@ function ecouterStatutAutreAvecHorodatage() {
                 statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
             }
             
-            // === BATTERIE ===
-            let batteryHtml = '';
-            if (batterie) {
-                const level = Math.min(100, Math.max(0, batterie.level)); // Sécurité entre 0 et 100
-                const charging = batterie.charging || false;
-                const icon = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
-                const colorClass = charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high'));
-                
-                // Indicateur si plusieurs appareils
-                const deviceCount = (data.devices && Array.isArray(data.devices)) ? data.devices.length : 0;
-                const deviceIndicator = deviceCount > 1 ? ` 📱` : '';
-                
-                batteryHtml = `
-                    <span class="battery-indicator" id="battery-indicator" style="display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 0.7rem; background: var(--input-bg); padding: 2px 6px; border-radius: 12px; border: 1px solid var(--border-color);">
-                        <span class="battery-icon" id="battery-icon" style="font-size: 0.75rem;">${icon}</span>
-                        <span class="battery-percent ${colorClass}" id="battery-percent" style="font-weight: 600;">${level}%${deviceIndicator}</span>
-                        ${deviceCount > 1 ? `<span style="font-size:0.5rem; opacity:0.5;">dernier: ${dernierAppareilId || ''}</span>` : ''}
-                    </span>
-                `;
-            } else {
-                batteryHtml = `
-                    <span class="battery-indicator" id="battery-indicator">
-                        <span class="battery-icon" id="battery-icon">🔋</span>
-                        <span class="battery-percent" id="battery-percent">--%</span>
-                    </span>
-                `;
-            }
+            // === BATTERIE DE L'AUTRE ===
+            const level = Math.min(100, Math.max(0, batterie.level));
+            const charging = batterie.charging || false;
+            const icon = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+            const colorClass = charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high'));
+            
+            const batteryHtml = `
+                <span class="battery-indicator" style="display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 0.7rem; background: var(--input-bg); padding: 2px 6px; border-radius: 12px; border: 1px solid var(--border-color);">
+                    <span class="battery-icon" style="font-size: 0.75rem;">${icon}</span>
+                    <span class="battery-percent ${colorClass}" style="font-weight: 600;">${level}%</span>
+                </span>
+            `;
             
             // === AFFICHAGE FINAL ===
             statusSpan.innerHTML = statutHtml + batteryHtml;
@@ -9426,7 +9413,7 @@ function écouterBatterieCorrespondant() {
 }
       
       
-  // ========== METTRE À JOUR SA PROPRE BATTERIE ==========
+// ========== METTRE À JOUR SA PROPRE BATTERIE (POUR LES AUTRES) ==========
 async function mettreAJourMaBatterie() {
     if (!currentUser) return;
 
@@ -9441,36 +9428,39 @@ async function mettreAJourMaBatterie() {
                 localStorage.setItem('deviceId', deviceId);
             }
             
+            const level = Math.round(battery.level * 100);
+            const charging = battery.charging;
+            
             const deviceInfo = {
                 deviceId: deviceId,
                 battery: {
-                    level: Math.round(battery.level * 100),
-                    charging: battery.charging
+                    level: level,
+                    charging: charging
                 },
                 lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
                 userAgent: navigator.userAgent.substring(0, 50),
                 platform: navigator.platform || 'unknown'
             };
             
-            // Sauvegarder dans Firestore
+            // 🔥 SAUVEGARDER DANS FIRESTORE POUR QUE L'AUTRE PUISSE VOIR 🔥
             await db.collection('users').doc(currentUser.id).set({
                 battery: {
-                    level: Math.round(battery.level * 100),
-                    charging: battery.charging,
+                    level: level,
+                    charging: charging,
                     deviceId: deviceId,
                     lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
                 },
                 devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo),
                 lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
                 online: true,
-                batteryLevel: Math.round(battery.level * 100),
-                isCharging: battery.charging
+                batteryLevel: level,
+                isCharging: charging
             }, { merge: true });
             
             // Nettoyer les anciens appareils (garder 5 max)
             nettoyerAnciensAppareils();
             
-            console.log(`🔋 Batterie mise à jour: ${Math.round(battery.level * 100)}%`);
+            console.log(`🔋 Ma batterie mise à jour: ${level}% (visible par l'autre)`);
             
         } else {
             console.log("⚠️ API Batterie non disponible");
@@ -9507,21 +9497,25 @@ async function nettoyerAnciensAppareils() {
     }
 }
 
-// ========== FORCER LA MISE À JOUR (APPELÉE RÉGULIÈREMENT) ==========
+// ========== DÉMARRER LA MISE À JOUR DE MA BATTERIE ==========
 function demarrerMiseAJourBatterie() {
     // Mettre à jour immédiatement
     mettreAJourMaBatterie();
     
-    // Puis toutes les 30 secondes
+    // Puis toutes les 15 secondes (plus fréquent pour plus de précision)
     setInterval(() => {
         mettreAJourMaBatterie();
-    }, 30000);
+    }, 15000);
     
     // Écouter les changements de batterie
     if (navigator.getBattery) {
         navigator.getBattery().then(battery => {
-            battery.addEventListener('levelchange', mettreAJourMaBatterie);
-            battery.addEventListener('chargingchange', mettreAJourMaBatterie);
+            battery.addEventListener('levelchange', () => {
+                mettreAJourMaBatterie();
+            });
+            battery.addEventListener('chargingchange', () => {
+                mettreAJourMaBatterie();
+            });
         });
     }
 }
@@ -9806,7 +9800,8 @@ function openSecretPageInIframe() {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
+            width: 
+            ;
             height: 100%;
             background: rgba(0,0,0,0.85);
             backdrop-filter: blur(20px);
@@ -11208,4 +11203,7 @@ console.log("✅ Icône 🗑️ ajoutée dans l'en-tête du tableau !");
 </body>   
   
 </html>    
-              
+
+
+
+                                                                                                                
