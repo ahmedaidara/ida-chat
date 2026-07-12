@@ -234,6 +234,34 @@
 
         @keyframes bounceDot { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ============================================================
+           ✅ ANIMATIONS D'ENVOI SÉLECTIONNABLES (Paramètres du site)
+           5 modèles au choix, appliqués uniquement aux messages envoyés
+           par l'utilisateur courant (comportement purement local/cosmétique,
+           identique au fonctionnement existant du "style de bulle par défaut").
+           ============================================================ */
+        @keyframes sendAnimFadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes sendAnimScalePop { 0% { opacity: 0; transform: scale(0.6); } 70% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes sendAnimSlideRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes sendAnimElasticBounce { 0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.08); } 70% { transform: scale(0.95); } 85% { transform: scale(1.03); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes sendAnimBlurFocus { from { opacity: 0; filter: blur(6px); transform: scale(1.02); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+
+        .anim-fade-in-up { animation: sendAnimFadeInUp 0.35s ease-out !important; }
+        .anim-scale-pop { animation: sendAnimScalePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important; }
+        .anim-slide-right { animation: sendAnimSlideRight 0.3s ease-out !important; }
+        .anim-elastic-bounce { animation: sendAnimElasticBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important; }
+        .anim-blur-focus { animation: sendAnimBlurFocus 0.4s ease-out !important; }
+
+        /* ✅ Flash de surbrillance quand on clique sur une citation de réponse
+           pour retrouver le message d'origine (point "Redirection au clic") */
+        @keyframes msgFlashHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(168,0,255,0); background-color: rgba(168,0,255,0.35); }
+            50% { box-shadow: 0 0 0 6px rgba(168,0,255,0.15); background-color: rgba(168,0,255,0.28); }
+            100% { box-shadow: 0 0 0 0 rgba(168,0,255,0); background-color: transparent; }
+        }
+        .message-bubble.msg-flash-highlight { animation: msgFlashHighlight 1.1s ease-out; }
+        .reply-citation { cursor: pointer; }
         @keyframes bounceEmoji { 0% { transform: scale(0.3); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
         
         .falling-emoji { position: absolute; pointer-events: none; z-index: 1000; animation: fall linear forwards; }
@@ -1328,6 +1356,19 @@ input, textarea {
     gap: 6px;
 }
 
+/* ✅ Icône "Supprimer" tout à droite de l'en-tête du tableau (uniquement sur SES propres tableaux) */
+.wb-delete-icon {
+    color: #ed4956;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    margin-left: 6px;
+    border-radius: 6px;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.wb-delete-icon:hover { background: rgba(237, 73, 86, 0.15); transform: scale(1.1); }
+.wb-delete-icon:active { transform: scale(0.9); }
+
 .wb-canvas-box {
     position: relative;
     border-radius: 14px;
@@ -1860,6 +1901,19 @@ input, textarea {
     </select>
     <button onclick="saveDefaultBubbleStyle()" style="width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 10px; color: white; cursor: pointer;">✅ Appliquer ce style par défaut</button>
 </div>
+      <!-- Section Animation d'envoi -->
+      <div class="settings-section">
+    <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Animation d'envoi</h4>
+    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">Choisis l'effet visuel chic qui s'affichera quand TES messages apparaissent dans le chat.</p>
+    <select id="default-send-animation" style="width: 100%; padding: 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); margin-bottom: 15px;">
+        <option value="fade-in-up">⬆️ Fade In Up (apparition douce vers le haut)</option>
+        <option value="scale-pop">🎈 Scale Up / Pop</option>
+        <option value="slide-right">➡️ Slide from Right</option>
+        <option value="elastic-bounce">🪀 Elastic Bounce</option>
+        <option value="blur-focus">🔍 Smooth Blur-to-Focus</option>
+    </select>
+    <button onclick="saveDefaultSendAnimation()" style="width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 10px; color: white; cursor: pointer;">✅ Appliquer cette animation</button>
+</div>
       
       <button onclick="demanderPermissionNotifications()" style="background:#0095f6; color:white; padding:10px; border:none; border-radius:10px; margin:5px;">
     🔔 Activer les notifications
@@ -2274,6 +2328,8 @@ async function demanderPermissionNotifications() {
         let typingTimeout = null;
         let selectedMessageId = null;
         let replyToId = null;
+        // ✅ Marqueur stocké dans replyToText quand le message d'origine cité a été supprimé
+        const MARQUEUR_REPONSE_SUPPRIMEE = "__MESSAGE_SUPPRIME__";
       let messageStatusListeners = [];  // ← AJOUTE ICI
 let lastReadUpdate = null;        // ← AJOUTE ICI
         
@@ -2573,6 +2629,7 @@ async function enregistrerTokenPush() {
             listenToOtherUserBattery();
             listenForFlashSignals();
             saveDefaultMood();
+            listenToUserMood(); // ✅ correction : cette écoute existait mais n'était jamais démarrée
             activerLesNotifications();
           demanderPermissionNotifications();
               ecouterChangementsStyle();
@@ -2786,6 +2843,17 @@ function listenToMessages() {
                         }
                     }
                     
+                    // ✅ Si CE message est lui-même une réponse dont le message d'origine
+                    // vient d'être supprimé (replyToText remplacé par le marqueur), on
+                    // met à jour sa citation affichée en temps réel, sans reconstruire toute la liste.
+                    if (data.replyToText === MARQUEUR_REPONSE_SUPPRIMEE) {
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        const ancienneCitation = messageRow ? messageRow.querySelector('.reply-citation') : null;
+                        if (ancienneCitation && !ancienneCitation.innerHTML.includes('Message supprimé')) {
+                            ancienneCitation.outerHTML = `<div class="reply-citation" style="font-style: italic; opacity: 0.7; cursor: default;"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Message supprimé</div>`;
+                        }
+                    }
+                    
                     // Mise à jour légère du morpion (sans reconstruire la liste)
                     if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
                         const existingRow = document.querySelector(`[data-id="${msgId}"]`);
@@ -2948,7 +3016,7 @@ function listenToMessages() {
         const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
         if(parentRow) {
             msgData.replyToId = replyToId;
-            msgData.replyToText = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+            msgData.replyToText = obtenirTexteCompletMessage(parentRow);
             msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
         }
     }
@@ -3241,11 +3309,24 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             document.removeEventListener('click', hideContextMenus);
         }
         
+        // ✅ Récupère le texte INTÉGRAL d'un message affiché, y compris pour les messages
+        // longs tronqués visuellement par le bouton "VOIR TOUT" (.msg-text-complet),
+        // pour ne jamais citer une réponse sur un extrait coupé à 100 caractères.
+        function obtenirTexteCompletMessage(parentRow) {
+            if (!parentRow) return "[Média]";
+            const bulle = parentRow.querySelector('.message-bubble');
+            if (!bulle) return "[Média]";
+            const texteComplet = bulle.querySelector('.msg-text-complet');
+            if (texteComplet) return texteComplet.innerText;
+            const span = bulle.querySelector('span');
+            return span?.innerText || "[Média]";
+        }
+
         function initiateReply() {
             replyToId = selectedMessageId;
             const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
             if(parentRow) {
-                const texteComplet = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+                const texteComplet = obtenirTexteCompletMessage(parentRow);
                 // Aperçu ultra-court : 4 mots maximum, suivis de "..." si le message est plus long
                 const mots = texteComplet.trim().split(/\s+/).filter(Boolean);
                 const snippet = mots.length > 4 ? mots.slice(0, 4).join(' ') + '...' : texteComplet;
@@ -3253,6 +3334,27 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
                 document.getElementById('reply-preview').style.display = 'flex';
             }
             hideContextMenus();
+        }
+
+        // ✅ Redirection au clic sur une citation de réponse : défile jusqu'au message
+        // d'origine avec une animation fluide, puis déclenche un flash de surbrillance.
+        function scrollToOriginalMessage(msgId) {
+            if (!msgId) return;
+            const target = document.querySelector(`[data-id="${msgId}"]`);
+            if (!target) {
+                showTempNotification("⚠️ Message d'origine introuvable");
+                return;
+            }
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const bulle = target.querySelector('.message-bubble');
+            if (bulle) {
+                // On retire puis réapplique la classe pour permettre de rejouer l'animation
+                // même si l'utilisateur clique plusieurs fois de suite sur la même citation.
+                bulle.classList.remove('msg-flash-highlight');
+                void bulle.offsetWidth; // force le reflow
+                bulle.classList.add('msg-flash-highlight');
+                setTimeout(() => bulle.classList.remove('msg-flash-highlight'), 1200);
+            }
         }
         
     async function deleteSelectedMessage() {
@@ -3293,6 +3395,30 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
                 modified: firebase.firestore.FieldValue.delete()
             });
         } catch(e) {}
+        
+        // ✅ Propager la suppression à toutes les citations de réponse pointant vers ce
+        // message : leur ancien contenu (replyToText) ne doit plus jamais réapparaître,
+        // ni pour soi, ni pour l'autre utilisateur en temps réel (voir ecouterMessagesSupprimes).
+        try {
+            const reponsesLiees = await db.collection('chats').doc(CHAT_ID).collection('messages')
+                .where('replyToId', '==', selectedMessageId)
+                .get();
+            if (!reponsesLiees.empty) {
+                const batch = db.batch();
+                reponsesLiees.forEach(docReponse => {
+                    batch.update(docReponse.ref, { replyToText: MARQUEUR_REPONSE_SUPPRIMEE });
+                });
+                await batch.commit();
+                
+                // Mise à jour visuelle immédiate des citations déjà affichées à l'écran
+                document.querySelectorAll('.reply-citation').forEach(citation => {
+                    const onclickAttr = citation.getAttribute('onclick') || '';
+                    if (onclickAttr.includes(`scrollToOriginalMessage('${selectedMessageId}')`)) {
+                        citation.outerHTML = `<div class="reply-citation" style="font-style: italic; opacity: 0.7; cursor: default;"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Message supprimé</div>`;
+                    }
+                });
+            }
+        } catch(e) { console.error("Erreur propagation suppression aux réponses:", e); }
         
         showTempNotification("✅ Message supprimé");
         
@@ -4090,6 +4216,24 @@ function detecterFrancaisRapide(texte) {
                 closePinModal();
             } else { showTempNotification("❌ Code PIN incorrect !"); input.value = ''; input.focus(); }
         }
+        // ✅ DÉVERROUILLAGE AUTOMATIQUE INSTANTANÉ : dès que le code tapé correspond
+        // EXACTEMENT au code secret, on déverrouille immédiatement, sans attendre un
+        // clic sur "Entrer". On ne déclenche rien tant que le code est incomplet ou
+        // faux (pas de message d'erreur prématuré), ce qui évite toute boucle infinie :
+        // l'écouteur ne fait rien de plus une fois le modal fermé (input vidé, plus d'event).
+        function verifierPinAutomatique() {
+            const input = document.getElementById('pin-input');
+            if (!input) return;
+            if (input.value === SECRET_PIN) {
+                unlockMessage(pendingMessageId);
+                closePinModal();
+            }
+        }
+        const pinInputEl = document.getElementById('pin-input');
+        if (pinInputEl) {
+            pinInputEl.addEventListener('input', verifierPinAutomatique);
+        }
+        
         function unlockMessage(messageId) {
             const messageRow = document.querySelector(`[data-id="${messageId}"]`);
             if (!messageRow) return;
@@ -4340,6 +4484,13 @@ function detecterFrancaisRapide(texte) {
     };
     
     // Mettre à jour dans Firestore
+    // ⚠️ IMPORTANT : on ne touche PAS aux champs "online" / "lastSeen" ici.
+    // Ce sont des champs de PRÉSENCE, gérés exclusivement par
+    // mettreAJourStatutUtilisateur() (voir plus bas). Les événements de batterie
+    // (levelchange/chargingchange) peuvent se déclencher même quand l'écran est en
+    // arrière-plan ou l'utilisateur inactif : les inclure ici réinitialisait
+    // silencieusement le statut à "en ligne" à chaque changement de batterie, ce qui
+    // était la cause du bug "affiché EN LIGNE alors que déconnecté/hors ligne".
     await db.collection('users').doc(currentUser.id).set({
         battery: {
             level: level,
@@ -4348,9 +4499,7 @@ function detecterFrancaisRapide(texte) {
             lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
         },
         // Ajouter/ mettre à jour la liste des appareils
-        devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo),
-        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-        online: true
+        devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo)
     }, { merge: true });
     
     // Nettoyer les anciens appareils (garder seulement les 5 derniers)
@@ -4506,7 +4655,12 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
         
         function listenToUserMood() {
             if (!targetUser) return;
-            db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+            // Nettoyer l'ancien écouteur pour ne jamais en cumuler plusieurs
+            if (window._moodListener) {
+                window._moodListener();
+                window._moodListener = null;
+            }
+            window._moodListener = db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
                 if (doc.exists && doc.data().mood) {
                     const mood = doc.data().mood;
                     const otherMoodSpan = document.getElementById('other-mood-emoji');
@@ -4963,6 +5117,34 @@ function loadDefaultBubbleStyle() {
 
 // Appeler cette fonction au chargement   
 setTimeout(loadDefaultBubbleStyle, 200);
+
+// ============================================================
+// ✅ ANIMATION D'ENVOI PAR DÉFAUT (Paramètres → Animation d'envoi)
+// Fonctionne exactement comme le style de bulle par défaut :
+// préférence 100% locale (localStorage), appliquée uniquement à
+// SES PROPRES messages envoyés (isSent) au moment du rendu.
+// ============================================================
+const SEND_ANIM_CLASSES = ['anim-fade-in-up', 'anim-scale-pop', 'anim-slide-right', 'anim-elastic-bounce', 'anim-blur-focus'];
+
+// Convertit la valeur du <select> (ex: "scale-pop") en nom de classe CSS (ex: "anim-scale-pop")
+function getSendAnimationClass() {
+    const saved = localStorage.getItem('default_send_animation') || 'fade-in-up';
+    return 'anim-' + saved;
+}
+
+function saveDefaultSendAnimation() {
+    const select = document.getElementById('default-send-animation');
+    if (!select) return;
+    localStorage.setItem('default_send_animation', select.value);
+    showTempNotification("✅ Animation d'envoi enregistrée");
+}
+
+function loadDefaultSendAnimation() {
+    const saved = localStorage.getItem('default_send_animation');
+    const select = document.getElementById('default-send-animation');
+    if (select && saved) select.value = saved;
+}
+setTimeout(loadDefaultSendAnimation, 200);
       
       
      
@@ -7688,9 +7870,11 @@ function ecouterMessagesSupprimes() {
         .where('isDeletedMessage', '==', true)
         .onSnapshot(snapshot => {
             snapshot.docChanges().forEach(change => {
-                // 2. SI UN MESSAGE EST MODIFIÉ (supprimé ou autre)
-if (change.type === "modified") {
+                // 2. SI UN MESSAGE EST SUPPRIMÉ (COMMENCE À MATCHER LE FILTRE → "added",
+                //    ou déjà présent et re-modifié plus tard → "modified")
+if (change.type === "modified" || change.type === "added") {
     const data = change.doc.data();
+    const msgId = change.doc.id; // ✅ correction : msgId était indéfini auparavant
     const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
     
     if (ligneMessage && data.isDeletedMessage === true) {
@@ -9471,7 +9655,24 @@ function basculerVoirTout(btnEl) {
         elTronque.style.display = 'none';
         btnEl.textContent = 'VOIR MOINS';
     }
+    // Forcer un reflow immédiat : évite que le changement d'affichage reste "gelé"
+    // visuellement juste après l'envoi d'un message (bulle encore en cours d'animation
+    // d'entrée), un cas qui ne se manifestait auparavant qu'en rafraîchissant la page.
+    void bulle.offsetHeight;
 }
+
+// ✅ Délégation d'événement bindée UNE SEULE FOIS au chargement du script (et non à
+// chaque rendu de message). C'est ce qui corrige le bug où "VOIR TOUT" ne répondait
+// pas au clic juste après l'envoi d'un message long : auparavant le clic dépendait
+// d'un attribut onclick inline régénéré à chaque rendu, ce qui pouvait rater le tout
+// premier rendu d'un message fraîchement envoyé et n'était résolu qu'au rafraîchissement.
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.voir-tout-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    basculerVoirTout(btn);
+});
       
       // ============================================================
 // ✅ FONCTION POUR AFFICHER TOUS LES MESSAGES
@@ -9561,7 +9762,10 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
             lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
         }
         
-        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+        // ✅ Animation d'envoi choisie dans les Paramètres, uniquement pour SES propres messages
+        const sendAnimClass = isSent ? getSendAnimationClass() : '';
+        
+        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass} ${sendAnimClass}" 
             onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
             oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
             ondblclick="handleDoubleTap(event, '${msgId}')"
@@ -9573,7 +9777,14 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
             onmouseleave="annulerAppuiLong()">`;
         
         if (data.replyToText) {
-            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+            const messageOrigineSupprime = (data.replyToText === MARQUEUR_REPONSE_SUPPRIMEE);
+            if (messageOrigineSupprime) {
+                // ✅ Le message cité a été supprimé entre-temps : on n'affiche plus son ancien contenu
+                bubbleHtml += `<div class="reply-citation" style="font-style: italic; opacity: 0.7; cursor: default;"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Message supprimé</div>`;
+            } else {
+                // ✅ Clic sur la citation → défiler jusqu'au message d'origine avec flash de surbrillance
+                bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scrollToOriginalMessage('${data.replyToId || ''}')"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+            }
         }
         
         // TEXTE
@@ -9592,7 +9803,7 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
                 let htmlComplet = formatText(escapeHTML(displayText)).replace(/\n/g, '<br>');
                 bubbleHtml += `<span class="msg-text-tronque" style="white-space: pre-wrap; display: block;">${htmlTronque}…</span>`;
                 bubbleHtml += `<span class="msg-text-complet" style="white-space: pre-wrap; display: none;">${htmlComplet}</span>`;
-                bubbleHtml += `<span class="voir-tout-btn" style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;" onclick="event.stopPropagation(); basculerVoirTout(this)">VOIR TOUT</span>`;
+                bubbleHtml += `<span class="voir-tout-btn" style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;">VOIR TOUT</span>`;
             } else {
                 displayText = formatText(escapeHTML(displayText));
                 displayText = displayText.replace(/\n/g, '<br>');
@@ -9838,16 +10049,79 @@ function afficherWb(msgId, data) {
     }
 }
 
+// ============================================================
+// ✅ SUPPRESSION SÉCURISÉE D'UN TABLEAU "DESSIN EN DIRECT"
+// ============================================================
+function demanderSuppressionTableau(msgId) {
+    // Sécurité côté client : on ne peut supprimer QUE ses propres tableaux
+    // (l'icône elle-même n'est déjà générée que pour le propriétaire, ceci est
+    // une double vérification avant toute écriture en base).
+    const row = document.querySelector(`[data-id="${msgId}"]`);
+    if (!row || !row.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux supprimer que tes propres tableaux");
+        return;
+    }
+    if (!confirm("Supprimer ce tableau de dessin ? Il sera remplacé par 'Tableau supprimé'.")) return;
+    supprimerTableauWb(msgId);
+}
+
+async function supprimerTableauWb(msgId) {
+    try {
+        // Couper l'écoute temps réel de ce tableau s'il est actuellement affiché/actif
+        if (window._wbListener && wb.msgId === msgId) {
+            window._wbListener();
+            window._wbListener = null;
+        }
+
+        const msgRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+        await msgRef.update({
+            type: 'text',
+            text: 'Tableau supprimé',
+            isDeleted: true,
+            isDeletedMessage: true,
+            whiteboardData: firebase.firestore.FieldValue.delete(),
+            deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // ✅ Remplacement visuel immédiat : le tableau ne disparaît pas sans laisser
+        // de trace, il est remplacé par le texte "Tableau supprimé".
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        if (row) {
+            const bubble = row.querySelector('.message-bubble');
+            if (bubble) {
+                bubble.style.padding = '';
+                bubble.style.background = '';
+                bubble.style.boxShadow = '';
+                bubble.style.borderRadius = '';
+                bubble.innerHTML = `<span style="font-style: italic; opacity: 0.7;">🚫 Tableau supprimé</span>`;
+            }
+        }
+
+        showTempNotification("✅ Tableau supprimé");
+    } catch (err) {
+        console.error("Erreur suppression tableau:", err);
+        showTempNotification("❌ Erreur lors de la suppression");
+    }
+}
+
 // ========== GÉNÉRER LA CARTE ==========
 function genererCarteWb(msgId, data) {
     const linesCount = data.whiteboardData?.lines?.length || 0;
     const senderName = data.senderName || 'inconnu';
+    // ✅ Sécurité : l'icône de suppression n'est générée QUE si l'utilisateur courant
+    // est bien l'auteur du tableau — elle n'existe donc même pas dans le HTML des
+    // tableaux reçus des autres (ni visible, ni exploitable).
+    const estProprietaireTableau = data.senderId === currentUser?.id;
+    const iconeSuppressionTableau = estProprietaireTableau
+        ? `<i class="fa-solid fa-trash wb-delete-icon" title="Supprimer ce tableau" onclick="event.stopPropagation(); demanderSuppressionTableau('${msgId}')"></i>`
+        : '';
 
     return `
         <div class="wb-card" data-wb-id="${msgId}">
             <div class="wb-header">
                 <span>🎨 Dessin</span>
                 <span style="font-size:0.6rem;opacity:0.6;">En direct-Ida au carré</span>
+                ${iconeSuppressionTableau}
             </div>
             <div class="wb-canvas-box">
                 <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
@@ -10028,7 +10302,7 @@ function wbMove(e, msgId) {
     wb.ctx.lineJoin = 'round';
     wb.ctx.stroke();
 
-    // Sauvegarder dans le buffer local
+    // Sauvegarder dans le buffer local 
     const line = {
         x1: wb.lastX, y1: wb.lastY,
         x2: x, y2: y,
@@ -10487,4 +10761,4 @@ function ouvrirProfil() {
    
 </body>   
   
-</html>  
+</html>
