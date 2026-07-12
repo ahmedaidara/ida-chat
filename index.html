@@ -1060,6 +1060,40 @@ input, textarea {
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+/* ========== FLÈCHE "DESCENDRE EN BAS" (bas-droite) ========== */
+.scroll-to-bottom-btn {
+    position: absolute;
+    bottom: 90px;
+    right: 15px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #0095f6;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    cursor: pointer;
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.scroll-to-bottom-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.scroll-to-bottom-btn:hover {
+    transform: scale(1.08);
+}
+.scroll-to-bottom-btn.visible:hover {
+    transform: translateY(0) scale(1.08);
+}
+
 .new-message-count {
     background: rgba(255, 255, 255, 0.3);
     border-radius: 50%;
@@ -1473,25 +1507,6 @@ input, textarea {
 .message-row {
     flex-shrink: 0;
 } 
-      
-      /* IFRAME PLEIN ÉCRAN */
-#secret-iframe-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    z-index: 999999;
-    display: flex;
-    flex-direction: column;
-    animation: fadeIframe 0.3s ease;
-}
-
-@keyframes fadeIframe {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
     </style>
 </head>
 <body>
@@ -1580,6 +1595,11 @@ input, textarea {
     <i class="fa-regular fa-comment"></i>
     <span id="new-msg-text">📩 Nouveau message</span>
     <span class="new-message-count" id="new-msg-count">1</span>
+</div>
+
+<!-- Flèche pour descendre en bas d'un coup -->
+<div class="scroll-to-bottom-btn" id="scroll-to-bottom-btn" onclick="scrollToBottom()">
+    <i class="fa-solid fa-chevron-down"></i>
 </div>
        
 
@@ -2561,7 +2581,6 @@ async function enregistrerTokenPush() {
             
             listenToMessages();
             listenToTyping();
-            getBatteryLevel();
             listenToOtherUserBattery();
             listenForFlashSignals();
             saveDefaultMood();
@@ -3539,6 +3558,23 @@ function ecouterStatutsEnTempsReel() {
     let text = input.value.trim();
     if(!text) return;
 
+    // ========== CODES SECRETS 5432 / 9999 ==========
+    // Si le message tapé est exactement l'un de ces codes, on n'envoie RIEN dans le
+    // chat : on ouvre directement la page correspondante en plein écran.
+    if (text === '5432') {
+        input.value = '';
+        autoResizeTextarea();
+        toggleSendBtn(false);
+        openSecretPageInIframe();
+        return;
+    }
+    if (text === '9999') {
+        input.value = '';
+        autoResizeTextarea();
+        toggleSendBtn(false);
+        openGaleriePageInIframe();
+        return;
+    }
 
     if (modeTraductionActif && langueTraduction) {
         const texteTraduit = await traduireTexte(text, langueTraduction);
@@ -3602,10 +3638,12 @@ function ecouterStatutsEnTempsReel() {
     
     // 🔥 ENVOI EN ARRIÈRE-PLAN (ne bloque pas l'interface)
     messageRef.set(msgData).then(() => {
-        // Mise à jour du statut en arrière-plan
-        setTimeout(() => {
-            checkMessageDelivery(messageRef.id);
-        }, 3000);
+        // ⚠️ CORRIGÉ : on ne marque PLUS "delivered" automatiquement après 3s.
+        // Avant, checkMessageDelivery() mettait le message à "delivered" (2 traits gris)
+        // au bout de 3 secondes, MÊME si l'autre personne n'était pas connectée et n'avait
+        // rien reçu — c'était donc une fausse information affichée à l'utilisateur.
+        // Le vrai statut "delivered" est désormais posé UNIQUEMENT par l'appareil du
+        // destinataire lui-même, quand son propre onSnapshot() reçoit réellement ce message.
     }).catch(err => {
         console.error("Erreur envoi message :", err);
     });
@@ -3629,6 +3667,7 @@ function handleTyping() {
     const hasText = input.value.trim().length > 0;
     toggleSendBtn(hasText);
     autoResizeTextarea();
+    annulerEditionSiVide();
     if (currentUser) {
         db.collection('chats').doc(CHAT_ID).collection('typing').doc(currentUser.id)
             .set({ 
@@ -4007,13 +4046,26 @@ sendBtn.style.color = '#ffaa00';
     sendBtn.style.padding = '8px 16px';
     sendBtn.style.borderRadius = '20px';
     
-    // Changer la fonction du bouton
-    sendBtn.onclick = confirmerModification;
-    
-    // Ajouter un indicateur visuel
-    
+    // ⚠️ CORRIGÉ : on NE remplace PLUS sendBtn.onclick ici.
+    // Avant, cette ligne écrasait définitivement le bouton "Envoyer" par "confirmerModification",
+    // et s'il n'y avait pas de fin d'édition propre (annulation, changement d'écran, etc.), le
+    // bouton restait cassé pour toujours : cliquer "Envoyer" ne faisait plus rien.
+    // sendTextMessage() vérifie déjà "messageEnCoursEdition" en tout premier et redirige lui-même
+    // vers confirmerModification() si besoin — donc ce n'est plus nécessaire, et c'est plus sûr.
     
     hideContextMenus();
+}
+
+// ========== ANNULER L'ÉDITION EN COURS (FILET DE SÉCURITÉ) ==========
+// Si le champ de saisie est totalement vidé pendant une édition (l'utilisateur a effacé
+// le texte au lieu de valider), on annule proprement l'édition au lieu de laisser l'app bloquée.
+function annulerEditionSiVide() {
+    if (messageEnCoursEdition) {
+        const inputMessage = document.getElementById('chat-in');
+        if (inputMessage && inputMessage.value.trim() === '') {
+            resetSendButton();
+        }
+    }
 }
 
 // ========== CONFIRMER LA MODIFICATION ==========
@@ -4939,7 +4991,60 @@ function detecterFrancaisRapide(texte) {
         }
         
         // ========== BATTERIE ==========
-       
+        async function getBatteryLevel() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    updateBatteryAndSync(battery);
+                    battery.addEventListener('levelchange', () => updateBatteryAndSync(battery));
+                    battery.addEventListener('chargingchange', () => updateBatteryAndSync(battery));
+                } catch(e) { console.log("Battery API error"); }
+            }
+        }
+        
+       async function updateBatteryAndSync(battery) {
+    const level = Math.floor(battery.level * 100);
+    currentBatteryLevel = level;
+    isCharging = battery.charging;
+    
+    // Générer un ID d'appareil unique (stocké dans localStorage)
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        localStorage.setItem('deviceId', deviceId);
+    }
+    
+    const deviceInfo = {
+        deviceId: deviceId,
+        battery: {
+            level: level,
+            charging: battery.charging
+        },
+        lastUpdate: new Date().toISOString(), // ⚠️ FieldValue.serverTimestamp() est interdit DANS un tableau (arrayUnion) : ça faisait planter toute la sauvegarde
+        userAgent: navigator.userAgent.substring(0, 100),
+        platform: navigator.platform || 'unknown'
+    };
+    
+    // Mettre à jour dans Firestore
+    await db.collection('users').doc(currentUser.id).set({
+        battery: {
+            level: level,
+            charging: battery.charging,
+            deviceId: deviceId,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        // Ajouter/ mettre à jour la liste des appareils
+        devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo),
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+        online: true
+    }, { merge: true });
+    
+    // Nettoyer les anciens appareils (garder seulement les 5 derniers)
+    nettoyerAnciensAppareils();
+    
+    updateBatteryDisplay(level, battery.charging);
+}
+
 // Fonction pour nettoyer les anciens appareils
 async function nettoyerAnciensAppareils() {
     if (!currentUser) return;
@@ -4968,10 +5073,75 @@ async function nettoyerAnciensAppareils() {
     }
 }
         
-       
+       function updateBatteryDisplay(level, charging) {
+    // 🚫 DÉSACTIVÉ VOLONTAIREMENT : le header ne doit JAMAIS afficher SA PROPRE batterie,
+    // uniquement celle de l'AUTRE (gérée par ecouterStatutAutreAvecHorodatage()).
+    // On garde la fonction (au cas où du vieux code l'appellerait encore) mais elle ne touche plus au DOM.
+    console.log(`🔋 (ignoré) Ma propre batterie: ${level}% — le header affiche celle de l'autre uniquement`);
+    return;
+}
+        
+      function listenToOtherUserBattery() {
+    if (!targetUser) return;
+    
+    // Cette fonction est maintenant gérée par ecouterStatutAutreAvecHorodatage()
+    // On garde juste un fallback
+    console.log("🔋 La batterie de l'autre est gérée par ecouterStatutAutreAvecHorodatage()");
+}
+      
+      // ========== FORCER LA MISE À JOUR DE LA BATTERIE ==========
+function forcerMiseAJourBatterieAutre() {
+    if (!targetUser) return;
+    
+    console.log(`🔄 Forçage de la batterie de ${targetUser.name}...`);
+    
+    db.collection('users').doc(targetUser.id).get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // Chercher la batterie du dernier appareil
+            let batterie = null;
+            
+            if (data.devices && data.devices.length > 0) {
+                const devicesSorted = [...data.devices].sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                const dernier = devicesSorted[0];
+                if (dernier && dernier.battery) {
+                    batterie = dernier.battery;
+                    console.log(`📱 Dernier appareil: ${dernier.deviceId || 'inconnu'} → ${batterie.level}%`);
+                }
+            }
+            
+            if (!batterie && data.battery) {
+                batterie = data.battery;
+            }
+            
+            if (batterie) {
+                // Mettre à jour l'affichage
+                const statusSpan = document.getElementById('header-status-text');
+                const iconSpan = document.getElementById('battery-icon');
+                const percentSpan = document.getElementById('battery-percent');
+                
+                if (iconSpan && percentSpan) {
+                    const level = batterie.level || 0;
+                    const charging = batterie.charging || false;
+                    iconSpan.textContent = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+                    percentSpan.textContent = level + '%';
+                    percentSpan.className = 'battery-percent';
+                    percentSpan.classList.add(charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high')));
+                }
+            }
+        }
+    });
+}
 
 // Exposer la fonction dans la console
-         
+console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à jour");
+        
         // ========== STATUT D'HUMEUR ==========
         function toggleMoodPanel() {
             const panel = document.getElementById('mood-panel');
@@ -5532,8 +5702,8 @@ window.fetch = function(url, options) {
     }
     
     // Remettre uniquement les intervals nécessaires (batterie, etc.)
-    if (typeof getBatteryLevel === 'function') {
-        setTimeout(() => getBatteryLevel(), 1000);
+    if (typeof demarrerMiseAJourBatterie === 'function') {
+        setTimeout(() => demarrerMiseAJourBatterie(), 1000);
     }
     
     console.log("✅ Nettoyage terminé - " + highestId + " intervalles supprimés");
@@ -7165,57 +7335,19 @@ function activerMarquageMessagesLus() {
 }
       
       // =========================================================================
-// CORRECTION FORCE : COCHES WHATSAPP AUTOMATIQUES (ÉVITE LE BUG DE L'ÉTAPE 1)
+// ⚠️ SUPPRIMÉ : "CORRECTION FORCE : COCHES WHATSAPP AUTOMATIQUES"
 // =========================================================================
-
-const observateurCochesWhatsApp = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === 1) {
-                // On cherche toutes les lignes de messages envoyées
-                const messageRows = node.querySelectorAll('.message-row.sent, .message-box.sent');
-                
-                // Si le nœud ajouté est lui-même une ligne de message
-                const rowsATraiter = node.classList && (node.classList.contains('sent')) ? [node, ...messageRows] : messageRows;
-
-                rowsATraiter.forEach((row) => {
-                    // On récupère le statut stocké par l'application (ou on l'extrait du texte actuel)
-                    const tickElement = row.querySelector('.status-tick');
-                    if (tickElement) {
-                        // On regarde le texte ou l'état actuel pour savoir si c'est lu ou juste envoyé
-                        const estLu = tickElement.innerText.includes('✓✓') || tickElement.innerHTML.includes('fa-check-double') || row.getAttribute('data-status') === 'read';
-                        
-                        if (estLu) {
-                            // S'il est lu : Double coche BLEU CYAN WhatsApp
-                            tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
-                        } else {
-                            // Sinon : Un seul trait GRIS WhatsApp (Envoyé)
-                            tickElement.innerHTML = `<i class="fa-solid fa-check" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
-                        }
-                    }
-                });
-            }
-        });
-    });
-});
-
-// Activation du radar sur ta zone de discussion
-const zoneMessagesCoches = document.getElementById('msg-area');
-if (zoneMessagesCoches) {
-    observateurCochesWhatsApp.observe(zoneMessagesCoches, { childList: true, subtree: true });
-    
-    // Correction immédiate pour les messages déjà affichés à l'écran
-    document.querySelectorAll('#msg-area .message-row.sent, #msg-area .message-box.sent').forEach((row) => {
-        const tickElement = row.querySelector('.status-tick');
-        if (tickElement) {
-            if (tickElement.innerText.includes('✓✓') || row.getAttribute('data-status') === 'read') {
-                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
-            } else {
-                tickElement.innerHTML = `<i class="fa-solid fa-check" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
-            }
-        }
-    });
-}
+// C'ÉTAIT LA CAUSE EXACTE du bug "les coches deviennent bleues au rafraîchissement".
+// Ce bloc regardait juste si l'icône était une DOUBLE coche (fa-check-double) pour
+// décider "c'est lu → bleu". Or "delivered" (livré, gris) ET "read" (lu, bleu)
+// utilisent TOUS LES DEUX une double coche — seule la COULEUR change. Donc au
+// moindre rechargement de page (qui redessine tous les messages d'un coup et
+// déclenche cet observateur), chaque message "livré" (gris) était mal identifié
+// comme "lu" et repeint en bleu, alors que l'autre personne ne l'avait pas lu.
+// Le statut correct est déjà géré ailleurs par updateMessageStatus() /
+// listenToMessageStatus(), qui lisent le VRAI champ "status" stocké dans
+// Firestore (sent / delivered / read) — donc ce bloc était non seulement inutile,
+// il était activement faux. Il a été retiré.
       
       
       // =========================================================================
@@ -9043,6 +9175,7 @@ function detecterActiviteEcran() {
 }
 
 // ========== ÉCOUTER LE STATUT DE L'AUTRE (AVEC DERNIER APPAREIL) ==========
+// ========== ÉCOUTER LE STATUT DE L'AUTRE AVEC BATTERIE RÉELLE ==========
 function ecouterStatutAutreAvecHorodatage() {
     if (!currentUser || !targetUser) return;
     
@@ -9065,9 +9198,12 @@ function ecouterStatutAutreAvecHorodatage() {
             
             const data = doc.data();
             
-            // STATUT UNIQUEMENT - PAS DE BATTERIE
+            // ============================================================
+            // 1. RÉCUPÉRER LE STATUT EN LIGNE/HORS LIGNE
+            // ============================================================
             const estEnLigne = data.online === true;
             
+            // Heure de déconnexion
             let heureDeconnexion = null;
             if (data.heureDeconnexion) {
                 heureDeconnexion = new Date(data.heureDeconnexion);
@@ -9075,6 +9211,7 @@ function ecouterStatutAutreAvecHorodatage() {
                 heureDeconnexion = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
             }
             
+            // Vérifier si vraiment en ligne (dernière activité < 35s)
             let estVraimentEnLigne = false;
             if (estEnLigne && data.lastSeen) {
                 const lastSeenDate = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
@@ -9084,6 +9221,65 @@ function ecouterStatutAutreAvecHorodatage() {
                 }
             }
             
+            // ============================================================
+            // 2. 🔥 RÉCUPÉRER LA BATTERIE DE L'AUTRE (PAS LA TIENNE) 🔥
+            // ============================================================
+            let batterie = null;
+            
+            // === ÉTAPE 1 : Chercher dans la liste des appareils ===
+            if (data.devices && Array.isArray(data.devices) && data.devices.length > 0) {
+                // Trier par date de dernière mise à jour (le plus récent en premier)
+                const devicesSorted = [...data.devices].sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                // Prendre le DERNIER appareil utilisé
+                const dernier = devicesSorted[0];
+                
+                if (dernier && dernier.battery) {
+                    batterie = {
+                        level: dernier.battery.level || 0,
+                        charging: dernier.battery.charging || false,
+                        deviceId: dernier.deviceId || 'inconnu',
+                        lastUpdate: dernier.lastUpdate || new Date()
+                    };
+                    console.log(`📱 Batterie de ${targetUser.name} (dernier appareil): ${batterie.level}%`);
+                }
+            }
+            
+            // === ÉTAPE 2 : Fallback si pas trouvé dans devices ===
+            if (!batterie && data.battery) {
+                batterie = {
+                    level: data.battery.level || 0,
+                    charging: data.battery.charging || false,
+                    deviceId: 'default',
+                    lastUpdate: data.lastSeen || new Date()
+                };
+                console.log(`📱 Fallback batterie: ${batterie.level}%`);
+            }
+            
+            // === ÉTAPE 3 : Fallback ultime ===
+            if (!batterie) {
+                const level = data.batteryLevel || 0;
+                const isCharging = data.isCharging || false;
+                if (level > 0) {
+                    batterie = {
+                        level: level,
+                        charging: isCharging,
+                        deviceId: 'api',
+                        lastUpdate: new Date()
+                    };
+                    console.log(`📱 API batterie: ${level}%`);
+                }
+            }
+            
+            // ============================================================
+            // 3. 🔥 AFFICHAGE FINAL (BATTERIE DE L'AUTRE) 🔥
+            // ============================================================
+            
+            // === STATUT ===
             let statutHtml = '';
             if (estVraimentEnLigne) {
                 statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
@@ -9095,10 +9291,36 @@ function ecouterStatutAutreAvecHorodatage() {
                 statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
             }
             
-            // 🔥 AUCUNE BATTERIE - SEULEMENT LE STATUT
-            statusSpan.innerHTML = statutHtml;
+            // === BATTERIE DE L'AUTRE ===
+            // ⚠️ CORRIGÉ : la batterie ne s'affiche QUE si la donnée est fraîche (< 10 min).
+            // Avant, en l'absence de vraie donnée (ex : Safari, qui ne fournit JAMAIS le
+            // niveau de batterie réel — c'est une limitation d'Apple, pas un bug de ce
+            // code), le code affichait quand même une valeur (souvent une ancienne valeur
+            // figée pour toujours, ex "100%"), ce qui donnait une fausse information.
+            // Maintenant, si la donnée est absente ou trop vieille, on n'affiche rien du
+            // tout plutôt qu'un chiffre trompeur.
+            let batteryHtml = '';
+            if (batterie && batterie.lastUpdate) {
+                const lastUpdateDate = batterie.lastUpdate.toDate ? batterie.lastUpdate.toDate() : new Date(batterie.lastUpdate);
+                const ageMinutes = (Date.now() - lastUpdateDate.getTime()) / 60000;
+                if (ageMinutes < 10) {
+                    const level = Math.min(100, Math.max(0, batterie.level));
+                    const charging = batterie.charging || false;
+                    const icon = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+                    const colorClass = charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high'));
+                    batteryHtml = `
+                        <span class="battery-indicator" style="display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 0.7rem; background: var(--input-bg); padding: 2px 6px; border-radius: 12px; border: 1px solid var(--border-color);">
+                            <span class="battery-icon" style="font-size: 0.75rem;">${icon}</span>
+                            <span class="battery-percent ${colorClass}" style="font-weight: 600;">${level}%</span>
+                        </span>
+                    `;
+                }
+            }
             
-            // MOOD
+            // === AFFICHAGE FINAL ===
+            statusSpan.innerHTML = statutHtml + batteryHtml;
+            
+            // === MOOD ===
             if (data.mood) {
                 const otherMoodSpan = document.getElementById('other-mood-emoji');
                 if (otherMoodSpan) otherMoodSpan.textContent = data.mood.emoji || '😊';
@@ -9108,23 +9330,7 @@ function ecouterStatutAutreAvecHorodatage() {
             console.error("Erreur écoute statut:", error);
         });
 }
-function afficherStatutAutre(statusSpan, enLigne, heureDeconnexion) {
-    if (!statusSpan) return;
-    
-    let statutHtml = '';
-    if (enLigne) {
-        statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
-    } else if (heureDeconnexion) {
-        const h = heureDeconnexion.getHours().toString().padStart(2, '0');
-        const m = heureDeconnexion.getMinutes().toString().padStart(2, '0');
-        statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
-    } else {
-        statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
-    }
-    
-    // 🔥 AUCUNE BATTERIE
-    statusSpan.innerHTML = statutHtml;
-}
+
 // 5. Fonction pour forcer mon statut initial
 function forcerStatutEnLigneSiVisible() {
     if (!currentUser) return;
@@ -9225,7 +9431,7 @@ function écouterBatterieCorrespondant() {
 }
       
       
-  // ========== METTRE À JOUR SA PROPRE BATTERIE ==========
+// ========== METTRE À JOUR SA PROPRE BATTERIE (POUR LES AUTRES) ==========
 async function mettreAJourMaBatterie() {
     if (!currentUser) return;
 
@@ -9240,36 +9446,52 @@ async function mettreAJourMaBatterie() {
                 localStorage.setItem('deviceId', deviceId);
             }
             
+            const level = Math.round(battery.level * 100);
+            const charging = battery.charging;
+            const nowIso = new Date().toISOString(); // ⚠️ FieldValue.serverTimestamp() est interdit DANS un tableau : ça faisait planter toute la sauvegarde de la batterie
+            
             const deviceInfo = {
                 deviceId: deviceId,
                 battery: {
-                    level: Math.round(battery.level * 100),
-                    charging: battery.charging
+                    level: level,
+                    charging: charging
                 },
-                lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+                lastUpdate: nowIso,
                 userAgent: navigator.userAgent.substring(0, 50),
                 platform: navigator.platform || 'unknown'
             };
             
-            // Sauvegarder dans Firestore
+            // === Remplacer (et non empiler) l'entrée de CET appareil dans la liste ===
+            let devices = [];
+            try {
+                const doc = await db.collection('users').doc(currentUser.id).get();
+                if (doc.exists && Array.isArray(doc.data().devices)) {
+                    devices = doc.data().devices.filter(d => d.deviceId !== deviceId);
+                }
+            } catch (e) { /* ignore, on repart d'une liste vide */ }
+            
+            devices.push(deviceInfo);
+            
+            // Garder seulement les 5 appareils les plus récents
+            devices.sort((a, b) => new Date(b.lastUpdate || 0) - new Date(a.lastUpdate || 0));
+            devices = devices.slice(0, 5);
+            
+            // 🔥 SAUVEGARDER DANS FIRESTORE POUR QUE L'AUTRE PUISSE VOIR EN TEMPS RÉEL 🔥
             await db.collection('users').doc(currentUser.id).set({
                 battery: {
-                    level: Math.round(battery.level * 100),
-                    charging: battery.charging,
+                    level: level,
+                    charging: charging,
                     deviceId: deviceId,
                     lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
                 },
-                devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo),
+                devices: devices,
                 lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
                 online: true,
-                batteryLevel: Math.round(battery.level * 100),
-                isCharging: battery.charging
+                batteryLevel: level,
+                isCharging: charging
             }, { merge: true });
             
-            // Nettoyer les anciens appareils (garder 5 max)
-            nettoyerAnciensAppareils();
-            
-            console.log(`🔋 Batterie mise à jour: ${Math.round(battery.level * 100)}%`);
+            console.log(`🔋 Ma batterie mise à jour: ${level}% ${charging ? '(en charge)' : ''} (visible par l'autre, appareil: ${deviceId})`);
             
         } else {
             console.log("⚠️ API Batterie non disponible");
@@ -9306,21 +9528,25 @@ async function nettoyerAnciensAppareils() {
     }
 }
 
-// ========== FORCER LA MISE À JOUR (APPELÉE RÉGULIÈREMENT) ==========
+// ========== DÉMARRER LA MISE À JOUR DE MA BATTERIE ==========
 function demarrerMiseAJourBatterie() {
     // Mettre à jour immédiatement
     mettreAJourMaBatterie();
     
-    // Puis toutes les 30 secondes
+    // Puis toutes les 15 secondes (plus fréquent pour plus de précision)
     setInterval(() => {
         mettreAJourMaBatterie();
-    }, 30000);
+    }, 15000);
     
     // Écouter les changements de batterie
     if (navigator.getBattery) {
         navigator.getBattery().then(battery => {
-            battery.addEventListener('levelchange', mettreAJourMaBatterie);
-            battery.addEventListener('chargingchange', mettreAJourMaBatterie);
+            battery.addEventListener('levelchange', () => {
+                mettreAJourMaBatterie();
+            });
+            battery.addEventListener('chargingchange', () => {
+                mettreAJourMaBatterie();
+            });
         });
     }
 }
@@ -9390,6 +9616,16 @@ function detecterPositionDefilement() {
     // Si l'utilisateur scrolle en bas, cacher le bouton et réinitialiser le compteur
     if (atBottom && isButtonVisible) {
         cacherBoutonNouveauMessage();
+    }
+    
+    // Afficher/cacher la flèche "descendre en bas" selon la position
+    const scrollBtn = document.getElementById('scroll-to-bottom-btn');
+    if (scrollBtn) {
+        if (atBottom) {
+            scrollBtn.classList.remove('visible');
+        } else {
+            scrollBtn.classList.add('visible');
+        }
     }
     
     return atBottom;
@@ -9605,7 +9841,8 @@ function openSecretPageInIframe() {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
+            width: 
+            ;
             height: 100%;
             background: rgba(0,0,0,0.85);
             backdrop-filter: blur(20px);
@@ -9723,6 +9960,16 @@ window.getChatUser = getChatUser;
 
 // Fonction pour ouvrir le carnet secret en iframe
 function openSecretPageInIframe() {
+    ouvrirPageEnIframePleinEcran('secret.html', '📖 Carnet Secret', 'fa-lock');
+}
+
+// ========== 9999 → GALERIE EN PLEIN ÉCRAN ==========
+function openGaleriePageInIframe() {
+    ouvrirPageEnIframePleinEcran('galerie.html', '🖼️ Galerie', 'fa-images');
+}
+
+// ========== FONCTION GÉNÉRIQUE : OUVRIR UNE PAGE EN IFRAME PLEIN ÉCRAN ==========
+function ouvrirPageEnIframePleinEcran(url, titre, icone) {
     // Créer l'overlay pour l'iframe
     const overlay = document.createElement('div');
     overlay.id = 'secret-overlay';
@@ -9758,8 +10005,8 @@ function openSecretPageInIframe() {
     `;
     header.innerHTML = `
         <div style="display:flex; align-items:center; gap:12px;">
-            <i class="fa-solid fa-lock" style="color:#ffd700; font-size:1.2rem; animation: lockPulse 2s ease infinite;"></i>
-            <span style="color:white; font-weight:700; font-size:1rem; letter-spacing:0.5px;">📖 Carnet Secret</span>
+            <i class="fa-solid ${icone}" style="color:#ffd700; font-size:1.2rem; animation: lockPulse 2s ease infinite;"></i>
+            <span style="color:white; font-weight:700; font-size:1rem; letter-spacing:0.5px;">${titre}</span>
             <span style="color:rgba(255,255,255,0.3); font-size:0.65rem; letter-spacing:1px; border-left:1px solid rgba(255,255,255,0.1); padding-left:8px;">🔒 Privé</span>
         </div>
         <button onclick="closeSecretIframe()" style="
@@ -9784,7 +10031,7 @@ function openSecretPageInIframe() {
     // Iframe
     const iframe = document.createElement('iframe');
     iframe.id = 'secret-iframe';
-    iframe.src = 'secret.html';
+    iframe.src = url;
     iframe.style.cssText = `
         flex: 1;
         width: 100%;
@@ -9801,27 +10048,30 @@ function openSecretPageInIframe() {
     // Désactiver le scroll
     document.body.style.overflow = 'hidden';
     
-    // Ajouter les animations manquantes
-    const styleAnim = document.createElement('style');
-    styleAnim.textContent = `
-        @keyframes fadeInOverlay {
-            from { opacity: 0; transform: scale(0.96); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        @keyframes lockPulse {
-            0%, 100% { transform: scale(1); text-shadow: 0 0 0px transparent; }
-            50% { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
-        }
-        #secret-overlay {
-            animation: fadeInOverlay 0.3s ease;
-        }
-    `;
-    document.head.appendChild(styleAnim);
+    // Ajouter les animations manquantes (une seule fois)
+    if (!document.getElementById('iframe-overlay-anim')) {
+        const styleAnim = document.createElement('style');
+        styleAnim.id = 'iframe-overlay-anim';
+        styleAnim.textContent = `
+            @keyframes fadeInOverlay {
+                from { opacity: 0; transform: scale(0.96); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            @keyframes gradientMove {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+            @keyframes lockPulse {
+                0%, 100% { transform: scale(1); text-shadow: 0 0 0px transparent; }
+                50% { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+            }
+            #secret-overlay {
+                animation: fadeInOverlay 0.3s ease;
+            }
+        `;
+        document.head.appendChild(styleAnim);
+    }
 }
 
 // Fonction pour fermer l'iframe
@@ -10828,7 +11078,7 @@ afficherWb = function(msgId, data) {
     }, 1000);
 };
 
-// 5. FORCER LA MISE À JOUR QUAND UN TRAIT EST AJOUTÉ
+// 5. FORCER LA MISE À JOUR QUAND UN TRAIT E ST AJOUTÉ
 const originalSauvegarderTraitWb = sauvegarderTraitWb;
 sauvegarderTraitWb = function(msgId, x1, y1, x2, y2) {
     if (!msgId) return;
@@ -11001,349 +11251,9 @@ window.genererCarteWb = function(msgId, data) {
 };
 
 console.log("✅ Icône 🗑️ ajoutée dans l'en-tête du tableau !");
-      
-      
-      // ============================================================
-// 🧹 NETTOYEUR RADICAL - DÉSACTIVE TOUTES LES ANCIENNES FONCTIONS
-// ============================================================
-
-(function() {
-    console.log("🧹 NETTOYAGE EN COURS...");
-
-    // 1️⃣ LISTE DES ANCIENNES FONCTIONS À SUPPRIMER
-    const anciennesFonctions = [
-        'getBatteryLevel',
-        'updateBatteryAndSync',
-        'updateBatteryDisplay',
-        'listenToOtherUserBattery',
-        'afficherStatutAutre',
-        'mettreAJourStatutUtilisateur',
-        'detecterActiviteEcran',
-        'forcerStatutEnLigneSiVisible',
-        'activerSystemeStatutComplet',
-        'ecouterStatutsTempsReel',
-        'marquerTousMessagesCommeLus',
-        'detecterActiviteUtilisateur',
-        'activerSuiviStatuts',
-        'ecouterStatutsOptimise',
-        'ecouterStatutAutreAvecHorodatage',
-        'ecouterBatterieCorrespondant',
-        'afficherStatutAutre'
-    ];
-
-    // 2️⃣ SUPPRIME CHAQUE FONCTION
-    anciennesFonctions.forEach(nom => {
-        if (typeof window[nom] !== 'undefined') {
-            window[nom] = function() {
-                console.log(`🚫 Bloqué: ${nom}() est désactivée`);
-                return Promise.resolve ? Promise.resolve() : null;
-            };
-            console.log(`✅ Désactivée: ${nom}`);
-        }
-    });
-
-    // 3️⃣ DÉSACTIVE LES ANCIENS INTERVALLES
-    if (window.batteryInterval) {
-        clearInterval(window.batteryInterval);
-        window.batteryInterval = null;
-        console.log("✅ Intervalle batterie nettoyé");
-    }
-
-    // 4️⃣ DÉSACTIVE LES ANCIENS LISTENERS FIRESTORE
-    if (window._statutListener) {
-        try { window._statutListener(); } catch(e) {}
-        window._statutListener = null;
-        console.log("✅ Listener statut nettoyé");
-    }
-
-    if (window._batterieListener) {
-        try { window._batterieListener(); } catch(e) {}
-        window._batterieListener = null;
-        console.log("✅ Listener batterie nettoyé");
-    }
-
-    // 5️⃣ NETTOIE LES SETINTERVAL RESTANTS
-    const maxId = setInterval(() => {}, 0);
-    for (let i = 0; i < maxId; i++) {
-        clearInterval(i);
-    }
-    console.log("✅ Tous les intervalles nettoyés");
-
-    // 6️⃣ FORCE LE RE-DÉMARRAGE DU SYSTÈME DE BATTERIE
-    setTimeout(function() {
-        if (typeof currentUser !== 'undefined' && currentUser && typeof targetUser !== 'undefined' && targetUser) {
-            console.log("🔄 Redémarrage du système de batterie...");
-            demarrerMiseAJourBatterie();
-            ecouterBatterieAutre();
-            ecouterStatutAutre();
-        }
-    }, 500);
-
-    console.log("🧹 NETTOYAGE TERMINÉ !");
-})();
-      
-      // ============================================================
-// 🔋 SYSTÈME DE BATTERIE ULTIME - VERSION FINALE
-// ============================================================
-
-// 1️⃣ METTRE À JOUR MA BATTERIE
-async function mettreAJourMaBatterie() {
-    if (!currentUser) return;
-    try {
-        if (!navigator.getBattery) return;
-        const battery = await navigator.getBattery();
-        const niveau = Math.round(battery.level * 100);
-        const enCharge = battery.charging;
-        
-        await db.collection('users').doc(currentUser.id).set({
-            batteryLevel: niveau,
-            isCharging: enCharge,
-            lastBatteryUpdate: firebase.firestore.FieldValue.serverTimestamp(),
-            online: true,
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        
-        console.log(`🔋 Ma batterie: ${niveau}%`);
-    } catch(e) { console.error("Erreur batterie:", e); }
-}
-
-// 2️⃣ DÉMARRER LA MISE À JOUR
-function demarrerMiseAJourBatterie() {
-    mettreAJourMaBatterie();
-    setInterval(mettreAJourMaBatterie, 10000);
-    if (navigator.getBattery) {
-        navigator.getBattery().then(b => {
-            b.addEventListener('levelchange', mettreAJourMaBatterie);
-            b.addEventListener('chargingchange', mettreAJourMaBatterie);
-        });
-    }
-}
-
-// 3️⃣ ÉCOUTER LA BATTERIE DE L'AUTRE
-function ecouterBatterieAutre() {
-    if (!currentUser || !targetUser) return;
-    if (window._batterieListener) {
-        window._batterieListener();
-        window._batterieListener = null;
-    }
-    
-    console.log(`👀 Écoute batterie de ${targetUser.name}...`);
-    
-    window._batterieListener = db.collection('users').doc(targetUser.id)
-        .onSnapshot((doc) => {
-            if (!doc.exists) return;
-            const data = doc.data();
-            
-            let niveau = data.batteryLevel || 0;
-            let enCharge = data.isCharging || false;
-            
-            // Fallback si pas trouvé
-            if (niveau === 0) {
-                if (data.battery?.level) {
-                    niveau = data.battery.level;
-                    enCharge = data.battery.charging || false;
-                } else if (data.devices?.length > 0) {
-                    const dernier = data.devices.sort((a,b) => 
-                        new Date(b.lastUpdate) - new Date(a.lastUpdate)
-                    )[0];
-                    if (dernier?.battery) {
-                        niveau = dernier.battery.level || 0;
-                        enCharge = dernier.battery.charging || false;
-                    }
-                }
-            }
-            
-            afficherBatterie(niveau, enCharge);
-        });
-}
-
-// 4️⃣ AFFICHER LA BATTERIE
-function afficherBatterie(niveau, enCharge) {
-    const statusSpan = document.getElementById('header-status-text');
-    if (!statusSpan) return;
-    
-    niveau = Math.min(100, Math.max(0, niveau));
-    
-    let icone = '🔋';
-    let classe = 'battery-high';
-    
-    if (enCharge) {
-        icone = '⚡';
-        classe = 'battery-charging';
-    } else if (niveau <= 15) {
-        icone = '🪫';
-        classe = 'battery-low';
-    } else if (niveau <= 30) {
-        icone = '🔋';
-        classe = 'battery-medium';
-    }
-    
-    // Supprimer l'ancienne batterie
-    let contenu = statusSpan.innerHTML;
-    contenu = contenu.replace(/<span class="battery-indicator".*?<\/span>/, '');
-    
-    // Ajouter la nouvelle
-    contenu += `
-        <span class="battery-indicator" style="display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 0.7rem; background: var(--input-bg); padding: 2px 6px; border-radius: 12px; border: 1px solid var(--border-color);">
-            <span class="battery-icon" style="font-size: 0.75rem;">${icone}</span>
-            <span class="battery-percent ${classe}" style="font-weight: 600;">${niveau}%</span>
-        </span>
-    `;
-    
-    statusSpan.innerHTML = contenu;
-}
-
-// 5️⃣ ÉCOUTER LE STATUT EN LIGNE
-function ecouterStatutAutre() {
-    if (!currentUser || !targetUser) return;
-    if (window._statutListener) {
-        window._statutListener();
-        window._statutListener = null;
-    }
-    
-    const statusSpan = document.getElementById('header-status-text');
-    if (!statusSpan) return;
-    
-    window._statutListener = db.collection('users').doc(targetUser.id)
-        .onSnapshot((doc) => {
-            if (!doc.exists) {
-                statusSpan.innerHTML = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
-                return;
-            }
-            
-            const data = doc.data();
-            const estEnLigne = data.online === true;
-            
-            let statutHtml = '';
-            if (estEnLigne) {
-                statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
-            } else {
-                const lastSeen = data.lastSeen?.toDate?.() || data.lastSeen;
-                if (lastSeen) {
-                    const h = lastSeen.getHours().toString().padStart(2, '0');
-                    const m = lastSeen.getMinutes().toString().padStart(2, '0');
-                    statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
-                } else {
-                    statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
-                }
-            }
-            
-            // Garder la batterie si elle existe
-            const batterieExistante = statusSpan.querySelector('.battery-indicator');
-            if (batterieExistante) {
-                statusSpan.innerHTML = statutHtml + batterieExistante.outerHTML;
-            } else {
-                statusSpan.innerHTML = statutHtml;
-            }
-            
-            // Mood
-            if (data.mood) {
-                const otherMoodSpan = document.getElementById('other-mood-emoji');
-                if (otherMoodSpan) otherMoodSpan.textContent = data.mood.emoji || '😊';
-            }
-        });
-}
-
-// 6️⃣ ACTIVER LE SYSTÈME
-function activerSystemeBatterie() {
-    if (!currentUser || !targetUser) {
-        console.log("⏳ Attente de connexion...");
-        setTimeout(activerSystemeBatterie, 500);
-        return;
-    }
-    
-    console.log("🚀 Activation batterie...");
-    demarrerMiseAJourBatterie();
-    setTimeout(ecouterBatterieAutre, 300);
-    setTimeout(ecouterStatutAutre, 600);
-}
-
-// 7️⃣ LANCER AUTOMATIQUEMENT
-setTimeout(activerSystemeBatterie, 1000);
-
-console.log("✅ SYSTÈME DE BATTERIE ULTIME ACTIVÉ !");
-      
-// ============================================================
-// FLÈCHE POUR DESCENDRE - AVEC AFFICHAGE INTELLIGENT
-// ============================================================
-const area = document.getElementById('msg-area');
-const goDownBtn = document.getElementById('goDownBtn');
-
-// Fonction pour descendre tout en bas
-function scrollToBottom() {
-    if (area) {
-        area.scrollTo({
-            top: area.scrollHeight,
-            behavior: 'smooth'
-        });
-    }
-}
-
-if (area && goDownBtn) {
-    area.addEventListener('scroll', () => {
-        // Hauteur totale du contenu moins la hauteur visible de la zone
-        const maxScroll = area.scrollHeight - area.clientHeight;
-        
-        // Si on est à moins de 50px du bas, on considère qu'on est en bas -> on cache le bouton
-        if (maxScroll - area.scrollTop < 50) {
-            goDownBtn.style.display = 'none';
-        } else {
-            // Sinon, dès qu'on remonte (qu'on s'éloig, le bouton s'affiche
-            goDownBtn.style.display = 'block';
-        }
-    });
-}
-      
-      // ============================================================
-// 🚪 CODES SECRETS - IFRAME PLEIN ÉCRAN
-// ============================================================
-
-// ============================================================
-// CODES SECRETS - VERSION CHAT MASQUÉ
-// ============================================================
-
-let chatCodeBuffer = '';
-let chatCodeTimer = null;
-
-// Écouter les changements dans le chat
-document.getElementById('chat-in').addEventListener('input', function(e) {
-    const text = this.value;
-    
-    // Détecter si le texte contient un code secret
-    if (text.includes('5432')) {
-        this.value = this.value.replace('5432', '');
-        // Réinitialiser le buffer
-        chatCodeBuffer = '';
-        clearTimeout(chatCodeTimer);
-        window.location.href = 'secret.html';
-    } else if (text.includes('9999')) {
-        this.value = this.value.replace('9999', '');
-        chatCodeBuffer = '';
-        clearTimeout(chatCodeTimer);
-        window.location.href = 'galerie.html';
-    }
-});
     </script>
-  <button id="goDownBtn" onclick="scrollToBottom()" style="
-    display: none; /* Masqué au départ tant qu'on est en bas */
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #a800ff, #0076ff);
-    color: white;
-    border: none;
-    font-size: 24px;
-    box-shadow: 0 4px 15px rgba(168,0,255,0.5);
-    cursor: pointer;
-    z-index: 99999;
-    transition: transform 0.2s;
-">
-    ↓
-</button>
+  
+   
 </body>   
- 
-</html>    
-               
+  
+</html>
