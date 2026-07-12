@@ -3245,7 +3245,10 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             replyToId = selectedMessageId;
             const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
             if(parentRow) {
-                const snippet = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+                const texteComplet = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+                // Aperçu ultra-court : 4 mots maximum, suivis de "..." si le message est plus long
+                const mots = texteComplet.trim().split(/\s+/).filter(Boolean);
+                const snippet = mots.length > 4 ? mots.slice(0, 4).join(' ') + '...' : texteComplet;
                 document.getElementById('reply-preview-text').innerText = `Répondre à : ${snippet}`;
                 document.getElementById('reply-preview').style.display = 'flex';
             }
@@ -5210,6 +5213,56 @@ function annulerAppuiLong() {
         appuiLongTimer = null;
     }
     elementAppuye = null;
+}
+
+      // ========== SWIPE POUR RÉPONDRE (droite) / MODIFIER (gauche) ==========
+      // Réutilise les mêmes événements tactiles que l'appui long : un swipe
+      // horizontal annule l'appui long en cours et déclenche l'action associée,
+      // exactement comme sur WhatsApp.
+let swipeDepartX = null;
+let swipeDepartY = null;
+let swipeDeclenche = false;
+const SWIPE_SEUIL_PX = 55;
+
+function gererSwipeDebut(event, msgId) {
+    const touche = event.touches ? event.touches[0] : event;
+    swipeDepartX = touche.clientX;
+    swipeDepartY = touche.clientY;
+    swipeDeclenche = false;
+    demarrerAppuiLong(event, msgId);
+}
+
+function gererSwipeMouvement(event, msgId) {
+    if (swipeDepartX === null || swipeDeclenche) return;
+    const touche = event.touches ? event.touches[0] : event;
+    const deltaX = touche.clientX - swipeDepartX;
+    const deltaY = touche.clientY - swipeDepartY;
+    
+    // Tout mouvement annule l'appui long (comportement original conservé)
+    annulerAppuiLong();
+    
+    // Un swipe doit être surtout horizontal pour ne pas gêner le scroll vertical
+    if (Math.abs(deltaX) > SWIPE_SEUIL_PX && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+        swipeDeclenche = true;
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        const estMonMessage = row && row.classList.contains('sent');
+        
+        if (deltaX > 0) {
+            // Swipe vers la droite → Répondre
+            selectedMessageId = msgId;
+            initiateReply();
+        } else if (estMonMessage) {
+            // Swipe vers la gauche → Modifier (uniquement si l'utilisateur est l'auteur)
+            modifierMonMessageDirect(msgId);
+        }
+    }
+}
+
+function gererSwipeFin() {
+    swipeDepartX = null;
+    swipeDepartY = null;
+    swipeDeclenche = false;
+    annulerAppuiLong();
 }
       
       // ========== COPIER LE MESSAGE ==========
@@ -8504,6 +8557,13 @@ function detecterActiviteEcran() {
         mettreAJourStatutUtilisateur(false, 'depart');
     });
     
+    // 'pagehide' est déclenché de façon bien plus fiable que 'beforeunload' sur mobile
+    // (Safari iOS / apps PWA en arrière-plan), ce qui évite qu'un utilisateur reste
+    // affiché « en ligne » alors qu'il a quitté le site.
+    window.addEventListener('pagehide', function() {
+        mettreAJourStatutUtilisateur(false, 'depart');
+    });
+    
     let tempsInactivite = Date.now();
     let estInactif = false;
     
@@ -8552,15 +8612,20 @@ function ecouterStatutAutreAvecHorodatage() {
     
     console.log(`👀 Écoute du statut de ${targetUser.name}...`);
     
-    if (window._statutListener) {
-        window._statutListener();
-        window._statutListener = null;
+    // ⚠️ IMPORTANT : ce listener utilise SA PROPRE variable (window._presenceListener),
+    // distincte de window._statutListener (utilisée par les accusés de lecture).
+    // Avant cette correction, les deux systèmes partageaient la même variable globale :
+    // chacun annulait silencieusement l'écouteur de l'autre en démarrant, ce qui gelait
+    // le statut « en ligne »/humeur affiché sur l'écran du destinataire.
+    if (window._presenceListener) {
+        window._presenceListener();
+        window._presenceListener = null;
     }
     
     const statusSpan = document.getElementById('header-status-text');
     if (!statusSpan) return;
     
-    window._statutListener = db.collection('users').doc(targetUser.id)
+    window._presenceListener = db.collection('users').doc(targetUser.id)
         .onSnapshot((doc) => {
             if (!doc.exists) {
                 statusSpan.innerHTML = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
@@ -8738,9 +8803,9 @@ setTimeout(() => {
 
 // 9. Nettoyage lors des changements
 function nettoyerSystemeStatut() {
-    if (window._statutListener) {
-        window._statutListener();
-        window._statutListener = null;
+    if (window._presenceListener) {
+        window._presenceListener();
+        window._presenceListener = null;
     }
     if (STATUT_UTILISATEUR.pingInterval) {
         clearInterval(STATUT_UTILISATEUR.pingInterval);
@@ -9387,6 +9452,28 @@ document.addEventListener('keydown', function(e) {
       
       
       // ============================================================
+// ✅ "VOIR TOUT" : bascule l'affichage tronqué / complet d'un message long
+// ============================================================
+function basculerVoirTout(btnEl) {
+    const bulle = btnEl.closest('.message-bubble');
+    if (!bulle) return;
+    const elTronque = bulle.querySelector('.msg-text-tronque');
+    const elComplet = bulle.querySelector('.msg-text-complet');
+    if (!elTronque || !elComplet) return;
+    
+    const estDeplie = elComplet.style.display !== 'none';
+    if (estDeplie) {
+        elComplet.style.display = 'none';
+        elTronque.style.display = 'block';
+        btnEl.textContent = 'VOIR TOUT';
+    } else {
+        elComplet.style.display = 'block';
+        elTronque.style.display = 'none';
+        btnEl.textContent = 'VOIR MOINS';
+    }
+}
+      
+      // ============================================================
 // ✅ FONCTION POUR AFFICHER TOUS LES MESSAGES
 // ============================================================
 function afficherTousLesMessages(snapshot, isInitialLoad) {
@@ -9415,10 +9502,24 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
     
     let lastDateStr = "";
     
-    // NOTE : la requête Firestore renvoie désormais les messages triés du plus ancien
-    // au plus récent (orderBy 'asc' + limitToLast) — on les affiche donc dans cet ordre,
-    // exactement comme WhatsApp/Instagram, sans jamais les retrier ici.
-    snapshot.forEach(doc => {
+    // NOTE : la requête Firestore renvoie déjà les messages triés du plus ancien
+    // au plus récent (orderBy 'asc' + limitToLast). On applique EN PLUS un tri
+    // explicite et stable ici, côté client, pour garantir l'ordre chronologique
+    // strict même dans le cas où un message vient d'être envoyé et que son
+    // serverTimestamp() n'est pas encore résolu par le serveur (valeur locale nulle) :
+    // sans ce filet de sécurité, Firestore peut placer ce message « en attente »
+    // en tête de liste (au lieu du bas) au moment précis du rafraîchissement.
+    const docsTries = snapshot.docs.slice().sort((a, b) => {
+        const ta = a.data().timestamp;
+        const tb = b.data().timestamp;
+        // Un timestamp non résolu (écriture locale en attente) est traité comme "maintenant",
+        // donc il reste en bas de la liste (le plus récent), jamais en haut.
+        const msA = ta && ta.toMillis ? ta.toMillis() : Date.now();
+        const msB = tb && tb.toMillis ? tb.toMillis() : Date.now();
+        return msA - msB;
+    });
+    
+    docsTries.forEach(doc => {
         const data = doc.data();
         const msgId = doc.id;
         
@@ -9464,9 +9565,9 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
             onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
             oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
             ondblclick="handleDoubleTap(event, '${msgId}')"
-            ontouchstart="demarrerAppuiLong(event, '${msgId}')"
-            ontouchend="annulerAppuiLong()"
-            ontouchmove="annulerAppuiLong()"
+            ontouchstart="gererSwipeDebut(event, '${msgId}')"
+            ontouchend="gererSwipeFin()"
+            ontouchmove="gererSwipeMouvement(event, '${msgId}')"
             onmousedown="demarrerAppuiLong(event, '${msgId}')"
             onmouseup="annulerAppuiLong()"
             onmouseleave="annulerAppuiLong()">`;
@@ -9482,6 +9583,16 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
                 const originalMessage = data.originalText || data.text;
                 displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
                 bubbleHtml += displayText;
+            } else if (typeof displayText === 'string' && displayText.length > 100) {
+                // Message long : on tronque le texte BRUT à 100 caractères (avant mise en
+                // forme) pour ne jamais couper au milieu d'une balise HTML générée par
+                // formatText/escapeHTML, puis on prépare les deux versions (courte/complète).
+                const texteTronqueBrut = displayText.slice(0, 100);
+                let htmlTronque = formatText(escapeHTML(texteTronqueBrut)).replace(/\n/g, '<br>');
+                let htmlComplet = formatText(escapeHTML(displayText)).replace(/\n/g, '<br>');
+                bubbleHtml += `<span class="msg-text-tronque" style="white-space: pre-wrap; display: block;">${htmlTronque}…</span>`;
+                bubbleHtml += `<span class="msg-text-complet" style="white-space: pre-wrap; display: none;">${htmlComplet}</span>`;
+                bubbleHtml += `<span class="voir-tout-btn" style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;" onclick="event.stopPropagation(); basculerVoirTout(this)">VOIR TOUT</span>`;
             } else {
                 displayText = formatText(escapeHTML(displayText));
                 displayText = displayText.replace(/\n/g, '<br>');
@@ -10376,4 +10487,4 @@ function ouvrirProfil() {
    
 </body>   
   
-</html>
+</html>  
