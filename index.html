@@ -1977,10 +1977,20 @@ input, textarea {
       <div class="context-menu" id="ctx-menu">
     <div class="context-item" onclick="initiateReply()"><i class="fa-solid fa-reply"></i> Répondre</div>
     <div class="context-item" onclick="copierMessage()"><i class="fa-regular fa-copy"></i> Copier le message</div>
-    <div class="context-item translate-btn" onclick="translateSelectedMessage()"><i class="fa-solid fa-language"></i> Traduire</div>
+            <div class="context-item" style="color:#ed4956;" onclick="deleteSelectedMessage()"><i class="fa-solid fa-trash"></i> Supprimer</div>
+
     <div class="context-item" onclick="editSelectedMessage()"><i class="fa-solid fa-pen"></i> Modifier</div>
     <div class="context-item" style="border-top: 1px solid var(--border-color); margin-top: 5px;" onclick="showStyleMenu()"><i class="fa-solid fa-palette"></i> Changer le style de bulle ▶</div>
-    <div class="context-item" style="color:#ed4956;" onclick="deleteSelectedMessage()"><i class="fa-solid fa-trash"></i> Supprimer</div>
+        <!-- Dans le sous-menu des styles (#style-submenu) -->
+ 
+<div class="context-item" onclick="openColorPickerForMessage()">
+    <i class="fa-solid fa-fill-drip"></i> Choisir une couleur
+</div>
+<div class="context-item" onclick="applyGradientToMessage()">
+    <i class="fa-solid fa-rainbow"></i> Dégradé personnalisé
+</div> 
+            <div class="context-item translate-btn" onclick="translateSelectedMessage()"><i class="fa-solid fa-language"></i> Traduire</div>
+
 </div>
 
         <div class="context-menu" id="style-submenu">
@@ -2868,7 +2878,7 @@ setTimeout(restaurerMonMood, 500);
             if(unsubscribeTyping) unsubscribeTyping();
             document.getElementById('login-screen').style.display = 'flex';
         }
-// ========== ÉCOUTE EN TEMPS RÉEL DES STATUTS DE LECTURE ==========
+// ========== ÉCOUTE EN TEMPS RÉEL DES STATUTS DE LECTURE ========== 
 function ecouterStatutsTempsReel() {
     if (!currentUser || !targetUser) return;
     
@@ -4146,8 +4156,7 @@ async function confirmerModification() {
     }
 }
 
-      // ========== ÉCOUTER LES MODIFICATIONS DE MESSAGES EN TEMPS RÉEL ==========
-function ecouterModificationsMessages() {
+ function ecouterModificationsMessages() {
     if (!currentUser) return;
     
     db.collection('chats').doc(CHAT_ID).collection('messages')
@@ -4158,9 +4167,8 @@ function ecouterModificationsMessages() {
                     const msgId = change.doc.id;
                     const nouvelleData = change.doc.data();
                     
-                    // IGNORER LES MESSAGES SUPPRIMÉS
                     if (nouvelleData.isDeletedMessage === true) {
-                        return; // NE RIEN FAIRE
+                        return;
                     }
                     
                     const messageRow = document.querySelector(`.message-row[data-id="${msgId}"]`);
@@ -4171,6 +4179,33 @@ function ecouterModificationsMessages() {
                     
                     const bubble = messageRow.querySelector('.message-bubble');
                     const textSpan = bubble.querySelector('span:not(.coded-mask)');
+                    
+                    // ✅ AJOUTE CE BLOC POUR LES COULEURS
+                    // ===================================================
+                    // Mise à jour de la couleur si elle a changé
+                    if (nouvelleData.customColor) {
+                        bubble.style.background = nouvelleData.customColor;
+                        bubble.style.color = getContrastColor(nouvelleData.customColor);
+                        // Enlever les classes de style qui pourraient interférer
+                        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                        allStyles.forEach(style => bubble.classList.remove(style));
+                    } else if (nouvelleData.customGradient) {
+                        bubble.style.background = nouvelleData.customGradient;
+                        bubble.style.color = 'white';
+                        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                        allStyles.forEach(style => bubble.classList.remove(style));
+                    } else {
+                        // Si plus de couleur, on remet le style par défaut
+                        bubble.style.background = '';
+                        bubble.style.color = '';
+                        const defaultStyle = localStorage.getItem('default_bubble_style');
+                        if (defaultStyle && defaultStyle !== 'none') {
+                            const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                            allStyles.forEach(style => bubble.classList.remove(style));
+                            bubble.classList.add(defaultStyle);
+                        }
+                    }
+                    // ===================================================
                     
                     if (textSpan && nouvelleData.text && !nouvelleData.isDeletedMessage) {
                         textSpan.style.transition = 'all 0.3s ease';
@@ -4191,8 +4226,79 @@ function ecouterModificationsMessages() {
             });
         });
 }
-      
-      // ========== FORCER LE RAFRAÎCHISSEMENT D'UN MESSAGE SPÉCIFIQUE ==========
+      // ========== ÉCOUTEUR SPÉCIFIQUE POUR LES COULEURS PERSONNALISÉES ==========
+function ecouterChangementsCouleurs() {
+    if (!currentUser) return;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .where('customColor', '>=', '')  // Tous les messages qui ont customColor
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'modified' || change.type === 'added') {
+                    const msgId = change.doc.id;
+                    const data = change.doc.data();
+                    
+                    const messageRow = document.querySelector(`.message-row[data-id="${msgId}"]`);
+                    if (!messageRow) return;
+                    
+                    const bubble = messageRow.querySelector('.message-bubble');
+                    if (!bubble) return;
+                    
+                    // Appliquer la couleur
+                    if (data.customColor) {
+                        bubble.style.background = data.customColor;
+                        bubble.style.color = getContrastColor(data.customColor);
+                        // Enlever les classes de style
+                        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                        allStyles.forEach(style => bubble.classList.remove(style));
+                    } else if (data.customGradient) {
+                        bubble.style.background = data.customGradient;
+                        bubble.style.color = 'white';
+                        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                        allStyles.forEach(style => bubble.classList.remove(style));
+                    }
+                }
+            });
+        });
+}
+
+// ========== ÉCOUTEUR POUR LA SUPPRESSION DES COULEURS ==========
+function ecouterSuppressionCouleurs() {
+    if (!currentUser) return;
+    
+    // Écouter les messages où customColor est null (supprimé)
+    // On utilise un écouteur sur tous les messages et on vérifie
+    db.collection('chats').doc(CHAT_ID).collection('messages')
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'modified') {
+                    const msgId = change.doc.id;
+                    const data = change.doc.data();
+                    
+                    const messageRow = document.querySelector(`.message-row[data-id="${msgId}"]`);
+                    if (!messageRow) return;
+                    
+                    const bubble = messageRow.querySelector('.message-bubble');
+                    if (!bubble) return;
+                    
+                    // Si plus de customColor ET plus de customGradient
+                    if (!data.customColor && !data.customGradient) {
+                        // Remettre le style par défaut
+                        bubble.style.background = '';
+                        bubble.style.color = '';
+                        
+                        const defaultStyle = localStorage.getItem('default_bubble_style');
+                        if (defaultStyle && defaultStyle !== 'none') {
+                            const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                            allStyles.forEach(style => bubble.classList.remove(style));
+                            bubble.classList.add(defaultStyle);
+                        }
+                    }
+                }
+            });
+        });
+}
+      // ========== FORCER LE RAFRAÎCHISSEMEN T D'UN MESSAGE SPÉCIFIQUE = =========
 async function forcerRafraichissementMessage(messageId) {
     const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(messageId).get();
     if (!doc.exists) return;
@@ -10251,8 +10357,7 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         return;
     }
     
-    // On mémorise la position de lecture actuelle AVANT de reconstruire la liste,
-    // car vider msgArea remet toujours le scroll à 0.
+    // On mémorise la position de lecture actuelle AVANT de reconstruire la liste
     const wasAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 150;
     const previousScrollTop = msgArea.scrollTop;
     
@@ -10261,18 +10366,9 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
     
     let lastDateStr = "";
     
-    // NOTE : la requête Firestore renvoie déjà les messages triés du plus ancien
-    // au plus récent (orderBy 'asc' + limitToLast). On applique EN PLUS un tri
-    // explicite et stable ici, côté client, pour garantir l'ordre chronologique
-    // strict même dans le cas où un message vient d'être envoyé et que son
-    // serverTimestamp() n'est pas encore résolu par le serveur (valeur locale nulle) :
-    // sans ce filet de sécurité, Firestore peut placer ce message « en attente »
-    // en tête de liste (au lieu du bas) au moment précis du rafraîchissement.
     const docsTries = snapshot.docs.slice().sort((a, b) => {
         const ta = a.data().timestamp;
         const tb = b.data().timestamp;
-        // Un timestamp non résolu (écriture locale en attente) est traité comme "maintenant",
-        // donc il reste en bas de la liste (le plus récent), jamais en haut.
         const msA = ta && ta.toMillis ? ta.toMillis() : Date.now();
         const msB = tb && tb.toMillis ? tb.toMillis() : Date.now();
         return msA - msB;
@@ -10302,16 +10398,32 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         
         const isGiant = isOnlyEmojis(data.text);
         let customStyle = '';
-        if (data.bubbleStyle) {
-            customStyle = data.bubbleStyle;
-        } else if (data.messageStyle) {
-            customStyle = data.messageStyle;
-        } else if (isSent) {
-            const defaultStyle = localStorage.getItem('default_bubble_style');
-            if (defaultStyle && defaultStyle !== 'none') {
-                customStyle = defaultStyle;
-            }
+// 🚨 PRIORITÉ : Si une couleur personnalisée existe, on désactive les styles de classe
+const hasCustomColor = data.customColor || data.customGradient;
+
+if (!hasCustomColor) {
+    // Seulement si PAS de couleur personnalisée
+    if (data.bubbleStyle) {
+        customStyle = data.bubbleStyle;
+    } else if (data.messageStyle) {
+        customStyle = data.messageStyle;
+    } else if (isSent) {
+        const defaultStyle = localStorage.getItem('default_bubble_style');
+        if (defaultStyle && defaultStyle !== 'none') {
+            customStyle = defaultStyle;
         }
+    }
+}
+
+        
+        // ✅ NOUVEAU CODE POUR LES COULEURS PERSONNALISÉES
+      let inlineStyle = '';
+if (data.customColor) {
+    inlineStyle = `background: ${data.customColor} !important; color: ${getContrastColor(data.customColor)} !important;`;
+} else if (data.customGradient) {
+    inlineStyle = `background: ${data.customGradient} !important; color: white !important;`;
+}
+        // ✅ FIN NOUVEAU CODE 
         
         let codedClass = '';
         let lockBadge = '';
@@ -10320,10 +10432,11 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
             lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
         }
         
-        // ✅ Animation d'envoi choisie dans les Paramètres, uniquement pour SES propres messages
         const sendAnimClass = isSent ? getSendAnimationClass() : '';
         
+        // ✅ MODIFICATION : ajout de style="${inlineStyle}"
         let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass} ${sendAnimClass}" 
+            style="${inlineStyle}"
             onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
             oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
             ondblclick="handleDoubleTap(event, '${msgId}')"
@@ -11696,9 +11809,293 @@ window.fermerEtude = fermerEtude;
 window.ouvrirJeux = ouvrirJeux;
 window.ouvrirEffets = ouvrirEffets;
   
+  // ========== COULEURS PERSONNALISÉES POUR LES BULLES ==========
+
+// Ouvrir le sélecteur de couleur
+function openColorPickerForMessage() {
+    if (!selectedMessageId) {
+        showTempNotification("❌ Sélectionne d'abord un message");
+        return;
+    }
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow || !messageRow.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux colorer que TES messages !");
+        return;
+    }
+    
+    document.getElementById('color-picker-modal').style.display = 'flex';
+    hideContextMenus();
+    closeStyleMenu();
+}
+
+// Fermer le sélecteur
+function closeColorPicker() {
+    document.getElementById('color-picker-modal').style.display = 'none';
+}
+
+// Appliquer la couleur personnalisée
+async function applyCustomColorToMessage() {
+    if (!selectedMessageId) {
+        closeColorPicker();
+        return;
+    }
+    
+    const color = document.getElementById('custom-color-picker').value;
+    await applyColorToMessage(selectedMessageId, color);
+    closeColorPicker();
+}
+
+// Fonction principale pour appliquer une couleur
+async function applyColorToMessage(msgId, color) {
+    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+    if (!messageRow || !messageRow.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux colorer que TES messages !");
+        return;
+    }
+    
+    // Sauvegarder dans Firestore (champ customColor)
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({
+        customColor: color,
+        // On retire les styles de classe pour éviter les conflits
+        bubbleStyle: null
+    });
+    
+    // Appliquer visuellement
+    const bubble = messageRow.querySelector('.message-bubble');
+    if (bubble) {
+        // Enlever tous les styles de classe
+        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+        allStyles.forEach(style => bubble.classList.remove(style));
+        
+        // Appliquer la couleur
+        bubble.style.background = color;
+        bubble.style.color = getContrastColor(color);
+    }
+    
+    showTempNotification(`🎨 Couleur appliquée !`);
+    selectedMessageId = null;
+}
+
+// ========== DÉGRADÉ PERSONNALISÉ ==========
+function applyGradientToMessage() {
+    if (!selectedMessageId) {
+        showTempNotification("❌ Sélectionne d'abord un message");
+        return;
+    }
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow || !messageRow.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux colorer que TES messages !");
+        return;
+    }
+    
+    // Demander deux couleurs
+    const color1 = prompt("🎨 Couleur 1 (ex: #ff0000 ou red) :", "#a800ff");
+    if (!color1) return;
+    const color2 = prompt("🎨 Couleur 2 (ex: #0076ff ou blue) :", "#0076ff");
+    if (!color2) return;
+    
+    const gradient = `linear-gradient(135deg, ${color1}, ${color2})`;
+    
+    // Sauvegarder dans Firestore
+    db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({
+        customGradient: gradient,
+        customColor: null,
+        bubbleStyle: null
+    });
+    
+    // Appliquer visuellement
+    const bubble = document.querySelector(`[data-id="${selectedMessageId}"] .message-bubble`);
+    if (bubble) {
+        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+        allStyles.forEach(style => bubble.classList.remove(style));
+        bubble.style.background = gradient;
+        bubble.style.color = 'white';
+    }
+    
+    showTempNotification(`🌈 Dégradé appliqué !`);
+    selectedMessageId = null;
+    hideContextMenus();
+    closeStyleMenu();
+}
+
+// ========== FONCTION AUXILIAIRE : COULEUR DE TEXTE CONTRASTÉE ==========
+function getContrastColor(hexColor) {
+    // Si c'est un nom de couleur ou autre format, on le passe
+    if (!hexColor.startsWith('#')) {
+        return '#ffffff';
+    }
+    
+    // Convertir en RGB
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // Luminosité (formule standard)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    return luminance > 0.5 ? '#000000' : '#ffffff';
+}
   
-  
-  
+  // ========== FONCTIONS POUR LES COULEURS PERSONNALISÉES ==========
+
+// Fonction pour obtenir une couleur de texte contrastée
+function getContrastColor(hexColor) {
+    if (!hexColor || !hexColor.startsWith('#')) {
+        return '#ffffff';
+    }
+    
+    try {
+        const r = parseInt(hexColor.slice(1, 3), 16);
+        const g = parseInt(hexColor.slice(3, 5), 16);
+        const b = parseInt(hexColor.slice(5, 7), 16);
+        
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return luminance > 0.5 ? '#000000' : '#ffffff';
+    } catch(e) {
+        return '#ffffff';
+    }
+}
+
+// Ouvrir le sélecteur de couleur
+function openColorPickerForMessage() {
+    if (!selectedMessageId) {
+        showTempNotification("❌ Sélectionne d'abord un message");
+        return;
+    }
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow || !messageRow.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux colorer que TES messages !");
+        return;
+    }
+    
+    document.getElementById('color-picker-modal').style.display = 'flex';
+    hideContextMenus();
+    closeStyleMenu();
+}
+
+// Fermer le sélecteur
+function closeColorPicker() {
+    document.getElementById('color-picker-modal').style.display = 'none';
+}
+
+// Appliquer la couleur personnalisée
+async function applyCustomColorToMessage() {
+    if (!selectedMessageId) {
+        closeColorPicker();
+        return;
+    }
+    
+    const color = document.getElementById('custom-color-picker').value;
+    await applyColorToMessage(selectedMessageId, color);
+    closeColorPicker();
+}
+
+// Fonction principale pour appliquer une couleur
+async function applyColorToMessage(msgId, color) {
+    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+    if (!messageRow || !messageRow.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux colorer que TES messages !");
+        return;
+    }
+    
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({
+        customColor: color,
+        customGradient: null,
+        bubbleStyle: null
+    });
+    
+    const bubble = messageRow.querySelector('.message-bubble');
+    if (bubble) {
+        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+        allStyles.forEach(style => bubble.classList.remove(style));
+        bubble.style.background = color;
+        bubble.style.color = getContrastColor(color);
+    }
+    
+    showTempNotification(`🎨 Couleur appliquée !`);
+    selectedMessageId = null;
+    hideContextMenus();
+    closeStyleMenu();
+}
+
+// Appliquer un dégradé
+function applyGradientToMessage() {
+    if (!selectedMessageId) {
+        showTempNotification("❌ Sélectionne d'abord un message");
+        return;
+    }
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow || !messageRow.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux colorer que TES messages !");
+        return;
+    }
+    
+    const color1 = prompt("🎨 Couleur 1 (ex: #ff0000 ou red) :", "#a800ff");
+    if (!color1) return;
+    const color2 = prompt("🎨 Couleur 2 (ex: #0076ff ou blue) :", "#0076ff");
+    if (!color2) return;
+    
+    const gradient = `linear-gradient(135deg, ${color1}, ${color2})`;
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({
+        customGradient: gradient,
+        customColor: null,
+        bubbleStyle: null
+    });
+    
+    const bubble = document.querySelector(`[data-id="${selectedMessageId}"] .message-bubble`);
+    if (bubble) {
+        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+        allStyles.forEach(style => bubble.classList.remove(style));
+        bubble.style.background = gradient;
+        bubble.style.color = 'white';
+    }
+    
+    showTempNotification(`🌈 Dégradé appliqué !`);
+    selectedMessageId = null;
+    hideContextMenus();
+    closeStyleMenu();
+}
+
+// Supprimer la couleur personnalisée
+async function removeCustomColorFromMessage() {
+    if (!selectedMessageId) {
+        showTempNotification("❌ Sélectionne d'abord un message");
+        return;
+    }
+    
+    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    if (!messageRow || !messageRow.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux supprimer la couleur que de TES messages !");
+        return;
+    }
+    
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({
+        customColor: null,
+        customGradient: null
+    });
+    
+    const bubble = messageRow.querySelector('.message-bubble');
+    if (bubble) {
+        bubble.style.background = '';
+        bubble.style.color = '';
+        const defaultStyle = localStorage.getItem('default_bubble_style');
+        if (defaultStyle && defaultStyle !== 'none') {
+            const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+            allStyles.forEach(style => bubble.classList.remove(style));
+            bubble.classList.add(defaultStyle);
+        }
+    }
+    
+    showTempNotification("🗑️ Couleur supprimée !");
+    selectedMessageId = null;
+    hideContextMenus();
+    closeStyleMenu();
+}
   </script>
   <!-- Script pour nettoyer et désactiver la console -->
 <script>
@@ -11719,7 +12116,29 @@ window.ouvrirEffets = ouvrirEffets;
     }
   })();
 </script>
-   
+   <!-- Sélecteur de couleur pour les bulles -->
+<div class="color-picker-modal" id="color-picker-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:99999; justify-content:center; align-items:center;">
+    <div style="background:var(--bg-main); padding:25px; border-radius:20px; max-width:350px; width:90%;">
+        <h3 style="margin-bottom:15px;">🎨 Choisis une couleur</h3>
+        <input type="color" id="custom-color-picker" value="#a800ff" style="width:100%; height:50px; border:none; border-radius:10px; cursor:pointer;">
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="applyCustomColorToMessage()" style="flex:1; padding:12px; background:#0095f6; border:none; border-radius:10px; color:white; cursor:pointer; font-weight:bold;">✅ Appliquer</button>
+            <button onclick="closeColorPicker()" style="flex:1; padding:12px; background:transparent; border:1px solid var(--border-color); border-radius:10px; color:var(--text-main); cursor:pointer;">Annuler</button>
+        </div>
+        <div style="margin-top:15px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+            <span style="font-size:0.7rem; color:var(--text-muted); width:100%; text-align:center;">Couleurs rapides :</span>
+            <div style="width:30px;height:30px;border-radius:50%;background:#ff0000;cursor:pointer;" onclick="document.getElementById('custom-color-picker').value='#ff0000'"></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#ff6b00;cursor:pointer;" onclick="document.getElementById('custom-color-picker').value='#ff6b00'"></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#ffd700;cursor:pointer;" onclick="document.getElementById('custom-color-picker').value='#ffd700'"></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#00cc44;cursor:pointer;" onclick="document.getElementById('custom-color-picker').value='#00cc44'"></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#0095f6;cursor:pointer;" onclick="document.getElementById('custom-color-picker').value='#0095f6'"></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#a800ff;cursor:pointer;" onclick="document.getElementById('custom-color-picker').value='#a800ff'"></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#ff00ff;cursor:pointer;" onclick="document.getElementById('custom-color-picker').value='#ff00ff'"></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#000000;cursor:pointer;border:1px solid #ccc;" onclick="document.getElementById('custom-color-picker').value='#000000'"></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#ffffff;cursor:pointer;border:1px solid #ccc;" onclick="document.getElementById('custom-color-picker').value='#ffffff'"></div>
+        </div>
+    </div>
+</div>
 </body>   
   
 </html> 
