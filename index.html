@@ -1536,6 +1536,36 @@ input, textarea {
     max-width: 100% !important;
     overflow-x: hidden !important;
 }
+      
+      
+      /* EFFET THANOS / POUSSIÈRE */
+@keyframes thanosDust {
+    0% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+        filter: blur(0px);
+    }
+    30% {
+        opacity: 0.8;
+        transform: scale(0.9) rotate(-5deg);
+        filter: blur(2px);
+    }
+    70% {
+        opacity: 0.3;
+        transform: scale(0.5) rotate(15deg) translateY(-50px);
+        filter: blur(8px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0) rotate(30deg) translateY(-100px);
+        filter: blur(15px);
+    }
+}
+
+.thanos-effect {
+    animation: thanosDust 1.2s ease-out forwards !important;
+    pointer-events: none !important;
+}
     </style>
 </head>
 <body>
@@ -2110,7 +2140,29 @@ async function uploadVersSupabase(file, type) {
         return null;
     }
 }
-
+// Fonction pour basculer VOIR TOUT / VOIR MOINS
+window.basculerVoirTout = function(btn) {
+    console.log("🔄 Basculer VOIR TOUT cliqué !");
+    const bulle = btn.closest('.message-bubble');
+    if (!bulle) return;
+    
+    const tronque = bulle.querySelector('.msg-text-tronque');
+    const complet = bulle.querySelector('.msg-text-complet');
+    
+    if (!tronque || !complet) return;
+    
+    if (complet.style.display === 'none' || complet.style.display === '') {
+        complet.style.display = 'block';
+        tronque.style.display = 'none';
+        btn.textContent = 'VOIR MOINS';
+        console.log("📖 Affichage complet");
+    } else {
+        complet.style.display = 'none';
+        tronque.style.display = 'block';
+        btn.textContent = 'VOIR TOUT';
+        console.log("📖 Affichage tronqué");
+    }
+};
 // ========== FONCTION SUPPRIMER UN FICHIER ==========
 async function supprimerFichierSupabase(filePath) {
     const { error } = await supabaseClient.storage
@@ -2602,7 +2654,7 @@ async function enregistrerTokenPush() {
         console.error("❌ Erreur token:", error);
     }
 }
-        // ========== SÉLECTION UTILISATEUR==========
+        // ========== SÉLECTION UTILISATEUR======= ===
         function selectUser(userKey) {
             if(userKey === 'ida') {
                 currentUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
@@ -2625,7 +2677,7 @@ async function enregistrerTokenPush() {
             getBatteryLevel();
             listenToOtherUserBattery();
             listenForFlashSignals();
-            saveDefaultMood();
+             
             listenToUserMood(); // ✅ correction : cette écoute existait mais n'était jamais démarrée
             activerLesNotifications();
           demanderPermissionNotifications();
@@ -2637,7 +2689,7 @@ ecouterMessagesSupprimes();
 setTimeout(markMessagesAsRead, 1000);      // ← AJOUTE ICI
               activerSuiviStatuts();
               setTimeout(marquerMessagesCommeLus, 2000);
-
+setTimeout(restaurerMonMood, 500);
 
         }
 
@@ -3319,14 +3371,18 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             return span?.innerText || "[Média]";
         }
 
-       function initiateReply() {
+      function initiateReply() {
     replyToId = selectedMessageId;
     const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
     if(parentRow) {
         const texteComplet = obtenirTexteCompletMessage(parentRow);
-        // ---- NOUVEAU CODE ----
+        // --- NOUVEAU CODE : 4 mots maximum ---
         const mots = texteComplet.trim().split(/\s+/).filter(Boolean);
-        const snippet = mots.length > 5 ? mots.slice(0, 5).join(' ') + '...' : texteComplet;
+        let snippet = texteComplet;
+        if (mots.length > 4) {
+            snippet = mots.slice(0, 4).join(' ') + '...';
+        }
+        // --- FIN NOUVEAU CODE ---
         document.getElementById('reply-preview-text').innerText = `Répondre à : ${snippet}`;
         document.getElementById('reply-preview').style.display = 'flex';
     }
@@ -4634,26 +4690,41 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
             panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
         }
         
-        async function setMood(emoji, label) {
-            currentMood = { emoji, label };
-            document.getElementById('mood-emoji').textContent = emoji;
-            const moodDiv = document.getElementById('mood-status');
-            moodDiv.classList.add('animated');
-            setTimeout(() => moodDiv.classList.remove('animated'), 2000);
-            await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            document.getElementById('mood-panel').style.display = 'none';
-            
-        }
+       async function setMood(emoji, label) {
+    currentMood = { emoji, label };
+    document.getElementById('mood-emoji').textContent = emoji;
+    const moodDiv = document.getElementById('mood-status');
+    moodDiv.classList.add('animated');
+    setTimeout(() => moodDiv.classList.remove('animated'), 2000);
+    
+    // Sauvegarder dans Firestore
+    await db.collection('users').doc(currentUser.id).set({ 
+        mood: currentMood, 
+        lastUpdate: firebase.firestore.FieldValue.serverTimestamp() 
+    }, { merge: true });
+    
+    // --- NOUVEAU : Sauvegarder DANS LE LOCAL STORAGE pour persistance ---
+    try {
+        localStorage.setItem('mon_mood', JSON.stringify(currentMood));
+    } catch(e) {}
+    
+    document.getElementById('mood-panel').style.display = 'none';
+}
         
-        async function clearMood() {
-            currentMood = { emoji: '😊', label: 'Heureux' };
-            document.getElementById('mood-emoji').textContent = '😊';
-            await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            document.getElementById('mood-panel').style.display = 'none';
-            
-        }
+       async function clearMood() {
+    // NE PAS remettre à "Heureux" automatiquement
+    // On efface carrément le champ moo d
+    await db.collection('users').doc(currentUser.id).set({ 
+        mood: firebase.firestore.FieldValue.delete()
+    }, { merge: true });
+    
+    // On affiche un statut neutre
+    document.getElementById('mood-emoji').textContent = '😊';
+    currentMood = { emoji: '😊', label: 'Heureux' };
+    document.getElementById('mood-panel').style.display = 'none';
+}
         
-        function listenToUserMood() {
+      function listenToUserMood() {
     if (!targetUser) return;
     
     // Nettoie l'ancien écouteur
@@ -4661,28 +4732,64 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
         window._moodListener();
         window._moodListener = null;
     }
-     
+    
+    // --- NOUVEAU : Restaurer le mood de l'autre depuis le localStorage ---
+    try {
+        const savedMood = localStorage.getItem('mood_autre');
+        if (savedMood) {
+            const mood = JSON.parse(savedMood);
+            const otherMoodSpan = document.getElementById('other-mood-emoji');
+            if (otherMoodSpan) {
+                otherMoodSpan.innerHTML = mood.emoji;
+                otherMoodSpan.title = mood.label || '';
+            }
+        }
+    } catch(e) {}
+    
+    // Écoute en temps réel
     window._moodListener = db.collection('users').doc(targetUser.id)
         .onSnapshot((doc) => {
-            if (doc.exists && doc.data().mood) {
-                const mood = doc.data().mood;
-                const otherMoodSpan = document.getElementById('other-mood-emoji');
-                if (otherMoodSpan) {
-                    otherMoodSpan.innerHTML = mood.emoji;
-                    // Met à jour le tooltip pour afficher le label
-                    otherMoodSpan.title = mood.label || '';
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.mood) {
+                    const mood = data.mood;
+                    const otherMoodSpan = document.getElementById('other-mood-emoji');
+                    if (otherMoodSpan) {
+                        otherMoodSpan.innerHTML = mood.emoji;
+                        otherMoodSpan.title = mood.label || '';
+                    }
+                    // --- NOUVEAU : Sauvegarder dan s localStorage ---
+                    try {
+                        localStorage.setItem('mood_autre', JSON.stringify(mood));
+                    } catch(e) {}
                 }
             }
         });
 }
         
-        async function saveDefaultMood() {
-            if (currentUser) {
-                await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            }
-        }
+      async function saveDefaultMood() {
+    if (!currentUser) return;
+    
+    // 1. D'abord, on vérifie si un mood existe déjà
+    const doc = await db.collection('users').doc(currentUser.id).get();
+    
+    if (doc.exists && doc.data().mood) {
+        // 2. Si un mood existe, on le GARDE (on ne l'écrase pas)
+        const existingMood = doc.data().mood;
+        currentMood = existingMood;  // On met à jour currentMood avec la vraie valeur
+        document.getElementById('mood-emoji').textContent = existingMood.emoji;
+        console.log("😊 Mood existant conservé:", existingMood);
+        return;  // ← On sort de la fonction, on ne fait rien d'autre !
+    }
+    
+    // 3. Si aucun mood n'existe, on crée le mood par défaut
+    await db.collection('users').doc(currentUser.id).set({ 
+        mood: currentMood,  // '😊' par défaut
+        lastUpdate: firebase.firestore.FieldValue.serverTimestamp() 
+    }, { merge: true });
+}
         
-        // ========== CANVAS DESSIN ==========
+        // ========== CANVAS DESSIN ========== 
         function openCanvasDrawer() {
             document.getElementById('canvas-modal').style.display = 'flex';
             setTimeout(() => initCanvas(), 100);
@@ -9790,10 +9897,16 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
                 bubbleHtml += `<div class="reply-citation" style="font-style: italic; opacity: 0.7; cursor: default;"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Message supprimé</div>`;
             } else {
                 // ✅ Clic sur la citation → défiler jusqu'au message d'origine avec flash de surbrillance
-                bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scrollToOriginalMessage('${data.replyToId || ''}')"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+                // --- NOUVEAU : 4 mots pour l'aperçu DANS le message ---
+let apercuCitation = data.replyToText;
+const motsCitation = apercuCitation.trim().split(/\s+/).filter(Boolean);
+if (motsCitation.length > 4) {
+    apercuCitation = motsCitation.slice(0, 4).join(' ') + '...';
+}
+bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scrollToOriginalMessage('${data.replyToId || ''}')"><b>${data.replyToSender}:</b> ${escapeHTML(apercuCitation)}</div>`;
             }
         }
-        
+         
         // TEXTE
         if (data.type === 'text') {
             let displayText = data.text;
@@ -9811,7 +9924,7 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
                 bubbleHtml += `<span class="msg-text-tronque" style="white-space: pre-wrap; display: block;">${htmlTronque}…</span>`;
                 bubbleHtml += `<span class="msg-text-complet" style="white-space: pre-wrap; display: none;">${htmlComplet}</span>`;
                 bubbleHtml += `<span class="voir-tout-btn"  style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;">VOIR TOUT</span>`;
-            } else {
+            } else { 
                 displayText = formatText(escapeHTML(displayText));
                 displayText = displayText.replace(/\n/g, '<br>');
                 bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
@@ -10117,37 +10230,30 @@ function demanderSuppressionTableau(msgId) {
 
 async function supprimerTableauWb(msgId) {
     try {
-        // Couper l'écoute temps réel de ce tableau s'il est actuellement affiché/actif
+        // Couper l'écoute temps réel
         if (window._wbListener && wb.msgId === msgId) {
             window._wbListener();
             window._wbListener = null;
         }
 
-        const msgRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
-        await msgRef.update({
-            type: 'text',
-            text: 'Tableau supprimé',
-            isDeleted: true,
-            isDeletedMessage: true,
-            whiteboardData: firebase.firestore.FieldValue.delete(),
-            deletedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // ✅ Remplacement visuel immédiat : le tableau ne disparaît pas sans laisser
-        // de trace, il est remplacé par le texte "Tableau supprimé".
+        // --- EFFET THANOS DIRECT SUR L'ÉCRAN ---
         const row = document.querySelector(`[data-id="${msgId}"]`);
         if (row) {
-            const bubble = row.querySelector('.message-bubble');
-            if (bubble) {
-                bubble.style.padding = '';
-                bubble.style.background = '';
-                bubble.style.boxShadow = '';
-                bubble.style.borderRadius = '';
-                bubble.innerHTML = `<span style="font-style: italic; opacity: 0.7;">🚫 Tableau supprimé</span>`;
-            }
+            // Ajouter la classe d'animation
+            row.classList.add('thanos-effect');
+            
+            // Attendre 1 seconde pour l'animation
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Supprimer l'élément du DOM
+            row.remove();
         }
 
-        showTempNotification("✅ Tableau supprimé");
+        // Supprimer de Firestore
+        const msgRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+        await msgRef.delete();
+
+         
     } catch (err) {
         console.error("Erreur suppression tableau:", err);
         showTempNotification("❌ Erreur lors de la suppression");
@@ -10803,7 +10909,26 @@ function ouvrirProfil() {
         });
     }, 100);
 }
-       
+       // Restaurer mon mood après rafraîchissement
+async function restaurerMonMood() {
+    if (!currentUser) return;
+    
+    try {
+        const doc = await db.collection('users').doc(currentUser.id).get();
+        if (doc.exists && doc.data().mood) {
+            const mood = doc.data().mood;
+            currentMood = mood;
+            document.getElementById('mood-emoji').textContent = mood.emoji;
+            console.log("✅ Mon mood restauré:", mood);
+        }
+    } catch(e) {
+        console.error("Erreur restauration mood:", e);
+    }
+}
+
+// Appeler cette fonction APRÈS la connexion
+// Dans selectUser(), AJOUTE cette ligne à la fin :
+// setTimeout(restaurerMonMood, 500);
       
       
     </script>
@@ -10811,4 +10936,4 @@ function ouvrirProfil() {
    
 </body>   
   
-</html>   
+</html> 
