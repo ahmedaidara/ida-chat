@@ -2436,25 +2436,22 @@ function updateMessageStatus(messageId, newStatus) {
 }
 
 // ========== ÉCOUTER LES CHANGEMENTS DE STATUT ==========
+// Écoute en temps réel des statuts de message
 function listenToMessageStatus() {
     if (!currentUser) return;
-    messageStatusListeners.forEach(unsub => unsub());
-    messageStatusListeners = [];
-    const listener = db.collection('chats').doc(CHAT_ID).collection('messages')
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
         .where('senderId', '==', currentUser.id)
-        .onSnapshot(snapshot => {
-            snapshot.docChanges().forEach(change => {
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
                 if (change.type === 'modified') {
                     const data = change.doc.data();
                     const msgId = change.doc.id;
-                    if (data.status) {
-                        updateMessageStatus(msgId, data.status);
-                    }
+                    updateMessageStatus(msgId, data.status);
                 }
             });
         });
-    messageStatusListeners.push(listener);
-}
+} 
 
 // ========== MARQUER LES MESSAGES COMME LUS ==========
 function markMessagesAsRead() {
@@ -3322,19 +3319,19 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             return span?.innerText || "[Média]";
         }
 
-        function initiateReply() {
-            replyToId = selectedMessageId;
-            const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
-            if(parentRow) {
-                const texteComplet = obtenirTexteCompletMessage(parentRow);
-                // Aperçu ultra-court : 4 mots maximum, suivis de "..." si le message est plus long
-                const mots = texteComplet.trim().split(/\s+/).filter(Boolean);
-                const snippet = mots.length > 4 ? mots.slice(0, 4).join(' ') + '...' : texteComplet;
-                document.getElementById('reply-preview-text').innerText = `Répondre à : ${snippet}`;
-                document.getElementById('reply-preview').style.display = 'flex';
-            }
-            hideContextMenus();
-        }
+       function initiateReply() {
+    replyToId = selectedMessageId;
+    const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
+    if(parentRow) {
+        const texteComplet = obtenirTexteCompletMessage(parentRow);
+        // ---- NOUVEAU CODE ----
+        const mots = texteComplet.trim().split(/\s+/).filter(Boolean);
+        const snippet = mots.length > 5 ? mots.slice(0, 5).join(' ') + '...' : texteComplet;
+        document.getElementById('reply-preview-text').innerText = `Répondre à : ${snippet}`;
+        document.getElementById('reply-preview').style.display = 'flex';
+    }
+    hideContextMenus();
+}
 
         // ✅ Redirection au clic sur une citation de réponse : défile jusqu'au message
         // d'origine avec une animation fluide, puis déclenche un flash de surbrillance.
@@ -3366,7 +3363,10 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
         const msgRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId);
         const doc = await msgRef.get();
         const data = doc.data();
-        
+        if (data.senderId !== currentUser.id) {
+    alert("🚨 Ida toi aussi tu ne peux supprimer que tes propres messages 😁​😁​!");
+    return;
+}
         // Supprimer le fichier de Supabase si besoin
         if (data.mediaUrl && data.storage === 'supabase') {
             try {
@@ -3376,7 +3376,7 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             } catch(e) { console.log("Erreur suppression fichier:", e); }
         }
         
-        // Mettre à jour - SUPPRIMER TOUT CHAMP MODIFIED
+        // Mettre à jour - SUPPRIMER TOUT CHAMP MODIFIED   
         await msgRef.update({
             text: "🚫 Ce message a été supprimé",
             mediaUrl: null,
@@ -4654,20 +4654,27 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
         }
         
         function listenToUserMood() {
-            if (!targetUser) return;
-            // Nettoyer l'ancien écouteur pour ne jamais en cumuler plusieurs
-            if (window._moodListener) {
-                window._moodListener();
-                window._moodListener = null;
-            }
-            window._moodListener = db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
-                if (doc.exists && doc.data().mood) {
-                    const mood = doc.data().mood;
-                    const otherMoodSpan = document.getElementById('other-mood-emoji');
-                    if (otherMoodSpan) otherMoodSpan.innerHTML = mood.emoji;
+    if (!targetUser) return;
+    
+    // Nettoie l'ancien écouteur
+    if (window._moodListener) {
+        window._moodListener();
+        window._moodListener = null;
+    }
+     
+    window._moodListener = db.collection('users').doc(targetUser.id)
+        .onSnapshot((doc) => {
+            if (doc.exists && doc.data().mood) {
+                const mood = doc.data().mood;
+                const otherMoodSpan = document.getElementById('other-mood-emoji');
+                if (otherMoodSpan) {
+                    otherMoodSpan.innerHTML = mood.emoji;
+                    // Met à jour le tooltip pour afficher le label
+                    otherMoodSpan.title = mood.label || '';
                 }
-            });
-        }
+            }
+        });
+}
         
         async function saveDefaultMood() {
             if (currentUser) {
@@ -9803,7 +9810,7 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
                 let htmlComplet = formatText(escapeHTML(displayText)).replace(/\n/g, '<br>');
                 bubbleHtml += `<span class="msg-text-tronque" style="white-space: pre-wrap; display: block;">${htmlTronque}…</span>`;
                 bubbleHtml += `<span class="msg-text-complet" style="white-space: pre-wrap; display: none;">${htmlComplet}</span>`;
-                bubbleHtml += `<span class="voir-tout-btn" style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;">VOIR TOUT</span>`;
+                bubbleHtml += `<span class="voir-tout-btn"  style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;">VOIR TOUT</span>`;
             } else {
                 displayText = formatText(escapeHTML(displayText));
                 displayText = displayText.replace(/\n/g, '<br>');
@@ -10040,6 +10047,7 @@ function afficherWb(msgId, data) {
         const canvas = document.getElementById(`wb-canvas-${msgId}`);
         if (canvas) {
             initialiserWb(msgId, canvas);
+          ecouterWbEnTempsReel(msgId);
         }
     }, 200);
 
@@ -10049,6 +10057,48 @@ function afficherWb(msgId, data) {
     }
 }
 
+      // Écoute en temps réel du tableau
+function ecouterWbEnTempsReel(msgId) {
+    if (!msgId) return;
+    
+    // Nettoie l'ancien écouteur s'il existe
+    if (window._wbListener) {
+        window._wbListener();
+    }
+    
+    window._wbListener = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot((doc) => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            if (!data.whiteboardData) return;
+            
+            // Récupère les nouvelles lignes
+            const nouvellesLignes = data.whiteboardData.lines || [];
+            const canvas = document.getElementById(`wb-canvas-${msgId}`);
+            if (!canvas) return;
+            
+            // Redessine tout sur le canvas local
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, rect.width, rect.height);
+            
+            nouvellesLignes.forEach(line => {
+                ctx.beginPath();
+                ctx.moveTo(line.x1, line.y1);
+                ctx.lineTo(line.x2, line.y2);
+                ctx.strokeStyle = line.color || '#000000';
+                ctx.lineWidth = line.size || 4;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            });
+            
+            // Met à jour le cache local
+            wb.lines = nouvellesLignes;
+        });
+}
 // ============================================================
 // ✅ SUPPRESSION SÉCURISÉE D'UN TABLEAU "DESSIN EN DIRECT"
 // ============================================================
@@ -10708,14 +10758,14 @@ function ouvrirProfil() {
     const menu = document.createElement('div');
     menu.style.cssText = `
         position: fixed;
-        top: 60px;
+        top: 60px; 
         left: 50%;
         transform: translateX(-50%);
-        background: var(--bg-main);
+        background: var(--bg-main); 
         border: 1px solid var(--border-color);
         border-radius: 16px;
         padding: 20px;
-        z-index: 9999;
+        z-index: 9999; 
         min-width: 250px;
         box-shadow: 0 8px 30px rgba(0,0,0,0.2);
         animation: fadeIn 0.2s ease-out;
@@ -10761,4 +10811,4 @@ function ouvrirProfil() {
    
 </body>   
   
-</html> 
+</html>   
