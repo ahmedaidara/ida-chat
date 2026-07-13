@@ -3051,6 +3051,41 @@ function listenToMessages() {
                     }
                 }
                 else if (change.type === 'modified') {
+                    // ✅ Synchronisation FIABLE de la couleur/dégradé personnalisé d'un message.
+                    // Placée ici (dans l'écouteur principal, toujours actif) au lieu des anciens
+                    // écouteurs dédiés qui n'étaient jamais démarrés et ne se déclenchaient donc
+                    // jamais -> c'était la cause du "parfois ça marche, parfois il faut rafraîchir".
+                    {
+                        const messageRowCouleur = document.querySelector(`[data-id="${msgId}"]`);
+                        const bubbleCouleur = messageRowCouleur ? messageRowCouleur.querySelector('.message-bubble') : null;
+                        if (bubbleCouleur) {
+                            const allStylesCouleur = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+                            if (data.customColor) {
+                                allStylesCouleur.forEach(style => bubbleCouleur.classList.remove(style));
+                                bubbleCouleur.style.setProperty('background', data.customColor, 'important');
+                                bubbleCouleur.style.setProperty('color', getContrastColor(data.customColor), 'important');
+                            } else if (data.customGradient) {
+                                allStylesCouleur.forEach(style => bubbleCouleur.classList.remove(style));
+                                bubbleCouleur.style.setProperty('background', data.customGradient, 'important');
+                                bubbleCouleur.style.setProperty('color', 'white', 'important');
+                            } else if (bubbleCouleur.style.background) {
+                                // La couleur vient d'être supprimée -> retour au style par défaut
+                                bubbleCouleur.style.removeProperty('background');
+                                bubbleCouleur.style.removeProperty('color');
+                                if (data.bubbleStyle) {
+                                    allStylesCouleur.forEach(style => bubbleCouleur.classList.remove(style));
+                                    bubbleCouleur.classList.add(data.bubbleStyle);
+                                } else if (messageRowCouleur.classList.contains('sent')) {
+                                    const defaultStyle = localStorage.getItem('default_bubble_style');
+                                    if (defaultStyle && defaultStyle !== 'none') {
+                                        allStylesCouleur.forEach(style => bubbleCouleur.classList.remove(style));
+                                        bubbleCouleur.classList.add(defaultStyle);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
                     // Mise à jour légère des coches de statut (évite de reconstruire toute la liste,
                     // ce qui interromprait une éventuelle lecture audio/vidéo en cours)
                     if (data.status) {
@@ -8522,7 +8557,7 @@ if (zoneChatFonds) {
     // Lancement immédiat pour corriger les stickers déjà présents à l'écran
     effacerFondGifsEtStickers();
 }
-      
+       
       // =========================================================================
 // SYNCHRONISATION DES MESSAGES SUPPRIMÉS (SANS RAFRAÎCHIR)
 // =========================================================================
@@ -11958,7 +11993,7 @@ function getContrastColor(hexColor) {
     }
 }
 
-// Ouvrir le sélecteur de couleur
+// Ouvrir le sélecteur de couleur (pour LE message sélectionné uniquement)
 function openColorPickerForMessage() {
     if (!selectedMessageId) {
         showTempNotification("❌ Sélectionne d'abord un message");
@@ -11981,7 +12016,7 @@ function closeColorPicker() {
     document.getElementById('color-picker-modal').style.display = 'none';
 }
 
-// Appliquer la couleur personnalisée
+// Appliquer la couleur personnalisée UNIQUEMENT au message sélectionné
 async function applyCustomColorToMessage() {
     if (!selectedMessageId) {
         closeColorPicker();
@@ -12141,4 +12176,4 @@ async function removeCustomColorFromMessage() {
 </div>
 </body>   
   
-</html> 
+</html>   
