@@ -234,6 +234,34 @@
 
         @keyframes bounceDot { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ============================================================
+           ✅ ANIMATIONS D'ENVOI SÉLECTIONNABLES (Paramètres du site)
+           5 modèles au choix, appliqués uniquement aux messages envoyés
+           par l'utilisateur courant (comportement purement local/cosmétique,
+           identique au fonctionnement existant du "style de bulle par défaut").
+           ============================================================ */
+        @keyframes sendAnimFadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes sendAnimScalePop { 0% { opacity: 0; transform: scale(0.6); } 70% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes sendAnimSlideRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes sendAnimElasticBounce { 0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.08); } 70% { transform: scale(0.95); } 85% { transform: scale(1.03); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes sendAnimBlurFocus { from { opacity: 0; filter: blur(6px); transform: scale(1.02); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+
+        .anim-fade-in-up { animation: sendAnimFadeInUp 0.35s ease-out !important; }
+        .anim-scale-pop { animation: sendAnimScalePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important; }
+        .anim-slide-right { animation: sendAnimSlideRight 0.3s ease-out !important; }
+        .anim-elastic-bounce { animation: sendAnimElasticBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important; }
+        .anim-blur-focus { animation: sendAnimBlurFocus 0.4s ease-out !important; }
+
+        /* ✅ Flash de surbrillance quand on clique sur une citation de réponse
+           pour retrouver le message d'origine (point "Redirection au clic") */
+        @keyframes msgFlashHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(168,0,255,0); background-color: rgba(168,0,255,0.35); }
+            50% { box-shadow: 0 0 0 6px rgba(168,0,255,0.15); background-color: rgba(168,0,255,0.28); }
+            100% { box-shadow: 0 0 0 0 rgba(168,0,255,0); background-color: transparent; }
+        }
+        .message-bubble.msg-flash-highlight { animation: msgFlashHighlight 1.1s ease-out; }
+        .reply-citation { cursor: pointer; }
         @keyframes bounceEmoji { 0% { transform: scale(0.3); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
         
         .falling-emoji { position: absolute; pointer-events: none; z-index: 1000; animation: fall linear forwards; }
@@ -303,23 +331,7 @@
         @keyframes flashIntense { 0%, 100% { transform: scale(1); text-shadow: 0 0 5px #ffaa00; } 50% { transform: scale(1.1); text-shadow: 0 0 15px #ffaa00; color: #ff6600; } }
         .flash-notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #ffaa00; font-size: 3rem; padding: 20px; border-radius: 50%; z-index: 2000; animation: flashZoom 0.5s ease-out; pointer-events: none; }
         @keyframes flashZoom { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
-      
-        .canvas-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        .canvas-toolbar { position: fixed; top: 0; left: 0; right: 0; background: #2a2a2a; padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; z-index: 3001; border-bottom: 1px solid #444; }
-        .canvas-tool-btn { background: #3a3a3a; border: none; border-radius: 8px; padding: 8px 12px; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
-        .canvas-tool-btn:hover { background: #a800ff; transform: scale(1.05); }
-        .canvas-tool-btn.active { background: #a800ff; border: 1px solid white; }
-        .canvas-colors { display: flex; gap: 5px; }
-        .color-option { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid white; transition: transform 0.1s; }
-        .color-option:hover { transform: scale(1.1); }
-        .canvas-area { background: white; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: crosshair; }
-        #drawing-canvas { display: block; background: white; cursor: crosshair; }
-        .emoji-palette { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #2a2a2a; border-radius: 30px; padding: 10px 15px; display: flex; gap: 12px; z-index: 3002; flex-wrap: wrap; justify-content: center; max-width: 90%; }
-        .emoji-palette span { font-size: 1.5rem; cursor: pointer; transition: transform 0.1s; padding: 5px; }
-        .emoji-palette span:hover { transform: scale(1.3); }
-        .canvas-actions { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 3002; }
-        .canvas-send-btn { background: #0095f6; border: none; border-radius: 30px; padding: 12px 24px; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        .canvas-close-btn { background: #ed4956; border: none; border-radius: 30px; padding: 12px 24px; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
+       
       
         .blur-mode .message-bubble { filter: blur(5px); transition: filter 0.2s ease; cursor: pointer; }
         .blur-mode .message-bubble:hover { filter: blur(3px); }
@@ -1069,6 +1081,45 @@ input, textarea {
     min-width: 20px;
     text-align: center;
 }
+
+/* ========== BOUTON "RETOUR EN BAS" — STYLE iOS GLASSMORPHISM ========== */
+.scroll-to-bottom-btn {
+    position: absolute;
+    right: 16px;
+    bottom: 84px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 49;
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+[data-theme="dark"] .scroll-to-bottom-btn {
+    background: rgba(40, 40, 40, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.scroll-to-bottom-btn.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+.scroll-to-bottom-btn i {
+    font-size: 1rem;
+    color: var(--text-main);
+}
+.scroll-to-bottom-btn:active {
+    transform: scale(0.92);
+}
       
       /* ===== TABLEAU BLANC DANS LE CHAT (COMME MORPION) ===== */
 .whiteboard-card {
@@ -1289,6 +1340,19 @@ input, textarea {
     gap: 6px;
 }
 
+/* ✅ Icône "Supprimer" tout à droite de l'en-tête du tableau (uniquement sur SES propres tableaux) */
+.wb-delete-icon {
+    color: #ed4956;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    margin-left: 6px;
+    border-radius: 6px;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.wb-delete-icon:hover { background: rgba(237, 73, 86, 0.15); transform: scale(1.1); }
+.wb-delete-icon:active { transform: scale(0.9); }
+
 .wb-canvas-box {
     position: relative;
     border-radius: 14px;
@@ -1456,41 +1520,35 @@ input, textarea {
     max-width: 100% !important;
     overflow-x: hidden !important;
 }
-      /* --- COMPORTEMENT DE SCROLL NORMAL --- */
-.messages-area {
-    overflow-y: auto;
-    overflow-x: hidden;
-    scroll-behavior: smooth;
-    height: 100%;
-}
-
-/* --- Les messags --- */
-.messages-area {
-    display: flex;
-    flex-direction: column;
-}
-
-.message-row {
-    flex-shrink: 0;
-} 
       
-      /* IFRAME PLEIN ÉCRAN */
-#secret-iframe-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    z-index: 999999;
-    display: flex;
-    flex-direction: column;
-    animation: fadeIframe 0.3s ease;
+      
+      /* EFFET THANOS / POUSSIÈRE */
+@keyframes thanosDust {
+    0% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+        filter: blur(0px);
+    }
+    30% {
+        opacity: 0.8;
+        transform: scale(0.9) rotate(-5deg);
+        filter: blur(2px);
+    }
+    70% {
+        opacity: 0.3;
+        transform: scale(0.5) rotate(15deg) translateY(-50px);
+        filter: blur(8px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0) rotate(30deg) translateY(-100px);
+        filter: blur(15px);
+    }
 }
 
-@keyframes fadeIframe {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+.thanos-effect {
+    animation: thanosDust 1.2s ease-out forwards !important;
+    pointer-events: none !important;
 }
     </style>
 </head>
@@ -1581,6 +1639,11 @@ input, textarea {
     <span id="new-msg-text">📩 Nouveau message</span>
     <span class="new-message-count" id="new-msg-count">1</span>
 </div>
+
+<!-- Bouton "Retour en bas" (glassmorphism) -->
+<div class="scroll-to-bottom-btn" id="scroll-to-bottom-btn" onclick="scrollToBottom()">
+    <i class="fa-solid fa-arrow-down"></i>
+</div>
        
 
         <div class="typing-indicator" id="typing-ind">
@@ -1627,7 +1690,7 @@ input, textarea {
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
             <div class="tool-item" onclick="toggleRecording(); closeToolsPanel();"><i class="fa-solid fa-microphone" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Micro</span></div>
             <div class="tool-item" onclick="triggerImageUpload(); closeToolsPanel();"><i class="fa-regular fa-image" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Galerie</span></div>
-            <div class="tool-item" onclick="openCanvasDrawer(); closeToolsPanel();"><i class="fa-solid fa-pencil" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Dessin</span></div>
+             
             <div class="tool-item" onclick="toggleEphemeralAudioMode(); closeToolsPanel();"><i class="fa-solid fa-head-side-headphones" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Audio Éph</span></div>
         </div>
         <!-- Deuxième ligne -->
@@ -1751,37 +1814,7 @@ input, textarea {
         </div>
         
         <!-- Modal Canvas --> 
-        <div class="canvas-modal" id="canvas-modal">
-            <div class="canvas-toolbar">
-                <button class="canvas-tool-btn" id="draw-mode" onclick="setDrawMode(true)">✏️ Dessiner</button>
-                <button class="canvas-tool-btn" id="eraser-mode" onclick="setDrawMode(false)">🧽 Effacer</button>
-                <div class="canvas-colors">
-                    <div class="color-option" style="background: #000000;" onclick="setColor('#000000')"></div>
-                    <div class="color-option" style="background: #ff0000;" onclick="setColor('#ff0000')"></div>
-                    <div class="color-option" style="background: #00ff00;" onclick="setColor('#00ff00')"></div>
-                    <div class="color-option" style="background: #0000ff;" onclick="setColor('#0000ff')"></div>
-                    <div class="color-option" style="background: #ffff00;" onclick="setColor('#ffff00')"></div>
-                    <div class="color-option" style="background: #ff00ff;" onclick="setColor('#ff00ff')"></div>
-                    <div class="color-option" style="background: #00ffff;" onclick="setColor('#00ffff')"></div>
-                    <div class="color-option" style="background: #ff6600;" onclick="setColor('#ff6600')"></div>
-                </div>
-                <button class="canvas-tool-btn" onclick="clearCanvas()">🗑️ Effacer tout</button>
-                <button class="canvas-tool-btn" onclick="changeBrushSize(5)">🔵 Petit</button>
-                <button class="canvas-tool-btn" onclick="changeBrushSize(15)">🟢 Moyen</button>
-                <button class="canvas-tool-btn" onclick="changeBrushSize(30)">🔴 Grand</button>
-            </div>
-            <canvas id="drawing-canvas" class="canvas-area"></canvas>
-            <div class="emoji-palette" id="emoji-palette">
-                <span onclick="addEmojiToCanvas('😀')">😀</span><span onclick="addEmojiToCanvas('😂')">😂</span><span onclick="addEmojiToCanvas('❤️')">❤️</span>
-                <span onclick="addEmojiToCanvas('🔥')">🔥</span><span onclick="addEmojiToCanvas('👍')">👍</span><span onclick="addEmojiToCanvas('🎉')">🎉</span>
-                <span onclick="addEmojiToCanvas('😢')">😢</span><span onclick="addEmojiToCanvas('😮')">😮</span><span onclick="addEmojiToCanvas('🐱')">🐱</span>
-                <span onclick="addEmojiToCanvas('🐶')">🐶</span><span onclick="addEmojiToCanvas('⭐')">⭐</span><span onclick="addEmojiToCanvas('💀')">💀</span>
-            </div>
-            <div class="canvas-actions">
-                <button class="canvas-send-btn" onclick="sendDrawing()">📤 Envoyer le dessin</button>
-                <button class="canvas-close-btn" onclick="closeCanvasDrawer()">❌ Fermer</button>
-            </div>
-        </div>
+     
         <!-- Page Paramètres -->
 <div class="settings-page" id="settings-page">
     <div class="settings-header">
@@ -1851,6 +1884,19 @@ input, textarea {
         <option value="cyberpunk">🤖 Cyberpunk</option>
     </select>
     <button onclick="saveDefaultBubbleStyle()" style="width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 10px; color: white; cursor: pointer;">✅ Appliquer ce style par défaut</button>
+</div>
+      <!-- Section Animation d'envoi -->
+      <div class="settings-section">
+    <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Animation d'envoi</h4>
+    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">Choisis l'effet visuel chic qui s'affichera quand TES messages apparaissent dans le chat.</p>
+    <select id="default-send-animation" style="width: 100%; padding: 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); margin-bottom: 15px;">
+        <option value="fade-in-up">⬆️ Fade In Up (apparition douce vers le haut)</option>
+        <option value="scale-pop">🎈 Scale Up / Pop</option>
+        <option value="slide-right">➡️ Slide from Right</option>
+        <option value="elastic-bounce">🪀 Elastic Bounce</option>
+        <option value="blur-focus">🔍 Smooth Blur-to-Focus</option>
+    </select>
+    <button onclick="saveDefaultSendAnimation()" style="width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 10px; color: white; cursor: pointer;">✅ Appliquer cette animation</button>
 </div>
       
       <button onclick="demanderPermissionNotifications()" style="background:#0095f6; color:white; padding:10px; border:none; border-radius:10px; margin:5px;">
@@ -2048,7 +2094,29 @@ async function uploadVersSupabase(file, type) {
         return null;
     }
 }
-
+// Fonction pour basculer VOIR TOUT / VOIR MOINS
+window.basculerVoirTout = function(btn) {
+    console.log("🔄 Basculer VOIR TOUT cliqué !");
+    const bulle = btn.closest('.message-bubble');
+    if (!bulle) return;
+    
+    const tronque = bulle.querySelector('.msg-text-tronque');
+    const complet = bulle.querySelector('.msg-text-complet');
+    
+    if (!tronque || !complet) return;
+    
+    if (complet.style.display === 'none' || complet.style.display === '') {
+        complet.style.display = 'block';
+        tronque.style.display = 'none';
+        btn.textContent = 'VOIR MOINS';
+        console.log("📖 Affichage complet");
+    } else {
+        complet.style.display = 'none';
+        tronque.style.display = 'block';
+        btn.textContent = 'VOIR TOUT';
+        console.log("📖 Affichage tronqué");
+    }
+};
 // ========== FONCTION SUPPRIMER UN FICHIER ==========
 async function supprimerFichierSupabase(filePath) {
     const { error } = await supabaseClient.storage
@@ -2266,6 +2334,8 @@ async function demanderPermissionNotifications() {
         let typingTimeout = null;
         let selectedMessageId = null;
         let replyToId = null;
+        // ✅ Marqueur stocké dans replyToText quand le message d'origine cité a été supprimé
+        const MARQUEUR_REPONSE_SUPPRIMEE = "__MESSAGE_SUPPRIME__";
       let messageStatusListeners = [];  // ← AJOUTE ICI
 let lastReadUpdate = null;        // ← AJOUTE ICI
         
@@ -2372,25 +2442,22 @@ function updateMessageStatus(messageId, newStatus) {
 }
 
 // ========== ÉCOUTER LES CHANGEMENTS DE STATUT ==========
+// Écoute en temps réel des statuts de message
 function listenToMessageStatus() {
     if (!currentUser) return;
-    messageStatusListeners.forEach(unsub => unsub());
-    messageStatusListeners = [];
-    const listener = db.collection('chats').doc(CHAT_ID).collection('messages')
+    
+    db.collection('chats').doc(CHAT_ID).collection('messages')
         .where('senderId', '==', currentUser.id)
-        .onSnapshot(snapshot => {
-            snapshot.docChanges().forEach(change => {
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
                 if (change.type === 'modified') {
                     const data = change.doc.data();
                     const msgId = change.doc.id;
-                    if (data.status) {
-                        updateMessageStatus(msgId, data.status);
-                    }
+                    updateMessageStatus(msgId, data.status);
                 }
             });
         });
-    messageStatusListeners.push(listener);
-}
+} 
 
 // ========== MARQUER LES MESSAGES COMME LUS ==========
 function markMessagesAsRead() {
@@ -2541,7 +2608,7 @@ async function enregistrerTokenPush() {
         console.error("❌ Erreur token:", error);
     }
 }
-        // ========== SÉLECTION UTILISATEUR==========
+        // ========== SÉLECTION UTILISATEUR======= ===
         function selectUser(userKey) {
             if(userKey === 'ida') {
                 currentUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
@@ -2564,7 +2631,8 @@ async function enregistrerTokenPush() {
             getBatteryLevel();
             listenToOtherUserBattery();
             listenForFlashSignals();
-            saveDefaultMood();
+             
+            listenToUserMood(); // ✅ correction : cette écoute existait mais n'était jamais démarrée
             activerLesNotifications();
           demanderPermissionNotifications();
               ecouterChangementsStyle();
@@ -2575,12 +2643,8 @@ ecouterMessagesSupprimes();
 setTimeout(markMessagesAsRead, 1000);      // ← AJOUTE ICI
               activerSuiviStatuts();
               setTimeout(marquerMessagesCommeLus, 2000);
+setTimeout(restaurerMonMood, 500);
 
- // Démarrer la mise à jour de sa batterie
-    demarrerMiseAJourBatterie();
-    
-    // Écouter la batterie de l'autre
-    ecouterStatutAutreAvecHorodatage();
         }
 
         function logout() {
@@ -2713,776 +2777,147 @@ function activerSuiviStatuts() {
         }
     });
 }
-    // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION COR RIGÉE ==========
-      
-      function ajouterMessageDOM(msgId, data) {
-    const msgArea = document.getElementById('msg-area');
-    if (!msgArea) return;
-    
-    const isSent = data.senderId === currentUser.id;
-    const row = document.createElement('div');
-    row.className = `message-row ${isSent ? 'sent' : 'received'}`;
-    row.setAttribute('data-id', msgId);
-    
-    const isGiant = isOnlyEmojis(data.text);
-    let customStyle = '';
-    if (data.bubbleStyle) {
-        customStyle = data.bubbleStyle;
-    } else if (data.messageStyle) {
-        customStyle = data.messageStyle;
-    } else if (isSent) {
-        const defaultStyle = localStorage.getItem('default_bubble_style');
-        if (defaultStyle && defaultStyle !== 'none') {
-            customStyle = defaultStyle;
-        }
-    }
-    
-    let codedClass = '';
-    if (data.isCoded === true) {
-        codedClass = 'coded';
-    }
-    
-    let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
-        onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
-        oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
-        ondblclick="handleDoubleTap(event, '${msgId}')"
-        ontouchstart="demarrerAppuiLong(event, '${msgId}')"
-        ontouchend="annulerAppuiLong()"
-        ontouchmove="annulerAppuiLong()"
-        onmousedown="demarrerAppuiLong(event, '${msgId}')"
-        onmouseup="annulerAppuiLong()"
-        onmouseleave="annulerAppuiLong()">`;
-    
-    if (data.replyToText) {
-        bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
-    }
-    
-    // Gérer les différents types de messages
-    if (data.type === 'text') {
-        let displayText = data.text;
-        if (data.isCoded === true) {
-            const originalMessage = data.originalText || data.text;
-            displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
-            bubbleHtml += displayText;
-        } else {
-            displayText = formatText(escapeHTML(displayText));
-            displayText = displayText.replace(/\n/g, '<br>');
-            bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
-        }
-    } else if (data.type === 'image') {
-        bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
-    } else if (data.type === 'drawing') {
-        bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
-    } else if (data.type === 'video') {
-        const videoUrl = data.mediaUrl || data.fileUrl || "";
-        bubbleHtml += `
-            <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
-                <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
-            </div>
-        `;
-    } else if (data.type === 'audio') {
-        const audioId = `audio_${msgId}`;
-        if (!data.isEphemeralAudio) {
-            bubbleHtml += `
-                <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
-                    <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
-                        <i class="fa-solid fa-play"></i>
-                    </button>
-                    <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
-                    <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
-                    <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
-                        <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
-                    </div>
-                    <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
-                </div>
-            `;
-        }
-    } else if (data.type === 'whiteboard') {
-    afficherWb(msgId, data);
-    return;  // ← GARDE LE return MAIS NE PAS SCROLLER ICI
-} else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
-        // Code Morpion simplifié (tu peux garder le même que dans afficherTousLesMessages)
-        const game = data.gameData;
-        const isMyTurn = game.turn === currentUser.id;
-        const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
-        
-        let cardHtml = `
-            <div class="morpion-card" style="margin: 5px 0;">
-                <div class="morpion-header">
-                    <span>🎮 MORPION </span>
-                    <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
-                </div>
-                <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
-                    ${game.status === 'finished' ? (game.winner === 'nul' ? "🎯 Match nul !" : `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`) : (isMyTurn ? "⚡ À ton tour !" : `⏳ ${targetUser.name} réfléchit...`)}
-                </div>
-                <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
-        `;
-        
-        for (let i = 0; i < 9; i++) {
-            const cellValue = game.board[i] || "";
-            const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
-            const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
-            cardHtml += `
-                <div class="morpion-cell ${cellClass} ${isWinCell}" 
-                     data-cell-index="${i}" 
-                     onclick="jouerCoupMorpion('${msgId}', ${i})"
-                     style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
-                    ${cellValue}
-                </div>
-            `;
-        }
-        
-        cardHtml += `</div></div>`;
-        bubbleHtml += cardHtml;
-    }
-    
-    // HEURE ET STATUT
-    const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-    
-    let checkMark = '<span>✓</span>';
-    if (data.status === 'read') {
-        checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-    } else if (data.status === 'delivered') {
-        checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-    } else {
-        checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
-    }
-    
-    const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
-    bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
-    
-    if (data.reactions && Object.keys(data.reactions).length > 0) {
-        bubbleHtml += `<div class="applied-reactions">`;
-        Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
-        bubbleHtml += `</div>`;
-    }
-    
-    bubbleHtml += `</div>`;
-    row.innerHTML = bubbleHtml;
-    
-    if (blurModeActive) {
-        const bubble = row.querySelector('.message-bubble');
-        if (bubble) {
-            bubble.classList.add('blur-active');
-            attachBlurEvents(bubble);
-        }
-    }
-    
-    // Ajouter le message à la fin (en bas)
-    msgArea.appendChild(row);
-}
-      
+    // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION CORRIGÉE ==========
 function listenToMessages() {
-    if(unsubscribeMessages) unsubscribeMessages();
+    if (unsubscribeMessages) unsubscribeMessages();
     
-    // Variable pour suivre le premier chargement 
+    // Variable pour suivre le premier chargement (pas de notif, position de scroll restaurée)
     let isFirstSnapshot = true;
-     let userScrolledUp = false; // ← AJOUTER CETTE LIGNE
-    let scrollTimeout = null;   // ← AJOUTER CETTE LIGNE
-   unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
-    .orderBy('timestamp', 'asc')
-    .limit(50)
-    .onSnapshot(snapshot => {
-             if (isFirstSnapshot) { afficherTousLesMessages(snapshot); }
-            // ================== ====================== ====================
-            // BLOQUER LES NOTIFICATIONS AU PREMIER CHARGEMENT
-            // ============================================================
-            if (isFirstSnapshot) {
-                // On affiche juste les messages sans notifications
-                isFirstSnapshot = false;
-                  scrollToLatestMessage(); // ← Scroller en bas
-
-                console.log("📱 Premier chargement - Aucune notification envoyée");
-                // On continue pour afficher les messages
-            }
+    
+    // ⚠️ Tri fiable : on demande à Firestore les 50 DERNIERS messages, déjà triés
+    // du plus ancien au plus récent (asc + limitToLast). Comme ça, l'ordre chronologique
+    // ne peut plus jamais s'inverser au rafraîchissement — la liste est rendue dans
+    // l'ordre exact renvoyé par la requête, sans retri manuel côté client.
+    unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .limitToLast(50)
+        .onSnapshot(snapshot => {
+            let hasNewMessage = false;
+            let hasNewMessageFromOther = false;
             
             // ============================================================
-            // TRAITEMENT DES CHANGEMENTS
+            // EFFETS DE BORD + MISES À JOUR LÉGÈRES (sans reconstruire toute la liste)
             // ============================================================
-           // Forcer l'affichage des messages existants avant de traiter les changements
-if (isFirstSnapshot) {
-    const msgArea = document.getElementById('msg-area');
-  
-    msgArea.innerHTML = '';
-    let lastDateStr = "";
-    
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        const msgId = doc.id;
-        
-        if(data.timestamp) {
-            const dateObj = data.timestamp.toDate();
-            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-            if(dateStr !== lastDateStr) {
-                const sep = document.createElement('div');
-                sep.className = 'date-separator';
-                sep.innerText = dateStr;
-                msgArea.appendChild(sep);
-                lastDateStr = dateStr;
-            } 
-        }
-        
-        const row = document.createElement('div');
-        const isSent = data.senderId === currentUser.id;
-        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
-        row.setAttribute('data-id', msgId);
-        
-        const isGiant = isOnlyEmojis(data.text);
-        let customStyle = '';
-        if (data.bubbleStyle) {
-            customStyle = data.bubbleStyle;
-        } else if (data.messageStyle) {
-            customStyle = data.messageStyle;
-        } else if (isSent) {
-            const defaultStyle = localStorage.getItem('default_bubble_style');
-            if (defaultStyle && defaultStyle !== 'none') {
-                customStyle = defaultStyle;
-            }
-        }
-        
-        let codedClass = '';
-        if (data.isCoded === true) {
-            codedClass = 'coded';
-        }
-        
-        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
-            onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
-            oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
-            ondblclick="handleDoubleTap(event, '${msgId}')"
-            ontouchstart="demarrerAppuiLong(event, '${msgId}')"
-            ontouchend="annulerAppuiLong()"
-            ontouchmove="annulerAppuiLong()"
-            onmousedown="demarrerAppuiLong(event, '${msgId}')"
-            onmouseup="annulerAppuiLong()"
-            onmouseleave="annulerAppuiLong()">`;
-        
-        if (data.replyToText) {
-            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
-        }
-        
-        if (data.type === 'text') {
-            let displayText = data.text;
-            if (data.isCoded === true) {
-                const originalMessage = data.originalText || data.text;
-                displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
-                bubbleHtml += displayText;
-            } else {
-                displayText = formatText(escapeHTML(displayText));
-                displayText = displayText.replace(/\n/g, '<br>');
-                bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
-            }
-        } else if (data.type === 'image') {
-            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
-        } else if (data.type === 'drawing') {
-            bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
-        } else if (data.type === 'video') {
-            const videoUrl = data.mediaUrl || data.fileUrl || "";
-            bubbleHtml += `
-                <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
-                    <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
-                </div>
-            `;
-        } else if (data.type === 'audio') {
-            const audioId = `audio_${msgId}`;
-            if (data.isEphemeralAudio) {
-                // ... garde ton code existant pour audio éphémère
-            } else {
-                bubbleHtml += `
-                    <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
-                        <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
-                            <i class="fa-solid fa-play"></i>
-                        </button>
-                        <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
-                        <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
-                        <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
-                            <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
-                        </div>
-                        <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
-                    </div>
-                `;
-            }
-        }
-        
-        const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-        
-        let checkMark = '<span>✓</span>';
-        if (data.status === 'read') {
-            checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-        } else if (data.status === 'delivered') {
-            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-        } else {
-            checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
-        }
-        
-        const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
-        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
-        
-        if(data.reactions && Object.keys(data.reactions).length > 0) {
-            bubbleHtml += `<div class="applied-reactions">`;
-            Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
-            bubbleHtml += `</div>`;
-        }
-        
-        bubbleHtml += `</div>`;
-        row.innerHTML = bubbleHtml;
-        
-        if (blurModeActive) {
-            const bubble = row.querySelector('.message-bubble');
-            if (bubble) {
-                bubble.classList.add('blur-active');
-                attachBlurEvents(bubble);
-            }
-        }
-        msgArea.appendChild(row);
-    });
-    
-    // Forcer le scroll seulement si l'utilisateur est en bas
-const isAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 50;
-if (isAtBottom) {
-    msgArea.scrollTop = msgArea.scrollHeight;
-}
-}
-
-// ET GARDE TON CODE EXISTANT POUR LES CHANGEMENTS
-snapshot.docChanges().forEach(change => {
-    const data = change.doc.data();
-    const msgId = change.doc.id;
-    
-    // ============================================================
-    // 1. MESSAGE AJOUTÉ (NOUVEAU MESSAGE)
-    // ============================================================
-    if (change.type === 'added') {
-        // Bloque les notifications au premier chargement
-        if (data.senderId !== currentUser?.id && !isFirstSnapshot) {
-            const now = new Date();
-            const msgTime = data.timestamp?.toDate() || new Date(0);
-            const diffSeconds = (now - msgTime) / 1000;
-            if (diffSeconds < 5) {
-                sendTelegramNotification(data.senderId);
-            }
-        }
-        
-        // Marquer comme "delivered" si le message vient de l'autre 
-       // VERSION CORRIGÉE
-if (msg.senderId === targetUser?.id) {
-    const msgRef = change.doc.ref;
-    // Si le statut est 'sent' → le mettre en 'delivered'
-    if (msg.status === 'sent') {
-        msgRef.update({ 
-            status: 'delivered',
-            deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).catch(err => console.error("Erreur mise à jour delivered:", err));
-    }
-}
-    }
-    
-    // ============================================================
-    // 2. MESSAGE MODIFIÉ (MISE À JOUR DU STATUT OU DU TEXTE)
-    // ============================================================
-    else if (change.type === 'modified') {
-        // 🔥 PARTIE 1 : MISE À JOUR DU STATUT (COCHES) 🔥
-        if (data.status) {
-            const messageRow = document.querySelector(`[data-id="${msgId}"]`);
-            if (messageRow) {
-                const isSent = messageRow.classList.contains('sent');
-                if (isSent) {
-                    const bubble = messageRow.querySelector('.message-bubble');
-                    if (bubble) {
-                        const msgMeta = bubble.querySelector('.msg-meta');
-                        if (msgMeta) {
-                            // Extraire l'heure (sans les icônes)
-                            let timeText = msgMeta.textContent;
-                            timeText = timeText.replace(/[✓✓✓]/g, '').replace(/✓/g, '').trim();
-                            
-                            // Déterminer le statut
-                            let statusHtml = '';
-                            if (data.status === 'read') {
-                                statusHtml = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-                            } else if (data.status === 'delivered') {
-                                statusHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-                            } else {
-                                statusHtml = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
-                            }
-                            
-                            // Ajouter "modifié" si présent
-                            const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
-                            msgMeta.innerHTML = `${timeText} ${statusHtml}${modifiedTag}`;
-                        }
-                    }
-                }
-            }
-        }
-        
-        // 🔥 PARTIE 2 : MISE À JOUR DU MORPION (si présent) 🔥
-        if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
-            const existingRow = document.querySelector(`[data-id="${msgId}"]`);
-            if (existingRow) {
-                const card = existingRow.querySelector('.morpion-card');
-                if (card) {
-                    const game = data.gameData;
-                    const isMyTurn = game.turn === currentUser.id;
-                    
-                    // Mettre à jour le statut
-                    const statusDiv = card.querySelector('.morpion-status');
-                    if (statusDiv) {
-                        if (game.status === 'finished') {
-                            if (game.winner === 'nul') {
-                                statusDiv.textContent = "🎯 Match nul !";
-                            } else {
-                                statusDiv.textContent = `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
-                            }
-                            statusDiv.classList.remove('active-turn');
-                        } else {
-                            statusDiv.textContent = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
-                            if (isMyTurn && game.status === 'active') {
-                                statusDiv.classList.add('active-turn');
-                            } else {
-                                statusDiv.classList.remove('active-turn');
-                            }
-                        }
-                    }
-                    
-                    // Mettre à jour les scores
-                    const headerSpan = card.querySelector('.morpion-header span:last-child');
-                    if (headerSpan) {
-                        headerSpan.textContent = `🏆 ${game.scores.X || 0} - ${game.scores.O || 0}`;
-                    }
-                    
-                    // Mettre à jour les cases
-                    for (let i = 0; i < 9; i++) {
-                        const cell = card.querySelector(`.morpion-cell[data-cell-index="${i}"]`);
-                        if (cell) {
-                            const value = game.board[i] || "";
-                            cell.textContent = value;
-                            cell.classList.remove('x', 'o', 'taken');
-                            if (value === "X") {
-                                cell.classList.add('x', 'taken');
-                            } else if (value === "O") {
-                                cell.classList.add('o', 'taken');
-                            }
-                            if (game.winningLine && game.winningLine.includes(i)) {
-                                cell.classList.add('win-cell');
-                            } else {
-                                cell.classList.remove('win-cell');
-                            }
-                            const peutCliquer = (game.status === 'active' && isMyTurn && !value);
-                            cell.style.cursor = peutCliquer ? 'pointer' : 'not-allowed';
-                        }
-                    }
-                    
-                    // Mettre à jour l'overlay
-                    const grid = card.querySelector('.morpion-grid');
-                    if (grid) {
-                        if (game.status !== 'active' || !isMyTurn) {
-                            grid.classList.add('morpion-overlay-block');
-                        } else {
-                            grid.classList.remove('morpion-overlay-block');
-                        }
-                    }
-                }
-            }
-        }
-    }
-});
-            // ========== ÉCOUTE EN TEMPS RÉEL DES STATUTS ==========
-function ecouterStatutsEnTempsReel() {
-    if (!currentUser || !targetUser) return;
-    
-    // Écouter les messages de l'autre personne
-    db.collection('chats').doc(CHAT_ID).collection('messages')
-        .where('senderId', '==', targetUser.id)
-        .onSnapshot((snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'modified') {
-                    const data = change.doc.data();
-                    const msgId = change.doc.id;
-                    
-                    // SI le statut est 'read' → mettre les coches en BLEU
-                    if (data.status === 'read') {
-                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
-                        if (messageRow && messageRow.classList.contains('sent')) {
-                            const tickElement = messageRow.querySelector('.status-tick');
-                            if (tickElement) {
-                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #53bdeb !important; font-size: 0.85rem;"></i>`;
-                            }
-                            // Mettre à jour aussi le message original
-                            updateMessageStatus(msgId, 'read');
-                        }
-                    }
-                    // SI le statut est 'delivered' → mettre les coches en GRIS
-                    else if (data.status === 'delivered') {
-                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
-                        if (messageRow && messageRow.classList.contains('sent')) {
-                            const tickElement = messageRow.querySelector('.status-tick');
-                            if (tickElement) {
-                                tickElement.innerHTML = `<i class="fa-solid fa-check-double" style="color: #8696a0 !important; font-size: 0.85rem;"></i>`;
-                            }
-                        }
-                    }
-                }
-            });
-        });
-}
-            // ============================================================
-            // FONCTION POUR ÉCOUTER LES CHANGEMENTS DE STYLE
-            // ============================================================
-            function ecouterChangementsStyle() {
-                if (!currentUser) return;
+            snapshot.docChanges().forEach(change => {
+                const data = change.doc.data();
+                const msgId = change.doc.id;
                 
-                db.collection('chats').doc(CHAT_ID).collection('messages')
-                    .where('bubbleStyle', '!=', null)
-                    .onSnapshot(snapshot => {
-                        snapshot.docChanges().forEach(change => {
-                            if (change.type === 'modified') {
-                                const data = change.doc.data();
-                                const msgId = change.doc.id;
-                                const newStyle = data.bubbleStyle;
-                                
-                                const messageRow = document.querySelector(`[data-id="${msgId}"]`);
-                                if (messageRow && messageRow.classList.contains('sent')) {
-                                    const bubble = messageRow.querySelector('.message-bubble');
-                                    if (bubble && newStyle) {
-                                        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-                                        allStyles.forEach(style => bubble.classList.remove(style));
-                                        bubble.classList.add(newStyle);
-                                    }
+                if (change.type === 'added') {
+                    hasNewMessage = true;
+                    if (data.senderId !== currentUser?.id) hasNewMessageFromOther = true;
+                    
+                    // Notification pour un message reçu tout juste arrivé (jamais au 1er chargement)
+                    if (data.senderId !== currentUser?.id && !isFirstSnapshot) {
+                        const now = new Date();
+                        const msgTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(0);
+                        const diffSeconds = (now - msgTime) / 1000;
+                        if (diffSeconds < 5) {
+                            sendTelegramNotification(data.senderId);
+                        }
+                    }
+                    
+                    // Marquer "delivered" si le message vient de l'autre personne et est encore "sent"
+                    if (data.senderId === targetUser?.id && data.status === 'sent') {
+                        change.doc.ref.update({
+                            status: 'delivered',
+                            deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }).catch(err => console.error("Erreur mise à jour delivered:", err));
+                    }
+                }
+                else if (change.type === 'modified') {
+                    // Mise à jour légère des coches de statut (évite de reconstruire toute la liste,
+                    // ce qui interromprait une éventuelle lecture audio/vidéo en cours)
+                    if (data.status) {
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        if (messageRow && messageRow.classList.contains('sent')) {
+                            const bubble = messageRow.querySelector('.message-bubble');
+                            const msgMeta = bubble ? bubble.querySelector('.msg-meta') : null;
+                            if (msgMeta) {
+                                let timeText = msgMeta.textContent.replace(/[✓]/g, '').trim();
+                                let statusHtml = '<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>';
+                                if (data.status === 'read') {
+                                    statusHtml = '<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>';
+                                } else if (data.status === 'delivered') {
+                                    statusHtml = '<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>';
+                                }
+                                const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+                                msgMeta.innerHTML = `${timeText} ${statusHtml}${modifiedTag}`;
+                            }
+                        }
+                    }
+                    
+                    // ✅ Si CE message est lui-même une réponse dont le message d'origine
+                    // vient d'être supprimé (replyToText remplacé par le marqueur), on
+                    // met à jour sa citation affichée en temps réel, sans reconstruire toute la liste.
+                    if (data.replyToText === MARQUEUR_REPONSE_SUPPRIMEE) {
+                        const messageRow = document.querySelector(`[data-id="${msgId}"]`);
+                        const ancienneCitation = messageRow ? messageRow.querySelector('.reply-citation') : null;
+                        if (ancienneCitation && !ancienneCitation.innerHTML.includes('Message supprimé')) {
+                            ancienneCitation.outerHTML = `<div class="reply-citation" style="font-style: italic; opacity: 0.7; cursor: default;"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Message supprimé</div>`;
+                        }
+                    }
+                    
+                    // Mise à jour légère du morpion (sans reconstruire la liste)
+                    if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+                        const existingRow = document.querySelector(`[data-id="${msgId}"]`);
+                        const card = existingRow ? existingRow.querySelector('.morpion-card') : null;
+                        if (card) {
+                            const game = data.gameData;
+                            const isMyTurn = game.turn === currentUser.id;
+                            const statusDiv = card.querySelector('.morpion-status');
+                            if (statusDiv) {
+                                if (game.status === 'finished') {
+                                    statusDiv.textContent = game.winner === 'nul' ? "🎯 Match nul !" : `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
+                                    statusDiv.classList.remove('active-turn');
+                                } else {
+                                    statusDiv.textContent = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
+                                    statusDiv.classList.toggle('active-turn', isMyTurn && game.status === 'active');
                                 }
                             }
-                        });
-                    });
-            }
-            
-            // ============================================================
-            // AFFICHAGE DES MESSAGES (CODE ORIGINAL)
-            // ============================================================
-            const msgArea = document.getElementById('msg-area');
-            
-            let lastDateStr = "";
-            
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const msgId = doc.id;
-                if(document.querySelector(`[data-id="${msgId}"]`)) return;
-
-                if(data.timestamp) {
-                    const dateObj = data.timestamp.toDate();
-                    const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                    if(dateStr !== lastDateStr) {
-                        const sep = document.createElement('div');
-                        sep.className = 'date-separator';
-                        sep.innerText = dateStr;
-                        msgArea.appendChild(sep);
-                        lastDateStr = dateStr;
-                    } 
-                }
-                
-                const row = document.createElement('div');
-                const isSent = data.senderId === currentUser.id;
-                row.className = `message-row ${isSent ? 'sent' : 'received'}`;
-                row.setAttribute('data-id', msgId);
-                
-                const isGiant = isOnlyEmojis(data.text);
-                let customStyle = '';
-                // 🔥 Vérifier d'abord le style personnalisé du message
-                if (data.bubbleStyle) {
-                    customStyle = data.bubbleStyle;
-                } else if (data.messageStyle) {
-                    customStyle = data.messageStyle;
-                } else if (isSent) {
-                    const defaultStyle = localStorage.getItem('default_bubble_style');
-                    if (defaultStyle && defaultStyle !== 'none') {
-                        customStyle = defaultStyle;
-                    }
-                }
-                
-                let codedClass = '';
-                let lockBadge = '';
-                if (data.isCoded === true) {
-                    codedClass = 'coded';
-                    lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
-                    // Ajouter un attribut data-coded sur la bulle pour détecter les messages codés
-                }
-                
-                let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
-                    onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
-                    oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
-                    ondblclick="handleDoubleTap(event, '${msgId}')"
-                    ontouchstart="demarrerAppuiLong(event, '${msgId}')"
-                    ontouchend="annulerAppuiLong()"
-                    ontouchmove="annulerAppuiLong()"
-                    onmousedown="demarrerAppuiLong(event, '${msgId}')"
-                    onmouseup="annulerAppuiLong()"
-                    onmouseleave="annulerAppuiLong()">`;
-                
-                if (data.replyToText) {
-                    bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
-                }
-                
-                if (data.type === 'text') {
-                    let displayText = data.text;
-                    if (data.isCoded === true) {
-                        const originalMessage = data.originalText || data.text;
-                        displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
-                        bubbleHtml += displayText;
-                    } else {
-                        displayText = formatText(escapeHTML(displayText));
-                        displayText = displayText.replace(/\n/g, '<br>');
-                        bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
-                    }
-                } 
-                else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
-                    // ========== AFFICHAGE DU MORPION ==========
-                    const game = data.gameData;
-                    const isMyTurn = game.turn === currentUser.id;
-                    const amIPlayerX = game.players.X === currentUser.id;
-                    const amIPlayerO = game.players.O === currentUser.id;
-                    
-                    // Déterminer si c'est le tour du joueur actuel
-                    let statusText = "";
-                    if (game.status === 'finished') {
-                        if (game.winner === 'nul') {
-                            statusText = "🎯 Match nul !";
-                        } else {
-                            statusText = `👑 Gagnant : ${game.winner === currentUser.id ? 'Toi' : targetUser.name}`;
-                        }
-                    } else {
-                        statusText = isMyTurn ? "⚡ À ton tour !  " : `⏳ ${targetUser.name} réfléchit...`;
-                    }
-
-                    // Blocage graphique si ce n'est pas le tour du joueur ou si la partie est finie
-                    const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
-
-                    let cardHtml = `
-                        <div class="morpion-card" style="margin: 5px 0;">
-                            <div class="morpion-header">
-                                <span>🎮 MORPION </span>
-                                <span>🏆 ${game.scores.X} - ${game.scores.O}</span>
-                            </div>
-                            <div class="morpion-status ${isMyTurn && game.status === 'active' ? 'active-turn' : ''}">
-                                ${statusText}
-                            </div>
-                            <div class="morpion-grid ${interactionClass}" style="grid-template-columns: repeat(3, 1fr); gap: 8px; aspect-ratio: 1/1;">
-                    `;
-
-                    // Génération des 9 cases
-                    for (let i = 0; i < 9; i++) {
-                        const cellValue = game.board[i] || "";
-                        const cellClass = cellValue ? `taken ${cellValue.toLowerCase()}` : "";
-                        const isWinCell = game.winningLine && game.winningLine.includes(i) ? "win-cell" : "";
-                        
-                        cardHtml += `
-                            <div class="morpion-cell ${cellClass} ${isWinCell}" 
-                                 data-cell-index="${i}" 
-                                 onclick="jouerCoupMorpion('${msgId}', ${i})"
-                                 style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; cursor: ${(game.status === 'active' && isMyTurn && !cellValue) ? 'pointer' : 'not-allowed'}; background: rgba(255,255,255,0.05); border-radius: 12px; aspect-ratio: 1/1;">
-                                ${cellValue}
-                            </div>
-                        `;
-                    }
-
-                    cardHtml += `
-                            </div>
-                        </div>
-                    `;
-                    
-                    bubbleHtml += cardHtml;
-                } 
-                else if (data.type === 'image') {
-                    // Affichage IMAGE
-                    bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
-                    
-                } else if (data.type === 'drawing') {
-                    // Affichage DESSIN
-                    bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
-                    
-                } else if (data.type === 'video') {
-                    // ✅ NOUVEAU : Affichage VIDÉO - CORRECTION SUPABASE
-                    const videoUrl = data.mediaUrl || data.fileUrl || "";
-                    bubbleHtml += `
-                        <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
-                            <video 
-                                src="${videoUrl}" 
-                                controls 
-                                playsinline 
-                                preload="metadata" 
-                                style="width: 100%; display: block; object-fit: cover;"
-                                poster=""
-                            >
-                                Votre navigateur ne supporte pas la lecture vidéo
-                            </video>
-                        </div>
-                    `;
-                    
-                } else if (data.type === 'audio') {
-                    if (data.isEphemeralAudio) {
-                        const alreadyPlayed = data.playedBy && data.playedBy.includes(currentUser.id);
-                        const isDestroyed = data.destroyed;
-                        if (isDestroyed) {
-                            bubbleHtml += `<div style="padding:10px; text-align:center; color:#ff4444;">🔇 Audio éphémère supprimé</div>`;
-                        } else {
-                            bubbleHtml += `<div class="ephemeral-badge">🎙️ 1 écoute</div>`;
-                            if (alreadyPlayed) {
-                                bubbleHtml += `<div class="ephemeral-played" style="padding:8px; text-align:center;"><i class="fa-solid fa-head-side-headphones"></i><span style="opacity:0.5;">🔇 Audio écouté (disparaîtra bientôt)</span></div>`;
-                            } else {
-                                bubbleHtml += `<div style="padding:5px;"><audio controls src="${data.mediaUrl}" id="audio-${msgId}" onplay="handleEphemeralAudioPlay('${msgId}', this)"></audio><small style="font-size:0.7rem; opacity:0.7;">⚠️ Écoute unique</small></div>`;
+                            const headerSpan = card.querySelector('.morpion-header span:last-child');
+                            if (headerSpan) headerSpan.textContent = `🏆 ${game.scores.X || 0} - ${game.scores.O || 0}`;
+                            for (let i = 0; i < 9; i++) {
+                                const cell = card.querySelector(`.morpion-cell[data-cell-index="${i}"]`);
+                                if (!cell) continue;
+                                const value = game.board[i] || "";
+                                cell.textContent = value;
+                                cell.classList.remove('x', 'o', 'taken', 'win-cell');
+                                if (value === "X") cell.classList.add('x', 'taken');
+                                else if (value === "O") cell.classList.add('o', 'taken');
+                                if (game.winningLine && game.winningLine.includes(i)) cell.classList.add('win-cell');
+                                cell.style.cursor = (game.status === 'active' && isMyTurn && !value) ? 'pointer' : 'not-allowed';
                             }
+                            const grid = card.querySelector('.morpion-grid');
+                            if (grid) grid.classList.toggle('morpion-overlay-block', game.status !== 'active' || !isMyTurn);
                         }
-                    } else {
-                        // ✅ NOUVEAU CODE POUR AUDIO NORMAL (CORRIGÉ)
-                        const audioId = `audio_${msgId}`;
-                        bubbleHtml += `
-                            <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
-                                <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
-                                    <i class="fa-solid fa-play"></i>
-                                </button>
-                                <audio id="${audioId}" src="${data.mediaUrl}" preload="metadata" style="display: none;"></audio>
-                                <span class="audio-time" style="font-size: 0.75rem; min-width: 40px;">--:--</span>
-                                <div style="flex: 1; height: 3px; background: rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden;">
-                                    <div class="audio-progress" style="width: 0%; height: 100%; background: #0095f6;"></div>
-                                </div>
-                                <span class="audio-duration" style="font-size: 0.7rem; min-width: 35px;">0:00</span>
-                            </div>
-                        `;
                     }
                 }
-                
-                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-                // --- BLOC DE COCHES FORMAT WHATSAPP AJOUTÉ ICI ---
-                let checkMark = '<span>✓</span>'; // Un seul trait gris par défaut
-                if (data.status === 'read') {
-                    // Deux traits bleus (lu)
-                    checkMark = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-                } else if (data.status === 'delivered') {
-                    // Deux traits grises (reçu)
-                    checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
-                } else {
-                    // Un trait gris (envoyé)
-                    checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
-                }
-                // ------------------------------------------------ 
-                const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
-                bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
-                
-                if(data.reactions && Object.keys(data.reactions).length > 0) {
-                    bubbleHtml += `<div class="applied-reactions">`;
-                    Object.entries(data.reactions).forEach(([user, react]) => { bubbleHtml += `<span>${react}</span>`; });
-                    bubbleHtml += `</div>`;
-                }
-                
-                bubbleHtml += `</div>`;
-                row.innerHTML = bubbleHtml;
-                
-                if (blurModeActive) {
-                    const bubble = row.querySelector('.message-bubble');
-                    if (bubble) {
-                        bubble.classList.add('blur-active');
-                        attachBlurEvents(bubble);
-                    }
-                }
-                msgArea.appendChild(row);
             });
             
-            msgArea.scrollTop = msgArea.scrollHeight;
+            // ============================================================
+            // RENDU COMPLET : uniquement au premier chargement ou quand un
+            // nouveau message est réellement arrivé (garantit l'ordre chronologique
+            // strict sans jamais toucher les messages déjà affichés inutilement)
+            // ============================================================
+            const msgAreaEl = document.getElementById('msg-area');
+            const wasAtBottomBeforeRender = msgAreaEl ? (msgAreaEl.scrollHeight - msgAreaEl.scrollTop - msgAreaEl.clientHeight) < 150 : true;
+            
+            if (isFirstSnapshot || hasNewMessage) {
+                afficherTousLesMessages(snapshot, isFirstSnapshot);
+            }
+            
+            // Si un message de l'autre personne arrive pendant qu'on lit l'historique
+            // (pas en bas), on signale son arrivée avec le bouton pastille "Nouveau message"
+            if (!isFirstSnapshot && hasNewMessageFromOther && !wasAtBottomBeforeRender) {
+                afficherBoutonNouveauMessage();
+            }
+            
+            if (isFirstSnapshot) {
+                isFirstSnapshot = false;
+                console.log("📱 Premier chargement - Aucune notification envoyée");
+            }
+        }, err => {
+            console.error("Erreur listenToMessages:", err);
         });
 }
 
@@ -3530,7 +2965,7 @@ function ecouterStatutsEnTempsReel() {
         
         function cancelReply() { replyToId = null; document.getElementById('reply-preview').style.display = 'none'; }
         
-   async function sendTextMessage() {
+     async function sendTextMessage() {
     if (messageEnCoursEdition) {
         await confirmerModification();
         return;
@@ -3538,7 +2973,6 @@ function ecouterStatutsEnTempsReel() {
     const input = document.getElementById('chat-in');
     let text = input.value.trim();
     if(!text) return;
-
 
     if (modeTraductionActif && langueTraduction) {
         const texteTraduit = await traduireTexte(text, langueTraduction);
@@ -3585,7 +3019,7 @@ function ecouterStatutsEnTempsReel() {
         const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
         if(parentRow) {
             msgData.replyToId = replyToId;
-            msgData.replyToText = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
+            msgData.replyToText = obtenirTexteCompletMessage(parentRow);
             msgData.replyToSender = parentRow.classList.contains('sent') ? currentUser.name : targetUser.name;
         }
     }
@@ -3878,15 +3312,56 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             document.removeEventListener('click', hideContextMenus);
         }
         
-        function initiateReply() {
-            replyToId = selectedMessageId;
-            const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
-            if(parentRow) {
-                const snippet = parentRow.querySelector('.message-bubble span')?.innerText || "[Média]";
-                document.getElementById('reply-preview-text').innerText = `Répondre à : ${snippet}`;
-                document.getElementById('reply-preview').style.display = 'flex';
+        // ✅ Récupère le texte INTÉGRAL d'un message affiché, y compris pour les messages
+        // longs tronqués visuellement par le bouton "VOIR TOUT" (.msg-text-complet),
+        // pour ne jamais citer une réponse sur un extrait coupé à 100 caractères.
+        function obtenirTexteCompletMessage(parentRow) {
+            if (!parentRow) return "[Média]";
+            const bulle = parentRow.querySelector('.message-bubble');
+            if (!bulle) return "[Média]";
+            const texteComplet = bulle.querySelector('.msg-text-complet');
+            if (texteComplet) return texteComplet.innerText;
+            const span = bulle.querySelector('span');
+            return span?.innerText || "[Média]";
+        }
+
+      function initiateReply() {
+    replyToId = selectedMessageId;
+    const parentRow = document.querySelector(`[data-id="${replyToId}"]`);
+    if(parentRow) {
+        const texteComplet = obtenirTexteCompletMessage(parentRow);
+        // --- NOUVEAU CODE : 4 mots maximum ---
+        const mots = texteComplet.trim().split(/\s+/).filter(Boolean);
+        let snippet = texteComplet;
+        if (mots.length > 4) {
+            snippet = mots.slice(0, 4).join(' ') + '...';
+        }
+        // --- FIN NOUVEAU CODE ---
+        document.getElementById('reply-preview-text').innerText = `Répondre à : ${snippet}`;
+        document.getElementById('reply-preview').style.display = 'flex';
+    }
+    hideContextMenus();
+}
+
+        // ✅ Redirection au clic sur une citation de réponse : défile jusqu'au message
+        // d'origine avec une animation fluide, puis déclenche un flash de surbrillance.
+        function scrollToOriginalMessage(msgId) {
+            if (!msgId) return;
+            const target = document.querySelector(`[data-id="${msgId}"]`);
+            if (!target) {
+                showTempNotification("⚠️ Message d'origine introuvable");
+                return;
             }
-            hideContextMenus();
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const bulle = target.querySelector('.message-bubble');
+            if (bulle) {
+                // On retire puis réapplique la classe pour permettre de rejouer l'animation
+                // même si l'utilisateur clique plusieurs fois de suite sur la même citation.
+                bulle.classList.remove('msg-flash-highlight');
+                void bulle.offsetWidth; // force le reflow
+                bulle.classList.add('msg-flash-highlight');
+                setTimeout(() => bulle.classList.remove('msg-flash-highlight'), 1200);
+            }
         }
         
     async function deleteSelectedMessage() {
@@ -3898,7 +3373,10 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
         const msgRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId);
         const doc = await msgRef.get();
         const data = doc.data();
-        
+        if (data.senderId !== currentUser.id) {
+    alert("🚨 Ida toi aussi tu ne peux supprimer que tes propres messages 😁​😁​!");
+    return;
+}
         // Supprimer le fichier de Supabase si besoin
         if (data.mediaUrl && data.storage === 'supabase') {
             try {
@@ -3908,7 +3386,7 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             } catch(e) { console.log("Erreur suppression fichier:", e); }
         }
         
-        // Mettre à jour - SUPPRIMER TOUT CHAMP MODIFIED
+        // Mettre à jour - SUPPRIMER TOUT CHAMP MODIFIED   
         await msgRef.update({
             text: "🚫 Ce message a été supprimé",
             mediaUrl: null,
@@ -3927,6 +3405,30 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
                 modified: firebase.firestore.FieldValue.delete()
             });
         } catch(e) {}
+        
+        // ✅ Propager la suppression à toutes les citations de réponse pointant vers ce
+        // message : leur ancien contenu (replyToText) ne doit plus jamais réapparaître,
+        // ni pour soi, ni pour l'autre utilisateur en temps réel (voir ecouterMessagesSupprimes).
+        try {
+            const reponsesLiees = await db.collection('chats').doc(CHAT_ID).collection('messages')
+                .where('replyToId', '==', selectedMessageId)
+                .get();
+            if (!reponsesLiees.empty) {
+                const batch = db.batch();
+                reponsesLiees.forEach(docReponse => {
+                    batch.update(docReponse.ref, { replyToText: MARQUEUR_REPONSE_SUPPRIMEE });
+                });
+                await batch.commit();
+                
+                // Mise à jour visuelle immédiate des citations déjà affichées à l'écran
+                document.querySelectorAll('.reply-citation').forEach(citation => {
+                    const onclickAttr = citation.getAttribute('onclick') || '';
+                    if (onclickAttr.includes(`scrollToOriginalMessage('${selectedMessageId}')`)) {
+                        citation.outerHTML = `<div class="reply-citation" style="font-style: italic; opacity: 0.7; cursor: default;"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Message supprimé</div>`;
+                    }
+                });
+            }
+        } catch(e) { console.error("Erreur propagation suppression aux réponses:", e); }
         
         showTempNotification("✅ Message supprimé");
         
@@ -4724,6 +4226,24 @@ function detecterFrancaisRapide(texte) {
                 closePinModal();
             } else { showTempNotification("❌ Code PIN incorrect !"); input.value = ''; input.focus(); }
         }
+        // ✅ DÉVERROUILLAGE AUTOMATIQUE INSTANTANÉ : dès que le code tapé correspond
+        // EXACTEMENT au code secret, on déverrouille immédiatement, sans attendre un
+        // clic sur "Entrer". On ne déclenche rien tant que le code est incomplet ou
+        // faux (pas de message d'erreur prématuré), ce qui évite toute boucle infinie :
+        // l'écouteur ne fait rien de plus une fois le modal fermé (input vidé, plus d'event).
+        function verifierPinAutomatique() {
+            const input = document.getElementById('pin-input');
+            if (!input) return;
+            if (input.value === SECRET_PIN) {
+                unlockMessage(pendingMessageId);
+                closePinModal();
+            }
+        }
+        const pinInputEl = document.getElementById('pin-input');
+        if (pinInputEl) {
+            pinInputEl.addEventListener('input', verifierPinAutomatique);
+        }
+        
         function unlockMessage(messageId) {
             const messageRow = document.querySelector(`[data-id="${messageId}"]`);
             if (!messageRow) return;
@@ -4939,7 +4459,65 @@ function detecterFrancaisRapide(texte) {
         }
         
         // ========== BATTERIE ==========
-       
+        async function getBatteryLevel() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    updateBatteryAndSync(battery);
+                    battery.addEventListener('levelchange', () => updateBatteryAndSync(battery));
+                    battery.addEventListener('chargingchange', () => updateBatteryAndSync(battery));
+                } catch(e) { console.log("Battery API error"); }
+            }
+        }
+        
+       async function updateBatteryAndSync(battery) {
+    const level = Math.floor(battery.level * 100);
+    currentBatteryLevel = level;
+    isCharging = battery.charging;
+    
+    // Générer un ID d'appareil unique (stocké dans localStorage)
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        localStorage.setItem('deviceId', deviceId);
+    }
+    
+    const deviceInfo = {
+        deviceId: deviceId,
+        battery: {
+            level: level,
+            charging: battery.charging
+        },
+        lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+        userAgent: navigator.userAgent.substring(0, 100),
+        platform: navigator.platform || 'unknown'
+    };
+    
+    // Mettre à jour dans Firestore
+    // ⚠️ IMPORTANT : on ne touche PAS aux champs "online" / "lastSeen" ici.
+    // Ce sont des champs de PRÉSENCE, gérés exclusivement par
+    // mettreAJourStatutUtilisateur() (voir plus bas). Les événements de batterie
+    // (levelchange/chargingchange) peuvent se déclencher même quand l'écran est en
+    // arrière-plan ou l'utilisateur inactif : les inclure ici réinitialisait
+    // silencieusement le statut à "en ligne" à chaque changement de batterie, ce qui
+    // était la cause du bug "affiché EN LIGNE alors que déconnecté/hors ligne".
+    await db.collection('users').doc(currentUser.id).set({
+        battery: {
+            level: level,
+            charging: battery.charging,
+            deviceId: deviceId,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        // Ajouter/ mettre à jour la liste des appareils
+        devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo)
+    }, { merge: true });
+    
+    // Nettoyer les anciens appareils (garder seulement les 5 derniers)
+    nettoyerAnciensAppareils();
+    
+    updateBatteryDisplay(level, battery.charging);
+}
+
 // Fonction pour nettoyer les anciens appareils
 async function nettoyerAnciensAppareils() {
     if (!currentUser) return;
@@ -4968,126 +4546,205 @@ async function nettoyerAnciensAppareils() {
     }
 }
         
-       
+       function updateBatteryDisplay(level, charging) {
+    // Ne met à jour que si c'est la batterie de l'utilisateur courant
+    // et que l'autre n'est pas affiché
+    const percentSpan = document.getElementById('battery-percent');
+    const iconSpan = document.getElementById('battery-icon');
+    if (!percentSpan) return;
+    
+    // Vérifier si on affiche le statut de l'autre ou le sien
+    const statusSpan = document.getElementById('header-status-text');
+    if (statusSpan && statusSpan.innerHTML.includes('🟢 En ligne') && currentUser) {
+        // Si l'autre est en ligne, on affiche SA batterie, pas la nôtre
+        return;
+    }
+    
+    // Sinon, afficher sa propre batterie
+    percentSpan.textContent = level + '%';
+    if (charging) {
+        iconSpan.innerHTML = '⚡';
+        percentSpan.className = 'battery-percent battery-charging';
+    } else if (level <= 15) {
+        iconSpan.innerHTML = '🪫';
+        percentSpan.className = 'battery-percent battery-low';
+    } else if (level <= 30) {
+        iconSpan.innerHTML = '🔋';
+        percentSpan.className = 'battery-percent battery-medium';
+    } else {
+        iconSpan.innerHTML = '🔋';
+        percentSpan.className = 'battery-percent battery-high';
+    }
+}
+        
+      function listenToOtherUserBattery() {
+    if (!targetUser) return;
+    
+    // Cette fonction est maintenant gérée par ecouterStatutAutreAvecHorodatage()
+    // On garde juste un fallback
+    console.log("🔋 La batterie de l'autre est gérée par ecouterStatutAutreAvecHorodatage()");
+}
+      
+      // ========== FORCER LA MISE À JOUR DE LA BATTERIE ==========
+function forcerMiseAJourBatterieAutre() {
+    if (!targetUser) return;
+    
+    console.log(`🔄 Forçage de la batterie de ${targetUser.name}...`);
+    
+    db.collection('users').doc(targetUser.id).get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // Chercher la batterie du dernier appareil
+            let batterie = null;
+            
+            if (data.devices && data.devices.length > 0) {
+                const devicesSorted = [...data.devices].sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                const dernier = devicesSorted[0];
+                if (dernier && dernier.battery) {
+                    batterie = dernier.battery;
+                    console.log(`📱 Dernier appareil: ${dernier.deviceId || 'inconnu'} → ${batterie.level}%`);
+                }
+            }
+            
+            if (!batterie && data.battery) {
+                batterie = data.battery;
+            }
+            
+            if (batterie) {
+                // Mettre à jour l'affichage
+                const statusSpan = document.getElementById('header-status-text');
+                const iconSpan = document.getElementById('battery-icon');
+                const percentSpan = document.getElementById('battery-percent');
+                
+                if (iconSpan && percentSpan) {
+                    const level = batterie.level || 0;
+                    const charging = batterie.charging || false;
+                    iconSpan.textContent = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+                    percentSpan.textContent = level + '%';
+                    percentSpan.className = 'battery-percent';
+                    percentSpan.classList.add(charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high')));
+                }
+            }
+        }
+    });
+}
 
 // Exposer la fonction dans la console
-         
+console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à jour");
+        
         // ========== STATUT D'HUMEUR ==========
         function toggleMoodPanel() {
             const panel = document.getElementById('mood-panel');
             panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
         }
         
-        async function setMood(emoji, label) {
-            currentMood = { emoji, label };
-            document.getElementById('mood-emoji').textContent = emoji;
-            const moodDiv = document.getElementById('mood-status');
-            moodDiv.classList.add('animated');
-            setTimeout(() => moodDiv.classList.remove('animated'), 2000);
-            await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            document.getElementById('mood-panel').style.display = 'none';
-            
-        }
+       async function setMood(emoji, label) {
+    currentMood = { emoji, label };
+    document.getElementById('mood-emoji').textContent = emoji;
+    const moodDiv = document.getElementById('mood-status');
+    moodDiv.classList.add('animated');
+    setTimeout(() => moodDiv.classList.remove('animated'), 2000);
+    
+    // Sauvegarder dans Firestore
+    await db.collection('users').doc(currentUser.id).set({ 
+        mood: currentMood, 
+        lastUpdate: firebase.firestore.FieldValue.serverTimestamp() 
+    }, { merge: true });
+    
+    // --- NOUVEAU : Sauvegarder DANS LE LOCAL STORAGE pour persistance ---
+    try {
+        localStorage.setItem('mon_mood', JSON.stringify(currentMood));
+    } catch(e) {}
+    
+    document.getElementById('mood-panel').style.display = 'none';
+}
         
-        async function clearMood() {
-            currentMood = { emoji: '😊', label: 'Heureux' };
-            document.getElementById('mood-emoji').textContent = '😊';
-            await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            document.getElementById('mood-panel').style.display = 'none';
-            
-        }
+       async function clearMood() {
+    // NE PAS remettre à "Heureux" automatiquement
+    // On efface carrément le champ moo d
+    await db.collection('users').doc(currentUser.id).set({ 
+        mood: firebase.firestore.FieldValue.delete()
+    }, { merge: true });
+    
+    // On affiche un statut neutre
+    document.getElementById('mood-emoji').textContent = '😊';
+    currentMood = { emoji: '😊', label: 'Heureux' };
+    document.getElementById('mood-panel').style.display = 'none';
+}
         
-        function listenToUserMood() {
-            if (!targetUser) return;
-            db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
-                if (doc.exists && doc.data().mood) {
-                    const mood = doc.data().mood;
+      function listenToUserMood() {
+    if (!targetUser) return;
+    
+    // Nettoie l'ancien écouteur
+    if (window._moodListener) {
+        window._moodListener();
+        window._moodListener = null;
+    }
+    
+    // --- NOUVEAU : Restaurer le mood de l'autre depuis le localStorage ---
+    try {
+        const savedMood = localStorage.getItem('mood_autre');
+        if (savedMood) {
+            const mood = JSON.parse(savedMood);
+            const otherMoodSpan = document.getElementById('other-mood-emoji');
+            if (otherMoodSpan) {
+                otherMoodSpan.innerHTML = mood.emoji;
+                otherMoodSpan.title = mood.label || '';
+            }
+        }
+    } catch(e) {}
+    
+    // Écoute en temps réel
+    window._moodListener = db.collection('users').doc(targetUser.id)
+        .onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.mood) {
+                    const mood = data.mood;
                     const otherMoodSpan = document.getElementById('other-mood-emoji');
-                    if (otherMoodSpan) otherMoodSpan.innerHTML = mood.emoji;
+                    if (otherMoodSpan) {
+                        otherMoodSpan.innerHTML = mood.emoji;
+                        otherMoodSpan.title = mood.label || '';
+                    }
+                    // --- NOUVEAU : Sauvegarder dan s localStorage ---
+                    try {
+                        localStorage.setItem('mood_autre', JSON.stringify(mood));
+                    } catch(e) {}
                 }
-            });
-        }
-        
-        async function saveDefaultMood() {
-            if (currentUser) {
-                await db.collection('users').doc(currentUser.id).set({ mood: currentMood, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
             }
-        }
+        });
+}
         
-        // ========== CANVAS DESSIN ==========
-        function openCanvasDrawer() {
-            document.getElementById('canvas-modal').style.display = 'flex';
-            setTimeout(() => initCanvas(), 100);
-        }
-        function closeCanvasDrawer() { document.getElementById('canvas-modal').style.display = 'none'; }
+      async function saveDefaultMood() {
+    if (!currentUser) return;
+    
+    // 1. D'abord, on vérifie si un mood existe déjà
+    const doc = await db.collection('users').doc(currentUser.id).get();
+    
+    if (doc.exists && doc.data().mood) {
+        // 2. Si un mood existe, on le GARDE (on ne l'écrase pas)
+        const existingMood = doc.data().mood;
+        currentMood = existingMood;  // On met à jour currentMood avec la vraie valeur
+        document.getElementById('mood-emoji').textContent = existingMood.emoji;
+        console.log("😊 Mood existant conservé:", existingMood);
+        return;  // ← On sort de la fonction, on ne fait rien d'autre !
+    }
+    
+    // 3. Si aucun mood n'existe, on crée le mood par défaut
+    await db.collection('users').doc(currentUser.id).set({ 
+        mood: currentMood,  // '😊' par défaut
+        lastUpdate: firebase.firestore.FieldValue.serverTimestamp() 
+    }, { merge: true });
+}
         
-        function initCanvas() {
-            canvas = document.getElementById('drawing-canvas');
-            ctx = canvas.getContext('2d');
-            const toolbarHeight = 70;
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - toolbarHeight - 100;
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            canvasEmojis.forEach(emoji => drawEmojiOnCanvas(emoji.emoji, emoji.x, emoji.y, emoji.size));
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseleave', stopDrawing);
-            canvas.addEventListener('touchstart', startDrawingTouch);
-            canvas.addEventListener('touchmove', drawTouch);
-            canvas.addEventListener('touchend', stopDrawing);
-        }
-        
-        function getMousePos(canvas, evt) {
-            const rect = canvas.getBoundingClientRect();
-            return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
-        }
-        
-        function startDrawing(e) { drawing = true; const pos = getMousePos(canvas, e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
-        function draw(e) {
-            if (!drawing) return;
-            const pos = getMousePos(canvas, e);
-            if (isDrawMode) {
-                ctx.strokeStyle = currentColor;
-                ctx.lineWidth = currentBrushSize;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                ctx.lineTo(pos.x, pos.y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(pos.x, pos.y);
-            } else {
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(pos.x, pos.y, currentBrushSize, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(pos.x, pos.y);
-            }
-        }
-        function stopDrawing() { drawing = false; ctx.beginPath(); }
-        
-        function startDrawingTouch(e) { e.preventDefault(); drawing = true; const rect = canvas.getBoundingClientRect(); const touch = e.touches[0]; const x = touch.clientX - rect.left, y = touch.clientY - rect.top; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y); ctx.stroke(); }
-        function drawTouch(e) { e.preventDefault(); if (!drawing) return; const rect = canvas.getBoundingClientRect(); const touch = e.touches[0]; const x = touch.clientX - rect.left, y = touch.clientY - rect.top; if (isDrawMode) { ctx.strokeStyle = currentColor; ctx.lineWidth = currentBrushSize; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y); } else { ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(x, y, currentBrushSize, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.moveTo(x, y); } }
-        
-        function setColor(color) { currentColor = color; isDrawMode = true; document.getElementById('draw-mode').classList.add('active'); document.getElementById('eraser-mode').classList.remove('active'); }
-        function setDrawMode(mode) { isDrawMode = mode; if(mode) { document.getElementById('draw-mode').classList.add('active'); document.getElementById('eraser-mode').classList.remove('active'); } else { document.getElementById('draw-mode').classList.remove('active'); document.getElementById('eraser-mode').classList.add('active'); } }
-        function changeBrushSize(size) { currentBrushSize = size; }
-        function clearCanvas() { ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height); canvasEmojis = []; }
-        function addEmojiToCanvas(emoji) { const x = canvas.width/2 + (Math.random()-0.5)*100; const y = canvas.height/2 + (Math.random()-0.5)*100; const size = 40 + Math.random()*20; canvasEmojis.push({ emoji, x, y, size }); drawEmojiOnCanvas(emoji, x, y, size); }
-        function drawEmojiOnCanvas(emoji, x, y, size) { ctx.font = `${size}px "Segoe UI Emoji", "Apple Color Emoji"`; ctx.fillStyle = 'black'; ctx.fillText(emoji, x - size/2, y + size/2); }
-        async function sendDrawing() {
-            if (!canvas) return;
-            const imageData = canvas.toDataURL('image/png');
-            await db.collection('chats').doc(CHAT_ID).collection('messages').add({
-                text: null, senderId: currentUser.id, senderName: currentUser.name,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(), status: "sent", readBy: [currentUser.id],
-                type: "drawing", isEphemeral: false, mediaUrl: imageData
-            });
-            
-            closeCanvasDrawer();
-        }
+        // ========== CANVAS DESSIN ========== 
+       
         
         // ========== PHOTO PLEIN ÉCRAN ==========
        function openFullscreenPhoto(event, imgElement) {
@@ -5456,6 +5113,34 @@ function loadDefaultBubbleStyle() {
 
 // Appeler cette fonction au chargement   
 setTimeout(loadDefaultBubbleStyle, 200);
+
+// ============================================================
+// ✅ ANIMATION D'ENVOI PAR DÉFAUT (Paramètres → Animation d'envoi)
+// Fonctionne exactement comme le style de bulle par défaut :
+// préférence 100% locale (localStorage), appliquée uniquement à
+// SES PROPRES messages envoyés (isSent) au moment du rendu.
+// ============================================================
+const SEND_ANIM_CLASSES = ['anim-fade-in-up', 'anim-scale-pop', 'anim-slide-right', 'anim-elastic-bounce', 'anim-blur-focus'];
+
+// Convertit la valeur du <select> (ex: "scale-pop") en nom de classe CSS (ex: "anim-scale-pop")
+function getSendAnimationClass() {
+    const saved = localStorage.getItem('default_send_animation') || 'fade-in-up';
+    return 'anim-' + saved;
+}
+
+function saveDefaultSendAnimation() {
+    const select = document.getElementById('default-send-animation');
+    if (!select) return;
+    localStorage.setItem('default_send_animation', select.value);
+    showTempNotification("✅ Animation d'envoi enregistrée");
+}
+
+function loadDefaultSendAnimation() {
+    const saved = localStorage.getItem('default_send_animation');
+    const select = document.getElementById('default-send-animation');
+    if (select && saved) select.value = saved;
+}
+setTimeout(loadDefaultSendAnimation, 200);
       
       
      
@@ -5706,6 +5391,56 @@ function annulerAppuiLong() {
         appuiLongTimer = null;
     }
     elementAppuye = null;
+}
+
+      // ========== SWIPE POUR RÉPONDRE (droite) / MODIFIER (gauche) ==========
+      // Réutilise les mêmes événements tactiles que l'appui long : un swipe
+      // horizontal annule l'appui long en cours et déclenche l'action associée,
+      // exactement comme sur WhatsApp.
+let swipeDepartX = null;
+let swipeDepartY = null;
+let swipeDeclenche = false;
+const SWIPE_SEUIL_PX = 55;
+
+function gererSwipeDebut(event, msgId) {
+    const touche = event.touches ? event.touches[0] : event;
+    swipeDepartX = touche.clientX;
+    swipeDepartY = touche.clientY;
+    swipeDeclenche = false;
+    demarrerAppuiLong(event, msgId);
+}
+
+function gererSwipeMouvement(event, msgId) {
+    if (swipeDepartX === null || swipeDeclenche) return;
+    const touche = event.touches ? event.touches[0] : event;
+    const deltaX = touche.clientX - swipeDepartX;
+    const deltaY = touche.clientY - swipeDepartY;
+    
+    // Tout mouvement annule l'appui long (comportement original conservé)
+    annulerAppuiLong();
+    
+    // Un swipe doit être surtout horizontal pour ne pas gêner le scroll vertical
+    if (Math.abs(deltaX) > SWIPE_SEUIL_PX && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+        swipeDeclenche = true;
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        const estMonMessage = row && row.classList.contains('sent');
+        
+        if (deltaX > 0) {
+            // Swipe vers la droite → Répondre
+            selectedMessageId = msgId;
+            initiateReply();
+        } else if (estMonMessage) {
+            // Swipe vers la gauche → Modifier (uniquement si l'utilisateur est l'auteur)
+            modifierMonMessageDirect(msgId);
+        }
+    }
+}
+
+function gererSwipeFin() {
+    swipeDepartX = null;
+    swipeDepartY = null;
+    swipeDeclenche = false;
+    annulerAppuiLong();
 }
       
       // ========== COPIER LE MESSAGE ==========
@@ -8131,9 +7866,11 @@ function ecouterMessagesSupprimes() {
         .where('isDeletedMessage', '==', true)
         .onSnapshot(snapshot => {
             snapshot.docChanges().forEach(change => {
-                // 2. SI UN MESSAGE EST MODIFIÉ (supprimé ou autre)
-if (change.type === "modified") {
+                // 2. SI UN MESSAGE EST SUPPRIMÉ (COMMENCE À MATCHER LE FILTRE → "added",
+                //    ou déjà présent et re-modifié plus tard → "modified")
+if (change.type === "modified" || change.type === "added") {
     const data = change.doc.data();
+    const msgId = change.doc.id; // ✅ correction : msgId était indéfini auparavant
     const ligneMessage = document.querySelector(`[data-id="${msgId}"]`);
     
     if (ligneMessage && data.isDeletedMessage === true) {
@@ -9000,6 +8737,13 @@ function detecterActiviteEcran() {
         mettreAJourStatutUtilisateur(false, 'depart');
     });
     
+    // 'pagehide' est déclenché de façon bien plus fiable que 'beforeunload' sur mobile
+    // (Safari iOS / apps PWA en arrière-plan), ce qui évite qu'un utilisateur reste
+    // affiché « en ligne » alors qu'il a quitté le site.
+    window.addEventListener('pagehide', function() {
+        mettreAJourStatutUtilisateur(false, 'depart');
+    });
+    
     let tempsInactivite = Date.now();
     let estInactif = false;
     
@@ -9048,15 +8792,20 @@ function ecouterStatutAutreAvecHorodatage() {
     
     console.log(`👀 Écoute du statut de ${targetUser.name}...`);
     
-    if (window._statutListener) {
-        window._statutListener();
-        window._statutListener = null;
+    // ⚠️ IMPORTANT : ce listener utilise SA PROPRE variable (window._presenceListener),
+    // distincte de window._statutListener (utilisée par les accusés de lecture).
+    // Avant cette correction, les deux systèmes partageaient la même variable globale :
+    // chacun annulait silencieusement l'écouteur de l'autre en démarrant, ce qui gelait
+    // le statut « en ligne »/humeur affiché sur l'écran du destinataire.
+    if (window._presenceListener) {
+        window._presenceListener();
+        window._presenceListener = null;
     }
     
     const statusSpan = document.getElementById('header-status-text');
     if (!statusSpan) return;
     
-    window._statutListener = db.collection('users').doc(targetUser.id)
+    window._presenceListener = db.collection('users').doc(targetUser.id)
         .onSnapshot((doc) => {
             if (!doc.exists) {
                 statusSpan.innerHTML = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
@@ -9064,10 +8813,9 @@ function ecouterStatutAutreAvecHorodatage() {
             }
             
             const data = doc.data();
-            
-            // STATUT UNIQUEMENT - PAS DE BATTERIE
             const estEnLigne = data.online === true;
             
+            // Récupérer l'heure de déconnexion
             let heureDeconnexion = null;
             if (data.heureDeconnexion) {
                 heureDeconnexion = new Date(data.heureDeconnexion);
@@ -9075,6 +8823,7 @@ function ecouterStatutAutreAvecHorodatage() {
                 heureDeconnexion = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
             }
             
+            // Vérifier si vraiment en ligne
             let estVraimentEnLigne = false;
             if (estEnLigne && data.lastSeen) {
                 const lastSeenDate = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
@@ -9084,6 +8833,61 @@ function ecouterStatutAutreAvecHorodatage() {
                 }
             }
             
+            // ============================================================
+            // ⭐⭐⭐ PARTIE BATTERIE - DERNIER APPAREIL UTILISÉ ⭐⭐⭐
+            // ============================================================
+            
+            // Récupérer la batterie du DERNIER appareil utilisé
+            let batterie = null;
+            
+            // 1. Vérifier si la batterie est dans les données principales (dernier appareil)
+            if (data.battery) {
+                batterie = {
+                    level: data.battery.level || 0,
+                    charging: data.battery.charging || false,
+                    deviceId: data.battery.deviceId || 'default',
+                    lastUpdate: data.battery.lastUpdate || data.lastSeen || new Date()
+                };
+                console.log(`🔋 Batterie du dernier appareil: ${batterie.level}%`);
+            }
+            
+            // 2. Si plusieurs appareils, prendre le dernier mis à jour
+            if (data.devices && Array.isArray(data.devices) && data.devices.length > 0) {
+                // Trier les appareils par date de dernière mise à jour (le plus récent en premier)
+                const devicesSorted = [...data.devices].sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                // Prendre le dernier appareil utilisé
+                const dernierAppareil = devicesSorted[0];
+                if (dernierAppareil && dernierAppareil.battery) {
+                    batterie = {
+                        level: dernierAppareil.battery.level || 0,
+                        charging: dernierAppareil.battery.charging || false,
+                        deviceId: dernierAppareil.deviceId || 'unknown',
+                        lastUpdate: dernierAppareil.lastUpdate || new Date()
+                    };
+                    console.log(`📱 Dernier appareil: ${dernierAppareil.deviceId || 'inconnu'} → ${batterie.level}%`);
+                }
+            }
+            
+            // 3. Fallback : utiliser la batterie du document principal
+            if (!batterie && data.battery) {
+                batterie = {
+                    level: data.battery.level || 0,
+                    charging: data.battery.charging || false,
+                    deviceId: 'default',
+                    lastUpdate: data.lastSeen || new Date()
+                };
+            }
+            
+            // ============================================================
+            // AFFICHAGE
+            // ============================================================
+            
+            // Statut
             let statutHtml = '';
             if (estVraimentEnLigne) {
                 statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
@@ -9095,10 +8899,35 @@ function ecouterStatutAutreAvecHorodatage() {
                 statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
             }
             
-            // 🔥 AUCUNE BATTERIE - SEULEMENT LE STATUT
-            statusSpan.innerHTML = statutHtml;
+            // Batterie avec indicateur de dernier appareil
+            let batteryHtml = '';
+            if (batterie) {
+                const level = batterie.level || 0;
+                const charging = batterie.charging || false;
+                const icon = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+                const colorClass = charging ? 'battery-charging' : (level <= 15 ? 'battery-low' : (level <= 30 ? 'battery-medium' : 'battery-high'));
+                
+                // Ajouter un petit indicateur si plusieurs appareils
+                const deviceIndicator = (data.devices && data.devices.length > 1) ? ' 📱' : '';
+                
+                batteryHtml = `
+                    <span class="battery-indicator" id="battery-indicator">
+                        <span class="battery-icon" id="battery-icon">${icon}</span>
+                        <span class="battery-percent ${colorClass}" id="battery-percent">${level}%${deviceIndicator}</span>
+                    </span>
+                `;
+            } else {
+                batteryHtml = `
+                    <span class="battery-indicator" id="battery-indicator">
+                        <span class="battery-icon" id="battery-icon">🔋</span>
+                        <span class="battery-percent" id="battery-percent">--%</span>
+                    </span>
+                `;
+            }
             
-            // MOOD
+            statusSpan.innerHTML = statutHtml + batteryHtml;
+            
+            // Mood
             if (data.mood) {
                 const otherMoodSpan = document.getElementById('other-mood-emoji');
                 if (otherMoodSpan) otherMoodSpan.textContent = data.mood.emoji || '😊';
@@ -9108,23 +8937,7 @@ function ecouterStatutAutreAvecHorodatage() {
             console.error("Erreur écoute statut:", error);
         });
 }
-function afficherStatutAutre(statusSpan, enLigne, heureDeconnexion) {
-    if (!statusSpan) return;
-    
-    let statutHtml = '';
-    if (enLigne) {
-        statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
-    } else if (heureDeconnexion) {
-        const h = heureDeconnexion.getHours().toString().padStart(2, '0');
-        const m = heureDeconnexion.getMinutes().toString().padStart(2, '0');
-        statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
-    } else {
-        statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
-    }
-    
-    // 🔥 AUCUNE BATTERIE
-    statusSpan.innerHTML = statutHtml;
-}
+
 // 5. Fonction pour forcer mon statut initial
 function forcerStatutEnLigneSiVisible() {
     if (!currentUser) return;
@@ -9170,9 +8983,9 @@ setTimeout(() => {
 
 // 9. Nettoyage lors des changements
 function nettoyerSystemeStatut() {
-    if (window._statutListener) {
-        window._statutListener();
-        window._statutListener = null;
+    if (window._presenceListener) {
+        window._presenceListener();
+        window._presenceListener = null;
     }
     if (STATUT_UTILISATEUR.pingInterval) {
         clearInterval(STATUT_UTILISATEUR.pingInterval);
@@ -9225,103 +9038,29 @@ function écouterBatterieCorrespondant() {
 }
       
       
-  // ========== METTRE À JOUR SA PROPRE BATTERIE ==========
+      // Mettre à jour ton propre niveau de batterie dans la base de données
 async function mettreAJourMaBatterie() {
     if (!currentUser) return;
 
     try {
+        // Utilise l'API Battery du navigateur
         if (navigator.getBattery) {
             const battery = await navigator.getBattery();
             
-            // Générer un ID d'appareil unique
-            let deviceId = localStorage.getItem('deviceId');
-            if (!deviceId) {
-                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-                localStorage.setItem('deviceId', deviceId);
-            }
-            
-            const deviceInfo = {
-                deviceId: deviceId,
-                battery: {
-                    level: Math.round(battery.level * 100),
-                    charging: battery.charging
-                },
-                lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
-                userAgent: navigator.userAgent.substring(0, 50),
-                platform: navigator.platform || 'unknown'
+            const updateData = () => {
+                db.collection('users').doc(currentUser.id).set({
+                    batteryLevel: Math.round(battery.level * 100),
+                    isCharging: battery.charging
+                }, { merge: true });
             };
-            
-            // Sauvegarder dans Firestore
-            await db.collection('users').doc(currentUser.id).set({
-                battery: {
-                    level: Math.round(battery.level * 100),
-                    charging: battery.charging,
-                    deviceId: deviceId,
-                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-                },
-                devices: firebase.firestore.FieldValue.arrayUnion(deviceInfo),
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-                online: true,
-                batteryLevel: Math.round(battery.level * 100),
-                isCharging: battery.charging
-            }, { merge: true });
-            
-            // Nettoyer les anciens appareils (garder 5 max)
-            nettoyerAnciensAppareils();
-            
-            console.log(`🔋 Batterie mise à jour: ${Math.round(battery.level * 100)}%`);
-            
-        } else {
-            console.log("⚠️ API Batterie non disponible");
+
+            // Mettre à jour immédiatement et à chaque changement
+            updateData();
+            battery.addEventListener('levelchange', updateData);
+            battery.addEventListener('chargingchange', updateData);
         }
     } catch (error) {
-        console.error("Erreur batterie:", error);
-    }
-}
-
-// ========== NETTOYER LES ANCIENS APPAREILS ==========
-async function nettoyerAnciensAppareils() {
-    if (!currentUser) return;
-    
-    try {
-        const doc = await db.collection('users').doc(currentUser.id).get();
-        if (doc.exists && doc.data().devices) {
-            let devices = doc.data().devices;
-            if (devices.length > 5) {
-                devices.sort((a, b) => {
-                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
-                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
-                    return dateB - dateA;
-                });
-                devices = devices.slice(0, 5);
-                
-                await db.collection('users').doc(currentUser.id).update({
-                    devices: devices
-                });
-                console.log(`🧹 ${doc.data().devices.length - 5} anciens appareils supprimés`);
-            }
-        }
-    } catch(e) {
-        console.error("Erreur nettoyage:", e);
-    }
-}
-
-// ========== FORCER LA MISE À JOUR (APPELÉE RÉGULIÈREMENT) ==========
-function demarrerMiseAJourBatterie() {
-    // Mettre à jour immédiatement
-    mettreAJourMaBatterie();
-    
-    // Puis toutes les 30 secondes
-    setInterval(() => {
-        mettreAJourMaBatterie();
-    }, 30000);
-    
-    // Écouter les changements de batterie
-    if (navigator.getBattery) {
-        navigator.getBattery().then(battery => {
-            battery.addEventListener('levelchange', mettreAJourMaBatterie);
-            battery.addEventListener('chargingchange', mettreAJourMaBatterie);
-        });
+        console.error("Erreur lors de la récupération de la batterie :", error);
     }
 }
       
@@ -9392,7 +9131,56 @@ function detecterPositionDefilement() {
         cacherBoutonNouveauMessage();
     }
     
+    // Bouton "Retour en bas" (glassmorphism) : visible dès qu'on n'est plus tout en bas
+    const scrollBtn = document.getElementById('scroll-to-bottom-btn');
+    if (scrollBtn) {
+        scrollBtn.classList.toggle('visible', !atBottom);
+    }
+    
+    // Sauvegarder la position de lecture (debounced) pour la restaurer au prochain chargement
+    sauvegarderPositionScrollDebounced(msgArea, atBottom);
+    
     return atBottom;
+}
+
+// ========== SAUVEGARDE / RESTAURATION DE LA POSITION DE SCROLL ==========
+function getScrollPositionKey() {
+    return `chat_scroll_pos_${CHAT_ID}`;
+}
+
+let _scrollSaveTimeout = null;
+function sauvegarderPositionScrollDebounced(msgArea, atBottom) {
+    clearTimeout(_scrollSaveTimeout);
+    _scrollSaveTimeout = setTimeout(() => {
+        try {
+            if (atBottom) {
+                // En bas = comportement par défaut, on ne mémorise rien de spécifique
+                localStorage.removeItem(getScrollPositionKey());
+            } else {
+                localStorage.setItem(getScrollPositionKey(), String(msgArea.scrollTop));
+            }
+        } catch (e) { /* localStorage indisponible, on ignore */ }
+    }, 300);
+}
+
+// Repositionne le chat : à la position sauvegardée si elle existe, sinon tout en bas
+function restaurerPositionScrollInitiale() {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+    
+    let savedPos = null;
+    try {
+        savedPos = localStorage.getItem(getScrollPositionKey());
+    } catch (e) { /* ignore */ }
+    
+    requestAnimationFrame(() => {
+        if (savedPos !== null && !isNaN(parseInt(savedPos, 10))) {
+            msgArea.scrollTop = parseInt(savedPos, 10);
+        } else {
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
+        detecterPositionDefilement();
+    });
 }
 
 // Afficher le bouton flottant
@@ -9457,10 +9245,13 @@ function scrollToBottom() {
         });
     }
     
-    // Cacher le bouton après le défilement
+    // Cacher les boutons après le défilement
     setTimeout(() => {
         cacherBoutonNouveauMessage();
+        const scrollBtn = document.getElementById('scroll-to-bottom-btn');
+        if (scrollBtn) scrollBtn.classList.remove('visible');
         isAtBottom = true;
+        try { localStorage.removeItem(getScrollPositionKey()); } catch (e) {}
     }, 300);
 }
 
@@ -9514,77 +9305,9 @@ function initNewMessageButton() {
     }, { passive: true });
 }
 
-// ========== SURCHARGER LA FONCTION D'ÉCOUTE DE MESSAGES ==========
-// Pour intégrer la détection des nouveaux messages
-
-// Sauvegarder l'ancienne fonction
-const originalListenToMessages = window.listenToMessages;
-
-// Redéfinir la fonction pour inclure la détection des nouveaux messages
-window.listenToMessages = function() {
-    if (originalListenToMessages) {
-        // Appeler l'originale
-        originalListenToMessages();
-    }
-    
-    // Si l'écoute est déjà active, on ajoute un second listener dédié aux nouveaux messages
-    if (currentUser && targetUser) {
-        // Écouter UNIQUEMENT les nouveaux messages de l'autre personne
-        if (window._newMsgListener) {
-            window._newMsgListener();
-        }
-        
-        window._newMsgListener = db.collection('chats').doc(CHAT_ID).collection('messages')
-            .where('senderId', '==', targetUser.id)
-            .orderBy('timestamp', 'desc')
-            .limitToLast(5) // Ne prendre que les derniers pour éviter la surcharge
-            .onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        const data = change.doc.data();
-                        const msgId = change.doc.id;
-                                // === DÉTECTION DES TABLEAUX BLANCS ===
-        if (data.type === 'whiteboard') {
-            afficherCarteTableauBlanc(msgId, data);
-            return; // On arrête ici pour ne pas afficher deux fois
-        }
-                        // Vérifier que c'est vraiment un nouveau message (pas dans le DOM)
-                        const existing = document.querySelector(`[data-id="${msgId}"]`);
-                        if (existing) return;
-                        
-                        // Vérifier si le message est de l'autre personne
-                        if (data.senderId === targetUser.id) {
-                            // Attendre que le message soit affiché avant de décider
-                            setTimeout(() => {
-                                const estEnBas = detecterPositionDefilement();
-                                
-                                if (!estEnBas) {
-                                    // L'utilisateur est en haut → afficher le bouton
-                                    // Vérifier que le message est bien affiché
-                                    const msgInDom = document.querySelector(`[data-id="${msgId}"]`);
-                                    if (msgInDom) {
-                                        afficherBoutonNouveauMessage();
-                                    }
-                                } else {
-                                    // L'utilisateur est en bas → défiler
-                                    setTimeout(scrollToBottom, 200);
-                                }
-                            }, 300);
-                        }
-                    }
-                });
-            });
-    }
-};
-
-// ========== INITIALISATION ==========
+// ========== INITIALISATION DU BOUTON FLOTTANT ==========
 setTimeout(() => {
     initNewMessageButton();
-    
-    // Si déjà connecté, activer
-    if (currentUser && targetUser) {
-        window.listenToMessages();
-    }
 }, 500);
 
 console.log("✅ Bouton flottant 'Nouveau message' activé !");
@@ -9909,10 +9632,52 @@ document.addEventListener('keydown', function(e) {
       
       
       // ============================================================
-function afficherTousLesMessages(snapshot) {
+// ✅ "VOIR TOUT" : bascule l'affichage tronqué / complet d'un message long
+// ============================================================
+function basculerVoirTout(btnEl) {
+    const bulle = btnEl.closest('.message-bubble');
+    if (!bulle) return;
+    const elTronque = bulle.querySelector('.msg-text-tronque');
+    const elComplet = bulle.querySelector('.msg-text-complet');
+    if (!elTronque || !elComplet) return;
+    
+    const estDeplie = elComplet.style.display !== 'none';
+    if (estDeplie) {
+        elComplet.style.display = 'none';
+        elTronque.style.display = 'block';
+        btnEl.textContent = 'VOIR TOUT';
+    } else {
+        elComplet.style.display = 'block';
+        elTronque.style.display = 'none';
+        btnEl.textContent = 'VOIR MOINS';
+    }
+    // Forcer un reflow immédiat : évite que le changement d'affichage reste "gelé"
+    // visuellement juste après l'envoi d'un message (bulle encore en cours d'animation
+    // d'entrée), un cas qui ne se manifestait auparavant qu'en rafraîchissant la page.
+    void bulle.offsetHeight;
+}
+
+// ✅ Délégation d'événement bindée UNE SEULE FOIS au chargement du script (et non à
+// chaque rendu de message). C'est ce qui corrige le bug où "VOIR TOUT" ne répondait
+// pas au clic juste après l'envoi d'un message long : auparavant le clic dépendait
+// d'un attribut onclick inline régénéré à chaque rendu, ce qui pouvait rater le tout
+// premier rendu d'un message fraîchement envoyé et n'était résolu qu'au rafraîchissement.
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.voir-tout-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    basculerVoirTout(btn);
+});
+      
+      // ============================================================
+// ✅ FONCTION POUR AFFICHER TOUS LES MESSAGES
+// ============================================================
+function afficherTousLesMessages(snapshot, isInitialLoad) {
     const msgArea = document.getElementById('msg-area');
     if (!msgArea) return;
     
+    // Si pas de messages
     if (snapshot.empty) {
         msgArea.innerHTML = `
             <div style="text-align:center; color:var(--text-muted); padding:40px;">
@@ -9924,30 +9689,40 @@ function afficherTousLesMessages(snapshot) {
         return;
     }
     
+    // On mémorise la position de lecture actuelle AVANT de reconstruire la liste,
+    // car vider msgArea remet toujours le scroll à 0.
+    const wasAtBottom = (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 150;
+    const previousScrollTop = msgArea.scrollTop;
+    
+    // Vider la zone
     msgArea.innerHTML = '';
     
     let lastDateStr = "";
-    let messages = [];
     
-    // --- ÉTAPE 1 : RÉCUPÉRER TOUS LES MESSAGES DANS UN TABLEAU ---
-    snapshot.forEach(doc => {
+    // NOTE : la requête Firestore renvoie déjà les messages triés du plus ancien
+    // au plus récent (orderBy 'asc' + limitToLast). On applique EN PLUS un tri
+    // explicite et stable ici, côté client, pour garantir l'ordre chronologique
+    // strict même dans le cas où un message vient d'être envoyé et que son
+    // serverTimestamp() n'est pas encore résolu par le serveur (valeur locale nulle) :
+    // sans ce filet de sécurité, Firestore peut placer ce message « en attente »
+    // en tête de liste (au lieu du bas) au moment précis du rafraîchissement.
+    const docsTries = snapshot.docs.slice().sort((a, b) => {
+        const ta = a.data().timestamp;
+        const tb = b.data().timestamp;
+        // Un timestamp non résolu (écriture locale en attente) est traité comme "maintenant",
+        // donc il reste en bas de la liste (le plus récent), jamais en haut.
+        const msA = ta && ta.toMillis ? ta.toMillis() : Date.now();
+        const msB = tb && tb.toMillis ? tb.toMillis() : Date.now();
+        return msA - msB;
+    });
+    
+    docsTries.forEach(doc => {
         const data = doc.data();
         const msgId = doc.id;
-        messages.push({ id: msgId, data: data });
-    });
-    
-    // --- ÉTAPE 2 : TRIER PAR DATE CROISSANTE (PLUS ANCIEN → PLUS RÉCENT) ---
-    messages.sort((a, b) => {
-        const dateA = a.data.timestamp ? a.data.timestamp.toDate() : new Date(0);
-        const dateB = b.data.timestamp ? b.data.timestamp.toDate() : new Date(0);
-        return dateA - dateB;
-    });
-    
-    // --- ÉTAPE 3 : AFFICHER LES MESSAGES DANS L'ORDRE ---
-    messages.forEach(({ id: msgId, data }) => {
+        
         // Ajouter le séparateur de date
         if (data.timestamp) {
-            const dateObj = data.timestamp.toDate();
+            const dateObj = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
             const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
             if (dateStr !== lastDateStr) {
                 const sep = document.createElement('div');
@@ -9977,25 +9752,43 @@ function afficherTousLesMessages(snapshot) {
         }
         
         let codedClass = '';
+        let lockBadge = '';
         if (data.isCoded === true) {
             codedClass = 'coded';
+            lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
         }
         
-        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass}" 
+        // ✅ Animation d'envoi choisie dans les Paramètres, uniquement pour SES propres messages
+        const sendAnimClass = isSent ? getSendAnimationClass() : '';
+        
+        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass} ${sendAnimClass}" 
             onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
             oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
             ondblclick="handleDoubleTap(event, '${msgId}')"
-            ontouchstart="demarrerAppuiLong(event, '${msgId}')"
-            ontouchend="annulerAppuiLong()"
-            ontouchmove="annulerAppuiLong()"
+            ontouchstart="gererSwipeDebut(event, '${msgId}')"
+            ontouchend="gererSwipeFin()"
+            ontouchmove="gererSwipeMouvement(event, '${msgId}')"
             onmousedown="demarrerAppuiLong(event, '${msgId}')"
             onmouseup="annulerAppuiLong()"
             onmouseleave="annulerAppuiLong()">`;
         
         if (data.replyToText) {
-            bubbleHtml += `<div class="reply-citation"><b>${data.replyToSender}:</b> ${escapeHTML(data.replyToText)}</div>`;
+            const messageOrigineSupprime = (data.replyToText === MARQUEUR_REPONSE_SUPPRIMEE);
+            if (messageOrigineSupprime) {
+                // ✅ Le message cité a été supprimé entre-temps : on n'affiche plus son ancien contenu
+                bubbleHtml += `<div class="reply-citation" style="font-style: italic; opacity: 0.7; cursor: default;"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Message supprimé</div>`;
+            } else {
+                // ✅ Clic sur la citation → défiler jusqu'au message d'origine avec flash de surbrillance
+                // --- NOUVEAU : 4 mots pour l'aperçu DANS le message ---
+let apercuCitation = data.replyToText;
+const motsCitation = apercuCitation.trim().split(/\s+/).filter(Boolean);
+if (motsCitation.length > 4) {
+    apercuCitation = motsCitation.slice(0, 4).join(' ') + '...';
+}
+bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scrollToOriginalMessage('${data.replyToId || ''}')"><b>${data.replyToSender}:</b> ${escapeHTML(apercuCitation)}</div>`;
+            }
         }
-        
+         
         // TEXTE
         if (data.type === 'text') {
             let displayText = data.text;
@@ -10003,7 +9796,17 @@ function afficherTousLesMessages(snapshot) {
                 const originalMessage = data.originalText || data.text;
                 displayText = `<span class="coded-mask" data-original-text="${escapeHTML(originalMessage)}">${escapeHTML(data.text)}</span>`;
                 bubbleHtml += displayText;
-            } else {
+            } else if (typeof displayText === 'string' && displayText.length > 100) {
+                // Message long : on tronque le texte BRUT à 100 caractères (avant mise en
+                // forme) pour ne jamais couper au milieu d'une balise HTML générée par
+                // formatText/escapeHTML, puis on prépare les deux versions (courte/complète).
+                const texteTronqueBrut = displayText.slice(0, 100);
+                let htmlTronque = formatText(escapeHTML(texteTronqueBrut)).replace(/\n/g, '<br>');
+                let htmlComplet = formatText(escapeHTML(displayText)).replace(/\n/g, '<br>');
+                bubbleHtml += `<span class="msg-text-tronque" style="white-space: pre-wrap; display: block;">${htmlTronque}…</span>`;
+                bubbleHtml += `<span class="msg-text-complet" style="white-space: pre-wrap; display: none;">${htmlComplet}</span>`;
+                bubbleHtml += `<span class="voir-tout-btn"  style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;">VOIR TOUT</span>`;
+            } else { 
                 displayText = formatText(escapeHTML(displayText));
                 displayText = displayText.replace(/\n/g, '<br>');
                 bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
@@ -10037,9 +9840,10 @@ function afficherTousLesMessages(snapshot) {
                 `;
             }
         } else if (data.type === 'whiteboard') {
-            afficherWb(msgId, data);
-            return;
-        } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+    // Afficher le tableau blanc
+    afficherWb(msgId, data);
+} else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
+            // MORPION - code simplifié
             const game = data.gameData;
             const isMyTurn = game.turn === currentUser.id;
             const interactionClass = (game.status === 'active' && isMyTurn) ? '' : 'morpion-overlay-block';
@@ -10109,25 +9913,27 @@ function afficherTousLesMessages(snapshot) {
         msgArea.appendChild(row);
     });
     
-    // --- ÉTAPE 4 : SCROLLER EN BAS APRÈS AFFICHAGE ---
-    setTimeout(() => {
-         
-    }, 100);
+    // ===== SCROLL INTELLIGENT =====
+    // - Premier chargement : on restaure la position sauvegardée (localStorage), sinon tout en bas.
+    // - Mise à jour en temps réel : si l'utilisateur était en bas, on le garde en bas ;
+    //   sinon on préserve exactement sa position de lecture (aucun saut).
+    requestAnimationFrame(() => {
+        if (isInitialLoad) {
+            restaurerPositionScrollInitiale();
+        } else if (wasAtBottom) {
+            msgArea.scrollTop = msgArea.scrollHeight;
+        } else {
+            msgArea.scrollTop = previousScrollTop;
+        }
+        if (typeof detecterPositionDefilement === 'function') {
+            detecterPositionDefilement();
+        }
+    });
 }
       // ========== AFFICHER LES DERNIERS MESSAGES EN BAS ==========
 function scrollToLatestMessage() {
-    const msgArea = document.getElementById('msg-area');
-    if (msgArea) {
-        // Attendre un peu que les messages soient chargés
-        setTimeout(() => {
-            msgArea.scrollTop = msgArea.scrollHeight;
-        }, 200);
-    }
+    restaurerPositionScrollInitiale();
 }
-
-// Appeler cette fonction après l'affichage des messages
-// Dans la fonction listenToMessages(), après l'appel à afficherTousLesMessages()
-// Ajouter : scrollToLatestMessage();
       // ========== NOTIFICATION INSTANTANÉE (SANS TELEGRAM) ==========
 function notifierInstantane(expediteurId) {
     // Met à jour le statut en temps réel
@@ -10236,12 +10042,103 @@ function afficherWb(msgId, data) {
         const canvas = document.getElementById(`wb-canvas-${msgId}`);
         if (canvas) {
             initialiserWb(msgId, canvas);
+          ecouterWbEnTempsReel(msgId);
         }
     }, 200);
 
     // Ne pas scroller si l'utilisateur est en train de dessiner
     if (!wb.drawing) {
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }
+}
+
+      // Écoute en temps réel du tableau
+function ecouterWbEnTempsReel(msgId) {
+    if (!msgId) return;
+    
+    // Nettoie l'ancien écouteur s'il existe
+    if (window._wbListener) {
+        window._wbListener();
+    }
+    
+    window._wbListener = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot((doc) => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            if (!data.whiteboardData) return;
+            
+            // Récupère les nouvelles lignes
+            const nouvellesLignes = data.whiteboardData.lines || [];
+            const canvas = document.getElementById(`wb-canvas-${msgId}`);
+            if (!canvas) return;
+            
+            // Redessine tout sur le canvas local
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, rect.width, rect.height);
+            
+            nouvellesLignes.forEach(line => {
+                ctx.beginPath();
+                ctx.moveTo(line.x1, line.y1);
+                ctx.lineTo(line.x2, line.y2);
+                ctx.strokeStyle = line.color || '#000000';
+                ctx.lineWidth = line.size || 4;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            });
+            
+            // Met à jour le cache local
+            wb.lines = nouvellesLignes;
+        });
+}
+// ============================================================
+// ✅ SUPPRESSION SÉCURISÉE D'UN TABLEAU "DESSIN EN DIRECT"
+// ============================================================
+function demanderSuppressionTableau(msgId) {
+    // Sécurité côté client : on ne peut supprimer QUE ses propres tableaux
+    // (l'icône elle-même n'est déjà générée que pour le propriétaire, ceci est
+    // une double vérification avant toute écriture en base).
+    const row = document.querySelector(`[data-id="${msgId}"]`);
+    if (!row || !row.classList.contains('sent')) {
+        showTempNotification("❌ Tu ne peux supprimer que tes propres tableaux");
+        return;
+    }
+    if (!confirm("Supprimer ce tableau de dessin ? Il sera remplacé par 'Tableau supprimé'.")) return;
+    supprimerTableauWb(msgId);
+}
+
+async function supprimerTableauWb(msgId) {
+    try {
+        // Couper l'écoute temps réel
+        if (window._wbListener && wb.msgId === msgId) {
+            window._wbListener();
+            window._wbListener = null;
+        }
+
+        // --- EFFET THANOS DIRECT SUR L'ÉCRAN ---
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        if (row) {
+            // Ajouter la classe d'animation
+            row.classList.add('thanos-effect');
+            
+            // Attendre 1 seconde pour l'animation
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Supprimer l'élément du DOM
+            row.remove();
+        }
+
+        // Supprimer de Firestore
+        const msgRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
+        await msgRef.delete();
+
          
+    } catch (err) {
+        console.error("Erreur suppression tableau:", err);
+        showTempNotification("❌ Erreur lors de la suppression");
     }
 }
 
@@ -10249,39 +10146,20 @@ function afficherWb(msgId, data) {
 function genererCarteWb(msgId, data) {
     const linesCount = data.whiteboardData?.lines?.length || 0;
     const senderName = data.senderName || 'inconnu';
-    
-    // === VÉRIFIER SI L'UTILISATEUR EST LE PROPRIÉTAIRE ===
-    const isOwner = data.senderId === currentUser?.id;
+    // ✅ Sécurité : l'icône de suppression n'est générée QUE si l'utilisateur courant
+    // est bien l'auteur du tableau — elle n'existe donc même pas dans le HTML des
+    // tableaux reçus des autres (ni visible, ni exploitable).
+    const estProprietaireTableau = data.senderId === currentUser?.id;
+    const iconeSuppressionTableau = estProprietaireTableau
+        ? `<i class="fa-solid fa-trash wb-delete-icon" title="Supprimer ce tableau" onclick="event.stopPropagation(); demanderSuppressionTableau('${msgId}')"></i>`
+        : '';
 
     return `
         <div class="wb-card" data-wb-id="${msgId}">
             <div class="wb-header">
                 <span>🎨 Dessin</span>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size:0.6rem;opacity:0.6;">En direct</span>
-                    ${isOwner ? `
-                        <button onclick="supprimerTableauBlanc('${msgId}')" 
-                            style="
-                                background: none;
-                                border: none;
-                                color: #ff4444;
-                                cursor: pointer;
-                                font-size: 0.9rem;
-                                padding: 2px 6px;
-                                border-radius: 6px;
-                                transition: all 0.2s;
-                                display: flex;
-                                align-items: center;
-                                gap: 4px;
-                            "
-                            onmouseover="this.style.background='rgba(255,68,68,0.15)'; this.style.transform='scale(1.1)'"
-                            onmouseout="this.style.background='none'; this.style.transform='scale(1)'"
-                            title="Supprimer ce tableau"
-                        >
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    ` : ''}
-                </div>
+                <span style="font-size:0.6rem;opacity:0.6;">En direct-Ida au carré</span>
+                ${iconeSuppressionTableau}
             </div>
             <div class="wb-canvas-box">
                 <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
@@ -10289,47 +10167,9 @@ function genererCarteWb(msgId, data) {
             <div class="wb-tools" id="wb-tools-${msgId}">
                 ${genererOutilsWb(msgId)}
             </div>
+            
         </div>
     `;
-}
-      
-      
-      async function supprimerTableauBlanc(msgId) {
-    if (!msgId) {
-        showTempNotification("❌ Tableau introuvable");
-        return;
-    }
-    
-    if (!confirm("🗑️ Supprimer ce tableau blanc ?")) {
-        return;
-    }
-    
-    try {
-        // Supprimer de Firestore
-        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).delete();
-        
-        // Supprimer du DOM
-        const row = document.querySelector(`[data-id="${msgId}"]`);
-        if (row) {
-            row.style.transition = 'all 0.3s ease';
-            row.style.opacity = '0';
-            row.style.transform = 'scale(0.8)';
-            setTimeout(() => {
-                row.remove();
-                showTempNotification("🗑️ Tableau supprimé");
-            }, 300);
-        }
-        
-        // Nettoyer l'écoute
-        if (wb && wb.unsubscribe) {
-            wb.unsubscribe();
-            wb.unsubscribe = null;
-        }
-        
-    } catch (error) {
-        console.error("Erreur:", error);
-        showTempNotification("❌ Erreur lors de la suppression");
-    }
 }
 
 // ========== GÉNÉRER LES OUTILS ==========
@@ -10734,7 +10574,7 @@ function creerTableauBlanc() {
         });
 }
       
- 
+      // ============================================================
 // ⚡ FORCER LA SYNCHRONISATION EN TEMPS RÉEL DU TABLEAU ⚡
 // ============================================================
 
@@ -10897,453 +10737,85 @@ setTimeout(function() {
 
 console.log("✅ SYNCHRONISATION TEMPS RÉEL ACTIVÉE POUR LE TABLEAU BLANC");
       
-      // ============================================================
- 
-      
-      // ============================================================
-// 🗑️ ICÔNE SUPPRIMER DANS L'EN-TÊTE DU TABLEAU BLANC
-// ============================================================
-
-// === 1. FONCTION POUR SUPPRIMER LE TABLEAU ===
-async function supprimerTableauBlanc(msgId) {
-    if (!msgId) {
-        showTempNotification("❌ Tableau introuvable");
-        return;
-    }
+      // ========== OUVRIR LE PROFIL (SANS SE DÉCONNECTER) ==========
+function ouvrirProfil() {
+    // Afficher une petite info ou menu
+    showTempNotification(`👤 ${currentUser.name} · ${targetUser.name}`);
     
-    if (!confirm("🗑️ Supprimer ce tableau blanc ?")) {
-        return;
-    }
+    // Ou ouvrir un petit menu avec les infos
+    const menu = document.createElement('div');
+    menu.style.cssText = `
+        position: fixed;
+        top: 60px; 
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-main); 
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        z-index: 9999; 
+        min-width: 250px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        animation: fadeIn 0.2s ease-out;
+    `;
     
-    try {
-        // Supprimer de Firestore
-        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).delete();
-        
-        // Supprimer du DOM
-        const row = document.querySelector(`[data-id="${msgId}"]`);
-        if (row) {
-            row.style.transition = 'all 0.3s ease';
-            row.style.opacity = '0';
-            row.style.transform = 'scale(0.8)';
-            setTimeout(() => {
-                row.remove();
-                showTempNotification("🗑️ Tableau supprimé");
-            }, 300);
-        }
-        
-        // Nettoyer l'écoute
-        if (wb && wb.unsubscribe) {
-            wb.unsubscribe();
-            wb.unsubscribe = null;
-        }
-        
-    } catch (error) {
-        console.error("Erreur:", error);
-        showTempNotification("❌ Erreur lors de la suppression");
-    }
-}
-
-// === 2. MODIFIER LA FONCTION QUI GÉNÈRE LA CARTE ===
-const originalGenererCarte = window.genererCarteWb;
-
-window.genererCarteWb = function(msgId, data) {
-    // Vérifier si le tableau appartient à l'utilisateur connecté
-    const isOwner = data.senderId === currentUser?.id;
-    const senderName = data.senderName || 'inconnu';
-    const linesCount = data.whiteboardData?.lines?.length || 0;
-    
-    // === CRÉER LA CARTE AVEC L'ICÔNE DANS L'EN-TÊTE ===
-    return `
-        <div class="wb-card" data-wb-id="${msgId}" style="position: relative;">
-            <div class="wb-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid rgba(168, 0, 255, 0.1);">
-                <span style="display: flex; align-items: center; gap: 8px;">
-                    🎨 Dessin
-                    <span style="font-size:0.55rem; background:rgba(168,0,255,0.1); padding:2px 8px; border-radius:10px; color:#a800ff; opacity:0.7;">${linesCount} traits</span>
-                </span>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    ${isOwner ? `
-                        <!-- ✅ BOUTON SUPPRIMER DANS L'EN-TÊTE -->
-                        <button onclick="supprimerTableauBlanc('${msgId}')" 
-                            style="
-                                background: none;
-                                border: none;
-                                color: #ff4444;
-                                cursor: pointer;
-                                font-size: 1rem;
-                                padding: 2px 6px;
-                                border-radius: 6px;
-                                transition: all 0.2s;
-                                display: flex;
-                                align-items: center;
-                                gap: 4px;
-                            "
-                            onmouseover="this.style.background='rgba(255,68,68,0.15)'; this.style.transform='scale(1.1)'"
-                            onmouseout="this.style.background='none'; this.style.transform='scale(1)'"
-                            onmousedown="this.style.transform='scale(0.9)'"
-                            onmouseup="this.style.transform='scale(1.1)'"
-                            title="Supprimer ce tableau"
-                        >
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    ` : `
-                        <span style="font-size:0.55rem; opacity:0.4;">par ${senderName}</span>
-                    `}
-                </div>
-            </div>
-            <div class="wb-canvas-box">
-                <canvas id="wb-canvas-${msgId}" data-msg-id="${msgId}"></canvas>
-            </div>
-            <div class="wb-tools" id="wb-tools-${msgId}">
-                ${typeof genererOutilsWb === 'function' ? genererOutilsWb(msgId) : ''}
-            </div>
+    menu.innerHTML = `
+        <div style="text-align:center; margin-bottom:15px;">
+            <div style="font-size:3rem; margin-bottom:5px;">👤</div>
+            <div style="font-weight:bold; font-size:1.1rem;">${currentUser.name}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">Conversation avec ${targetUser.name}</div>
+        </div>
+        <div style="border-top:1px solid var(--border-color); padding-top:10px;">
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                width:100%;
+                padding:8px;
+                background:#0095f6;
+                color:white;
+                border:none;
+                border-radius:10px;
+                cursor:pointer;
+                font-weight:bold;
+            ">✖ Fermer</button>
         </div>
     `;
-};
-
-console.log("✅ Icône 🗑️ ajoutée dans l'en-tête du tableau !");
-      
-      
-      // ============================================================
-// 🧹 NETTOYEUR RADICAL - DÉSACTIVE TOUTES LES ANCIENNES FONCTIONS
-// ============================================================
-
-(function() {
-    console.log("🧹 NETTOYAGE EN COURS...");
-
-    // 1️⃣ LISTE DES ANCIENNES FONCTIONS À SUPPRIMER
-    const anciennesFonctions = [
-        'getBatteryLevel',
-        'updateBatteryAndSync',
-        'updateBatteryDisplay',
-        'listenToOtherUserBattery',
-        'afficherStatutAutre',
-        'mettreAJourStatutUtilisateur',
-        'detecterActiviteEcran',
-        'forcerStatutEnLigneSiVisible',
-        'activerSystemeStatutComplet',
-        'ecouterStatutsTempsReel',
-        'marquerTousMessagesCommeLus',
-        'detecterActiviteUtilisateur',
-        'activerSuiviStatuts',
-        'ecouterStatutsOptimise',
-        'ecouterStatutAutreAvecHorodatage',
-        'ecouterBatterieCorrespondant',
-        'afficherStatutAutre'
-    ];
-
-    // 2️⃣ SUPPRIME CHAQUE FONCTION
-    anciennesFonctions.forEach(nom => {
-        if (typeof window[nom] !== 'undefined') {
-            window[nom] = function() {
-                console.log(`🚫 Bloqué: ${nom}() est désactivée`);
-                return Promise.resolve ? Promise.resolve() : null;
-            };
-            console.log(`✅ Désactivée: ${nom}`);
-        }
-    });
-
-    // 3️⃣ DÉSACTIVE LES ANCIENS INTERVALLES
-    if (window.batteryInterval) {
-        clearInterval(window.batteryInterval);
-        window.batteryInterval = null;
-        console.log("✅ Intervalle batterie nettoyé");
-    }
-
-    // 4️⃣ DÉSACTIVE LES ANCIENS LISTENERS FIRESTORE
-    if (window._statutListener) {
-        try { window._statutListener(); } catch(e) {}
-        window._statutListener = null;
-        console.log("✅ Listener statut nettoyé");
-    }
-
-    if (window._batterieListener) {
-        try { window._batterieListener(); } catch(e) {}
-        window._batterieListener = null;
-        console.log("✅ Listener batterie nettoyé");
-    }
-
-    // 5️⃣ NETTOIE LES SETINTERVAL RESTANTS
-    const maxId = setInterval(() => {}, 0);
-    for (let i = 0; i < maxId; i++) {
-        clearInterval(i);
-    }
-    console.log("✅ Tous les intervalles nettoyés");
-
-    // 6️⃣ FORCE LE RE-DÉMARRAGE DU SYSTÈME DE BATTERIE
-    setTimeout(function() {
-        if (typeof currentUser !== 'undefined' && currentUser && typeof targetUser !== 'undefined' && targetUser) {
-            console.log("🔄 Redémarrage du système de batterie...");
-            demarrerMiseAJourBatterie();
-            ecouterBatterieAutre();
-            ecouterStatutAutre();
-        }
-    }, 500);
-
-    console.log("🧹 NETTOYAGE TERMINÉ !");
-})();
-      
-      // ============================================================
-// 🔋 SYSTÈME DE BATTERIE ULTIME - VERSION FINALE
-// ============================================================
-
-// 1️⃣ METTRE À JOUR MA BATTERIE
-async function mettreAJourMaBatterie() {
+    
+    document.body.appendChild(menu);
+    
+    // Fermer en cliquant ailleurs
+    setTimeout(() => {
+        document.addEventListener('click', function fermer(e) {
+            if (!menu.contains(e.target) && e.target.closest('.header-left') !== document.querySelector('.header-left')) {
+                menu.remove();
+                document.removeEventListener('click', fermer);
+            }
+        });
+    }, 100);
+}
+       // Restaurer mon mood après rafraîchissement
+async function restaurerMonMood() {
     if (!currentUser) return;
+    
     try {
-        if (!navigator.getBattery) return;
-        const battery = await navigator.getBattery();
-        const niveau = Math.round(battery.level * 100);
-        const enCharge = battery.charging;
-        
-        await db.collection('users').doc(currentUser.id).set({
-            batteryLevel: niveau,
-            isCharging: enCharge,
-            lastBatteryUpdate: firebase.firestore.FieldValue.serverTimestamp(),
-            online: true,
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        
-        console.log(`🔋 Ma batterie: ${niveau}%`);
-    } catch(e) { console.error("Erreur batterie:", e); }
-}
-
-// 2️⃣ DÉMARRER LA MISE À JOUR
-function demarrerMiseAJourBatterie() {
-    mettreAJourMaBatterie();
-    setInterval(mettreAJourMaBatterie, 10000);
-    if (navigator.getBattery) {
-        navigator.getBattery().then(b => {
-            b.addEventListener('levelchange', mettreAJourMaBatterie);
-            b.addEventListener('chargingchange', mettreAJourMaBatterie);
-        });
-    }
-}
-
-// 3️⃣ ÉCOUTER LA BATTERIE DE L'AUTRE
-function ecouterBatterieAutre() {
-    if (!currentUser || !targetUser) return;
-    if (window._batterieListener) {
-        window._batterieListener();
-        window._batterieListener = null;
-    }
-    
-    console.log(`👀 Écoute batterie de ${targetUser.name}...`);
-    
-    window._batterieListener = db.collection('users').doc(targetUser.id)
-        .onSnapshot((doc) => {
-            if (!doc.exists) return;
-            const data = doc.data();
-            
-            let niveau = data.batteryLevel || 0;
-            let enCharge = data.isCharging || false;
-            
-            // Fallback si pas trouvé
-            if (niveau === 0) {
-                if (data.battery?.level) {
-                    niveau = data.battery.level;
-                    enCharge = data.battery.charging || false;
-                } else if (data.devices?.length > 0) {
-                    const dernier = data.devices.sort((a,b) => 
-                        new Date(b.lastUpdate) - new Date(a.lastUpdate)
-                    )[0];
-                    if (dernier?.battery) {
-                        niveau = dernier.battery.level || 0;
-                        enCharge = dernier.battery.charging || false;
-                    }
-                }
-            }
-            
-            afficherBatterie(niveau, enCharge);
-        });
-}
-
-// 4️⃣ AFFICHER LA BATTERIE
-function afficherBatterie(niveau, enCharge) {
-    const statusSpan = document.getElementById('header-status-text');
-    if (!statusSpan) return;
-    
-    niveau = Math.min(100, Math.max(0, niveau));
-    
-    let icone = '🔋';
-    let classe = 'battery-high';
-    
-    if (enCharge) {
-        icone = '⚡';
-        classe = 'battery-charging';
-    } else if (niveau <= 15) {
-        icone = '🪫';
-        classe = 'battery-low';
-    } else if (niveau <= 30) {
-        icone = '🔋';
-        classe = 'battery-medium';
-    }
-    
-    // Supprimer l'ancienne batterie
-    let contenu = statusSpan.innerHTML;
-    contenu = contenu.replace(/<span class="battery-indicator".*?<\/span>/, '');
-    
-    // Ajouter la nouvelle
-    contenu += `
-        <span class="battery-indicator" style="display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 0.7rem; background: var(--input-bg); padding: 2px 6px; border-radius: 12px; border: 1px solid var(--border-color);">
-            <span class="battery-icon" style="font-size: 0.75rem;">${icone}</span>
-            <span class="battery-percent ${classe}" style="font-weight: 600;">${niveau}%</span>
-        </span>
-    `;
-    
-    statusSpan.innerHTML = contenu;
-}
-
-// 5️⃣ ÉCOUTER LE STATUT EN LIGNE
-function ecouterStatutAutre() {
-    if (!currentUser || !targetUser) return;
-    if (window._statutListener) {
-        window._statutListener();
-        window._statutListener = null;
-    }
-    
-    const statusSpan = document.getElementById('header-status-text');
-    if (!statusSpan) return;
-    
-    window._statutListener = db.collection('users').doc(targetUser.id)
-        .onSnapshot((doc) => {
-            if (!doc.exists) {
-                statusSpan.innerHTML = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
-                return;
-            }
-            
-            const data = doc.data();
-            const estEnLigne = data.online === true;
-            
-            let statutHtml = '';
-            if (estEnLigne) {
-                statutHtml = `<span style="color: #00cc44; font-weight: 600;">🟢 En ligne</span>`;
-            } else {
-                const lastSeen = data.lastSeen?.toDate?.() || data.lastSeen;
-                if (lastSeen) {
-                    const h = lastSeen.getHours().toString().padStart(2, '0');
-                    const m = lastSeen.getMinutes().toString().padStart(2, '0');
-                    statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
-                } else {
-                    statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
-                }
-            }
-            
-            // Garder la batterie si elle existe
-            const batterieExistante = statusSpan.querySelector('.battery-indicator');
-            if (batterieExistante) {
-                statusSpan.innerHTML = statutHtml + batterieExistante.outerHTML;
-            } else {
-                statusSpan.innerHTML = statutHtml;
-            }
-            
-            // Mood
-            if (data.mood) {
-                const otherMoodSpan = document.getElementById('other-mood-emoji');
-                if (otherMoodSpan) otherMoodSpan.textContent = data.mood.emoji || '😊';
-            }
-        });
-}
-
-// 6️⃣ ACTIVER LE SYSTÈME
-function activerSystemeBatterie() {
-    if (!currentUser || !targetUser) {
-        console.log("⏳ Attente de connexion...");
-        setTimeout(activerSystemeBatterie, 500);
-        return;
-    }
-    
-    console.log("🚀 Activation batterie...");
-    demarrerMiseAJourBatterie();
-    setTimeout(ecouterBatterieAutre, 300);
-    setTimeout(ecouterStatutAutre, 600);
-}
-
-// 7️⃣ LANCER AUTOMATIQUEMENT
-setTimeout(activerSystemeBatterie, 1000);
-
-console.log("✅ SYSTÈME DE BATTERIE ULTIME ACTIVÉ !");
-      
-// ============================================================
-// FLÈCHE POUR DESCENDRE - AVEC AFFICHAGE INTELLIGENT
-// ============================================================
-const area = document.getElementById('msg-area');
-const goDownBtn = document.getElementById('goDownBtn');
-
-// Fonction pour descendre tout en bas
-function scrollToBottom() {
-    if (area) {
-        area.scrollTo({
-            top: area.scrollHeight,
-            behavior: 'smooth'
-        });
-    }
-}
-
-if (area && goDownBtn) {
-    area.addEventListener('scroll', () => {
-        // Hauteur totale du contenu moins la hauteur visible de la zone
-        const maxScroll = area.scrollHeight - area.clientHeight;
-        
-        // Si on est à moins de 50px du bas, on considère qu'on est en bas -> on cache le bouton
-        if (maxScroll - area.scrollTop < 50) {
-            goDownBtn.style.display = 'none';
-        } else {
-            // Sinon, dès qu'on remonte (qu'on s'éloig, le bouton s'affiche
-            goDownBtn.style.display = 'block';
+        const doc = await db.collection('users').doc(currentUser.id).get();
+        if (doc.exists && doc.data().mood) {
+            const mood = doc.data().mood;
+            currentMood = mood;
+            document.getElementById('mood-emoji').textContent = mood.emoji;
+            console.log("✅ Mon mood restauré:", mood);
         }
-    });
-}
-      
-      // ============================================================
-// 🚪 CODES SECRETS - IFRAME PLEIN ÉCRAN
-// ============================================================
-
-// ============================================================
-// CODES SECRETS - VERSION CHAT MASQUÉ
-// ============================================================
-
-let chatCodeBuffer = '';
-let chatCodeTimer = null;
-
-// Écouter les changements dans le chat
-document.getElementById('chat-in').addEventListener('input', function(e) {
-    const text = this.value;
-    
-    // Détecter si le texte contient un code secret
-    if (text.includes('5432')) {
-        this.value = this.value.replace('5432', '');
-        // Réinitialiser le buffer
-        chatCodeBuffer = '';
-        clearTimeout(chatCodeTimer);
-        window.location.href = 'secret.html';
-    } else if (text.includes('9999')) {
-        this.value = this.value.replace('9999', '');
-        chatCodeBuffer = '';
-        clearTimeout(chatCodeTimer);
-        window.location.href = 'galerie.html';
+    } catch(e) {
+        console.error("Erreur restauration mood:", e);
     }
-});
+}
+
+// Appeler cette fonction APRÈS la connexion
+// Dans selectUser(), AJOUTE cette ligne à la fin :
+// setTimeout(restaurerMonMood, 500);
+      
+      
     </script>
-  <button id="goDownBtn" onclick="scrollToBottom()" style="
-    display: none; /* Masqué au départ tant qu'on est en bas */
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #a800ff, #0076ff);
-    color: white;
-    border: none;
-    font-size: 24px;
-    box-shadow: 0 4px 15px rgba(168,0,255,0.5);
-    cursor: pointer;
-    z-index: 99999;
-    transition: transform 0.2s;
-">
-    ↓
-</button>
+  
+   
 </body>   
- 
-</html>    
-               
+  
+</html> 
