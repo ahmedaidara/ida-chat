@@ -11700,7 +11700,25 @@ window.ouvrirEffets = ouvrirEffets;
   
   
   </script>
-  
+  <!-- Script pour nettoyer et désactiver la console -->
+<script>
+  (function() {
+    // 1. Nettoyer tout l'historique déjà affiché 
+    if (window.console && window.console.clear) {
+      window.console.clear();
+    }
+
+    // 2. Redéfinir les méthodes d'affichage pour qu'elles ne fassent plus rien
+    const emptyFunction = function() {};
+    const methods = ['log', 'info', 'warn', 'error', 'debug', 'dir', 'table', 'trace', 'group', 'groupCollapsed', 'groupEnd'];
+    
+    if (window.console) {
+      methods.forEach(method => {
+        window.console[method] = emptyFunction;
+      });
+    }
+  })();
+</script>
    
 </body>   
   
