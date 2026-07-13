@@ -263,8 +263,16 @@
         .ephemeral-overlay { display: none; position: absolute; inset: 60px 0 70px 0; background: rgba(150, 47, 191, 0.07); border: 2px dashed #962fbf; pointer-events: none; z-index: 1; align-items: center; justify-content: center; }
         .ephemeral-overlay span { background: #962fbf; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
         
-        .typing-indicator { display: none; align-items: center; gap: 5px; padding: 8px 15px; font-size: 0.8rem; color: var(--text-muted); }
-        .typing-dots { display: flex; gap: 3px; }
+.typing-indicator { 
+    display: none; 
+    align-items: center; 
+    gap: 5px; 
+    padding: 8px 15px; 
+    font-size: 0.8rem; 
+    color: #00cc44;  /* ← VERT (comme WhatsApp) */
+    font-weight: 500; /* Optionnel : un peu plus gras */
+}
+      .typing-dots { display: flex; gap: 3px; }
         .typing-dots span { width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: bounceDot 1.4s infinite ease-in-out both; }
         .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
         .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
@@ -1589,6 +1597,72 @@ input, textarea {
     animation: thanosDust 1.2s ease-out forwards !important;
     pointer-events: none !important;
 }
+      
+      /* ===== BARRE D'OUTILS ÉTUDE ===== */
+#etude-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    flex-shrink: 0;
+    min-height: 40px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    transition: all 0.25s ease;
+}
+#etude-toolbar::-webkit-scrollbar {
+    display: none;
+}
+
+.toolbar-btn:hover {
+    background: rgba(168, 0, 255, 0.08);
+    color: var(--text-main);
+}
+.toolbar-btn:active {
+    transform: scale(0.95);
+}
+
+#etude-btn:active {
+    transform: scale(0.92);
+}
+
+/* ✅ CACHER LA BARRE QUAND LE CLAVIER EST OUVERT (mobile uniquement) */
+@media (max-width: 768px) {
+    #etude-toolbar.hidden-keyboard {
+        display: none !important;
+        opacity: 0;
+        max-height: 0;
+        padding: 0 12px;
+        min-height: 0;
+        border-bottom: none;
+        transition: all 0.2s ease;
+    }
+    
+    #etude-toolbar.visible-keyboard {
+        display: flex !important;
+        opacity: 1;
+        max-height: 40px;
+        padding: 6px 12px;
+        min-height: 40px;
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.25s ease;
+    }
+}
+
+/* ✅ SUR PC : toujours visible */
+@media (min-width: 769px) {
+    #etude-toolbar.hidden-keyboard {
+        display: flex !important;
+        opacity: 1 !important;
+        max-height: 40px !important;
+        padding: 6px 12px !important;
+        min-height: 40px !important;
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+}
     </style>
 </head>
 <body>
@@ -1616,7 +1690,7 @@ input, textarea {
 
         <div class="chat-header">
             <div class="header-left" onclick="ouvrirProfil()">
-                <i class="fa-solid fa-arrow-left"></i>
+               
                 <div style="position: relative;">
                     <div class="header-avatar" id="header-av">--</div>
                     <div class="mood-status" id="mood-status" onclick="event.stopPropagation(); toggleMoodPanel()">
@@ -1694,7 +1768,110 @@ input, textarea {
             <span id="reply-preview-text">Réponse à un message...</span>
             <i class="fa-solid fa-xmark" onclick="cancelReply()"></i>
         </div>
+<!-- ========== BARRE D'OUTILS ÉTUDE (juste au-dessus de la zone de saisie) ========== -->
+<div id="etude-toolbar" style="
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    flex-shrink: 0;
+    min-height: 40px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+">
+    <!-- BOUTON ÉTUDE (comme sur TikTok) -->
+    <button id="etude-btn" onclick="ouvrirEtude()" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #9b2096;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    ">
+        <i class="fa-solid fa-graduation-cap" style="font-size: 0.8rem;"></i>
+        <span>ÉTUDE</span>
+    </button>
+    
+    <!-- Séparateur -->
+    <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+    
+    <!-- Autres boutons (optionnels, comme sur TikTok) -->
+    <button class="toolbar-btn" onclick="ouvrirJeux()" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #152cc2;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    ">
+        <i class="fa-solid fa-gamepad"></i>
+        <span>Jeux</span>
+    </button>
+        <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
+    <button class="toolbar-btn" onclick="ouvrirEffets()" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #15c227;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    ">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>Effets</span>
+    </button>
+      <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+
+      <button class="toolbar-btn" onclick="creerTableauBlanc()" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #FF6B00;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    ">
+        <i class="fa-solid fa-paintbrush" style="color: #ff6b6b;"></i>
+        <span>Dessin</span>
+    </button>
+      <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+
+  
+</div>
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
@@ -11350,7 +11527,179 @@ function ajouterAnimationsSecret() {
 
 // Appeler au chargement
 ajouterAnimationsSecret();
-    </script>
+  
+      // ========== OUVERTURE DE LA PAGE ÉTUDE ==========
+function ouvrirEtude() {
+    // Vérifier si la page est déjà ouverte
+    if (document.getElementById('etude-overlay')) {
+        return;
+    }
+    
+    // Créer l'overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'etude-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.92);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        animation: fadeInOverlay 0.3s ease;
+    `;
+    
+    // Header avec bouton fermer
+    const header = document.createElement('div');
+    header.style.cssText = `
+        background: linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e);
+        background-size: 200% 200%;
+        animation: gradientMove 4s ease infinite;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #a800ff;
+        flex-shrink: 0;
+        min-height: 60px;
+        z-index: 10;
+    `;
+    header.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-graduation-cap" style="color:#ffd700; font-size:1.3rem;"></i>
+            <span style="color:white; font-weight:700; font-size:1.1rem; letter-spacing:0.5px;">📚 ÉTUDE</span>
+            <span style="color:rgba(255,255,255,0.3); font-size:0.7rem; border-left:1px solid rgba(255,255,255,0.1); padding-left:10px;">📖 Espace d'étude</span>
+        </div>
+        <button onclick="fermerEtude()" style="
+            background: rgba(255, 50, 50, 0.15);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            color: #ff6b6b;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        " 
+        onmouseover="this.style.background='rgba(255,50,50,0.3)'; this.style.transform='scale(1.05)';"
+        onmouseout="this.style.background='rgba(255,50,50,0.15)'; this.style.transform='scale(1)';">
+            <i class="fa-solid fa-xmark"></i> Fermer
+        </button>
+    `;
+    
+    // Iframe vers etude.html
+    const iframe = document.createElement('iframe');
+    iframe.id = 'etude-iframe';
+    iframe.src = 'etude.html';
+    iframe.style.cssText = `
+        flex: 1;
+        width: 100%;
+        border: none;
+        background: #0a0a0a;
+        display: block;
+    `;
+    
+    overlay.appendChild(header);
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+}
+
+// ========== FERMER LA PAGE ÉTUDE ==========
+function fermerEtude() {
+    const overlay = document.getElementById('etude-overlay');
+    if (overlay) {
+        overlay.style.transition = 'all 0.3s ease';
+        overlay.style.opacity = '0';
+        overlay.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            overlay.remove();
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
+
+// ========== BOUTONS JEUX ET EFFETS (optionnels) ==========
+function ouvrirJeux() {
+    showTempNotification("🎮 Page Jeux - bientôt disponible");
+}
+
+function ouvrirEffets() {
+    showTempNotification("✨ Effets - bientôt disponible");
+}
+
+// ========== DÉTECTION DU CLAVIER POUR CACHER LA BARRE (MOBILE) ==========
+function detecterClavierMobile() {
+    const toolbar = document.getElementById('etude-toolbar');
+    if (!toolbar) return;
+    
+    // Détecter l'ouverture du clavier via le focus sur les inputs
+    const inputs = document.querySelectorAll('input, textarea, [contenteditable="true"]');
+    
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            // Vérifier si c'est un mobile (largeur < 768px)
+            if (window.innerWidth < 768) {
+                toolbar.classList.add('hidden-keyboard');
+                toolbar.classList.remove('visible-keyboard');
+            }
+        });
+        
+        input.addEventListener('blur', function() {
+            if (window.innerWidth < 768) {
+                // Petit délai pour s'assurer que le clavier est bien fermé
+                setTimeout(() => {
+                    toolbar.classList.remove('hidden-keyboard');
+                    toolbar.classList.add('visible-keyboard');
+                }, 300);
+            }
+        });
+    });
+    
+    // Détecter le redimensionnement (le clavier change la hauteur)
+    let lastHeight = window.innerHeight;
+    window.addEventListener('resize', function() {
+        if (window.innerWidth < 768) {
+            const currentHeight = window.innerHeight;
+            // Si la hauteur diminue significativement, le clavier est probablement ouvert
+            if (currentHeight < lastHeight - 150) {
+                toolbar.classList.add('hidden-keyboard');
+                toolbar.classList.remove('visible-keyboard');
+            } else if (currentHeight > lastHeight + 150) {
+                // Le clavier s'est fermé
+                setTimeout(() => {
+                    toolbar.classList.remove('hidden-keyboard');
+                    toolbar.classList.add('visible-keyboard');
+                }, 300);
+            }
+            lastHeight = currentHeight;
+        }
+    });
+}
+
+// ========== INITIALISATION ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // Détecter le clavier après un petit délai (pour que le DOM soit prêt)
+    setTimeout(detecterClavierMobile, 500);
+});
+
+// Exposer les fonctions globalement
+window.ouvrirEtude = ouvrirEtude;
+window.fermerEtude = fermerEtude;
+window.ouvrirJeux = ouvrirJeux;
+window.ouvrirEffets = ouvrirEffets;
+  
+  
+  
+  
+  </script>
   
    
 </body>   
