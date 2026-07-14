@@ -1913,6 +1913,313 @@ input, textarea {
     box-shadow: 0 6px 24px rgba(0,0,0,0.12) !important;
     border: 1px solid rgba(255,255,255,0.1) !important;
 }
+      
+      /* ============================================================
+   🌟 NOUVEAU : STRUCTURE PRINCIPALE AVEC HEADER FIXE
+   ============================================================ */
+
+.app-container {
+    width: 100%;
+    max-width: 450px;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-main);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+}
+
+/* --- HEADER FIXE --- */
+.chat-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+    height: 60px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    /* ← Ombre légère pour démarquer l'en-tête */
+}
+
+/* --- ZONE PRINCIPALE (scroll) --- */
+.chat-main {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg-chat);
+    padding-bottom: 0;
+    position: relative;
+    /* Permet au contenu de défiler sous l'en-tête */
+}
+
+/* --- ZONE DE SAISIE (fixe en bas) --- */
+.chat-footer {
+    flex-shrink: 0;
+    background: var(--bg-main);
+    border-top: 1px solid var(--border-color);
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+}
+
+/* Conteneur de la zone de saisie */
+.chat-input-bar {
+    padding: 8px 12px;
+    background: var(--bg-main);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* --- BARRE D'OUTILS ÉTUDE --- */
+#etude-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    flex-shrink: 0;
+    min-height: 40px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    transition: all 0.25s ease;
+}
+
+/* ============================================================
+   🎨 COULEURS : MODE CLAIR (par défaut)
+   ============================================================ */
+
+:root {
+    --bg-main: #ffffff;
+    --bg-chat: #faf8f6;
+    /* ← Blanc cassé */
+    --bg-header: #ffffff;
+    /* Blanc pur pour l'en-tête */
+    --text-main: #000000;
+    --text-muted: #737373;
+    --border-color: #e8e6e3;
+    /* Bordure légèrement beige */
+    --bubble-received: #efefef;
+    --bubble-sent: linear-gradient(45deg, #a800ff, #0076ff);
+    --bubble-sent-text: #ffffff;
+    --input-bg: #f5f3f0;
+    /* Fond d'input légèrement beige */
+    --panel-bg: rgba(255, 255, 255, 0.95);
+}
+
+/* ============================================================
+   🌙 MODE SOMBRE
+   ============================================================ */
+
+[data-theme="dark"],
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-main: #000000;
+        --bg-chat: #000000;
+        /* Noir profond */
+        --bg-header: #0a0a0a;
+        /* Noir très légèrement plus clair pour l'en-tête */
+        --text-main: #f5f5f5;
+        --text-muted: #a8a8a8;
+        --border-color: #262626;
+        --bubble-received: #262626;
+        --input-bg: #121212;
+        --panel-bg: rgba(20, 20, 20, 0.95);
+    }
+}
+
+/* ============================================================
+   🔧 GESTION DU CLAVIER (mobile)
+   ============================================================ */
+
+/* Quand le clavier est ouvert, on ajuste le footer */
+.chat-footer {
+    transition: transform 0.15s ease-out;
+}
+
+/* Sur mobile, quand le clavier apparaît, le footer monte naturellement
+   car il est sticky en bas. Le contenu scrollable s'ajuste. */
+
+/* Empêcher le défilement du body quand le clavier est ouvert */
+body.keyboard-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+/* ============================================================
+   📱 RESPONSIVE : Ajustements pour mobile
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .app-container {
+        height: 100dvh;
+        max-width: 100%;
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+    }
+
+    /* L'en-tête reste fixe */
+    .chat-header {
+        height: 56px;
+        min-height: 56px;
+    }
+
+    /* La zone de saisie s'adapte */
+    .chat-input-bar {
+        padding: 6px 10px;
+    }
+
+    /* Barre d'outils étude : cachée quand le clavier est ouvert */
+    #etude-toolbar.hidden-keyboard {
+        display: none !important;
+        opacity: 0;
+        max-height: 0;
+        padding: 0 12px;
+        min-height: 0;
+        border-bottom: none;
+        transition: all 0.2s ease;
+    }
+
+    #etude-toolbar.visible-keyboard {
+        display: flex !important;
+        opacity: 1;
+        max-height: 40px;
+        padding: 6px 12px;
+        min-height: 40px;
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.25s ease;
+    }
+}
+
+@media (min-width: 769px) {
+    .app-container {
+        height: 92vh;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    #etude-toolbar.hidden-keyboard {
+        display: flex !important;
+        opacity: 1 !important;
+        max-height: 40px !important;
+        padding: 6px 12px !important;
+        min-height: 40px !important;
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+}
+
+/* ============================================================
+   🧹 NETTOYAGE : Suppression des barres noires (iOS safe areas)
+   ============================================================ */
+
+/* Gestion des safe areas sur iPhone */
+@supports (padding: max(0px)) {
+    .app-container {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .chat-header {
+        padding-left: max(15px, env(safe-area-inset-left));
+        padding-right: max(15px, env(safe-area-inset-right));
+        padding-top: max(0px, env(safe-area-inset-top));
+    }
+
+    .chat-footer {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* ============================================================
+   🎯 OVERRIDE : Suppression des fonds noirs indésirables
+   ============================================================ */
+
+/* Supprimer les barres noires en haut et en bas */
+body {
+    background: var(--bg-chat) !important;
+    /* Le body hérite du fond chat */
+}
+
+/* S'assurer que l'app-container n'a pas de fond noir */
+.app-container {
+    background: var(--bg-main) !important;
+}
+
+/* S'assurer que les zones de scroll ont le bon fond */
+.chat-main {
+    background: var(--bg-chat) !important;
+}
+
+/* ============================================================
+   🖼️ FOND D'ÉCRAN DU CHAT (personnalisable)
+   ============================================================ */
+
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background: var(--bg-chat);
+    /* ← Blanc cassé par défaut */
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    min-height: 0;
+    /* Important pour le scroll */
+}
+
+/* ============================================================
+   🔧 AJUSTEMENTS DES ÉLÉMENTS EXISTANTS
+   ============================================================ */
+
+/* L'en-tête utilise les nouvelles variables */
+.chat-header {
+    background: var(--bg-header) !important;
+}
+
+/* Zone de saisie */
+.chat-input-bar {
+    background: var(--bg-main) !important;
+}
+
+/* Input box */
+.input-box-container {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color);
+}
+
+/* ============================================================
+   🎯 GESTION DU CLAVIER AVEC JAVASCRIPT (optionnel)
+   ============================================================ */
+
+/* Cette classe est ajoutée par le JS quand le clavier est ouvert */
+body.keyboard-open .chat-header {
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+body.keyboard-open .app-container {
+    height: 100dvh;
+    overflow: hidden;
+}
     </style>
 </head>
 <body>
@@ -12514,6 +12821,82 @@ async function removeCustomColorFromMessage() {
     hideContextMenus();
     closeStyleMenu();
 }
+      
+      // ============================================================
+// 🔧 GESTION DU CLAVIER SUR MOBILE
+// ============================================================
+
+function detecterClavierMobile() {
+    const toolbar = document.getElementById('etude-toolbar');
+    const appContainer = document.querySelector('.app-container');
+    const body = document.body;
+    let lastHeight = window.innerHeight;
+    let keyboardOpen = false;
+
+    // Détecter l'ouverture du clavier via le focus sur les inputs
+    const inputs = document.querySelectorAll('input, textarea, [contenteditable="true"]');
+
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            if (window.innerWidth < 768) {
+                keyboardOpen = true;
+                body.classList.add('keyboard-open');
+                if (toolbar) {
+                    toolbar.classList.add('hidden-keyboard');
+                    toolbar.classList.remove('visible-keyboard');
+                }
+                // Forcer le scroll vers le bas
+                setTimeout(() => {
+                    const msgArea = document.getElementById('msg-area');
+                    if (msgArea) {
+                        msgArea.scrollTop = msgArea.scrollHeight;
+                    }
+                }, 300);
+            }
+        });
+
+        input.addEventListener('blur', function() {
+            if (window.innerWidth < 768) {
+                keyboardOpen = false;
+                body.classList.remove('keyboard-open');
+                setTimeout(() => {
+                    if (toolbar) {
+                        toolbar.classList.remove('hidden-keyboard');
+                        toolbar.classList.add('visible-keyboard');
+                    }
+                }, 300);
+            }
+        });
+    });
+
+    // Détecter le redimensionnement (le clavier change la hauteur)
+    window.addEventListener('resize', function() {
+        if (window.innerWidth < 768) {
+            const currentHeight = window.innerHeight;
+            if (currentHeight < lastHeight - 150 && !keyboardOpen) {
+                // Le clavier s'est ouvert
+                keyboardOpen = true;
+                body.classList.add('keyboard-open');
+            } else if (currentHeight > lastHeight + 150 && keyboardOpen) {
+                // Le clavier s'est fermé
+                keyboardOpen = false;
+                body.classList.remove('keyboard-open');
+                setTimeout(() => {
+                    if (toolbar) {
+                        toolbar.classList.remove('hidden-keyboard');
+                        toolbar.classList.add('visible-keyboard');
+                    }
+                }, 300);
+            }
+            lastHeight = currentHeight;
+        }
+    });
+}
+
+// Initialiser la détection du clavier  
+setTimeout(detecterClavierMobile, 500);
+      
+      
   </script>
   <!-- Script pour nettoyer et désactiver la console -->
 <script>
