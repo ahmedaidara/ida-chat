@@ -427,7 +427,9 @@
     display: none !important;
 }
       
-      /* Page des paramètres */
+      /* ================================================================
+         PAGE DES PARAMÈTRES — Design moderne
+         ================================================================ */
 .settings-page {
     position: fixed;
     top: 0;
@@ -440,6 +442,7 @@
     display: none;
     flex-direction: column;
     animation: slideUp 0.3s ease-out;
+    -webkit-font-smoothing: antialiased;
 }
 
 @keyframes slideUp {
@@ -447,100 +450,271 @@
     to { transform: translateY(0); }
 }
 
+@keyframes settingsFadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Header --- */
 .settings-header {
     position: sticky;
     top: 0;
-    background: var(--bg-main);
-    padding: 15px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 16px 18px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 14px;
     z-index: 10;
 }
 
 .settings-header h3 {
     flex: 1;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
 }
 
+.settings-header i {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    font-size: 1rem !important;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.settings-header i:active {
+    transform: scale(0.92);
+}
+
+.settings-header i.fa-check {
+    background: linear-gradient(45deg, #a800ff, #0076ff);
+    border: none;
+    color: #fff !important;
+}
+
+/* --- Contenu --- */
 .settings-content {
-    padding: 20px;
+    padding: 20px 16px 90px;
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 18px;
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto;
 }
 
+/* --- Cartes de section --- */
 .settings-section {
     background: var(--input-bg);
-    border-radius: 15px;
-    padding: 15px;
+    border-radius: 18px;
+    padding: 18px;
     border: 1px solid var(--border-color);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    animation: settingsFadeInUp 0.35s ease-out both;
 }
 
 .settings-section h4 {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-bottom: 15px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
+.settings-section h4 i {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #a800ff22, #0076ff22);
+    color: #a800ff;
+    font-size: 0.9rem;
+}
+
+[data-theme="dark"] .settings-section h4 i {
+    color: #c266ff;
+}
+
+.settings-section-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: -6px 0 14px;
+    line-height: 1.45;
+}
+
+/* --- Profil --- */
 .profile-info {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding-bottom: 15px;
+    gap: 16px;
+    padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
-    margin-bottom: 15px;
+    margin-bottom: 14px;
 }
 
 .profile-avatar {
-    width: 70px;
-    height: 70px;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
     background: linear-gradient(45deg, #a800ff, #0076ff);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    font-weight: bold;
+    font-size: 1.8rem;
+    font-weight: 700;
     color: white;
+    box-shadow: 0 0 0 3px var(--input-bg), 0 0 0 5px #a800ff44;
+    flex-shrink: 0;
 }
 
 .profile-details {
     flex: 1;
+    min-width: 0;
 }
 
 .profile-name {
-    font-size: 1.2rem;
-    font-weight: 600;
+    font-size: 1.15rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .profile-username {
     font-size: 0.85rem;
     color: var(--text-muted);
+    margin-top: 2px;
 }
 
 .info-row {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    padding: 12px 0;
+    padding: 12px 4px;
     border-bottom: 1px solid var(--border-color);
 }
 
 .info-row:last-child {
     border-bottom: none;
+    padding-bottom: 2px;
 }
 
 .info-label {
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.87rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-label i {
+    width: 15px;
+    text-align: center;
+    opacity: 0.8;
 }
 
 .info-value {
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 0.87rem;
+    text-align: right;
+}
+
+/* --- Selects redessinés --- */
+.settings-section select {
+    width: 100%;
+    padding: 12px 40px 12px 14px;
+    border-radius: 12px;
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    margin-bottom: 14px;
+    font-size: 0.88rem;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.settings-section select:focus {
+    outline: none;
+    border-color: #a800ff;
+    box-shadow: 0 0 0 3px #a800ff22;
+}
+
+/* --- Boutons redessinés --- */
+.settings-btn-primary,
+.settings-section button {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(45deg, #a800ff, #0076ff);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(168,0,255,0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.settings-btn-primary:hover,
+.settings-section button:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px rgba(168,0,255,0.35);
+}
+
+.settings-btn-primary:active,
+.settings-section button:active {
+    transform: scale(0.98);
+}
+
+.settings-btn-secondary {
+    background: transparent;
+    color: var(--text-main);
+    border: 1.5px solid var(--border-color);
+    box-shadow: none;
+}
+
+.settings-btn-secondary:hover {
+    filter: none;
+    background: rgba(128,128,128,0.08);
+    border-color: #a800ff;
+    box-shadow: none;
+}
+
+.settings-btn-success {
+    background: linear-gradient(45deg, #00b25c, #00cc44);
+    box-shadow: 0 4px 14px rgba(0,204,68,0.25);
+}
+
+.settings-btn-success:hover {
+    box-shadow: 0 6px 18px rgba(0,204,68,0.35);
+}
+
+.settings-actions-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .color-options {
@@ -563,25 +737,84 @@
     transform: scale(1.05);
 }
 
+/* --- Fonds d'écran --- */
 .bg-options {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    margin-top: 10px;
+    margin-top: 4px;
 }
 
 .bg-option {
-    height: 80px;
-    border-radius: 12px;
+    position: relative;
+    height: 82px;
+    border-radius: 14px;
     cursor: pointer;
     background-size: cover;
     background-position: center;
-    border: 2px solid transparent;
+    border: 2px solid var(--border-color);
     transition: all 0.2s;
+}
+
+.bg-option:hover {
+    transform: translateY(-2px);
 }
 
 .bg-option.active {
     border-color: #a800ff;
+    box-shadow: 0 0 0 3px #a800ff33;
+}
+
+.bg-option.active::after {
+    content: '✓';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    background: #a800ff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.bg-option-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-main) !important;
+    border: 2px dashed var(--border-color) !important;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+}
+
+.bg-option-add:hover {
+    border-color: #a800ff !important;
+    color: #a800ff;
+}
+
+.bg-option-remove {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    z-index: 2;
+}
+
+.bg-option-remove:hover {
+    background: #ed4956;
 }
 
 .close-settings {
@@ -2061,17 +2294,13 @@ input, textarea {
         <!-- Page Paramètres -->
 <div class="settings-page" id="settings-page">
     <div class="settings-header">
-        <i class="fa-solid fa-arrow-left" onclick="closeSettingsPage()" style="cursor:pointer; font-size:1.3rem;"></i>
+        <i class="fa-solid fa-arrow-left" onclick="closeSettingsPage()"></i>
         <h3>Paramètres</h3>
-        <i class="fa-solid fa-check" onclick="closeSettingsPage()" style="cursor:pointer; font-size:1.3rem; color:#0095f6;"></i>
     </div>
     
     <div class="settings-content">
         <!-- Section Profil -->
-    <button onclick="demanderPermissionNotifications()" style="background:#0095f6; color:white; padding:10px; border-radius:10px; margin:5px;">
-    🔔 Activer les notifications dans l'app
-</button>
-        <div class="settings-section">
+        <div class="settings-section" style="animation-delay:0.02s;">
             <h4><i class="fa-solid fa-user"></i> Profil</h4>
             <div class="profile-info" id="profile-info">
                 <div class="profile-avatar" id="settings-avatar">--</div>
@@ -2097,67 +2326,80 @@ input, textarea {
                 <span class="info-value" id="member-since">2024</span>
             </div>
         </div>
-        <!-- Bouton Carnet Secret -->
-<div class="secret-notebook-btn" id="secret-notebook-btn" onclick="openSecretPage()" style="background-image: url('https://i.postimg.cc/HnSc4vz4/Design-sans-titre-(3).png');"></div>
-        <!-- Section Bulle de Chat -->
-       <div class="settings-section">
-    <h4><i class="fa-solid fa-message"></i> Style par défaut des bulles</h4>
-    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">Choisis le style qui s'appliquera à tous tes nouveaux messages (sauf ceux où tu as choisi un style spécifique)</p>
-    <select id="default-bubble-style" style="width: 100%; padding: 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); margin-bottom: 15px;">
-        <option value="none">🎨 Style par défaut d'Instagram</option>
-        <option value="bicolor">🌈 Bicolore</option>
-        <option value="dark-passion">🔥 Rouge et Noir</option>
-        <option value="grid-style">📊 Style Tableau</option>
-        <option value="rainbow">🏳️‍🌈 Arc-en-ciel</option>
-        <option value="neon">💡 Néon Glow</option>
-        <option value="wood">🌳 Style Bois</option>
-        <option value="code-style">💻 Style Code</option>
-        <option value="comics">🤣 Style Comics</option>
-        <option value="watercolor">🎨 Aquarelle</option>
-        <option value="retro">🕹️ Style Retro</option>
-        <option value="glassmorphism">🔮 Glassmorphism</option>
-        <option value="crystal">💎 Crystal</option>
-        <option value="sunset">🌅 Sunset</option>
-        <option value="ocean">🌊 Ocean</option>
-        <option value="forest">🌲 Forest</option>
-        <option value="midnight">🌙 Midnight</option>
-        <option value="rose">🌹 Rose</option>
-        <option value="gold">👑 Gold</option>
-        <option value="galaxy">✨ Galaxy</option>
-        <option value="cyberpunk">🤖 Cyberpunk</option>
-    </select>
-    <button onclick="saveDefaultBubbleStyle()" style="width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 10px; color: white; cursor: pointer;">✅ Appliquer ce style par défaut</button>
-</div>
-      <!-- Section Animation d'envoi -->
-      <div class="settings-section">
-    <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Animation d'envoi</h4>
-    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">Choisis l'effet visuel chic qui s'affichera quand TES messages apparaissent dans le chat.</p>
-    <select id="default-send-animation" style="width: 100%; padding: 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); margin-bottom: 15px;">
-        <option value="fade-in-up">⬆️ Fade In Up (apparition douce vers le haut)</option>
-        <option value="scale-pop">🎈 Scale Up / Pop</option>
-        <option value="slide-right">➡️ Slide from Right</option>
-        <option value="elastic-bounce">🪀 Elastic Bounce</option>
-        <option value="blur-focus">🔍 Smooth Blur-to-Focus</option>
-    </select>
-    <button onclick="saveDefaultSendAnimation()" style="width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 10px; color: white; cursor: pointer;">✅ Appliquer cette animation</button>
-</div>
-      
-      <button onclick="demanderPermissionNotifications()" style="background:#0095f6; color:white; padding:10px; border:none; border-radius:10px; margin:5px;">
-    🔔 Activer les notifications
-</button>
-        
-        <!-- Section Fond d'écran -->
-        <div class="settings-section">
-            <h4><i class="fa-solid fa-image"></i> Fond d'écran</h4>
-            <div class="bg-options" id="bg-options">
-                <div class="bg-option" style="background: var(--bg-chat);" data-bg="none"></div>
-                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=150');" data-bg="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=500"></div>
-                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?w=150');" data-bg="https://images.unsplash.com/photo-1557683316-973673baf926?w=500"></div>
-            </div>
+
+        <!-- Section Notifications -->
+        <div class="settings-section" style="animation-delay:0.06s;">
+            <h4><i class="fa-solid fa-bell"></i> Notifications</h4>
+            <p class="settings-section-desc">Active les notifications pour ne rater aucun message.</p>
+            <button class="settings-btn-secondary" onclick="demanderPermissionNotifications()"><i class="fa-solid fa-bell"></i> Activer les notifications</button>
         </div>
-      <button onclick="envoyerNotificationTelegram('🧪 Test', 'Ceci est un test !')" style="background:#00cc44; color:white; padding:10px; border-radius:10px; margin:10px; font-weight:bold;">
-    🔔 Tester notification Telegram
-</button>
+
+        <!-- Section Bulle de Chat -->
+        <div class="settings-section" style="animation-delay:0.1s;">
+            <h4><i class="fa-solid fa-message"></i> Style par défaut des bulles</h4>
+            <p class="settings-section-desc">Choisis le style qui s'appliquera à tous tes nouveaux messages (sauf ceux où tu as choisi un style spécifique).</p>
+            <select id="default-bubble-style" onchange="saveDefaultBubbleStyle()">
+                <option value="none">🎨 Style par défaut d'Instagram</option>
+                <option value="bicolor">🌈 Bicolore</option>
+                <option value="dark-passion">🔥 Rouge et Noir</option>
+                <option value="grid-style">📊 Style Tableau</option>
+                <option value="rainbow">🏳️‍🌈 Arc-en-ciel</option>
+                <option value="neon">💡 Néon Glow</option>
+                <option value="wood">🌳 Style Bois</option>
+                <option value="code-style">💻 Style Code</option>
+                <option value="comics">🤣 Style Comics</option>
+                <option value="watercolor">🎨 Aquarelle</option>
+                <option value="retro">🕹️ Style Retro</option>
+                <option value="glassmorphism">🔮 Glassmorphism</option>
+                <option value="crystal">💎 Crystal</option>
+                <option value="sunset">🌅 Sunset</option>
+                <option value="ocean">🌊 Ocean</option>
+                <option value="forest">🌲 Forest</option>
+                <option value="midnight">🌙 Midnight</option>
+                <option value="rose">🌹 Rose</option>
+                <option value="gold">👑 Gold</option>
+                <option value="galaxy">✨ Galaxy</option>
+                <option value="cyberpunk">🤖 Cyberpunk</option>
+            </select>
+        </div>
+
+        <!-- Section Animation d'envoi -->
+        <div class="settings-section" style="animation-delay:0.14s;">
+            <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Animation d'envoi</h4>
+            <p class="settings-section-desc">Choisis l'effet visuel chic qui s'affichera quand TES messages apparaissent dans le chat.</p>
+            <select id="default-send-animation" onchange="saveDefaultSendAnimation()">
+                <option value="fade-in-up">⬆️ Fade In Up (apparition douce vers le haut)</option>
+                <option value="scale-pop">🎈 Scale Up / Pop</option>
+                <option value="slide-right">➡️ Slide from Right</option>
+                <option value="elastic-bounce">🪀 Elastic Bounce</option>
+                <option value="blur-focus">🔍 Smooth Blur-to-Focus</option>
+            </select>
+        </div>
+
+        <!-- Section Fond d'écran -->
+        <div class="settings-section" style="animation-delay:0.18s;">
+            <h4><i class="fa-solid fa-image"></i> Fond d'écran</h4>
+            <p class="settings-section-desc">Personnalise l'arrière-plan de ta conversation, ou ajoute ta propre image.</p>
+            <div class="bg-options" id="bg-options">
+                <div class="bg-option" style="background: var(--bg-chat);" data-bg="none" title="Par défaut"></div>
+                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=150');" data-bg="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800"></div>
+                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?w=150');" data-bg="https://images.unsplash.com/photo-1557683316-973673baf926?w=800"></div>
+                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=150');" data-bg="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800" title="Forêt"></div>
+                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1470813740244-df37b8c1edcb?w=150');" data-bg="https://images.unsplash.com/photo-1470813740244-df37b8c1edcb?w=800" title="Étoiles"></div>
+                <div class="bg-option" style="background-image: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=150');" data-bg="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800" title="Ciel étoilé"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #a800ff, #0076ff);" data-bg="gradient:linear-gradient(135deg, #a800ff, #0076ff)" title="Dégradé violet"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #ff6b6b, #feca57);" data-bg="gradient:linear-gradient(135deg, #ff6b6b, #feca57)" title="Dégradé coucher de soleil"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #134e5e, #71b280);" data-bg="gradient:linear-gradient(135deg, #134e5e, #71b280)" title="Dégradé forêt"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #232526, #414345);" data-bg="gradient:linear-gradient(135deg, #232526, #414345)" title="Dégradé sombre"></div>
+                <div class="bg-option bg-option-add" id="bg-option-add" title="Ajouter une image">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+            </div>
+            <input type="file" id="bg-upload-input" accept="image/*" style="display:none;">
+        </div>
+
+        <!-- Bouton Carnet Secret -->
+        <div class="secret-notebook-btn" id="secret-notebook-btn" onclick="openSecretPage()" style="background-image: url('https://i.postimg.cc/HnSc4vz4/Design-sans-titre-(3).png');"></div>
     </div>
 </div>
         <!-- Modal Photo -->
@@ -3020,6 +3262,46 @@ function activerSuiviStatuts() {
         }
     });
 }
+    // ========== RENDU UNIFIÉ D'UNE BULLE (couleur / dégradé / style) ==========
+    // ✅ Cette fonction est LA SEULE source de vérité pour appliquer l'apparence
+    // d'une bulle (que ce soit juste après une action locale, ou reçu en temps réel
+    // via Firestore). Avant, plusieurs écouteurs différents faisaient chacun leur
+    // propre logique partielle (parfois incomplète), ce qui causait des bugs :
+    // "il faut rafraîchir pour voir la couleur" et "on ne peut plus changer le style
+    // d'un autre message sans rafraîchir". En centralisant ici, tout reste cohérent.
+    const LISTE_STYLES_BULLE = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
+
+    function appliquerRenduBulleMessage(bubble, row, data) {
+        if (!bubble) return;
+
+        // On repart toujours d'un état propre : aucune classe de style, aucune
+        // couleur inline. Comme ça, peu importe l'état précédent de LA bulle, le
+        // nouveau rendu calculé ci-dessous sera TOUJOURS correct (fini les "else if"
+        // qui ne se déclenchaient que dans certains cas précis).
+        LISTE_STYLES_BULLE.forEach(style => bubble.classList.remove(style));
+        bubble.style.removeProperty('background');
+        bubble.style.removeProperty('color');
+
+        if (data.customColor) {
+            bubble.style.setProperty('background', data.customColor, 'important');
+            bubble.style.setProperty('color', getContrastColor(data.customColor), 'important');
+        } else if (data.customGradient) {
+            bubble.style.setProperty('background', data.customGradient, 'important');
+            bubble.style.setProperty('color', 'white', 'important');
+        } else if (data.bubbleStyle) {
+            bubble.classList.add(data.bubbleStyle);
+        } else if (data.messageStyle) {
+            bubble.classList.add(data.messageStyle);
+        } else if (row && row.classList.contains('sent')) {
+            const defaultStyle = localStorage.getItem('default_bubble_style');
+            if (defaultStyle && defaultStyle !== 'none') {
+                bubble.classList.add(defaultStyle);
+            }
+        }
+    }
+    window.appliquerRenduBulleMessage = appliquerRenduBulleMessage;
+    window.LISTE_STYLES_BULLE = LISTE_STYLES_BULLE;
+
     // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION CORRIGÉE ==========
 function listenToMessages() {
     if (unsubscribeMessages) unsubscribeMessages();
@@ -3075,32 +3357,11 @@ function listenToMessages() {
                     {
                         const messageRowCouleur = document.querySelector(`[data-id="${msgId}"]`);
                         const bubbleCouleur = messageRowCouleur ? messageRowCouleur.querySelector('.message-bubble') : null;
-                        if (bubbleCouleur) {
-                            const allStylesCouleur = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-                            if (data.customColor) {
-                                allStylesCouleur.forEach(style => bubbleCouleur.classList.remove(style));
-                                bubbleCouleur.style.setProperty('background', data.customColor, 'important');
-                                bubbleCouleur.style.setProperty('color', getContrastColor(data.customColor), 'important');
-                            } else if (data.customGradient) {
-                                allStylesCouleur.forEach(style => bubbleCouleur.classList.remove(style));
-                                bubbleCouleur.style.setProperty('background', data.customGradient, 'important');
-                                bubbleCouleur.style.setProperty('color', 'white', 'important');
-                            } else if (bubbleCouleur.style.background) {
-                                // La couleur vient d'être supprimée -> retour au style par défaut
-                                bubbleCouleur.style.removeProperty('background');
-                                bubbleCouleur.style.removeProperty('color');
-                                if (data.bubbleStyle) {
-                                    allStylesCouleur.forEach(style => bubbleCouleur.classList.remove(style));
-                                    bubbleCouleur.classList.add(data.bubbleStyle);
-                                } else if (messageRowCouleur.classList.contains('sent')) {
-                                    const defaultStyle = localStorage.getItem('default_bubble_style');
-                                    if (defaultStyle && defaultStyle !== 'none') {
-                                        allStylesCouleur.forEach(style => bubbleCouleur.classList.remove(style));
-                                        bubbleCouleur.classList.add(defaultStyle);
-                                    }
-                                }
-                            }
-                        }
+                        // ✅ On applique TOUJOURS le rendu complet (couleur, dégradé, style
+                        // ou défaut) à partir des données actuelles du message, sans condition
+                        // fragile. Ça marche donc à chaque fois, sur n'importe quel message,
+                        // sans avoir besoin de rafraîchir la page.
+                        appliquerRenduBulleMessage(bubbleCouleur, messageRowCouleur, data);
                     }
                     
                     // Mise à jour légère des coches de statut (évite de reconstruire toute la liste,
@@ -4481,7 +4742,8 @@ async function applyStyleToMessage(styleName) {
         'rose':'Rose', 'gold':'Gold', 'galaxy':'Galaxy', 'cyberpunk':'Cyberpunk'
     };
     
-    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    const msgId = selectedMessageId;
+    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
     const isSentMessage = messageRow && messageRow.classList.contains('sent');
     
     if (!isSentMessage) {
@@ -4490,56 +4752,49 @@ async function applyStyleToMessage(styleName) {
         return;
     }
     
-    // Mettre à jour Firestore
-    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ 
-        bubbleStyle: styleName 
-    });
-    
-    // Mettre à jour l'affichage LOCAL immédiatement
+    const nouvellesDonnees = { bubbleStyle: styleName, customColor: null, customGradient: null };
+
+    // Mettre à jour l'affichage LOCAL immédiatement (optimiste), uniquement sur CE message
     const bubble = messageRow.querySelector('.message-bubble');
-    if (bubble) {
-        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-        allStyles.forEach(style => bubble.classList.remove(style));
-        bubble.classList.add(styleName);
-    }
+    appliquerRenduBulleMessage(bubble, messageRow, nouvellesDonnees);
     
-    // Fermer les menus
+    // Fermer les menus tout de suite (pas besoin d'attendre le réseau)
     closeStyleMenu();
     document.getElementById('ctx-menu').style.display = 'none';
-    
     showTempNotification(`✨ Style "${styleNames[styleName]}" appliqué !`);
     
-    // Réinitialiser selectedMessageId pour éviter les conflits
+    // Réinitialiser selectedMessageId pour éviter les conflits avec un autre message
     selectedMessageId = null;
+
+    // Puis mettre à jour Firestore (synchro temps réel pour l'autre personne)
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update(nouvellesDonnees);
 }
         
       async function removeStyleFromMessage() {
     if (!selectedMessageId) return;
     
-    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
+    const msgId = selectedMessageId;
+    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
     if (!messageRow || !messageRow.classList.contains('sent')) {
         showTempNotification("❌ Tu ne peux supprimer que le style de TES messages !");
         closeStyleMenu();
         return;
     }
     
-    // Supprimer le style de Firestore
-    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({ 
-        bubbleStyle: null 
-    });
-    
-    // Supprimer le style visuellement
+    // Supprimer le style visuellement tout de suite, uniquement sur CE message
     const bubble = messageRow.querySelector('.message-bubble');
-    if (bubble) {
-        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-        allStyles.forEach(style => bubble.classList.remove(style));
-    }
+    appliquerRenduBulleMessage(bubble, messageRow, { bubbleStyle: null, customColor: null, customGradient: null });
     
     closeStyleMenu();
     document.getElementById('ctx-menu').style.display = 'none';
     showTempNotification(`🗑️ Style supprimé`);
     
     selectedMessageId = null;
+
+    // Supprimer le style de Firestore
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({ 
+        bubbleStyle: null 
+    });
 }
         
         // ========== TRADUCTION ========== 
@@ -5622,14 +5877,153 @@ function initSettingsBubbles() {
         };
     });
     
-    document.querySelectorAll('.bg-option').forEach(opt => {
-        opt.onclick = function() {
-            const bg = this.getAttribute('data-bg');
-            document.getElementById('msg-area').style.backgroundImage = bg === 'none' ? 'none' : `url('${bg}')`;
-            document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
-            this.classList.add('active');
-        };
+    initBgOptions();
+}
+
+// ========== FOND D'ÉCRAN DU CHAT (avec persistance + upload d'image perso) ==========
+
+// Applique un fond d'écran sur la zone de chat et le sauvegarde pour qu'il persiste au rafraîchissement
+function appliquerFondEcran(bg) {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return;
+    if (!bg || bg === 'none') {
+        msgArea.style.backgroundImage = 'none';
+    } else if (bg.startsWith('gradient:')) {
+        msgArea.style.backgroundImage = bg.slice('gradient:'.length);
+    } else {
+        msgArea.style.backgroundImage = `url('${bg}')`;
+    }
+    localStorage.setItem('chat_background', bg || 'none');
+}
+
+// Marque visuellement la bonne vignette comme active (data-bg correspondant)
+function marquerFondActif(bg) {
+    document.querySelectorAll('.bg-option[data-bg]').forEach(o => {
+        o.classList.toggle('active', o.getAttribute('data-bg') === bg);
     });
+}
+
+function selectionnerFond(optionEl) {
+    const bg = optionEl.getAttribute('data-bg');
+    appliquerFondEcran(bg);
+    marquerFondActif(bg);
+}
+
+// Recrée une vignette de fond personnalisé (image uploadée par l'utilisateur), avec un bouton pour la supprimer
+function creerVignetteFondPerso(dataUrl) {
+    const opt = document.createElement('div');
+    opt.className = 'bg-option';
+    opt.style.backgroundImage = `url('${dataUrl}')`;
+    opt.setAttribute('data-bg', dataUrl);
+    opt.title = 'Ton image';
+
+    const removeBtn = document.createElement('div');
+    removeBtn.className = 'bg-option-remove';
+    removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    removeBtn.onclick = function(e) {
+        e.stopPropagation();
+        supprimerFondPerso(dataUrl, opt);
+    };
+    opt.appendChild(removeBtn);
+
+    opt.addEventListener('click', function(e) {
+        if (e.target.closest('.bg-option-remove')) return;
+        selectionnerFond(opt);
+    });
+
+    return opt;
+}
+
+function supprimerFondPerso(dataUrl, opt) {
+    let fonds = JSON.parse(localStorage.getItem('custom_backgrounds') || '[]');
+    fonds = fonds.filter(f => f !== dataUrl);
+    localStorage.setItem('custom_backgrounds', JSON.stringify(fonds));
+    opt.remove();
+    // Si c'était le fond actif, on revient au fond par défaut
+    if (localStorage.getItem('chat_background') === dataUrl) {
+        appliquerFondEcran('none');
+        marquerFondActif('none');
+    }
+}
+
+// Redimensionne/compresse l'image choisie avant de la stocker (évite de saturer le localStorage)
+function redimensionnerImage(file, maxLargeur, callback) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const ratio = Math.min(1, maxLargeur / img.width);
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width * ratio;
+            canvas.height = img.height * ratio;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            callback(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function initBgOptions() {
+    // Vignettes prédéfinies (couleurs, dégradés, photos)
+    document.querySelectorAll('.bg-option[data-bg]').forEach(opt => {
+        opt.addEventListener('click', () => selectionnerFond(opt));
+    });
+
+    // Charge les fonds personnalisés déjà ajoutés précédemment
+    const bgOptionsContainer = document.getElementById('bg-options');
+    const addTile = document.getElementById('bg-option-add');
+    const fondsPersos = JSON.parse(localStorage.getItem('custom_backgrounds') || '[]');
+    fondsPersos.forEach(dataUrl => {
+        const vignette = creerVignetteFondPerso(dataUrl);
+        bgOptionsContainer.insertBefore(vignette, addTile);
+    });
+
+    // Tuile "+" : ouvre le sélecteur de fichier
+    if (addTile) {
+        addTile.addEventListener('click', () => {
+            document.getElementById('bg-upload-input').click();
+        });
+    }
+
+    // Gestion de l'upload d'une image personnalisée
+    const uploadInput = document.getElementById('bg-upload-input');
+    if (uploadInput) {
+        uploadInput.addEventListener('change', function() {
+            const file = this.files && this.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showTempNotification("❌ Choisis un fichier image");
+                return;
+            }
+            redimensionnerImage(file, 1080, (dataUrl) => {
+                // Sauvegarder dans la liste des fonds personnalisés
+                const fonds = JSON.parse(localStorage.getItem('custom_backgrounds') || '[]');
+                fonds.push(dataUrl);
+                localStorage.setItem('custom_backgrounds', JSON.stringify(fonds));
+
+                // Ajouter la vignette juste avant le bouton "+"
+                const vignette = creerVignetteFondPerso(dataUrl);
+                bgOptionsContainer.insertBefore(vignette, addTile);
+
+                // Appliquer immédiatement comme fond d'écran
+                appliquerFondEcran(dataUrl);
+                marquerFondActif(dataUrl);
+                showTempNotification("🖼️ Image ajoutée en fond d'écran");
+            });
+            uploadInput.value = '';
+        });
+    }
+
+    // Restaurer le fond d'écran sauvegardé au chargement de la page
+    const fondSauvegarde = localStorage.getItem('chat_background');
+    if (fondSauvegarde) {
+        appliquerFondEcran(fondSauvegarde);
+        marquerFondActif(fondSauvegarde);
+    } else {
+        marquerFondActif('none');
+    }
 }
 
 // Appeler cette fonction après le chargement
@@ -5785,6 +6179,7 @@ function saveDefaultBubbleStyle() {
     // Met à jour IMMÉDIATEMENT tous les messages sans style perso
     updateAllMessagesDefaultStyle();
     
+    showTempNotification("✅ Style par défaut appliqué");
  }
 
 // Met à jour tous les messages qui n'ont PAS de style personnalisé
@@ -7743,11 +8138,10 @@ if (typeof CHAT_ID !== 'undefined' && typeof db !== 'undefined') {
                             texteSpan.innerText = data.text;
                         }
 
-                        // Met à jour le style de la bulle en direct (si changé)
-                        const bulle = ligneMessage.querySelector('.message-bubble');
-                        if (bulle && data.bubbleStyle) {
-                            bulle.className = `message-bubble ${data.bubbleStyle}`;
-                        }
+                        // ℹ️ La mise à jour du style/couleur de la bulle est désormais gérée
+                        // uniquement par la fonction unifiée appliquerRenduBulleMessage(),
+                        // appelée dans listenToMessages(), pour éviter les doublons qui se
+                        // marchaient dessus.
                         
                         console.log(`✏️ Message ${msgId} mis à jour en direct !`);
                     }
@@ -11979,147 +12373,20 @@ window.ouvrirJeux = ouvrirJeux;
 window.ouvrirEffets = ouvrirEffets;
   
   // ========== COULEURS PERSONNALISÉES POUR LES BULLES ==========
-
-// Ouvrir le sélecteur de couleur
-function openColorPickerForMessage() {
-    if (!selectedMessageId) {
-        showTempNotification("❌ Sélectionne d'abord un message");
-        return;
-    }
-    
-    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
-    if (!messageRow || !messageRow.classList.contains('sent')) {
-        showTempNotification("❌ Tu ne peux colorer que TES messages !");
-        return;
-    }
-    
-    document.getElementById('color-picker-modal').style.display = 'flex';
-    hideContextMenus();
-    closeStyleMenu();
-}
-
-// Fermer le sélecteur
-function closeColorPicker() {
-    document.getElementById('color-picker-modal').style.display = 'none';
-}
-
-// Appliquer la couleur personnalisée
-async function applyCustomColorToMessage() {
-    if (!selectedMessageId) {
-        closeColorPicker();
-        return;
-    }
-    
-    const color = document.getElementById('custom-color-picker').value;
-    await applyColorToMessage(selectedMessageId, color);
-    closeColorPicker();
-}
-
-// Fonction principale pour appliquer une couleur
-async function applyColorToMessage(msgId, color) {
-    const messageRow = document.querySelector(`[data-id="${msgId}"]`);
-    if (!messageRow || !messageRow.classList.contains('sent')) {
-        showTempNotification("❌ Tu ne peux colorer que TES messages !");
-        return;
-    }
-    
-    // Sauvegarder dans Firestore (champ customColor)
-    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({
-        customColor: color,
-        // On retire les styles de classe pour éviter les conflits
-        bubbleStyle: null
-    });
-    
-    // Appliquer visuellement
-    const bubble = messageRow.querySelector('.message-bubble');
-    if (bubble) {
-        // Enlever tous les styles de classe
-        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-        allStyles.forEach(style => bubble.classList.remove(style));
-        
-        // Appliquer la couleur
-        bubble.style.background = color;
-        bubble.style.color = getContrastColor(color);
-    }
-    
-    showTempNotification(`🎨 Couleur appliquée !`);
-    selectedMessageId = null;
-}
-
-// ========== DÉGRADÉ PERSONNALISÉ ==========
-function applyGradientToMessage() {
-    if (!selectedMessageId) {
-        showTempNotification("❌ Sélectionne d'abord un message");
-        return;
-    }
-    
-    const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
-    if (!messageRow || !messageRow.classList.contains('sent')) {
-        showTempNotification("❌ Tu ne peux colorer que TES messages !");
-        return;
-    }
-    
-    // Demander deux couleurs
-    const color1 = prompt("🎨 Couleur 1 (ex: #ff0000 ou red) :", "#a800ff");
-    if (!color1) return;
-    const color2 = prompt("🎨 Couleur 2 (ex: #0076ff ou blue) :", "#0076ff");
-    if (!color2) return;
-    
-    const gradient = `linear-gradient(135deg, ${color1}, ${color2})`;
-    
-    // Sauvegarder dans Firestore
-    db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({
-        customGradient: gradient,
-        customColor: null,
-        bubbleStyle: null
-    });
-    
-    // Appliquer visuellement
-    const bubble = document.querySelector(`[data-id="${selectedMessageId}"] .message-bubble`);
-    if (bubble) {
-        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-        allStyles.forEach(style => bubble.classList.remove(style));
-        bubble.style.background = gradient;
-        bubble.style.color = 'white';
-    }
-    
-    showTempNotification(`🌈 Dégradé appliqué !`);
-    selectedMessageId = null;
-    hideContextMenus();
-    closeStyleMenu();
-}
-
-// ========== FONCTION AUXILIAIRE : COULEUR DE TEXTE CONTRASTÉE ==========
-function getContrastColor(hexColor) {
-    // Si c'est un nom de couleur ou autre format, on le passe
-    if (!hexColor.startsWith('#')) {
-        return '#ffffff';
-    }
-    
-    // Convertir en RGB
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-    
-    // Luminosité (formule standard)
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    
-    return luminance > 0.5 ? '#000000' : '#ffffff';
-}
-  
-  // ========== FONCTIONS POUR LES COULEURS PERSONNALISÉES ==========
+  // ✅ Version nettoyée : ces fonctions n'existent plus qu'UNE seule fois dans le
+  // fichier (avant elles étaient dupliquées, ce qui rendait le code fragile) et
+  // utilisent toutes appliquerRenduBulleMessage() pour rester 100% cohérentes avec
+  // ce que la synchronisation temps réel affichera.
 
 // Fonction pour obtenir une couleur de texte contrastée
 function getContrastColor(hexColor) {
     if (!hexColor || !hexColor.startsWith('#')) {
         return '#ffffff';
     }
-    
     try {
         const r = parseInt(hexColor.slice(1, 3), 16);
         const g = parseInt(hexColor.slice(3, 5), 16);
         const b = parseInt(hexColor.slice(5, 7), 16);
-        
         const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
         return luminance > 0.5 ? '#000000' : '#ffffff';
     } catch(e) {
@@ -12133,13 +12400,13 @@ function openColorPickerForMessage() {
         showTempNotification("❌ Sélectionne d'abord un message");
         return;
     }
-    
+
     const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
     if (!messageRow || !messageRow.classList.contains('sent')) {
         showTempNotification("❌ Tu ne peux colorer que TES messages !");
         return;
     }
-    
+
     document.getElementById('color-picker-modal').style.display = 'flex';
     hideContextMenus();
     closeStyleMenu();
@@ -12156,110 +12423,92 @@ async function applyCustomColorToMessage() {
         closeColorPicker();
         return;
     }
-    
+
     const color = document.getElementById('custom-color-picker').value;
     await applyColorToMessage(selectedMessageId, color);
     closeColorPicker();
 }
 
-// Fonction principale pour appliquer une couleur
+// Fonction principale pour appliquer une couleur à UN message précis
 async function applyColorToMessage(msgId, color) {
     const messageRow = document.querySelector(`[data-id="${msgId}"]`);
     if (!messageRow || !messageRow.classList.contains('sent')) {
         showTempNotification("❌ Tu ne peux colorer que TES messages !");
         return;
     }
-    
-    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({
-        customColor: color,
-        customGradient: null,
-        bubbleStyle: null
-    });
-    
+
+    const nouvellesDonnees = { customColor: color, customGradient: null, bubbleStyle: null };
+
+    // Appliquer visuellement TOUT DE SUITE (optimiste), uniquement sur CE message
     const bubble = messageRow.querySelector('.message-bubble');
-    if (bubble) {
-        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-        allStyles.forEach(style => bubble.classList.remove(style));
-        bubble.style.background = color;
-        bubble.style.color = getContrastColor(color);
-    }
-    
+    appliquerRenduBulleMessage(bubble, messageRow, nouvellesDonnees);
+
+    // Puis sauvegarder dans Firestore (ce qui déclenchera aussi la synchro temps réel
+    // chez l'autre personne, et re-confirmera l'affichage local)
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update(nouvellesDonnees);
+
     showTempNotification(`🎨 Couleur appliquée !`);
     selectedMessageId = null;
     hideContextMenus();
     closeStyleMenu();
 }
 
-// Appliquer un dégradé
-function applyGradientToMessage() {
+// Appliquer un dégradé à UN message précis
+async function applyGradientToMessage() {
     if (!selectedMessageId) {
         showTempNotification("❌ Sélectionne d'abord un message");
         return;
     }
-    
+
     const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
     if (!messageRow || !messageRow.classList.contains('sent')) {
         showTempNotification("❌ Tu ne peux colorer que TES messages !");
         return;
     }
-    
+
     const color1 = prompt("🎨 Couleur 1 (ex: #ff0000 ou red) :", "#a800ff");
     if (!color1) return;
     const color2 = prompt("🎨 Couleur 2 (ex: #0076ff ou blue) :", "#0076ff");
     if (!color2) return;
-    
+
     const gradient = `linear-gradient(135deg, ${color1}, ${color2})`;
-    
-    db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({
-        customGradient: gradient,
-        customColor: null,
-        bubbleStyle: null
-    });
-    
-    const bubble = document.querySelector(`[data-id="${selectedMessageId}"] .message-bubble`);
-    if (bubble) {
-        const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-        allStyles.forEach(style => bubble.classList.remove(style));
-        bubble.style.background = gradient;
-        bubble.style.color = 'white';
-    }
-    
+    const msgId = selectedMessageId;
+    const nouvellesDonnees = { customGradient: gradient, customColor: null, bubbleStyle: null };
+
+    // Appliquer visuellement TOUT DE SUITE, uniquement sur CE message
+    const bubble = messageRow.querySelector('.message-bubble');
+    appliquerRenduBulleMessage(bubble, messageRow, nouvellesDonnees);
+
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update(nouvellesDonnees);
+
     showTempNotification(`🌈 Dégradé appliqué !`);
     selectedMessageId = null;
     hideContextMenus();
     closeStyleMenu();
 }
 
-// Supprimer la couleur personnalisée
+// Supprimer la couleur personnalisée d'UN message précis
 async function removeCustomColorFromMessage() {
     if (!selectedMessageId) {
         showTempNotification("❌ Sélectionne d'abord un message");
         return;
     }
-    
+
     const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
     if (!messageRow || !messageRow.classList.contains('sent')) {
         showTempNotification("❌ Tu ne peux supprimer la couleur que de TES messages !");
         return;
     }
-    
-    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(selectedMessageId).update({
-        customColor: null,
-        customGradient: null
-    });
-    
+
+    const msgId = selectedMessageId;
+    const nouvellesDonnees = { customColor: null, customGradient: null };
+
     const bubble = messageRow.querySelector('.message-bubble');
-    if (bubble) {
-        bubble.style.background = '';
-        bubble.style.color = '';
-        const defaultStyle = localStorage.getItem('default_bubble_style');
-        if (defaultStyle && defaultStyle !== 'none') {
-            const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
-            allStyles.forEach(style => bubble.classList.remove(style));
-            bubble.classList.add(defaultStyle);
-        }
-    }
-    
+    // On garde le bubbleStyle existant s'il y en avait un (on ne le touche pas ici)
+    appliquerRenduBulleMessage(bubble, messageRow, { customColor: null, customGradient: null, bubbleStyle: null });
+
+    await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update(nouvellesDonnees);
+
     showTempNotification("🗑️ Couleur supprimée !");
     selectedMessageId = null;
     hideContextMenus();
@@ -12310,4 +12559,4 @@ async function removeCustomColorFromMessage() {
 </div>
 </body>   
   
-</html>   
+</html>
