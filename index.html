@@ -1663,6 +1663,23 @@ input, textarea {
         border-bottom: 1px solid var(--border-color) !important;
     }
 }
+      /* SUPPRESSION COMPLETE DE LA BULLE POUR TABLEAU BLANC */ 
+.message-bubble:has(.wb-card) {
+    background: none !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+
+.wb-card {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
     </style>
 </head>
 <body>
@@ -8275,25 +8292,142 @@ document.addEventListener('DOMContentLoaded', function() {
     const triggerBtn = document.getElementById('gif-trigger-btn');
     
     // ========== COLLECTION DE GIFS ==========
-    const gifsPopulaires = [
-        "https://media.tenor.com/GfSX-u7VGM4AAAAC/pikachu-pokemon.gif",
-        "https://media.tenor.com/_hUq1BSUsiMAAAAM/cat-cute.gif",       
-        "https://media.tenor.com/8zkTzFrcGZYAAAAM/goodbye-thank-you.gif", 
-        "https://media.tenor.com/TmNWrln1uJAAAAAC/bongo-cat-cute.gif", 
-        "https://media.tenor.com/zqHbKTg9NxEAAAAM/ray-liotta-laughing.gif", 
-        "https://media.tenor.com/-XaDVlGtQeQAAAAM/laughing-rofl.gif",  
-        "https://media.tenor.com/xnJMR7T9UvUAAAAM/ring-will-you-marry-me.gif",
-        "https://media.tenor.com/A6mB6w_F5k0AAAAM/milk-and-mocha-hug.gif",
-        "https://media.tenor.com/7gM0VbVvI7MAAAAM/mochi-peachcat-kisses.gif",
-        "https://media.tenor.com/W7Sg5qTfU4IAAAAM/love-heart.gif",
-        "https://media.tenor.com/1GkUepqMCHYAAAAM/tu-me-manques-i-miss-you.gif",
-        "https://media.tenor.com/A9f697g_ZBcAAAAM/stitching-together-love.gif",
-        "https://media.tenor.com/b2b-mIuGZ7sAAAAM/milk-and-mocha-love.gif",
-        "https://media.tenor.com/gK6R8nOaECAAAAAM/love-couple.gif",
-        "https://media.tenor.com/A2T63w6yUo8AAAAM/cute-disney.gif",
-        "https://media.tenor.com/YwN9_2n7MAMAAAAM/tkthao219-bubududu.gif",
-        "https://media.tenor.com/P4W8_Vv8pGIAAAAM/flying-kiss-love.gif"
-    ];
+   // ========== COLLECTION DE GIFS - VERSION ULTRA COMPLÈTE ==========
+const gifsPopulaires = [
+    // HUMOUR
+    "https://media.tenor.com/zqHbKTg9NxEAAAAM/ray-liotta-laughing.gif",
+    "https://media.tenor.com/-XaDVlGtQeQAAAAM/laughing-rofl.gif",
+    "https://media.tenor.com/YwN9_2n7MAMAAAAM/tkthao219-bubududu.gif",
+    "https://media.tenor.com/9Hd3-Gl04OUAAAAM/funny-laugh.gif",
+    "https://media.tenor.com/5wW1dCgLJ7AAAAAM/funny-lol.gif",
+    "https://media.tenor.com/U7PL_rjKOyYAAAAM/funny-cat.gif",
+    "https://media.tenor.com/q5YqQfKvdoYAAAAM/funny-dog.gif",
+    "https://media.tenor.com/K4qZcVJmFqQAAAAM/funny-facepalm.gif",
+    "https://media.tenor.com/3mP6OG5sBlIAAAAM/funny-fail.gif",
+    "https://media.tenor.com/3fHbJvV9-dAAAAAM/funny-omg.gif",
+    "https://media.tenor.com/x8v1GpPtuAEAAAAM/funny-party.gif",
+    "https://media.tenor.com/2AFM1EGD2t4AAAAM/funny-celebrate.gif",
+    "https://media.tenor.com/po5Z8l7tQsMAAAAM/funny-dance.gif",
+    "https://media.tenor.com/kBbBzA8v7rUAAAAM/funny-move.gif",
+    
+    // AMOUR ET TENDRESSE
+    "https://media.tenor.com/A6mB6w_F5k0AAAAM/milk-and-mocha-hug.gif",
+    "https://media.tenor.com/7gM0VbVvI7MAAAAM/mochi-peachcat-kisses.gif",
+    "https://media.tenor.com/W7Sg5qTfU4IAAAAM/love-heart.gif",
+    "https://media.tenor.com/1GkUepqMCHYAAAAM/tu-me-manques-i-miss-you.gif",
+    "https://media.tenor.com/A9f697g_ZBcAAAAM/stitching-together-love.gif",
+    "https://media.tenor.com/b2b-mIuGZ7sAAAAM/milk-and-mocha-love.gif",
+    "https://media.tenor.com/gK6R8nOaECAAAAAM/love-couple.gif",
+    "https://media.tenor.com/A2T63w6yUo8AAAAM/cute-disney.gif",
+    "https://media.tenor.com/xnJMR7T9UvUAAAAM/ring-will-you-marry-me.gif",
+    "https://media.tenor.com/P4W8_Vv8pGIAAAAM/flying-kiss-love.gif",
+    "https://media.tenor.com/JrweJCyqShIAAAAM/i-love-you-love.gif",
+    "https://media.tenor.com/L0w3mX_nfjoAAAAM/love-couple.gif",
+    "https://media.tenor.com/lXeBw8nZPN0AAAAM/love-you.gif",
+    "https://media.tenor.com/jCH_crUByuoAAAAM/i-love-you.gif",
+    "https://media.tenor.com/0mJegOeLCmUAAAAM/cute-love.gif",
+    
+    // ANIMAUX
+    "https://media.tenor.com/_hUq1BSUsiMAAAAM/cat-cute.gif",
+    "https://media.tenor.com/TmNWrln1uJAAAAAC/bongo-cat-cute.gif",
+    "https://media.tenor.com/GfSX-u7VGM4AAAAC/pikachu-pokemon.gif",
+    "https://media.tenor.com/Hc3fCz6M5M0AAAAM/cute-cat.gif",
+    "https://media.tenor.com/o5xwQX-nvAYAAAAM/cute-puppy.gif",
+    "https://media.tenor.com/Hh9AsstPTHgAAAAM/cute-bunny.gif",
+    "https://media.tenor.com/FQoerIIQe-IAAAAM/cute-panda.gif",
+    "https://media.tenor.com/qpnGdyEfVoAAAAAM/cute-otter.gif",
+    "https://media.tenor.com/D5OyqVIh6AMAAAAM/cute-hamster.gif",
+    "https://media.tenor.com/RPpcoPMKxKgAAAAM/cute-koala.gif",
+    "https://media.tenor.com/1F3PDRTV_r4AAAAM/cute-shiba.gif",
+    "https://media.tenor.com/j1GB4nIE_9EAAAAM/cute-fox.gif",
+    "https://media.tenor.com/iZ9ETxH-nnQAAAAM/cute-raccoon.gif",
+    "https://media.tenor.com/vD0e0f0g0h0AAAAM/monkey-laughing.gif",
+    "https://media.tenor.com/wE1f1g1h1i1AAAAM/penguin-fall.gif",
+    "https://media.tenor.com/xF2g2h2i2j2AAAAM/llama-dance.gif",
+    "https://media.tenor.com/yG3h3i3j3k3AAAAM/alpaca-cute.gif",
+    "https://media.tenor.com/zH4i4j4k4l4AAAAM/parrot-talking.gif",
+    
+    // DANSE
+    "https://media.tenor.com/8zkTzFrcGZYAAAAM/goodbye-thank-you.gif",
+    "https://media.tenor.com/po5Z8l7tQsMAAAAM/dancing-dance.gif",
+    "https://media.tenor.com/t_UCbZOlZekAAAAM/happy-dance.gif",
+    "https://media.tenor.com/L0TwQdx4QlUAAAAM/dance-party.gif",
+    "https://media.tenor.com/WjH7N9Oz1bIAAAAM/dancing-celebrate.gif",
+    "https://media.tenor.com/x8v1GpPtuAEAAAAM/party-dance.gif",
+    "https://media.tenor.com/mD7lZf6D-RAAAAAM/dance-fun.gif",
+    "https://media.tenor.com/kBbBzA8v7rUAAAAM/dance-move.gif",
+    "https://media.tenor.com/2AFM1EGD2t4AAAAM/celebration-party.gif",
+    "https://media.tenor.com/3JbFfJtqNJ8AAAAM/happy-dance.gif",
+    
+    // RÉACTIONS
+    "https://media.tenor.com/3fHbJvV9-dAAAAAM/omg-shock.gif",
+    "https://media.tenor.com/K4qZcVJmFqQAAAAM/facepalm-frustration.gif",
+    "https://media.tenor.com/q5YqQfKvdoYAAAAM/angry-dog.gif",
+    "https://media.tenor.com/5wW1dCgLJ7AAAAAM/confused-cat.gif",
+    "https://media.tenor.com/U7PL_rjKOyYAAAAM/surprised-cat.gif",
+    "https://media.tenor.com/3mP6OG5sBlIAAAAM/embarrassed.gif",
+    "https://media.tenor.com/9Hd3-Gl04OUAAAAM/amazed.gif",
+    "https://media.tenor.com/KP0eE2S-ni0AAAAM/crying-sad.gif",
+    "https://media.tenor.com/O9RfQTgIYlYAAAAM/angry-rage.gif",
+    "https://media.tenor.com/e1R0Yt_CrLMAAAAM/sleepy-tired.gif",
+    "https://media.tenor.com/TG3VQr6v4GMAAAAM/hungry-eat.gif",
+    "https://media.tenor.com/0mJegOeLCmUAAAAM/thumbs-up.gif",
+    "https://media.tenor.com/Qp_-wVvYvJEAAAAM/homer-simpson.gif",
+    "https://media.tenor.com/YmHzk-8-3qIAAAAM/spongebob-squarepants.gif",
+    "https://media.tenor.com/TW-2FT92PjQAAAAM/patrick-star.gif",
+    
+    // PERSONNAGES CÉLÈBRES
+    "https://media.tenor.com/1hDAA0E-Gh8AAAAM/goku-dragon-ball.gif",
+    "https://media.tenor.com/2tQbQjMAsnAAAAAM/naruto.gif",
+    "https://media.tenor.com/QvN-Cn4LYWcAAAAM/michael-jordan.gif",
+    "https://media.tenor.com/7nRycS0rviwAAAAM/leonardo-dicaprio.gif",
+    "https://media.tenor.com/cO-hQfjKwncAAAAM/will-smith.gif",
+    "https://media.tenor.com/l1R3PmxG6XoAAAAM/the-rock-dwayne-johnson.gif",
+    "https://media.tenor.com/2YcUFf7sCFoAAAAM/jim-carrey.gif",
+    "https://media.tenor.com/5jJxKxLxMxNAAAAM/keanu-reeves.gif",
+    "https://media.tenor.com/6kKyLyMyNyOAAAAM/ryan-reynolds.gif",
+    "https://media.tenor.com/7lLzMzNzOzPAAAAM/tom-holland.gif",
+    
+    // SPORT
+    "https://media.tenor.com/EUHRz0NpHRoAAAAM/soccer-goal.gif",
+    "https://media.tenor.com/cvO9nQ80INsAAAAM/basketball-dunk.gif",
+    "https://media.tenor.com/1cXvRHLlQ1MAAAAM/football-goal.gif",
+    "https://media.tenor.com/8VCE6AaT-P0AAAAM/tennis-rafael-nadal.gif",
+    "https://media.tenor.com/QXzUYhRrHEsAAAAM/boxing-fight.gif",
+    "https://media.tenor.com/Jn8sR4rgfygAAAAM/skateboarding.gif",
+    "https://media.tenor.com/GLB6bKGApgoAAAAM/surfing-wave.gif",
+    "https://media.tenor.com/DQv6isDtBw0AAAAM/swimming.gif",
+    
+    // ALIMENTS
+    "https://media.tenor.com/pX4Y4Z4a4b4AAAAM/pizza-eat.gif",
+    "https://media.tenor.com/qY5Z5a5b5c5AAAAM/burger-eating.gif",
+    "https://media.tenor.com/rZ6a6b6c6d6AAAAM/coffee-drink.gif",
+    "https://media.tenor.com/sA7b7c7d7e7AAAAM/ice-cream.gif",
+    "https://media.tenor.com/tB8c8d8e8f8AAAAM/popcorn-movie.gif",
+    "https://media.tenor.com/uC9d9e9f9g9AAAAM/watermelon-eat.gif",
+    "https://media.tenor.com/vD0e0f0g0h0AAAAM/donut-eat.gif",
+    "https://media.tenor.com/wE1f1g1h1i1AAAAM/sushi-eat.gif",
+    
+    // MÉMES CLASSIQUES
+    "https://media.tenor.com/kJqOqOqOqOoAAAAM/dog-meme.gif",
+    "https://media.tenor.com/2XG4WvNvNvMAAAAM/cat-meme.gif",
+    "https://media.tenor.com/1aQbQcQdQeQAAAAM/old-meme.gif",
+    "https://media.tenor.com/3fGvHvIvJvKAAAAM/funny-meme.gif",
+    "https://media.tenor.com/4hIwJwKwLwMAAAAM/epic-meme.gif",
+    "https://media.tenor.com/5jJxKxLxMxNAAAAM/good-meme.gif",
+    "https://media.tenor.com/6kKyLyMyNyOAAAAM/best-meme.gif",
+    
+    // ÉMOTIONS
+    "https://media.tenor.com/8zkTzFrcGZYAAAAM/thank-you.gif",
+    "https://media.tenor.com/po5Z8l7tQsMAAAAM/congrats.gif",
+    "https://media.tenor.com/t_UCbZOlZekAAAAM/happy-dance.gif",
+    "https://media.tenor.com/L0TwQdx4QlUAAAAM/party-time.gif",
+    "https://media.tenor.com/WjH7N9Oz1bIAAAAM/celebrate.gif",
+    "https://media.tenor.com/x8v1GpPtuAEAAAAM/woohoo.gif",
+    "https://media.tenor.com/mD7lZf6D-RAAAAAM/yesss.gif",
+    "https://media.tenor.com/kBbBzA8v7rUAAAAM/lets-go.gif",
+    "https://media.tenor.com/2AFM1EGD2t4AAAAM/hooray.gif"
+];
     
     // ========== COLLECTION DE STICKERS (FOND TRANSPARENT) ==========
     const stickersCollection = [
