@@ -2220,6 +2220,161 @@ body.keyboard-open .app-container {
     height: 100dvh;
     overflow: hidden;
 }
+      
+      /* ============================================================
+   🚀 CORRECTION ULTRA-RAPIDE - HEADER & FOOTER FIXES
+   ============================================================ */
+
+/* 1. FORCER la structure en colonne avec hauteur 100% */
+.app-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+/* 2. HEADER FIXE EN HAUT */
+.chat-header {
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background: var(--bg-header, #ffffff) !important;
+    border-bottom: 1px solid var(--border-color, #e8e6e3) !important;
+    min-height: 60px !important;
+    height: 60px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 15px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+    width: 100% !important;
+}
+
+/* 3. ZONE PRINCIPALE - LE RESTE DE L'ESPACE */
+.chat-main {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    min-height: 0 !important;
+    height: auto !important;
+    background: var(--bg-chat, #faf8f6) !important;
+    position: relative !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* 4. FOOTER FIXE EN BAS */
+.chat-footer {
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 50 !important;
+    background: var(--bg-main, #ffffff) !important;
+    border-top: 1px solid var(--border-color, #e8e6e3) !important;
+    width: 100% !important;
+    margin-top: auto !important;
+}
+
+/* 5. CORRECTION MODE SOMBRE - FORCER LES COULEURS */
+[data-theme="dark"] .chat-header {
+    background: #0a0a0a !important;
+    border-bottom-color: #262626 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+}
+
+[data-theme="dark"] .chat-main {
+    background: #000000 !important;
+}
+
+[data-theme="dark"] .chat-footer {
+    background: #000000 !important;
+    border-top-color: #262626 !important;
+}
+
+[data-theme="dark"] .chat-input-bar {
+    background: #000000 !important;
+}
+
+/* 6. FORCER LE FOND BLANC CASSÉ EN MODE CLAIR */
+:root:not([data-theme="dark"]) .chat-main {
+    background: #faf8f6 !important;
+}
+
+:root:not([data-theme="dark"]) .chat-header {
+    background: #ffffff !important;
+}
+
+:root:not([data-theme="dark"]) .chat-footer {
+    background: #ffffff !important;
+}
+
+/* 7. CORRECTION POUR LES ANCIENS ÉLÉMENTS QUI POURRAIENT INTERFÉRER */
+#msg-area {
+    flex: 1 !important;
+    min-height: 100px !important;
+    background: inherit !important;
+    padding: 15px !important;
+    overflow-y: auto !important;
+}
+
+/* 8. BARRE D'OUTILS ÉTUDE - CORRECTION */
+#etude-toolbar {
+    flex-shrink: 0 !important;
+    background: var(--bg-header, #ffffff) !important;
+    border-bottom: 1px solid var(--border-color, #e8e6e3) !important;
+    min-height: 40px !important;
+    padding: 6px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+}
+
+[data-theme="dark"] #etude-toolbar {
+    background: #0a0a0a !important;
+    border-bottom-color: #262626 !important;
+}
+
+/* 9. CHAT INPUT BAR - CORRECTION */
+.chat-input-bar {
+    flex-shrink: 0 !important;
+    padding: 8px 12px !important;
+    background: var(--bg-main, #ffffff) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    width: 100% !important;
+}
+
+/* 10. GESTION DU CLAVIER - LE CONTENU SCROLLE, LE HEADER RESTE FIXE */
+@media (max-width: 768px) {
+    .app-container {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+    }
+    
+    .chat-header {
+        min-height: 56px !important;
+        height: 56px !important;
+    }
+    
+    /* Quand le clavier est ouvert */
+    body.keyboard-open .app-container {
+        height: 100dvh !important;
+        overflow: hidden !important;
+    }
+    
+    body.keyboard-open .chat-main {
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+    }
+}
     </style>
 </head>
 <body>
@@ -12896,9 +13051,258 @@ function detecterClavierMobile() {
 // Initialiser la détection du clavier  
 setTimeout(detecterClavierMobile, 500);
       
-      
+      // ============================================================
+// 🚀 CORRECTION RAPIDE - HEADER & FOOTER FIXES
+// ============================================================
+
+(function() {
+    console.log("🔧 Application des corrections rapides...");
+    
+    // 1. AJOUTER LA STRUCTURE MANQUANTE
+    function ajouterStructure() {
+        const app = document.querySelector('.app-container');
+        if (!app) return;
+        
+        // Vérifier si la structure existe déjà
+        if (document.querySelector('.chat-main')) return;
+        
+        console.log("📐 Ajout de la structure manquante...");
+        
+        // Créer les nouveaux conteneurs
+        const main = document.createElement('main');
+        main.className = 'chat-main';
+        const footer = document.createElement('footer');
+        footer.className = 'chat-footer';
+        
+        // Déplacer les éléments
+        const msgArea = document.getElementById('msg-area');
+        const toolsPanel = document.getElementById('etude-toolbar');
+        const inputBar = document.querySelector('.chat-input-bar');
+        const typingInd = document.getElementById('typing-ind');
+        const replyPreview = document.getElementById('reply-preview');
+        const toolsPanelFloating = document.getElementById('tools-panel');
+        
+        // Récupérer le header existant
+        const header = document.querySelector('.chat-header');
+        
+        // Préparer le contenu du main
+        if (msgArea) main.appendChild(msgArea);
+        
+        // Préparer le contenu du footer
+        if (inputBar) {
+            // Reconstruire le footer avec tous les éléments
+            const newFooter = document.createElement('div');
+            newFooter.className = 'chat-footer';
+            
+            // Ajouter les éléments dans le bon ordre
+            if (toolsPanel) newFooter.appendChild(toolsPanel);
+            if (typingInd) newFooter.appendChild(typingInd);
+            if (replyPreview) newFooter.appendChild(replyPreview);
+            
+            // Ajouter la barre d'outils étude si elle existe
+            if (document.getElementById('etude-toolbar')) {
+                // La barre d'outils est déjà dans le DOM, on la déplace
+                const toolbar = document.getElementById('etude-toolbar');
+                newFooter.appendChild(toolbar);
+            }
+            
+            // Ajouter la barre de saisie
+            const inputClone = inputBar.cloneNode(true);
+            newFooter.appendChild(inputClone);
+            
+            // Remplacer l'ancien inputBar
+            inputBar.parentNode.replaceChild(newFooter, inputBar);
+        }
+        
+        // Réorganiser l'app container
+        // Garder le header en premier
+        if (header) {
+            app.insertBefore(main, header.nextSibling);
+        } else {
+            app.appendChild(main);
+        }
+        
+        // Ajouter le footer à la fin
+        app.appendChild(footer);
+        
+        // Cacher l'ancien contenu qui pourrait traîner
+        document.querySelectorAll('.chat-header + .live-container, .chat-header + .live-bar, .chat-header + .messages-area, .chat-header + .typing-indicator, .chat-header + .reply-bar-preview, .chat-header + .chat-input-bar, .chat-header + #etude-toolbar, .chat-header + .floating-panel').forEach(el => {
+            if (el.closest('.chat-main') || el.closest('.chat-footer')) return;
+            el.remove();
+        });
+        
+        console.log("✅ Structure corrigée");
+    }
+    
+    // 2. AJOUTER LE CSS MANQUANT DYNAMIQUEMENT
+    function ajouterCssManquant() {
+        const style = document.createElement('style');
+        style.id = 'correction-rapide-css';
+        style.textContent = `
+            /* Structure */
+            .chat-main { flex: 1 1 auto; overflow-y: auto; min-height: 0; height: auto; background: var(--bg-chat, #faf8f6); }
+            .chat-footer { flex-shrink: 0; background: var(--bg-main, #ffffff); border-top: 1px solid var(--border-color, #e8e6e3); width: 100%; margin-top: auto; }
+            
+            /* Mode sombre */
+            [data-theme="dark"] .chat-main { background: #000000 !important; }
+            [data-theme="dark"] .chat-footer { background: #000000 !important; border-top-color: #262626 !important; }
+            [data-theme="dark"] .chat-header { background: #0a0a0a !important; border-bottom-color: #262626 !important; }
+            
+            /* Mode clair */
+            :root:not([data-theme="dark"]) .chat-main { background: #faf8f6 !important; }
+            :root:not([data-theme="dark"]) .chat-header { background: #ffffff !important; }
+            :root:not([data-theme="dark"]) .chat-footer { background: #ffffff !important; }
+            
+            /* Application container */
+            .app-container { display: flex !important; flex-direction: column !important; height: 100vh !important; height: 100dvh !important; overflow: hidden !important; }
+            .chat-header { flex-shrink: 0 !important; position: sticky !important; top: 0 !important; z-index: 100 !important; background: var(--bg-header, #ffffff); min-height: 60px !important; display: flex !important; align-items: center !important; }
+            
+            /* Messages area */
+            #msg-area { flex: 1; min-height: 100px; padding: 15px; overflow-y: auto; background: inherit; }
+            
+            /* Keyboard */
+            @media (max-width: 768px) { body.keyboard-open .app-container { overflow: hidden !important; } }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // 3. CORRECTION DU MODE SOMBRE
+    function corrigerModeSombre() {
+        const observer = new MutationObserver(() => {
+            const theme = document.documentElement.getAttribute('data-theme');
+            const main = document.querySelector('.chat-main');
+            const footer = document.querySelector('.chat-footer');
+            const header = document.querySelector('.chat-header');
+            
+            if (theme === 'dark') {
+                if (main) main.style.background = '#000000';
+                if (footer) footer.style.background = '#000000';
+                if (header) header.style.background = '#0a0a0a';
+            } else {
+                if (main) main.style.background = '#faf8f6';
+                if (footer) footer.style.background = '#ffffff';
+                if (header) header.style.background = '#ffffff';
+            }
+        });
+        
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    }
+    
+    // 4. FORCER LE REDIMENSIONNEMENT
+    function forcerRedimensionnement() {
+        const app = document.querySelector('.app-container');
+        if (!app) return;
+        
+        const main = document.querySelector('.chat-main');
+        if (!main) return;
+        
+        // Forcer le recalcul
+        app.style.display = 'flex';
+        app.style.flexDirection = 'column';
+        app.style.height = '100dvh';
+        app.style.maxHeight = '100dvh';
+        app.style.overflow = 'hidden';
+        
+        if (main) {
+            main.style.flex = '1 1 auto';
+            main.style.minHeight = '0';
+            main.style.overflowY = 'auto';
+        }
+        
+        const footer = document.querySelector('.chat-footer');
+        if (footer) {
+            footer.style.flexShrink = '0';
+            footer.style.marginTop = 'auto';
+        }
+        
+        console.log("✅ Redimensionnement forcé");
+    }
+    
+    // 5. DÉTECTER LE CLAVIER
+    function detecterClavierRapide() {
+        const inputs = document.querySelectorAll('input, textarea');
+        const body = document.body;
+        
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                body.classList.add('keyboard-open');
+                setTimeout(() => {
+                    const msgArea = document.getElementById('msg-area');
+                    if (msgArea) {
+                        msgArea.scrollTop = msgArea.scrollHeight;
+                    }
+                }, 300);
+            });
+            
+            input.addEventListener('blur', () => {
+                body.classList.remove('keyboard-open');
+            });
+        });
+        
+        let lastHeight = window.innerHeight;
+        window.addEventListener('resize', () => {
+            const currentHeight = window.innerHeight;
+            if (currentHeight < lastHeight - 100) {
+                body.classList.add('keyboard-open');
+            } else if (currentHeight > lastHeight + 100) {
+                body.classList.remove('keyboard-open');
+            }
+            lastHeight = currentHeight;
+        });
+    }
+    
+    // 6. TOUT LANCER AU CHARGEMENT
+    function init() {
+        // Attendre que le DOM soit prêt
+        setTimeout(() => {
+            ajouterStructure();
+            ajouterCssManquant();
+            corrigerModeSombre();
+            forcerRedimensionnement();
+            detecterClavierRapide();
+            
+            // Réappliquer après un court délai
+            setTimeout(forcerRedimensionnement, 200);
+            setTimeout(forcerRedimensionnement, 500);
+            
+            console.log("✅ Corrections rapides appliquées !");
+        }, 100);
+    }
+    
+    // Lancer au chargement
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+    // Exposer pour un appel manuel si besoin
+    window.forcerCorrection = init;
+})();
+
+// ============================================================
+// 🔄 RECALCULER LA HAUTEUR APRÈS CHANGEMENT DE TAILLE
+// ============================================================
+
+window.addEventListener('resize', function() {
+    const app = document.querySelector('.app-container');
+    if (app) {
+        app.style.height = window.innerHeight + 'px';
+        app.style.height = '100dvh';
+    }
+});
+
+// ============================================================
+// 🎯 FORCER L'APPLICATION APRÈS 1 SECONDE
+// ============================================================
+
+setTimeout(() => {
+    if (typeof forcerCorrection === 'function') {
+        forcerCorrection();
+    }
+}, 1000);
   </script>
-  <!-- Script pour nettoyer et désactiver la console -->
+  <!-- Script pour nettoyer et désactiver la console --> 
 <script>
   (function() {
     // 1. Nettoyer tout l'historique déjà affiché 
