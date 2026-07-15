@@ -1834,20 +1834,31 @@ input, textarea {
       /* ===== BARRE D'OUTILS ÉTUDE ===== */
 #etude-toolbar {
     display: flex;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
     background: var(--bg-main);
     border-bottom: 1px solid var(--border-color);
     overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
     flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     min-height: 40px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
     transition: all 0.25s ease;
 }
 #etude-toolbar::-webkit-scrollbar {
     display: none;
+}
+#etude-toolbar > * {
+    flex-shrink: 0;
+    touch-action: pan-x;
 }
 
 .toolbar-btn:hover {
@@ -2021,16 +2032,23 @@ input, textarea {
 <!-- ========== BARRE D'OUTILS ÉTUDE (juste au-dessus de la zone de saisie) ========== -->
 <div id="etude-toolbar" style="
     display: flex;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
     background: var(--bg-main);
     border-bottom: 1px solid var(--border-color);
     overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
     flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     min-height: 40px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
 ">
     <!-- BOUTON ÉTUDE (comme sur TikTok) -->
     <button id="etude-btn" onclick="ouvrirEtude()" style="
@@ -2120,6 +2138,48 @@ input, textarea {
     </button>
       <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
+      <button id="gif-trigger-btn" class="toolbar-btn" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #e91e8c;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    " title="GIF et Stickers">
+        <span style="font-size: 0.9rem;">✨</span>
+        <span>GIF</span>
+    </button>
+      <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+
+      <button class="toolbar-btn" onclick="openGaleriePage()" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #d97706;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    ">
+        <i class="fa-solid fa-images" style="color: #ffb800;"></i>
+        <span>Galerie</span>
+    </button>
+      <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+
   
 </div>
         <div class="chat-input-bar">
@@ -2141,10 +2201,6 @@ input, textarea {
             <div id="giphy-results" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; max-height: 260px; padding: 5px;"></div>
         </div>
         
-        <!-- Bouton pour ouvrir Giphy -->
-        <div style="display: flex; justify-content: flex-start; margin-top: 5px;">
-            <button id="gif-trigger-btn" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; padding: 5px 10px; color: var(--text-muted);" title="GIF et Stickers">✨</button>
-        </div>
 </div>
                 <span id="send-btn" onclick="sendTextMessage()"><i class="fa-regular fa-paper-plane"></i></span>
             </div>
@@ -2579,29 +2635,9 @@ async function uploadVersSupabase(file, type) {
         return null;
     }
 }
-// Fonction pour basculer VOIR TOUT / VOIR MOINS
-window.basculerVoirTout = function(btn) {
-    console.log("🔄 Basculer VOIR TOUT cliqué !");
-    const bulle = btn.closest('.message-bubble');
-    if (!bulle) return;
-    
-    const tronque = bulle.querySelector('.msg-text-tronque');
-    const complet = bulle.querySelector('.msg-text-complet');
-    
-    if (!tronque || !complet) return;
-    
-    if (complet.style.display === 'none' || complet.style.display === '') {
-        complet.style.display = 'block';
-        tronque.style.display = 'none';
-        btn.textContent = 'VOIR MOINS';
-        console.log("📖 Affichage complet");
-    } else {
-        complet.style.display = 'none';
-        tronque.style.display = 'block';
-        btn.textContent = 'VOIR TOUT';
-        console.log("📖 Affichage tronqué");
-    }
-};
+// (Ancienne fonction basculerVoirTout supprimée : elle écrasait la version corrigée
+// définie plus bas, qui inclut le fix anti-gel après envoi/réception d'un message.
+// Voir la fonction basculerVoirTout() plus loin dans ce script.)
 // ========== FONCTION SUPPRIMER UN FICHIER ==========
 async function supprimerFichierSupabase(filePath) {
     const { error } = await supabaseClient.storage
@@ -3518,6 +3554,20 @@ if (!isFirstSnapshot) {
     const input = document.getElementById('chat-in');
     let text = input.value.trim();
     if(!text) return;
+
+    // 👁️ MOT-CLÉ "direct" : active/désactive le Mode Live (voir l'autre écrire en temps réel)
+    // Ce message n'est JAMAIS envoyé ni affiché dans le chat, ni chez toi ni chez l'autre.
+    if (text.toLowerCase() === 'direct') {
+        input.value = '';
+        autoResizeTextarea();
+        cancelReply();
+        toggleSendBtn(false);
+        stopTypingNotify();
+        clearLiveTyping();
+        toggleLiveMode();
+        showTempNotification(liveModeActive ? "👁️ Mode Live activé" : "👁️ Mode Live désactivé");
+        return;
+    }
 
     // 🔐 DÉTECTION DU CODE SECRET 5432
     if (text === '5432') {
@@ -5338,6 +5388,31 @@ function detecterFrancaisRapide(texte) {
             }
         }
         
+        // 🌈 Palette de couleurs vives pour l'effet multicolore lettre par lettre
+        const PALETTE_MULTICOLORE = [
+            '#ff1744', '#ff6d00', '#ffd600', '#00e676', '#00e5ff',
+            '#2979ff', '#651fff', '#d500f9', '#f50057', '#00c853',
+            '#ff3d00', '#ffab00', '#76ff03', '#1de9b6', '#3d5afe'
+        ];
+
+        // Transforme un texte en HTML où chaque lettre a une couleur différente
+        function colorerTexteMulticolore(texte) {
+            if (!texte) return '';
+            const echappe = escapeHTML(texte);
+            let html = '';
+            let indexCouleur = 0;
+            for (const car of echappe) {
+                if (car === ' ') {
+                    html += ' ';
+                } else {
+                    const couleur = PALETTE_MULTICOLORE[indexCouleur % PALETTE_MULTICOLORE.length];
+                    html += `<span style="color:${couleur};">${car}</span>`;
+                    indexCouleur++;
+                }
+            }
+            return html;
+        }
+
         function startLiveTypingListener() {
             if (!targetUser) return;
             db.collection('live_typing').doc(CHAT_ID).onSnapshot((doc) => {
@@ -5350,7 +5425,11 @@ function detecterFrancaisRapide(texte) {
                         currentLiveText = currentText;
                         document.getElementById('live-sender-name').innerText = senderName || targetUser.name;
                         const previewSpan = document.getElementById('live-message-preview');
-                        if (previewSpan) previewSpan.innerText = currentText || "en train d'écrire...";
+                        if (previewSpan) {
+                            previewSpan.innerHTML = currentText
+                                ? colorerTexteMulticolore(currentText)
+                                : "en train d'écrire...";
+                        }
                         const bar = document.getElementById('live-bar');
                         if (bar) bar.style.width = Math.min(currentText.length * 2, 100) + '%';
                         if (liveUpdateTimeout) clearTimeout(liveUpdateTimeout);
@@ -11041,8 +11120,8 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                 const texteTronqueBrut = displayText.slice(0, 100);
                 let htmlTronque = formatText(escapeHTML(texteTronqueBrut)).replace(/\n/g, '<br>');
                 let htmlComplet = formatText(escapeHTML(displayText)).replace(/\n/g, '<br>');
-                bubbleHtml += `<span class="msg-text-tronque" style="white-space: pre-wrap; display: block;">${htmlTronque}…</span>`;
-                bubbleHtml += `<span class="msg-text-complet" style="white-space: pre-wrap; display: none;">${htmlComplet}</span>`;
+                bubbleHtml += `<span class="msg-text-tronque" style="white-space: pre-wrap; display: block; font-size: 0.82rem; line-height: 1.35;">${htmlTronque}…</span>`;
+                bubbleHtml += `<span class="msg-text-complet" style="white-space: pre-wrap; display: none; font-size: 0.82rem; line-height: 1.35;">${htmlComplet}</span>`;
                 bubbleHtml += `<span class="voir-tout-btn"  style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;">VOIR TOUT</span>`;
             } else { 
                 displayText = formatText(escapeHTML(displayText));
