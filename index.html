@@ -10176,8 +10176,7 @@ if (typeof db !== 'undefined' && typeof CHAT_ID !== 'undefined') {
                 if (messageData.senderId !== currentUser.id) {
                     
                     // ON BLOQUE TOUT !
-                    alert("🚨 Impossible ! Ida toi aussi tu peux pas supprimer mon message! 🟥😂😂😂");
-                    console.error("🛡️ Sécurité : Tentative de suppression d'un message tiers bloquée à la racine.");
+                     console.error("🛡️ Sécurité : Tentative de suppression d'un message tiers bloquée à la racine.");
                     
                     // On retourne une promesse rejetée pour stopper le code d'origine
                     return Promise.reject(new Error("Suppression non autorisée."));
