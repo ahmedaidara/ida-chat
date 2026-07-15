@@ -443,8 +443,9 @@
         .photo-modal img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0; box-shadow: none; cursor: zoom-out; }
         .photo-modal-close { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10001; }
         .photo-modal-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
-        .download-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 30px; padding: 12px 24px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; z-index: 10001; font-weight: 600; }
-        .download-btn:hover { background: #0095f6; transform: translateX(-50%) scale(1.05); }
+        .photo-modal-actions { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 10001; }
+        .download-btn { position: relative; bottom: auto; left: auto; transform: none; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 30px; padding: 12px 20px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
+        .download-btn:hover { background: #0095f6; transform: scale(1.05); }
         .download-btn i { font-size: 1.1rem; }
 
         /* ========== ÉDITEUR DE MÉDIA (style Telegram/WhatsApp) ========== */
@@ -1450,6 +1451,99 @@ input, textarea {
     font-size: 1.2rem;
     pointer-events: none;
 }
+
+.document-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+    background: var(--input-bg);
+    cursor: pointer;
+    min-width: 220px;
+    max-width: 260px;
+    transition: transform 0.12s ease;
+}
+.document-card:active { transform: scale(0.98); }
+.document-card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.document-card-info { flex: 1; min-width: 0; }
+.document-card-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.document-card-meta {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.document-card-open {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.settings-link-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.settings-link-row:active { background: var(--bubble-received); }
+.settings-link-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.settings-link-text { flex: 1; min-width: 0; }
+.settings-link-title { font-size: 0.88rem; font-weight: 600; color: var(--text-main); }
+.settings-link-desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.settings-link-arrow { color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0; }
+
+.media-gallery-grid {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    padding: 2px;
+    -webkit-overflow-scrolling: touch;
+}
+.media-gallery-item {
+    position: relative;
+    aspect-ratio: 1;
+    background: var(--bubble-received);
+    cursor: pointer;
+    overflow: hidden;
+}
+.media-gallery-item img,
+.media-gallery-item video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.media-gallery-item .media-gallery-video-icon {
+    position: absolute;
+    top: 6px; right: 6px;
+    color: #fff;
+    font-size: 0.85rem;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
       
         #translate-btn.active {
     color: #ffaa00 !important;
@@ -2381,7 +2475,7 @@ input, textarea {
         font-family: 'Inter', sans-serif;
     ">
         <i class="fa-solid fa-graduation-cap" style="font-size: 0.8rem;"></i>
-        <span>ÉTUDE</span>
+        <span>Étude</span>
     </button>
     
     <!-- Séparateur -->
@@ -2650,7 +2744,7 @@ input, textarea {
             </div>
             <div class="info-row">
                 <span class="info-label"><i class="fa-regular fa-calendar"></i> Date de naissance</span>
-                <span class="info-value" id="birthdate">01/01/1990</span>
+                <span class="info-value" id="birthdate">06/04/2006</span>
             </div>
             <div class="info-row">
                 <span class="info-label"><i class="fa-regular fa-envelope"></i> Email</span>
@@ -2658,11 +2752,31 @@ input, textarea {
             </div>
             <div class="info-row">
                 <span class="info-label"><i class="fa-solid fa-location-dot"></i> Localisation</span>
-                <span class="info-value" id="location">Dakar</span>
+                <span class="info-value" id="location">Dakar JDM - Wakhim Nimzat</span>
             </div>
             <div class="info-row">
-                <span class="info-label"><i class="fa-regular fa-clock"></i> Membre depuis</span>
-                <span class="info-value" id="member-since">2024</span>
+                <span class="info-label"><i class="fa-regular fa-clock"></i> Date de rencontre</span>
+                <span class="info-value" id="member-since">13/07/2023</span>
+            </div>
+        </div>
+
+        <!-- Section Média -->
+        <div class="settings-section" style="animation-delay:0.05s; padding:0; overflow:hidden;">
+            <div class="settings-link-row" onclick="ouvrirGalerieMediaPage()">
+                <div class="settings-link-icon" style="background:linear-gradient(45deg, #a800ff, #0076ff);"><i class="fa-solid fa-images"></i></div>
+                <div class="settings-link-text">
+                    <div class="settings-link-title">Média</div>
+                    <div class="settings-link-desc">Toutes les photos et vidéos de la conversation</div>
+                </div>
+                <i class="fa-solid fa-chevron-right settings-link-arrow"></i>
+            </div>
+            <div class="settings-link-row" onclick="ouvrirGalerieDocumentsPage()" style="border-top:1px solid var(--border-color);">
+                <div class="settings-link-icon" style="background:linear-gradient(45deg, #ff9500, #ff3b30);"><i class="fa-solid fa-file-lines"></i></div>
+                <div class="settings-link-text">
+                    <div class="settings-link-title">Document</div>
+                    <div class="settings-link-desc">Tous les fichiers PDF, TXT, Excel... partagés</div>
+                </div>
+                <i class="fa-solid fa-chevron-right settings-link-arrow"></i>
             </div>
         </div>
 
@@ -2817,6 +2931,34 @@ input, textarea {
     </div>
 </div>
 
+<!-- ========== PAGE GALERIE MÉDIA (toutes les photos/vidéos du chat) ========== -->
+<div class="search-page" id="media-gallery-page">
+    <div class="search-page-header">
+        <i class="fa-solid fa-arrow-left" onclick="fermerGalerieMediaPage()"></i>
+        <div class="settings-link-title" style="font-size:0.95rem;">Média</div>
+    </div>
+    <div class="media-gallery-grid" id="media-gallery-grid">
+        <div class="search-empty-state" style="grid-column:1/-1;">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Chargement des médias...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ========== PAGE GALERIE DOCUMENTS (tous les fichiers du chat) ========== -->
+<div class="search-page" id="documents-gallery-page">
+    <div class="search-page-header">
+        <i class="fa-solid fa-arrow-left" onclick="fermerGalerieDocumentsPage()"></i>
+        <div class="settings-link-title" style="font-size:0.95rem;">Document</div>
+    </div>
+    <div class="search-results" id="documents-gallery-list">
+        <div class="search-empty-state">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Chargement des documents...</p>
+        </div>
+    </div>
+</div>
+
 <!-- ========== VISUALISEUR VUE UNIQUE (photo/vidéo qui disparaît après ouverture) ========== -->
 <div class="viewonce-viewer-overlay" id="viewonce-viewer-overlay">
     <button class="viewonce-viewer-close" onclick="fermerVueUnique()"><i class="fa-solid fa-xmark"></i></button>
@@ -2827,7 +2969,10 @@ input, textarea {
         <div class="photo-modal" id="photo-modal" onclick="closePhotoModal()">
             <button class="photo-modal-close" onclick="closePhotoModal()"><i class="fa-solid fa-times"></i></button>
             <img id="modal-image" src="" alt="Photo">
-            <button class="download-btn" id="download-photo-btn" onclick="downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer </button>
+            <div class="photo-modal-actions">
+                <button class="download-btn" id="download-photo-btn" onclick="event.stopPropagation(); downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer</button>
+                <button class="download-btn" onclick="event.stopPropagation(); repondreDepuisVisualiseur()"><i class="fa-solid fa-reply"></i> Répondre</button>
+            </div>
         </div>
 
         <!-- ========== ÉDITEUR DE MÉDIA (rognage / dessin / rotation avant envoi) ========== -->
@@ -2947,7 +3092,7 @@ input, textarea {
 <!-- Menu Media (Photo/Vidéo/Galerie) -->
 <div class="floating-panel" id="media-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
     <h4 style="margin-bottom: 10px;">📷 Média</h4>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
        <div class="tool-item" onclick="ouvrirGalerieSupabase()">
     <i class="fa-regular fa-images" style="font-size: 2rem;"></i>
     <span style="font-size: 0.7rem;">Galerie</span>
@@ -2959,6 +3104,10 @@ input, textarea {
 <div class="tool-item" onclick="prendreVideoAvecSupabase()">
     <i class="fa-solid fa-video" style="font-size: 2rem;"></i>
     <span style="font-size: 0.7rem;">Vidéo</span>
+</div>
+<div class="tool-item" onclick="envoyerDocumentAvecSupabase()">
+    <i class="fa-solid fa-file-lines" style="font-size: 2rem;"></i>
+    <span style="font-size: 0.7rem;">Document</span>
 </div>
     </div>
     <button onclick="fermerMenuMedia()" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px;">Fermer</button>
@@ -3119,6 +3268,72 @@ function ouvrirGalerieSupabase() {
         }
     };
     input.click();
+}
+
+// ========== ENVOI DE DOCUMENT (PDF, TXT, Word, Excel...) ==========
+function envoyerDocumentAvecSupabase() {
+    fermerMenuMedia();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv';
+    input.onchange = async (e) => {
+        if (!e.target.files || !e.target.files[0]) return;
+        const file = e.target.files[0];
+        if (file.size > 25 * 1024 * 1024) {
+            showTempNotification("❌ Document trop grand (max 25 MB)");
+            return;
+        }
+        showTempNotification("📤 Envoi du document...");
+        const url = await uploadVersSupabase(file, 'document');
+        if (!url) return;
+        try {
+            await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+                text: null,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "sent",
+                readBy: [currentUser.id],
+                type: 'document',
+                mediaUrl: url,
+                fileName: file.name,
+                fileSize: file.size,
+                fileExt: (file.name.split('.').pop() || '').toLowerCase(),
+                storage: 'supabase'
+            });
+            showTempNotification("📄 Document envoyé !");
+        } catch (err) {
+            console.error("Erreur envoi document:", err);
+            showTempNotification("❌ Échec de l'envoi du document");
+        }
+    };
+    input.click();
+}
+
+function formaterTailleFichier(octets) {
+    if (!octets) return '';
+    if (octets < 1024) return octets + ' o';
+    if (octets < 1024 * 1024) return (octets / 1024).toFixed(0) + ' Ko';
+    return (octets / (1024 * 1024)).toFixed(1) + ' Mo';
+}
+
+function icoenPourExtensionDoc(ext) {
+    const map = {
+        pdf: 'fa-file-pdf', txt: 'fa-file-lines',
+        doc: 'fa-file-word', docx: 'fa-file-word',
+        xls: 'fa-file-excel', xlsx: 'fa-file-excel', csv: 'fa-file-excel',
+        ppt: 'fa-file-powerpoint', pptx: 'fa-file-powerpoint'
+    };
+    return map[ext] || 'fa-file';
+}
+function couleurPourExtensionDoc(ext) {
+    const map = {
+        pdf: '#ff3b30', txt: '#8696a0',
+        doc: '#2b579a', docx: '#2b579a',
+        xls: '#217346', xlsx: '#217346', csv: '#217346',
+        ppt: '#d24726', pptx: '#d24726'
+    };
+    return map[ext] || '#8696a0';
 }
 
 // ========== ENVOI UNIFIÉ VERS SUPABASE + FIRESTORE (URL légère, jamais de base64) ==========
@@ -4054,8 +4269,7 @@ async function demanderPermissionNotifications() {
         enregistrerTokenPush();
     } else if (permission === "denied") {
         console.log("❌ Permission refusée par l'utilisateur");
-        alert("❌ Vous avez refusé les notifications. Pour les activer, allez dans les paramètres de votre navigateur.");
-    } else {
+     } else {
         console.log("⏸️ Permission:", permission);
     }
 }
@@ -4101,11 +4315,11 @@ async function enregistrerTokenPush() {
         // ========== SÉLECTION UTILISATEUR======= ===
         function selectUser(userKey) {
             if(userKey === 'ida') {
-                currentUser = { id: 'ida', name: 'IDA SEUL', full: 'Ida' };
-                targetUser = { id: 'aidara', name: 'Mon Roi', full: 'Aidara' };
+                currentUser = { id: 'ida', name: 'IDA ', full: 'Ida' };
+                targetUser = { id: 'aidara', name: 'Aidara', full: 'Aidara' };
             } else {
                 currentUser = { id: 'aidara', name: 'Ahmed Said Aidara', full: 'Aidara' };
-                targetUser = { id: 'ida', name: 'Ma Reine', full: 'Ida' };
+                targetUser = { id: 'ida', name: 'Ida Marie José Monteiro', full: 'Ida' };
             }
           
            localStorage.setItem('lastUser', userKey);
@@ -6635,12 +6849,28 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
             const downloadBtn = document.getElementById('download-photo-btn');
             downloadBtn.classList.add('downloading');
             try {
-                await enregistrerMediaSurAppareil(currentPhotoUrl, 'photo_' + Date.now() + '.jpg', 'image/jpeg');
+                const estVideo = mediaGalerieListe[mediaGalerieIndex]?.type === 'video';
+                if (estVideo) {
+                    await enregistrerMediaSurAppareil(currentPhotoUrl, 'video_' + Date.now() + '.mp4', 'video/mp4');
+                } else {
+                    await enregistrerMediaSurAppareil(currentPhotoUrl, 'photo_' + Date.now() + '.jpg', 'image/jpeg');
+                }
             } catch (e) {
-                console.error('Erreur enregistrement photo:', e);
+                console.error('Erreur enregistrement média:', e);
                 showTempNotification('❌ Erreur téléchargement');
             }
             setTimeout(() => downloadBtn.classList.remove('downloading'), 500);
+        }
+
+        // Répond au message actuellement affiché dans le visualiseur plein écran
+        function repondreDepuisVisualiseur() {
+            const media = mediaGalerieListe[mediaGalerieIndex];
+            if (!media) return;
+            closePhotoModal();
+            fermerGalerieMediaPage();
+            closeSettingsPage();
+            selectedMessageId = media.msgId;
+            initiateReply();
         }
 
         async function telechargerVideo(btnEl, url) {
@@ -6775,6 +7005,124 @@ async function ouvrirRecherchePage() {
 
 function fermerRecherchePage() {
     document.getElementById('search-page').style.display = 'none';
+}
+
+// ============================================================
+// ✅ GALERIE MÉDIA (Paramètres → Média) — toutes les photos/vidéos du chat
+// ============================================================
+function afficherMediaGalerieDepuisListe(liste, index) {
+    mediaGalerieListe = liste;
+    afficherMediaGalerie(index);
+}
+
+async function ouvrirGalerieMediaPage() {
+    const page = document.getElementById('media-gallery-page');
+    const grid = document.getElementById('media-gallery-grid');
+    page.style.display = 'flex';
+    grid.innerHTML = `<div class="search-empty-state" style="grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin"></i><p>Chargement des médias...</p></div>`;
+
+    try {
+        const snapshot = await db.collection('chats').doc(CHAT_ID).collection('messages')
+            .orderBy('timestamp', 'asc')
+            .get();
+
+        const medias = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if ((data.type === 'image' || data.type === 'video') && !data.viewOnce && data.mediaUrl) {
+                medias.push({ msgId: doc.id, type: data.type, url: data.mediaUrl });
+            }
+        });
+
+        if (medias.length === 0) {
+            grid.innerHTML = `<div class="search-empty-state" style="grid-column:1/-1;"><i class="fa-regular fa-images"></i><p>Aucune photo ni vidéo dans cette conversation</p></div>`;
+            return;
+        }
+
+        // Affichage le plus récent en premier, façon galerie WhatsApp
+        window.__galerieMediaComplete = medias; // évite d'injecter du JSON dans les attributs onclick
+        const mediasRecentDabord = medias.slice().reverse();
+        grid.innerHTML = mediasRecentDabord.map((m, i) => {
+            const indexDansListeChrono = medias.length - 1 - i; // index correspondant dans "medias" (ordre chronologique, utilisé par le visualiseur)
+            if (m.type === 'video') {
+                return `<div class="media-gallery-item" onclick="afficherMediaGalerieDepuisListe(window.__galerieMediaComplete, ${indexDansListeChrono})">
+                    <video src="${m.url}" preload="metadata"></video>
+                    <i class="fa-solid fa-play media-gallery-video-icon"></i>
+                </div>`;
+            }
+            return `<div class="media-gallery-item" onclick="afficherMediaGalerieDepuisListe(window.__galerieMediaComplete, ${indexDansListeChrono})">
+                    <img src="${m.url}" loading="lazy">
+                </div>`;
+        }).join('');
+    } catch (err) {
+        console.error("Erreur chargement galerie média:", err);
+        grid.innerHTML = `<div class="search-empty-state" style="grid-column:1/-1;"><i class="fa-solid fa-triangle-exclamation"></i><p>Erreur de chargement</p></div>`;
+    }
+}
+
+function fermerGalerieMediaPage() {
+    document.getElementById('media-gallery-page').style.display = 'none';
+}
+
+// ============================================================
+// ✅ GALERIE DOCUMENTS (Paramètres → Document) — tous les fichiers du chat
+// ============================================================
+async function ouvrirGalerieDocumentsPage() {
+    const page = document.getElementById('documents-gallery-page');
+    const liste = document.getElementById('documents-gallery-list');
+    page.style.display = 'flex';
+    liste.innerHTML = `<div class="search-empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Chargement des documents...</p></div>`;
+
+    try {
+        const snapshot = await db.collection('chats').doc(CHAT_ID).collection('messages')
+            .orderBy('timestamp', 'desc')
+            .get();
+
+        const docs = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.type === 'document' && data.mediaUrl) {
+                docs.push({ msgId: doc.id, ...data });
+            }
+        });
+
+        if (docs.length === 0) {
+            liste.innerHTML = `<div class="search-empty-state"><i class="fa-solid fa-file-lines"></i><p>Aucun document dans cette conversation</p></div>`;
+            return;
+        }
+
+        liste.innerHTML = docs.map(d => {
+            const ext = d.fileExt || (d.fileName || '').split('.').pop().toLowerCase();
+            const icone = icoenPourExtensionDoc(ext);
+            const couleur = couleurPourExtensionDoc(ext);
+            const dateHeure = formatHeureRecherche(d.timestamp);
+            return `
+                <div class="search-result-item" style="display:flex; align-items:center; gap:12px;">
+                    <div class="document-card-icon" style="background:${couleur}; flex-shrink:0;"><i class="fa-solid ${icone}"></i></div>
+                    <div style="flex:1; min-width:0;" onclick="window.open('${d.mediaUrl}', '_blank')">
+                        <div class="document-card-name">${escapeHTML(d.fileName || 'Document')}</div>
+                        <div class="document-card-meta">${ext.toUpperCase()} · ${formaterTailleFichier(d.fileSize)} · ${dateHeure}</div>
+                    </div>
+                    <i class="fa-solid fa-reply" style="color:var(--text-muted); padding:8px;" onclick="repondreDepuisGalerieDocuments('${d.msgId}')" title="Répondre"></i>
+                    <i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--text-muted); padding:8px;" onclick="window.open('${d.mediaUrl}', '_blank')" title="Ouvrir"></i>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error("Erreur chargement galerie documents:", err);
+        liste.innerHTML = `<div class="search-empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Erreur de chargement</p></div>`;
+    }
+}
+
+function fermerGalerieDocumentsPage() {
+    document.getElementById('documents-gallery-page').style.display = 'none';
+}
+
+function repondreDepuisGalerieDocuments(msgId) {
+    fermerGalerieDocumentsPage();
+    closeSettingsPage();
+    selectedMessageId = msgId;
+    initiateReply();
 }
 
 function viderRechercheMessages() {
@@ -12016,7 +12364,7 @@ document.addEventListener('click', function(e) {
       // ============================================================
 // ✅ FONCTION POUR AFFICHER TOUS LES MESSAGES
 // ============================================================
-// ========== VUE UNIQUE (photo/vidéo) — rendu de la carte dans la bulle ==========
+// ========== VUE UNIQUE (photo/vidéo) — rendu de la carte dans la bulle ==========  
 // ✅ Chacun des deux (l'envoyeur ET le destinataire) a droit à SA PROPRE vue unique,
 // indépendamment l'un de l'autre — on suit donc une LISTE des personnes ayant déjà
 // consulté (viewOnceOpenedBy), pas un simple booléen partagé.
@@ -12034,7 +12382,7 @@ function rendreCarteVueUnique(msgId, data, type) {
     return `
         <div class="viewonce-card" onclick="ouvrirVueUnique('${msgId}')">
             <i class="fa-solid ${icone}"></i>
-            <span>1️⃣ ${type === 'video' ? 'Vidéo' : 'Photo'} vue unique — appuie pour voir</span>
+            <span> ${type === 'video' ? 'Vidéo' : 'Photo'} vue unique 1️⃣</span>
         </div>
     `;
 }
@@ -12274,6 +12622,20 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                     bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
                 }
             }
+        } else if (data.type === 'document') {
+            const ext = data.fileExt || (data.fileName || '').split('.').pop().toLowerCase();
+            const icone = icoenPourExtensionDoc(ext);
+            const couleur = couleurPourExtensionDoc(ext);
+            bubbleHtml += `
+                <div class="document-card" onclick="window.open('${data.mediaUrl}', '_blank')">
+                    <div class="document-card-icon" style="background:${couleur};"><i class="fa-solid ${icone}"></i></div>
+                    <div class="document-card-info">
+                        <div class="document-card-name">${escapeHTML(data.fileName || 'Document')}</div>
+                        <div class="document-card-meta">${ext.toUpperCase()} · ${formaterTailleFichier(data.fileSize)}</div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square document-card-open"></i>
+                </div>
+            `;
         } else if (data.type === 'audio') {
             const audioId = `audio_${msgId}`;
             if (!data.isEphemeralAudio) {
@@ -13544,6 +13906,34 @@ function detecterClavierMobile() {
         }
     });
 }
+
+// ========== GESTION DU CLAVIER MOBILE VIA visualViewport (moderne, fiable) ==========
+// Redimensionne précisément .app-container à la hauteur visible réelle (donc EXCLUANT le
+// clavier virtuel), ce qui garde le header fixe en haut, colle la barre de saisie juste
+// au-dessus du clavier, et laisse la zone de messages se contracter proprement au milieu.
+function initGestionClavierVisualViewport() {
+    if (!window.visualViewport) return; // repli sur 100dvh (déjà en place) si non supporté
+    const appContainer = document.querySelector('.app-container');
+    if (!appContainer) return;
+
+    const ajusterHauteur = () => {
+        appContainer.style.height = window.visualViewport.height + 'px';
+        // Garde la conversation scrollée en bas quand on tape, pour ne jamais perdre
+        // de vue le message en cours de saisie.
+        const actif = document.activeElement;
+        if (actif && (actif.tagName === 'TEXTAREA' || actif.tagName === 'INPUT')) {
+            const msgArea = document.getElementById('msg-area');
+            if (msgArea) requestAnimationFrame(() => { msgArea.scrollTop = msgArea.scrollHeight; });
+        }
+    };
+
+    window.visualViewport.addEventListener('resize', ajusterHauteur);
+    window.visualViewport.addEventListener('scroll', ajusterHauteur);
+    ajusterHauteur();
+}
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initGestionClavierVisualViewport, 300);
+});
 
 // ========== INITIALISATION ==========
 document.addEventListener('DOMContentLoaded', function() {
