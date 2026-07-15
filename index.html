@@ -121,7 +121,7 @@
     width: auto !important;
     padding: 8px 14px !important; 
     border-radius: 18px !important; 
-    font-size: 0.9rem !important; 
+    font-size: var(--message-font-size, 0.9rem) !important; 
     line-height: 1.4 !important; 
     position: relative !important; 
     cursor: pointer !important; 
@@ -562,6 +562,161 @@
       /* ================================================================
          PAGE DES PARAMÈTRES — Design moderne
          ================================================================ */
+/* ========== PAGE DE RECHERCHE DANS LA CONVERSATION ========== */
+.search-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-main);
+    z-index: 10000;
+    display: none;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+    -webkit-font-smoothing: antialiased;
+}
+.search-page-header {
+    position: sticky;
+    top: 0;
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+    flex-shrink: 0;
+}
+.search-page-header i.fa-arrow-left {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+.search-page-header i.fa-arrow-left:active { transform: scale(0.92); }
+.search-input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 22px;
+    padding: 9px 14px;
+}
+.search-input-wrapper i.fa-magnifying-glass { color: var(--text-muted); font-size: 0.85rem; }
+.search-input-wrapper input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+.search-input-wrapper i.fa-xmark { color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 4px; }
+
+.search-counts {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px 4px;
+    flex-shrink: 0;
+}
+.search-count-pill {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 10px 12px;
+    text-align: center;
+}
+.search-count-pill .search-count-number {
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, #a800ff, #0076ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.search-count-pill .search-count-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.search-results {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 40px;
+}
+.search-empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 60px 20px;
+}
+.search-empty-state i { font-size: 2.6rem; margin-bottom: 12px; opacity: 0.5; }
+.search-empty-state p { font-size: 0.85rem; }
+
+.search-result-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.12s ease;
+}
+.search-result-item:active { transform: scale(0.98); }
+.search-result-item:hover { background: var(--bubble-received); }
+.search-result-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+.search-result-sender { font-weight: 700; }
+.search-result-sender.is-me { color: #a800ff; }
+[data-theme="dark"] .search-result-sender.is-me { color: #c266ff; }
+.search-result-text {
+    font-size: 0.85rem;
+    color: var(--text-main);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.search-result-text mark {
+    background: linear-gradient(45deg, #a800ff44, #0076ff44);
+    color: inherit;
+    border-radius: 3px;
+    padding: 0 1px;
+    font-weight: 700;
+}
+
+/* Brillance quand on arrive sur le message ciblé depuis la recherche */
+@keyframes messageHighlightShine {
+    0% { box-shadow: 0 0 0 0 rgba(168,0,255,0); background-color: transparent; }
+    25% { box-shadow: 0 0 18px 4px rgba(168,0,255,0.55); background-color: rgba(168,0,255,0.12); }
+    100% { box-shadow: 0 0 0 0 rgba(168,0,255,0); background-color: transparent; }
+}
+.message-bubble.highlight-from-search {
+    animation: messageHighlightShine 1.6s ease-out;
+}
+
 .settings-page {
     position: fixed;
     top: 0;
@@ -787,6 +942,65 @@
     outline: none;
     border-color: #a800ff;
     box-shadow: 0 0 0 3px #a800ff22;
+}
+
+/* --- Contrôle segmenté (Apparence / Taille du texte) --- */
+.settings-segmented {
+    display: flex;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 3px;
+    gap: 3px;
+}
+.settings-segmented-option {
+    flex: 1;
+    text-align: center;
+    padding: 9px 6px;
+    border-radius: 9px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    white-space: nowrap;
+}
+.settings-segmented-option.active {
+    background: linear-gradient(45deg, #a800ff, #0076ff);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(168,0,255,0.3);
+}
+
+/* --- Couleur d'accent : grille compacte 7x2 en rond --- */
+.accent-color-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+}
+.accent-color-dot {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s ease;
+    position: relative;
+}
+.accent-color-dot:hover { transform: scale(1.12); }
+.accent-color-dot.active { border-color: var(--text-main); box-shadow: 0 0 0 2px var(--input-bg); }
+.accent-color-dot.active::after {
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 /* --- Boutons redessinés --- */
@@ -1289,21 +1503,27 @@ input, textarea {
     bottom: 80px;
     left: 50%;
     transform: translateX(-50%);
-    background: #0095f6;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: var(--text-main);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
     font-weight: 600;
-    box-shadow: 0 4px 15px rgba(0, 149, 246, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
     cursor: pointer;
     z-index: 50;
     display: none;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     animation: slideUpNewMsg 0.3s ease-out;
-    border: none;
     transition: transform 0.2s ease;
+}
+[data-theme="dark"] .new-message-floating-btn {
+    background: rgba(40, 40, 40, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .new-message-floating-btn:hover {
@@ -1311,7 +1531,7 @@ input, textarea {
 }
 
 .new-message-floating-btn i {
-    font-size: 1rem;
+    font-size: 0.8rem;
 }
 
 @keyframes slideUpNewMsg {
@@ -1320,12 +1540,12 @@ input, textarea {
 }
 
 .new-message-count {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(128, 128, 128, 0.3);
     border-radius: 50%;
-    padding: 0px 8px;
-    font-size: 0.75rem;
-    line-height: 20px;
-    min-width: 20px;
+    padding: 0px 6px;
+    font-size: 0.65rem;
+    line-height: 16px;
+    min-width: 16px;
     text-align: center;
 }
 
@@ -1956,7 +2176,7 @@ input, textarea {
                 <i class="fa-solid fa-bolt flash-btn" id="flash-btn" title="Faire vibrer le téléphone de l'autre" onclick="triggerFlashVibration()"></i>
                 <i class="fa-solid fa-eye-slash blur-toggle-btn" id="blur-toggle-btn" title="Mode Flou" onclick="toggleBlurMode()"></i>
                 <i class="fa-solid fa-eye live-toggle-btn" id="live-toggle-btn" title="Mode Live : voir ce que l'autre tape en temps réel" onclick="toggleLiveMode()"></i>
-                <i class="fa-solid fa-moon" title="Thème" onclick="toggleTheme()"></i>
+                <i class="fa-solid fa-magnifying-glass" title="Rechercher dans la conversation" onclick="ouvrirRecherchePage()" style="cursor:pointer;"></i>
                 <i class="fa-solid fa-gear" title="Paramètres" onclick="openSettingsPage()" style="cursor:pointer;"></i>
             </div>
         </div>
@@ -1974,7 +2194,7 @@ input, textarea {
  <!-- Bouton flottant "Nouveau message" -->
 <div class="new-message-floating-btn" id="new-msg-floating-btn" onclick="scrollToBottom()">
     <i class="fa-regular fa-comment"></i>
-    <span id="new-msg-text">📩 Nouveau message</span>
+    <span id="new-msg-text">Nouveau message</span>
     <span class="new-message-count" id="new-msg-count">1</span>
 </div>
 
@@ -2333,6 +2553,28 @@ input, textarea {
             <button class="settings-btn-secondary" onclick="demanderPermissionNotifications()"><i class="fa-solid fa-bell"></i> Activer les notifications</button>
         </div>
 
+        <!-- Section Apparence -->
+        <div class="settings-section" style="animation-delay:0.08s;">
+            <h4><i class="fa-solid fa-circle-half-stroke"></i> Apparence</h4>
+            <p class="settings-section-desc">Mode sombre : choisis clair, sombre, ou automatique selon ton appareil.</p>
+            <div class="settings-segmented" id="appearance-segmented">
+                <div class="settings-segmented-option" data-mode="light" onclick="choisirApparence('light')">☀️ Clair</div>
+                <div class="settings-segmented-option" data-mode="dark" onclick="choisirApparence('dark')">🌙 Sombre</div>
+                <div class="settings-segmented-option" data-mode="auto" onclick="choisirApparence('auto')">🔄 Auto</div>
+            </div>
+        </div>
+
+        <!-- Section Taille du texte -->
+        <div class="settings-section" style="animation-delay:0.09s;">
+            <h4><i class="fa-solid fa-text-height"></i> Taille du texte</h4>
+            <p class="settings-section-desc">Ajuste la taille du texte des messages dans la conversation.</p>
+            <div class="settings-segmented" id="textsize-segmented">
+                <div class="settings-segmented-option" data-size="small" onclick="choisirTailleTexte('small')">Petit</div>
+                <div class="settings-segmented-option" data-size="medium" onclick="choisirTailleTexte('medium')">Moyen</div>
+                <div class="settings-segmented-option" data-size="large" onclick="choisirTailleTexte('large')">Grand</div>
+            </div>
+        </div>
+
         <!-- Section Bulle de Chat -->
         <div class="settings-section" style="animation-delay:0.1s;">
             <h4><i class="fa-solid fa-message"></i> Style par défaut des bulles</h4>
@@ -2360,6 +2602,24 @@ input, textarea {
                 <option value="galaxy">✨ Galaxy</option>
                 <option value="cyberpunk">🤖 Cyberpunk</option>
             </select>
+
+            <p class="settings-section-desc" style="margin-top:2px;">Ou choisis simplement une <b>couleur d'accent</b> unie à la place d'un style :</p>
+            <div class="accent-color-grid" id="accent-color-grid">
+                <div class="accent-color-dot" style="background:#a800ff;" data-color="#a800ff" onclick="choisirCouleurAccent('#a800ff')" title="Violet"></div>
+                <div class="accent-color-dot" style="background:#0076ff;" data-color="#0076ff" onclick="choisirCouleurAccent('#0076ff')" title="Bleu"></div>
+                <div class="accent-color-dot" style="background:#ff007f;" data-color="#ff007f" onclick="choisirCouleurAccent('#ff007f')" title="Magenta"></div>
+                <div class="accent-color-dot" style="background:#ff3b30;" data-color="#ff3b30" onclick="choisirCouleurAccent('#ff3b30')" title="Rouge"></div>
+                <div class="accent-color-dot" style="background:#ff9500;" data-color="#ff9500" onclick="choisirCouleurAccent('#ff9500')" title="Orange"></div>
+                <div class="accent-color-dot" style="background:#ffcc00;" data-color="#ffcc00" onclick="choisirCouleurAccent('#ffcc00')" title="Jaune"></div>
+                <div class="accent-color-dot" style="background:#34c759;" data-color="#34c759" onclick="choisirCouleurAccent('#34c759')" title="Vert"></div>
+                <div class="accent-color-dot" style="background:#00c7be;" data-color="#00c7be" onclick="choisirCouleurAccent('#00c7be')" title="Turquoise"></div>
+                <div class="accent-color-dot" style="background:#30b0c7;" data-color="#30b0c7" onclick="choisirCouleurAccent('#30b0c7')" title="Cyan"></div>
+                <div class="accent-color-dot" style="background:#5856d6;" data-color="#5856d6" onclick="choisirCouleurAccent('#5856d6')" title="Indigo"></div>
+                <div class="accent-color-dot" style="background:#af52de;" data-color="#af52de" onclick="choisirCouleurAccent('#af52de')" title="Mauve"></div>
+                <div class="accent-color-dot" style="background:#ff2d55;" data-color="#ff2d55" onclick="choisirCouleurAccent('#ff2d55')" title="Rose"></div>
+                <div class="accent-color-dot" style="background:#8e8e93;" data-color="#8e8e93" onclick="choisirCouleurAccent('#8e8e93')" title="Gris"></div>
+                <div class="accent-color-dot" style="background:#1c1c1e;" data-color="#1c1c1e" onclick="choisirCouleurAccent('#1c1c1e')" title="Noir"></div>
+            </div>
         </div>
 
         <!-- Section Animation d'envoi -->
@@ -2405,6 +2665,34 @@ input, textarea {
                 </div>
             </div>
             <input type="file" id="bg-upload-input" accept="image/*" style="display:none;">
+        </div>
+    </div>
+</div>
+
+<!-- ========== PAGE DE RECHERCHE DANS LA CONVERSATION ========== -->
+<div class="search-page" id="search-page">
+    <div class="search-page-header">
+        <i class="fa-solid fa-arrow-left" onclick="fermerRecherchePage()"></i>
+        <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="search-page-input" placeholder="Rechercher un mot ou une expression..." oninput="lancerRechercheMessages()">
+            <i class="fa-solid fa-xmark" id="search-clear-btn" style="display:none;" onclick="viderRechercheMessages()"></i>
+        </div>
+    </div>
+    <div class="search-counts" id="search-counts" style="display:none;">
+        <div class="search-count-pill">
+            <div class="search-count-number" id="search-count-ida">0</div>
+            <div class="search-count-label" id="search-count-ida-label">fois — Ida</div>
+        </div>
+        <div class="search-count-pill">
+            <div class="search-count-number" id="search-count-aidara">0</div>
+            <div class="search-count-label" id="search-count-aidara-label">fois — Aidara</div>
+        </div>
+    </div>
+    <div class="search-results" id="search-results">
+        <div class="search-empty-state">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <p>Tape un mot ou une expression pour chercher dans toute la conversation</p>
         </div>
     </div>
 </div>
@@ -6433,10 +6721,7 @@ function toggleTheme() {
    
 // Restaurer au chargement
 document.addEventListener('DOMContentLoaded', function() {
-    const theme = localStorage.getItem('theme');
-    if (theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-    }
+    // (Le thème clair/sombre/auto est désormais restauré par loadApparence(), voir plus bas.)
     // ✅ Restaure aussi le fond d'écran choisi : avant ce correctif, il n'était appliqué
     // que si on rouvrait la page Paramètres, jamais au chargement/rafraîchissement de l'appli.
     const fondSauvegarde = localStorage.getItem('chat_background');
@@ -6476,6 +6761,188 @@ document.addEventListener('DOMContentLoaded', function() {
       
       
       // ========== PAGE PARAMÈTRES ==========
+// ============================================================
+// ✅ RECHERCHE DANS LA CONVERSATION (icône loupe du header)
+// ============================================================
+let rechercheMessagesCache = null; // tous les messages texte, chargés une seule fois par ouverture
+let rechercheChargementEnCours = false;
+
+function echapperRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function formatHeureRecherche(timestamp) {
+    if (!timestamp) return '';
+    const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const jour = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const heure = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    return `${jour} · ${heure}`;
+}
+
+async function ouvrirRecherchePage() {
+    const page = document.getElementById('search-page');
+    page.style.display = 'flex';
+    document.getElementById('search-page-input').value = '';
+    document.getElementById('search-clear-btn').style.display = 'none';
+    document.getElementById('search-counts').style.display = 'none';
+    document.getElementById('search-results').innerHTML = `
+        <div class="search-empty-state">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <p>Tape un mot ou une expression pour chercher dans toute la conversation</p>
+        </div>
+    `;
+    setTimeout(() => document.getElementById('search-page-input').focus(), 300);
+
+    // Recherche "aveugle" : on charge TOUT l'historique une seule fois par ouverture de la
+    // page (le chat principal, lui, n'affiche que les 50 derniers messages), pour pouvoir
+    // retrouver n'importe quel message, même ancien.
+    if (!CHAT_ID || !currentUser) return;
+    rechercheChargementEnCours = true;
+    try {
+        const snapshot = await db.collection('chats').doc(CHAT_ID).collection('messages')
+            .orderBy('timestamp', 'asc')
+            .get();
+        rechercheMessagesCache = snapshot.docs;
+    } catch (err) {
+        console.error("Erreur chargement recherche:", err);
+        rechercheMessagesCache = [];
+    }
+    rechercheChargementEnCours = false;
+}
+
+function fermerRecherchePage() {
+    document.getElementById('search-page').style.display = 'none';
+}
+
+function viderRechercheMessages() {
+    const input = document.getElementById('search-page-input');
+    input.value = '';
+    document.getElementById('search-clear-btn').style.display = 'none';
+    document.getElementById('search-counts').style.display = 'none';
+    document.getElementById('search-results').innerHTML = `
+        <div class="search-empty-state">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <p>Tape un mot ou une expression pour chercher dans toute la conversation</p>
+        </div>
+    `;
+    input.focus();
+}
+
+function surlignerTexteRecherche(texte, requete) {
+    const echappe = escapeHTML(texte);
+    const echappeRequete = escapeHTML(requete);
+    const regex = new RegExp(echapperRegex(echappeRequete), 'gi');
+    return echappe.replace(regex, (m) => `<mark>${m}</mark>`);
+}
+
+function lancerRechercheMessages() {
+    const input = document.getElementById('search-page-input');
+    const requete = input.value.trim();
+    const resultsEl = document.getElementById('search-results');
+    const countsEl = document.getElementById('search-counts');
+    document.getElementById('search-clear-btn').style.display = requete ? 'block' : 'none';
+
+    if (!requete) {
+        countsEl.style.display = 'none';
+        resultsEl.innerHTML = `
+            <div class="search-empty-state">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <p>Tape un mot ou une expression pour chercher dans toute la conversation</p>
+            </div>
+        `;
+        return;
+    }
+
+    if (rechercheChargementEnCours || !rechercheMessagesCache) {
+        resultsEl.innerHTML = `<div class="search-empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Chargement de la conversation...</p></div>`;
+        setTimeout(lancerRechercheMessages, 200);
+        return;
+    }
+
+    const requeteLower = requete.toLowerCase();
+    let compteIda = 0;
+    let compteAidara = 0;
+    const resultats = [];
+
+    rechercheMessagesCache.forEach(doc => {
+        const data = doc.data();
+        if (typeof data.text !== 'string' || !data.text) return;
+        if (data.isSecretMessage) return; // ne pas indexer les messages codés/masqués (5432 etc.)
+        const texteLower = data.text.toLowerCase();
+        if (!texteLower.includes(requeteLower)) return;
+
+        // Compte le nombre d'occurrences (pas juste de messages) pour chaque expéditeur
+        const occurrences = texteLower.split(requeteLower).length - 1;
+        if (data.senderId === 'ida') compteIda += occurrences;
+        else if (data.senderId === 'aidara') compteAidara += occurrences;
+
+        resultats.push({ id: doc.id, data });
+    });
+
+    // Compteurs par personne
+    document.getElementById('search-count-ida').textContent = compteIda;
+    document.getElementById('search-count-aidara').textContent = compteAidara;
+    countsEl.style.display = 'flex';
+
+    // Résultats, du plus récent au plus ancien
+    resultats.reverse();
+
+    if (resultats.length === 0) {
+        resultsEl.innerHTML = `<div class="search-empty-state"><i class="fa-solid fa-magnifying-glass"></i><p>Aucun résultat pour « ${escapeHTML(requete)} »</p></div>`;
+        return;
+    }
+
+    resultsEl.innerHTML = resultats.map(r => {
+        const nomExpediteur = r.data.senderId === 'ida' ? 'Ida' : (r.data.senderId === 'aidara' ? 'Aidara' : (r.data.senderName || '?'));
+        const estMoi = r.data.senderId === currentUser.id;
+        const dateHeure = formatHeureRecherche(r.data.timestamp);
+        const texteSurligne = surlignerTexteRecherche(r.data.text, requete);
+        return `
+            <div class="search-result-item" onclick="allerAuMessageDepuisRecherche('${r.id}')">
+                <div class="search-result-meta">
+                    <span class="search-result-sender ${estMoi ? 'is-me' : ''}">${nomExpediteur}</span>
+                    <span>${dateHeure}</span>
+                </div>
+                <div class="search-result-text">${texteSurligne}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Fait défiler jusqu'au message choisi et l'illumine brièvement, même s'il n'est pas
+// dans les 50 derniers messages actuellement affichés (dans ce cas, on ré-affiche une
+// fenêtre de messages autour de lui à partir du cache déjà chargé pour la recherche).
+function allerAuMessageDepuisRecherche(msgId) {
+    fermerRecherchePage();
+
+    const surligner = () => {
+        const bulle = document.querySelector(`[data-id="${msgId}"] .message-bubble`);
+        if (!bulle) return false;
+        document.querySelector(`[data-id="${msgId}"]`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        bulle.classList.remove('highlight-from-search');
+        void bulle.offsetWidth; // relance l'animation même si déjà jouée avant
+        bulle.classList.add('highlight-from-search');
+        setTimeout(() => bulle.classList.remove('highlight-from-search'), 1700);
+        return true;
+    };
+
+    if (surligner()) return;
+
+    // Le message n'est pas dans la fenêtre actuellement affichée : on reconstruit
+    // temporairement l'affichage autour de lui à partir de l'historique déjà en cache.
+    if (!rechercheMessagesCache) return;
+    const index = rechercheMessagesCache.findIndex(d => d.id === msgId);
+    if (index === -1) return;
+
+    const debut = Math.max(0, index - 25);
+    const fin = Math.min(rechercheMessagesCache.length, index + 26);
+    const fenetre = rechercheMessagesCache.slice(debut, fin);
+
+    afficherTousLesMessages({ empty: false, docs: fenetre }, false);
+
+    setTimeout(surligner, 150);
+}
+
 function openSettingsPage() {
     const settingsPage = document.getElementById('settings-page');
     settingsPage.style.display = 'flex';
@@ -6526,6 +6993,9 @@ function initSettingsBubbles() {
     });
     
     initBgOptions();
+    loadDefaultAccentColor();
+    loadApparence();
+    loadTailleTexte();
 }
 
 // ========== FOND D'ÉCRAN DU CHAT (avec persistance + upload d'image perso) ==========
@@ -6731,6 +7201,10 @@ function saveDefaultBubbleStyle() {
     const select = document.getElementById('default-bubble-style');
     const selectedStyle = select.value;
     localStorage.setItem('default_bubble_style', selectedStyle);
+    // Choisir un style de bulle désactive la couleur d'accent : les deux sont deux façons
+    // alternatives de régler le même défaut, elles ne doivent jamais être actives ensemble.
+    localStorage.setItem('default_accent_color', 'none');
+    marquerAccentActif('none');
     
     // Met à jour IMMÉDIATEMENT tous les messages sans style perso
     updateAllMessagesDefaultStyle();
@@ -6738,9 +7212,34 @@ function saveDefaultBubbleStyle() {
     showTempNotification("✅ Style par défaut appliqué");
  }
 
+// ========== COULEUR D'ACCENT PAR DÉFAUT (alternative à un style de bulle complet) ==========
+function choisirCouleurAccent(color) {
+    localStorage.setItem('default_accent_color', color);
+    // Mutuellement exclusif avec le style de bulle par défaut (dropdown)
+    localStorage.setItem('default_bubble_style', 'none');
+    const select = document.getElementById('default-bubble-style');
+    if (select) select.value = 'none';
+    marquerAccentActif(color);
+    updateAllMessagesDefaultStyle();
+    showTempNotification("✅ Couleur d'accent appliquée");
+}
+
+function marquerAccentActif(color) {
+    document.querySelectorAll('.accent-color-dot').forEach(dot => {
+        dot.classList.toggle('active', dot.getAttribute('data-color') === color);
+    });
+}
+
+function loadDefaultAccentColor() {
+    const saved = localStorage.getItem('default_accent_color');
+    marquerAccentActif(saved && saved !== 'none' ? saved : null);
+}
+setTimeout(loadDefaultAccentColor, 200);
+
 // Met à jour tous les messages qui n'ont PAS de style personnalisé
 function updateAllMessagesDefaultStyle() {
     const defaultStyle = localStorage.getItem('default_bubble_style');
+    const defaultAccent = localStorage.getItem('default_accent_color');
     
     document.querySelectorAll('.message-row.sent').forEach(row => {
         const bubble = row.querySelector('.message-bubble');
@@ -6750,21 +7249,26 @@ function updateAllMessagesDefaultStyle() {
         const msgId = row.getAttribute('data-id');
         if (!msgId) return;
         
-        // On vérifie dans Firestore si ce message a un bubbleStyle
+        // On vérifie dans Firestore si ce message a un bubbleStyle ou une couleur perso
         db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).get().then(doc => {
             if (doc.exists) {
                 const data = doc.data();
-                // Si le message a un style perso, on ne touche pas
-                if (data.bubbleStyle) return;
+                // Si le message a un style/couleur perso, on ne touche pas
+                if (data.bubbleStyle || data.customColor || data.customGradient) return;
                 
-                // Sinon on applique le style par défaut
                 const allStyles = ['bicolor','dark-passion','grid-style','rainbow','neon','wood','code-style','comics','watercolor','retro','glassmorphism','crystal','sunset','ocean','forest','midnight','rose','gold','galaxy','cyberpunk'];
                 allStyles.forEach(style => bubble.classList.remove(style));
-                
-                if (defaultStyle && defaultStyle !== 'none') {
+
+                if (defaultAccent && defaultAccent !== 'none') {
+                    // Couleur d'accent unie par défaut
+                    bubble.style.setProperty('background', defaultAccent, 'important');
+                    bubble.style.setProperty('color', getContrastColor(defaultAccent), 'important');
+                } else if (defaultStyle && defaultStyle !== 'none') {
+                    bubble.style.background = '';
+                    bubble.style.color = '';
                     bubble.classList.add(defaultStyle);
                 } else {
-                    // Style par défaut Instagram (aucune classe)
+                    // Style par défaut Instagram (aucune classe, aucune couleur)
                     bubble.style.background = '';
                     bubble.style.color = '';
                 }
@@ -6784,6 +7288,78 @@ function loadDefaultBubbleStyle() {
 
 // Appeler cette fonction au chargement   
 setTimeout(loadDefaultBubbleStyle, 200);
+
+// ============================================================
+// ✅ APPARENCE (Paramètres → Apparence) : Clair / Sombre / Auto
+// ============================================================
+function appliquerApparence(mode) {
+    let themeReel = mode;
+    if (mode === 'auto') {
+        themeReel = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', themeReel);
+    // On garde 'theme' synchronisé pour rester compatible avec d'anciens bouts de code
+    // qui pourraient encore le lire directement.
+    localStorage.setItem('theme', themeReel);
+}
+
+function marquerApparenceActive(mode) {
+    document.querySelectorAll('#appearance-segmented .settings-segmented-option').forEach(opt => {
+        opt.classList.toggle('active', opt.getAttribute('data-mode') === mode);
+    });
+}
+
+function choisirApparence(mode) {
+    localStorage.setItem('appearance_mode', mode);
+    appliquerApparence(mode);
+    marquerApparenceActive(mode);
+}
+
+function loadApparence() {
+    // Compatibilité ascendante : si l'utilisateur avait seulement l'ancien réglage clair/sombre
+    // (sans le nouveau mode "auto"), on part de sa préférence existante plutôt que de la perdre.
+    const saved = localStorage.getItem('appearance_mode') || localStorage.getItem('theme') || 'light';
+    appliquerApparence(saved);
+    marquerApparenceActive(saved);
+}
+setTimeout(loadApparence, 50);
+
+// Réagit aux changements de thème du système si l'utilisateur est en mode "Auto"
+if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (localStorage.getItem('appearance_mode') === 'auto') {
+            appliquerApparence('auto');
+        }
+    });
+}
+
+// ============================================================
+// ✅ TAILLE DU TEXTE (Paramètres → Taille du texte)
+// ============================================================
+function appliquerTailleTexte(size) {
+    const tailles = { small: '0.8rem', medium: '0.9rem', large: '1.05rem' };
+    document.documentElement.style.setProperty('--message-font-size', tailles[size] || tailles.medium);
+}
+
+function marquerTailleTexteActive(size) {
+    document.querySelectorAll('#textsize-segmented .settings-segmented-option').forEach(opt => {
+        opt.classList.toggle('active', opt.getAttribute('data-size') === size);
+    });
+}
+
+function choisirTailleTexte(size) {
+    localStorage.setItem('text_size', size);
+    appliquerTailleTexte(size);
+    marquerTailleTexteActive(size);
+}
+
+function loadTailleTexte() {
+    const saved = localStorage.getItem('text_size') || 'medium';
+    appliquerTailleTexte(saved);
+    marquerTailleTexteActive(saved);
+}
+setTimeout(loadTailleTexte, 50);
+
 
 // ============================================================
 // ✅ ANIMATION D'ENVOI PAR DÉFAUT (Paramètres → Animation d'envoi)
@@ -10912,9 +11488,9 @@ function afficherBoutonNouveauMessage(compteur) {
     
     // Mettre à jour le texte
     if (newMessageCount === 1) {
-        textSpan.textContent = '📩 Nouveau message';
+        textSpan.textContent = 'Nouveau message';
     } else {
-        textSpan.textContent = `📩 ${newMessageCount} nouveaux messages`;
+        textSpan.textContent = `${newMessageCount} nouveaux`;
     }
     
     // Mettre à jour le badge
@@ -11422,32 +11998,35 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         
         const isGiant = isOnlyEmojis(data.text);
         let customStyle = '';
+        let inlineStyle = '';
 // 🚨 PRIORITÉ : Si une couleur personnalisée existe, on désactive les styles de classe
 const hasCustomColor = data.customColor || data.customGradient;
 
-if (!hasCustomColor) {
-    // Seulement si PAS de couleur personnalisée
-    if (data.bubbleStyle) {
-        customStyle = data.bubbleStyle;
-    } else if (data.messageStyle) {
-        customStyle = data.messageStyle;
-    } else if (isSent) {
+if (hasCustomColor) {
+    // ✅ Couleur/dégradé choisi pour CE message précis (prioritaire sur tout le reste)
+    if (data.customColor) {
+        inlineStyle = `background: ${data.customColor} !important; color: ${getContrastColor(data.customColor)} !important;`;
+    } else if (data.customGradient) {
+        inlineStyle = `background: ${data.customGradient} !important; color: white !important;`;
+    }
+} else if (data.bubbleStyle) {
+    customStyle = data.bubbleStyle;
+} else if (data.messageStyle) {
+    customStyle = data.messageStyle;
+} else if (isSent) {
+    // Aucun style choisi pour CE message : on applique la préférence par défaut de l'utilisateur.
+    // La couleur d'accent (si choisie) est prioritaire sur le style de bulle par défaut —
+    // ce sont deux façons alternatives de définir le même réglage par défaut.
+    const defaultAccent = localStorage.getItem('default_accent_color');
+    if (defaultAccent && defaultAccent !== 'none') {
+        inlineStyle = `background: ${defaultAccent} !important; color: ${getContrastColor(defaultAccent)} !important;`;
+    } else {
         const defaultStyle = localStorage.getItem('default_bubble_style');
         if (defaultStyle && defaultStyle !== 'none') {
             customStyle = defaultStyle;
         }
     }
 }
-
-        
-        // ✅ NOUVEAU CODE POUR LES COULEURS PERSONNALISÉES
-      let inlineStyle = '';
-if (data.customColor) {
-    inlineStyle = `background: ${data.customColor} !important; color: ${getContrastColor(data.customColor)} !important;`;
-} else if (data.customGradient) {
-    inlineStyle = `background: ${data.customGradient} !important; color: white !important;`;
-}
-        // ✅ FIN NOUVEAU CODE 
         
         let codedClass = '';
         let lockBadge = '';
