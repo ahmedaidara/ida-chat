@@ -410,6 +410,135 @@
         .download-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 30px; padding: 12px 24px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; z-index: 10001; font-weight: 600; }
         .download-btn:hover { background: #0095f6; transform: translateX(-50%) scale(1.05); }
         .download-btn i { font-size: 1.1rem; }
+
+        /* ========== ÉDITEUR DE MÉDIA (style Telegram/WhatsApp) ========== */
+        .media-editor-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #0b0b0d;
+            z-index: 10050;
+            flex-direction: column;
+            animation: fadeInModal 0.2s ease-out;
+        }
+        .media-editor-overlay.active { display: flex; }
+        .me-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            flex-shrink: 0;
+        }
+        .me-icon-btn {
+            background: rgba(255,255,255,0.12);
+            border: none;
+            color: #fff;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            font-size: 1.05rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .me-icon-btn:active { background: rgba(255,255,255,0.25); }
+        .me-title { color: #fff; font-size: 0.95rem; font-weight: 600; opacity: 0.9; }
+        .me-send-btn {
+            background: linear-gradient(45deg, #a800ff, #0076ff);
+            border: none; color: #fff; width: 46px; height: 46px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 1.15rem; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(160,0,255,0.45);
+            transition: transform 0.15s;
+        }
+        .me-send-btn:active { transform: scale(0.92); }
+        .me-send-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+        .me-stage {
+            flex: 1;
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            min-height: 0;
+            padding: 10px;
+        }
+        #me-canvas, #me-video-preview {
+            max-width: 100%; max-height: 100%;
+            border-radius: 6px;
+            touch-action: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        #me-video-preview { touch-action: manipulation; }
+
+        .me-crop-box {
+            position: absolute;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);
+            touch-action: none;
+            display: none;
+        }
+        .me-crop-handle {
+            position: absolute; width: 20px; height: 20px; background: #fff; border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.5);
+            touch-action: none;
+        }
+        .me-crop-handle.nw { top: -10px; left: -10px; cursor: nwse-resize; }
+        .me-crop-handle.ne { top: -10px; right: -10px; cursor: nesw-resize; }
+        .me-crop-handle.sw { bottom: -10px; left: -10px; cursor: nesw-resize; }
+        .me-crop-handle.se { bottom: -10px; right: -10px; cursor: nwse-resize; }
+
+        .me-uploading-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.6);
+            display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px; z-index: 5;
+            border-radius: 6px;
+        }
+        .me-uploading-overlay.active { display: flex; }
+        .me-spinner { width: 42px; height: 42px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.25); border-top-color: #fff; animation: meSpin 0.8s linear infinite; }
+        @keyframes meSpin { to { transform: rotate(360deg); } }
+        .me-uploading-text { color: #fff; font-size: 0.8rem; opacity: 0.85; }
+
+        .me-toolbar {
+            display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+            overflow-x: auto; flex-shrink: 0;
+            scrollbar-width: none;
+        }
+        .me-toolbar::-webkit-scrollbar { display: none; }
+        .me-tool-btn {
+            background: rgba(255,255,255,0.1); border: none; color: #fff; width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 1.05rem; cursor: pointer; flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .me-tool-btn.active { background: linear-gradient(45deg, #a800ff, #0076ff); }
+        .me-color-swatches { display: none; align-items: center; gap: 9px; flex-shrink: 0; padding-left: 4px; border-left: 1px solid rgba(255,255,255,0.15); }
+        .me-color-dot { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; }
+        .me-color-dot.selected { border-color: #fff; transform: scale(1.15); }
+
+        .me-crop-actions { display: none; align-items: center; gap: 10px; padding: 8px 14px; flex-shrink: 0; }
+        .me-crop-actions button {
+            flex: 1; padding: 10px; border-radius: 22px; border: none; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+        }
+        .me-crop-cancel-btn { background: rgba(255,255,255,0.12); color: #fff; }
+        .me-crop-valider-btn { background: linear-gradient(45deg, #a800ff, #0076ff); color: #fff; }
+
+        .me-caption-bar {
+            display: flex; align-items: center; gap: 10px; padding: 8px 14px 16px; flex-shrink: 0;
+        }
+        .me-caption-input {
+            flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+            color: #fff; border-radius: 22px; padding: 11px 16px; font-size: 0.9rem; outline: none;
+        }
+        .me-caption-input::placeholder { color: rgba(255,255,255,0.5); }
+
+        /* ----- Découpe vidéo (début/fin) ----- */
+        .me-video-trim { display: none; padding: 4px 18px 2px; flex-shrink: 0; }
+        .me-trim-track { position: relative; height: 4px; background: rgba(255,255,255,0.22); border-radius: 2px; margin: 16px 0 6px; }
+        .me-trim-selected { position: absolute; top: 0; bottom: 0; background: linear-gradient(45deg, #a800ff, #0076ff); border-radius: 2px; }
+        .me-trim-range { position: absolute; top: -8px; left: 0; width: 100%; height: 20px; -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none; margin: 0; }
+        .me-trim-range::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: all; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.45); cursor: pointer; }
+        .me-trim-range::-moz-range-thumb { pointer-events: all; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.45); cursor: pointer; border: none; }
+        .me-trim-range::-moz-range-track { background: transparent; }
+        .me-trim-labels { display: flex; justify-content: space-between; color: rgba(255,255,255,0.75); font-size: 0.72rem; }
+        .me-trim-duration-label { font-weight: 600; color: #fff; }
+
+
         .downloading { animation: downloadPulse 0.5s ease; }
         @keyframes downloadPulse { 0%, 100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); background: #00cc44; } }
 
@@ -2464,6 +2593,72 @@ input, textarea {
             <img id="modal-image" src="" alt="Photo">
             <button class="download-btn" id="download-photo-btn" onclick="downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer </button>
         </div>
+
+        <!-- ========== ÉDITEUR DE MÉDIA (rognage / dessin / rotation avant envoi) ========== -->
+        <div class="media-editor-overlay" id="media-editor-overlay">
+            <div class="me-header">
+                <button class="me-icon-btn" onclick="fermerEditeurMedia()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="me-title" id="me-header-title">Photo</div>
+                <button class="me-send-btn" id="me-send-btn" onclick="envoyerMediaEdite()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+
+            <div class="me-stage" id="me-stage">
+                <canvas id="me-canvas"
+                    onmousedown="meCanvasPointerDown(event)" onmousemove="meCanvasPointerMove(event)" onmouseup="meCanvasPointerUp()" onmouseleave="meCanvasPointerUp()"
+                    ontouchstart="meCanvasPointerDown(event)" ontouchmove="meCanvasPointerMove(event)" ontouchend="meCanvasPointerUp()"></canvas>
+                <video id="me-video-preview" style="display:none;" controls playsinline></video>
+
+                <div class="me-crop-box" id="me-crop-box"
+                    onmousedown="meCropPointerDown(event,'move')" ontouchstart="meCropPointerDown(event,'move')">
+                    <div class="me-crop-handle nw" onmousedown="meCropPointerDown(event,'nw')" ontouchstart="meCropPointerDown(event,'nw')"></div>
+                    <div class="me-crop-handle ne" onmousedown="meCropPointerDown(event,'ne')" ontouchstart="meCropPointerDown(event,'ne')"></div>
+                    <div class="me-crop-handle sw" onmousedown="meCropPointerDown(event,'sw')" ontouchstart="meCropPointerDown(event,'sw')"></div>
+                    <div class="me-crop-handle se" onmousedown="meCropPointerDown(event,'se')" ontouchstart="meCropPointerDown(event,'se')"></div>
+                </div>
+
+                <div class="me-uploading-overlay" id="me-uploading-overlay">
+                    <div class="me-spinner"></div>
+                    <div class="me-uploading-text" id="me-uploading-text">Envoi en cours...</div>
+                </div>
+            </div>
+
+            <div class="me-video-trim" id="me-video-trim">
+                <div class="me-trim-track">
+                    <div class="me-trim-selected" id="me-trim-selected"></div>
+                    <input type="range" class="me-trim-range" id="me-trim-start" min="0" max="100" value="0" step="0.1" oninput="meUpdateTrimUI()">
+                    <input type="range" class="me-trim-range" id="me-trim-end" min="0" max="100" value="100" step="0.1" oninput="meUpdateTrimUI()">
+                </div>
+                <div class="me-trim-labels">
+                    <span id="me-trim-start-label">0:00</span>
+                    <span class="me-trim-duration-label" id="me-trim-duration-label">Durée : 0:00</span>
+                    <span id="me-trim-end-label">0:00</span>
+                </div>
+            </div>
+
+            <div class="me-crop-actions" id="me-crop-actions">
+                <button class="me-crop-cancel-btn" onclick="meFinCrop(false)">Annuler</button>
+                <button class="me-crop-valider-btn" onclick="meFinCrop(true)">Valider le recadrage</button>
+            </div>
+
+            <div class="me-toolbar" id="me-toolbar">
+                <button class="me-tool-btn" data-tool="rotate" title="Pivoter" onclick="meRotate()"><i class="fa-solid fa-rotate-right"></i></button>
+                <button class="me-tool-btn" data-tool="crop" title="Rogner" onclick="meToggleCrop()"><i class="fa-solid fa-crop-simple"></i></button>
+                <button class="me-tool-btn" data-tool="draw" title="Dessiner" onclick="meToggleDraw()"><i class="fa-solid fa-pen"></i></button>
+                <div class="me-color-swatches" id="me-color-swatches">
+                    <span class="me-color-dot selected" data-color="#ff1744" style="background:#ff1744;" onclick="meSetColor('#ff1744')"></span>
+                    <span class="me-color-dot" data-color="#ffea00" style="background:#ffea00;" onclick="meSetColor('#ffea00')"></span>
+                    <span class="me-color-dot" data-color="#00e676" style="background:#00e676;" onclick="meSetColor('#00e676')"></span>
+                    <span class="me-color-dot" data-color="#2979ff" style="background:#2979ff;" onclick="meSetColor('#2979ff')"></span>
+                    <span class="me-color-dot" data-color="#ffffff" style="background:#ffffff;" onclick="meSetColor('#ffffff')"></span>
+                    <span class="me-color-dot" data-color="#000000" style="background:#000000;" onclick="meSetColor('#000000')"></span>
+                </div>
+            </div>
+
+            <div class="me-caption-bar">
+                <input type="text" class="me-caption-input" id="me-caption-input" placeholder="Ajouter une légende..." maxlength="300">
+            </div>
+        </div>
+
       <!-- Page Carnet Secret -->
 <div class="secret-page" id="secret-page">
     <div class="secret-header">
@@ -2647,112 +2842,559 @@ async function supprimerFichierSupabase(filePath) {
     if (error) console.error("Erreur suppression:", error);
 }
 
-// ========== ENVOI DE PHOTO MODIFIÉ ==========
-async function prendrePhotoAvecSupabase() {
+// ========== SÉLECTION PHOTO → OUVRE L'ÉDITEUR (au lieu d'envoyer direct) ==========
+function prendrePhotoAvecSupabase() {
+    fermerMenuMedia();
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            
-            // Vérifier la taille (max 10 MB)
-            if (file.size > 10 * 1024 * 1024) {
-                showTempNotification("❌ Photo trop grande (max 10 MB)");
+            if (file.size > 15 * 1024 * 1024) {
+                showTempNotification("❌ Photo trop grande (max 15 MB)");
                 return;
             }
-            
-            showTempNotification("📤 Upload de la photo...");
-            
-            const url = await uploadVersSupabase(file, 'image');
-            
-            if (url) {
-                showTempNotification("📷 Photo envoyée !");
-                
-                // Envoyer le message avec l'URL
-                await db.collection('chats').doc(CHAT_ID).collection('messages').add({
-                    text: null,
-                    senderId: currentUser.id,
-                    senderName: currentUser.name,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    status: "sent",
-                    readBy: [currentUser.id],
-                    type: 'image',
-                    mediaUrl: url,
-                    storage: 'supabase'
-                });
-            } else {
-                showTempNotification("❌ Échec de l'upload"); 
-            }
+            ouvrirEditeurMedia(file);
         }
     };
     input.click();
 }
 
-// ========== ENVOI DE VIDÉO ========= =
-async function prendreVideoAvecSupabase() {
+// ========== SÉLECTION VIDÉO → OUVRE L'ÉDITEUR ==========
+function prendreVideoAvecSupabase() {
+    fermerMenuMedia();
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'video/*';
     input.capture = 'environment';
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            showTempNotification("📤 Upload de la vidéo...");
             const file = e.target.files[0];
-            
             if (file.size > 50 * 1024 * 1024) {
                 showTempNotification("❌ Vidéo trop grande (max 50 MB)");
                 return;
             }
-            
-            const url = await uploadVersSupabase(file, 'video');
-            
-            if (url) {
-                await envoyerMessageMedia(url, 'video');
-                showTempNotification("🎥 Vidéo envoyée !");
-            }
+            ouvrirEditeurMedia(file);
         }
     };
     input.click();
 }
 
-// ========== ENVOI DE FICHIER (GALERIE) ==========
-async function ouvrirGalerieSupabase() {
+// ========== SÉLECTION DEPUIS LA GALERIE → OUVRE L'ÉDITEUR ==========
+function ouvrirGalerieSupabase() {
+    fermerMenuMedia();
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            const type = file.type.startsWith('image/') ? 'image' : 'video';
-            
-            showTempNotification(`📤 Upload ${type === 'image' ? 'photo' : 'vidéo'}...`);
-            
-            const url = await uploadVersSupabase(file, type);
-            
-            if (url) {
-                await envoyerMessageMedia(url, type);
-                showTempNotification(type === 'image' ? "📷 Photo envoyée !" : "🎥 Vidéo envoyée !");
+            const isVideo = file.type.startsWith('video/');
+            const maxMB = isVideo ? 50 : 15;
+            if (file.size > maxMB * 1024 * 1024) {
+                showTempNotification(`❌ Fichier trop grand (max ${maxMB} MB)`);
+                return;
             }
+            ouvrirEditeurMedia(file);
         }
     };
     input.click();
 }
 
-// ========== ENVOYER LE MESSAGE DANS FIRESTORE ==========
-async function envoyerMessageMedia(mediaUrl, type) {
-    await db.collection('chats').doc(CHAT_ID).collection('messages').add({
-        text: null,
+// ========== ENVOI UNIFIÉ VERS SUPABASE + FIRESTORE (URL légère, jamais de base64) ==========
+async function sendMediaMessage(type, file, caption) {
+    const url = await uploadVersSupabase(file, type);
+    if (!url) {
+        showTempNotification("❌ Échec de l'upload");
+        return false;
+    }
+    const msgData = {
+        text: caption || null,
         senderId: currentUser.id,
         senderName: currentUser.name,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         status: "sent",
         readBy: [currentUser.id],
         type: type,
-        mediaUrl: mediaUrl,
-        storage: 'supabase' // Pour savoir d'où ça vient
+        mediaUrl: url,
+        storage: 'supabase'
+    };
+    const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
+    await messageRef.set(msgData);
+    setTimeout(() => checkMessageDelivery(messageRef.id), 3000);
+    showTempNotification(type === 'video' ? "🎥 Vidéo envoyée !" : "📷 Photo envoyée !");
+    return true;
+}
+
+// ============================================================
+// ✅ ÉDITEUR DE MÉDIA — recadrage / dessin / rotation avant envoi
+// ============================================================
+let meType = 'image';          // 'image' | 'video'
+let meVideoFile = null;        // fichier vidéo original (non modifiable côté client)
+let meCropMode = false;
+let meDrawMode = false;
+let meDrawColor = '#ff1744';
+let meDrawing = false;
+let meLastPoint = null;
+let meCropDrag = null;
+let meVideoDuration = 0;
+let meTrimStart = 0;
+let meTrimEnd = 0;
+
+const MEDIA_EDITOR_MAX_DIM = 1600; // redimensionnement pour un envoi rapide
+
+function ouvrirEditeurMedia(file) {
+    const overlay = document.getElementById('media-editor-overlay');
+    const canvas = document.getElementById('me-canvas');
+    const video = document.getElementById('me-video-preview');
+    const toolbar = document.getElementById('me-toolbar');
+    const cropActions = document.getElementById('me-crop-actions');
+    const captionInput = document.getElementById('me-caption-input');
+
+    captionInput.value = '';
+    meCropMode = false;
+    meDrawMode = false;
+    document.getElementById('me-crop-box').style.display = 'none';
+    document.getElementById('me-color-swatches').style.display = 'none';
+    cropActions.style.display = 'none';
+    setMeToolActive(null);
+
+    const isVideo = file.type.startsWith('video/');
+    meType = isVideo ? 'video' : 'image';
+    document.getElementById('me-header-title').textContent = isVideo ? 'Vidéo' : 'Photo';
+    toolbar.style.display = isVideo ? 'none' : 'flex';
+
+    if (isVideo) {
+        meVideoFile = file;
+        canvas.style.display = 'none';
+        video.style.display = 'block';
+        video.src = URL.createObjectURL(file);
+        meSetupVideoTrim();
+        meLoadFFmpegScript().catch(() => {}); // préchargement silencieux en arrière-plan
+    } else {
+        meVideoFile = null;
+        document.getElementById('me-video-trim').style.display = 'none';
+        video.style.display = 'none';
+        canvas.style.display = 'block';
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            let { width, height } = img;
+            if (width > MEDIA_EDITOR_MAX_DIM || height > MEDIA_EDITOR_MAX_DIM) {
+                const ratio = Math.min(MEDIA_EDITOR_MAX_DIM / width, MEDIA_EDITOR_MAX_DIM / height);
+                width = Math.round(width * ratio);
+                height = Math.round(height * ratio);
+            }
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            URL.revokeObjectURL(objectUrl);
+        };
+        img.src = objectUrl;
+    }
+
+    overlay.classList.add('active');
+}
+
+function fermerEditeurMedia() {
+    document.getElementById('media-editor-overlay').classList.remove('active');
+    const video = document.getElementById('me-video-preview');
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    video.ontimeupdate = null;
+    meVideoFile = null;
+    meVideoDuration = 0;
+    meTrimStart = 0;
+    meTrimEnd = 0;
+    document.getElementById('me-video-trim').style.display = 'none';
+    meCropMode = false;
+    meDrawMode = false;
+    document.getElementById('me-crop-box').style.display = 'none';
+    document.getElementById('me-crop-actions').style.display = 'none';
+    setMeToolActive(null);
+}
+
+// ----- DÉCOUPE VIDÉO (choisir un début et une fin avant l'envoi) -----
+function meFormatTime(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+function meSetupVideoTrim() {
+    const video = document.getElementById('me-video-preview');
+    const trimUI = document.getElementById('me-video-trim');
+    trimUI.style.display = 'none';
+    video.onloadedmetadata = () => {
+        meVideoDuration = video.duration || 0;
+        meTrimStart = 0;
+        meTrimEnd = meVideoDuration;
+        const startInput = document.getElementById('me-trim-start');
+        const endInput = document.getElementById('me-trim-end');
+        startInput.min = 0; startInput.max = meVideoDuration; startInput.step = 0.1; startInput.value = 0;
+        endInput.min = 0; endInput.max = meVideoDuration; endInput.step = 0.1; endInput.value = meVideoDuration;
+        // La découpe n'a de sens que si la vidéo dure plus de 2 secondes
+        trimUI.style.display = meVideoDuration > 2 ? 'block' : 'none';
+        meUpdateTrimUI();
+        video.ontimeupdate = () => {
+            if (video.currentTime >= meTrimEnd) {
+                video.pause();
+                video.currentTime = meTrimStart;
+            }
+        };
+    };
+}
+
+function meUpdateTrimUI() {
+    const startInput = document.getElementById('me-trim-start');
+    const endInput = document.getElementById('me-trim-end');
+    let start = parseFloat(startInput.value);
+    let end = parseFloat(endInput.value);
+    const minGap = Math.min(0.5, meVideoDuration || 0.5);
+
+    if (end - start < minGap) {
+        if (document.activeElement === endInput) {
+            end = Math.min(meVideoDuration, start + minGap);
+            endInput.value = end;
+        } else {
+            start = Math.max(0, end - minGap);
+            startInput.value = start;
+        }
+    }
+
+    meTrimStart = start;
+    meTrimEnd = end;
+
+    const pctStart = meVideoDuration ? (start / meVideoDuration) * 100 : 0;
+    const pctEnd = meVideoDuration ? (end / meVideoDuration) * 100 : 100;
+    const selected = document.getElementById('me-trim-selected');
+    selected.style.left = pctStart + '%';
+    selected.style.width = Math.max(0, pctEnd - pctStart) + '%';
+
+    document.getElementById('me-trim-start-label').textContent = meFormatTime(start);
+    document.getElementById('me-trim-end-label').textContent = meFormatTime(end);
+    document.getElementById('me-trim-duration-label').textContent = 'Durée : ' + meFormatTime(end - start);
+
+    const video = document.getElementById('me-video-preview');
+    video.currentTime = start;
+}
+
+// ----- Chargement paresseux de ffmpeg.wasm (uniquement si l'utilisateur découpe une vidéo) -----
+let meFFmpegScriptPromise = null;
+function meLoadFFmpegScript() {
+    if (window.FFmpeg) return Promise.resolve();
+    if (meFFmpegScriptPromise) return meFFmpegScriptPromise;
+    meFFmpegScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('ffmpeg-script-failed'));
+        document.head.appendChild(script);
     });
+    return meFFmpegScriptPromise;
+}
+
+let meFFmpegInstance = null;
+async function meGetFFmpeg() {
+    await meLoadFFmpegScript();
+    if (!window.FFmpeg) throw new Error('ffmpeg-unavailable');
+    if (!meFFmpegInstance) {
+        const { createFFmpeg } = window.FFmpeg;
+        meFFmpegInstance = createFFmpeg({
+            log: false,
+            // Core mono-thread : fonctionne sans les en-têtes serveur COOP/COEP
+            // (nécessaires uniquement pour la variante multi-thread), donc compatible
+            // avec un simple fichier HTML statique, y compris sur Safari/iOS.
+            corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js'
+        });
+    }
+    if (!meFFmpegInstance.isLoaded()) {
+        await meFFmpegInstance.load();
+    }
+    return meFFmpegInstance;
+}
+
+async function meTrimVideo(file, start, end) {
+    const ffmpeg = await meGetFFmpeg();
+    const { fetchFile } = window.FFmpeg;
+    const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+    const inputName = 'entree.' + ext;
+    ffmpeg.FS('writeFile', inputName, await fetchFile(file));
+    const duration = Math.max(0.1, end - start).toFixed(2);
+    // -ss avant -i = découpage rapide par mots-clés, -c copy = pas de ré-encodage (rapide)
+    await ffmpeg.run('-ss', String(start), '-i', inputName, '-t', duration, '-c', 'copy', '-avoid_negative_ts', 'make_zero', 'sortie.mp4');
+    const data = ffmpeg.FS('readFile', 'sortie.mp4');
+    try { ffmpeg.FS('unlink', inputName); } catch (e) {}
+    try { ffmpeg.FS('unlink', 'sortie.mp4'); } catch (e) {}
+    return new File([data.buffer], `video_${Date.now()}.mp4`, { type: 'video/mp4' });
+}
+
+function setMeToolActive(tool) {
+    document.querySelectorAll('.me-tool-btn').forEach(b => b.classList.remove('active'));
+    if (tool) {
+        const btn = document.querySelector(`.me-tool-btn[data-tool="${tool}"]`);
+        if (btn) btn.classList.add('active');
+    }
+}
+
+// ----- ROTATION -----
+function meRotate() {
+    if (meCropMode) meFinCrop(false);
+    const canvas = document.getElementById('me-canvas');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const tmp = document.createElement('canvas');
+    tmp.width = h; tmp.height = w;
+    const tctx = tmp.getContext('2d');
+    tctx.translate(h / 2, w / 2);
+    tctx.rotate(Math.PI / 2);
+    tctx.drawImage(canvas, -w / 2, -h / 2);
+    canvas.width = h; canvas.height = w;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(tmp, 0, 0);
+}
+
+// ----- RECADRAGE (rognage) -----
+function meToggleCrop() {
+    if (meCropMode) { meFinCrop(false); return; }
+    meDrawMode = false;
+    document.getElementById('me-color-swatches').style.display = 'none';
+    setMeToolActive('crop');
+    meCropMode = true;
+
+    const canvas = document.getElementById('me-canvas');
+    const stage = document.getElementById('me-stage').getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
+    const box = document.getElementById('me-crop-box');
+    const margin = 0.1;
+
+    const canvasLeft = rect.left - stage.left;
+    const canvasTop = rect.top - stage.top;
+
+    box.dataset.canvasLeft = canvasLeft;
+    box.dataset.canvasTop = canvasTop;
+    box.dataset.canvasW = rect.width;
+    box.dataset.canvasH = rect.height;
+
+    box.style.left = (canvasLeft + rect.width * margin) + 'px';
+    box.style.top = (canvasTop + rect.height * margin) + 'px';
+    box.style.width = (rect.width * (1 - 2 * margin)) + 'px';
+    box.style.height = (rect.height * (1 - 2 * margin)) + 'px';
+    box.style.display = 'block';
+
+    document.getElementById('me-toolbar').style.display = 'none';
+    document.getElementById('me-crop-actions').style.display = 'flex';
+}
+
+function meCropPointerDown(e, mode) {
+    e.stopPropagation();
+    e.preventDefault();
+    const box = document.getElementById('me-crop-box');
+    const point = e.touches ? e.touches[0] : e;
+    meCropDrag = {
+        mode,
+        startX: point.clientX,
+        startY: point.clientY,
+        startLeft: parseFloat(box.style.left),
+        startTop: parseFloat(box.style.top),
+        startW: parseFloat(box.style.width),
+        startH: parseFloat(box.style.height)
+    };
+    document.addEventListener('mousemove', meCropPointerMove);
+    document.addEventListener('mouseup', meCropPointerUp);
+    document.addEventListener('touchmove', meCropPointerMove, { passive: false });
+    document.addEventListener('touchend', meCropPointerUp);
+}
+
+function meCropPointerMove(e) {
+    if (!meCropDrag) return;
+    e.preventDefault();
+    const point = e.touches ? e.touches[0] : e;
+    const dx = point.clientX - meCropDrag.startX;
+    const dy = point.clientY - meCropDrag.startY;
+    const box = document.getElementById('me-crop-box');
+    const minSize = 40;
+    const boundLeft = parseFloat(box.dataset.canvasLeft);
+    const boundTop = parseFloat(box.dataset.canvasTop);
+    const boundW = parseFloat(box.dataset.canvasW);
+    const boundH = parseFloat(box.dataset.canvasH);
+    const { mode, startLeft, startTop, startW, startH } = meCropDrag;
+    let left = startLeft, top = startTop, w = startW, h = startH;
+
+    if (mode === 'move') {
+        left = Math.max(boundLeft, Math.min(startLeft + dx, boundLeft + boundW - w));
+        top = Math.max(boundTop, Math.min(startTop + dy, boundTop + boundH - h));
+    } else if (mode === 'se') {
+        w = Math.max(minSize, Math.min(startW + dx, boundLeft + boundW - left));
+        h = Math.max(minSize, Math.min(startH + dy, boundTop + boundH - top));
+    } else if (mode === 'nw') {
+        left = Math.max(boundLeft, Math.min(startLeft + dx, startLeft + startW - minSize));
+        top = Math.max(boundTop, Math.min(startTop + dy, startTop + startH - minSize));
+        w = (startLeft + startW) - left;
+        h = (startTop + startH) - top;
+    } else if (mode === 'ne') {
+        top = Math.max(boundTop, Math.min(startTop + dy, startTop + startH - minSize));
+        w = Math.max(minSize, Math.min(startW + dx, boundLeft + boundW - left));
+        h = (startTop + startH) - top;
+    } else if (mode === 'sw') {
+        left = Math.max(boundLeft, Math.min(startLeft + dx, startLeft + startW - minSize));
+        h = Math.max(minSize, Math.min(startH + dy, boundTop + boundH - top));
+        w = (startLeft + startW) - left;
+    }
+
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    box.style.width = w + 'px';
+    box.style.height = h + 'px';
+}
+
+function meCropPointerUp() {
+    meCropDrag = null;
+    document.removeEventListener('mousemove', meCropPointerMove);
+    document.removeEventListener('mouseup', meCropPointerUp);
+    document.removeEventListener('touchmove', meCropPointerMove);
+    document.removeEventListener('touchend', meCropPointerUp);
+}
+
+function meFinCrop(appliquer) {
+    const box = document.getElementById('me-crop-box');
+    if (appliquer) {
+        const canvas = document.getElementById('me-canvas');
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const boxLeft = parseFloat(box.style.left);
+        const boxTop = parseFloat(box.style.top);
+        const boxW = parseFloat(box.style.width);
+        const boxH = parseFloat(box.style.height);
+        const canvasLeft = parseFloat(box.dataset.canvasLeft);
+        const canvasTop = parseFloat(box.dataset.canvasTop);
+
+        const sx = Math.max(0, (boxLeft - canvasLeft) * scaleX);
+        const sy = Math.max(0, (boxTop - canvasTop) * scaleY);
+        const sw = boxW * scaleX;
+        const sh = boxH * scaleY;
+
+        const tmp = document.createElement('canvas');
+        tmp.width = Math.max(1, Math.round(sw));
+        tmp.height = Math.max(1, Math.round(sh));
+        tmp.getContext('2d').drawImage(canvas, sx, sy, sw, sh, 0, 0, tmp.width, tmp.height);
+
+        canvas.width = tmp.width;
+        canvas.height = tmp.height;
+        canvas.getContext('2d').drawImage(tmp, 0, 0);
+    }
+    box.style.display = 'none';
+    meCropMode = false;
+    setMeToolActive(null);
+    document.getElementById('me-crop-actions').style.display = 'none';
+    document.getElementById('me-toolbar').style.display = 'flex';
+}
+
+// ----- DESSIN -----
+function meToggleDraw() {
+    if (meCropMode) meFinCrop(false);
+    meDrawMode = !meDrawMode;
+    setMeToolActive(meDrawMode ? 'draw' : null);
+    document.getElementById('me-color-swatches').style.display = meDrawMode ? 'flex' : 'none';
+}
+
+function meSetColor(c) {
+    meDrawColor = c;
+    document.querySelectorAll('.me-color-dot').forEach(d => d.classList.remove('selected'));
+    const dot = document.querySelector(`.me-color-dot[data-color="${c}"]`);
+    if (dot) dot.classList.add('selected');
+}
+
+function meGetCanvasPoint(e) {
+    const canvas = document.getElementById('me-canvas');
+    const rect = canvas.getBoundingClientRect();
+    const point = e.touches ? e.touches[0] : e;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+        x: (point.clientX - rect.left) * scaleX,
+        y: (point.clientY - rect.top) * scaleY
+    };
+}
+
+function meCanvasPointerDown(e) {
+    if (!meDrawMode) return;
+    e.preventDefault();
+    meDrawing = true;
+    meLastPoint = meGetCanvasPoint(e);
+}
+
+function meCanvasPointerMove(e) {
+    if (!meDrawMode || !meDrawing) return;
+    e.preventDefault();
+    const canvas = document.getElementById('me-canvas');
+    const ctx = canvas.getContext('2d');
+    const p = meGetCanvasPoint(e);
+    ctx.strokeStyle = meDrawColor;
+    ctx.lineWidth = Math.max(4, canvas.width * 0.008);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(meLastPoint.x, meLastPoint.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    meLastPoint = p;
+}
+
+function meCanvasPointerUp() {
+    meDrawing = false;
+    meLastPoint = null;
+}
+
+// ----- ENVOI -----
+async function envoyerMediaEdite() {
+    const sendBtn = document.getElementById('me-send-btn');
+    const uploading = document.getElementById('me-uploading-overlay');
+    const uploadingText = document.getElementById('me-uploading-text');
+    const caption = document.getElementById('me-caption-input').value.trim();
+
+    sendBtn.disabled = true;
+    uploadingText.textContent = meType === 'video' ? "Envoi de la vidéo..." : "Envoi de la photo...";
+    uploading.classList.add('active');
+
+    try {
+        let ok = false;
+        if (meType === 'image') {
+            const canvas = document.getElementById('me-canvas');
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+            if (!blob) throw new Error('canvas-vide');
+            const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+            ok = await sendMediaMessage('image', file, caption);
+        } else if (meVideoFile) {
+            let fichierAEnvoyer = meVideoFile;
+            const estDecoupee = meVideoDuration > 0 && (meTrimStart > 0.05 || meTrimEnd < meVideoDuration - 0.05);
+            if (estDecoupee) {
+                uploadingText.textContent = "Découpage de la vidéo...";
+                try {
+                    fichierAEnvoyer = await meTrimVideo(meVideoFile, meTrimStart, meTrimEnd);
+                } catch (err) {
+                    console.error("Erreur découpage vidéo:", err);
+                    showTempNotification("⚠️ Découpage indisponible, envoi de la vidéo complète");
+                    fichierAEnvoyer = meVideoFile;
+                }
+                uploadingText.textContent = "Envoi de la vidéo...";
+            }
+            ok = await sendMediaMessage('video', fichierAEnvoyer, caption);
+        }
+        if (ok) fermerEditeurMedia();
+    } catch (err) {
+        console.error("Erreur envoi média édité:", err);
+        showTempNotification("❌ Échec de l'envoi");
+    } finally {
+        uploading.classList.remove('active');
+        sendBtn.disabled = false;
+    }
 }
       
       // Nettoyage agressif des anciens listeners
@@ -4050,19 +4692,8 @@ function listenToTyping() {
             }
         }
         
-        function sendMediaMessage(type, base64Data) {
-            db.collection('chats').doc(CHAT_ID).collection('messages').add({
-                text: null,
-                senderId: currentUser.id,
-                senderName: currentUser.name,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: "sent",
-                readBy: [currentUser.id],
-                type: type,
-                 
-                mediaUrl: base64Data
-            });
-        }
+        // (Ancienne fonction sendMediaMessage basée sur le base64 supprimée : elle écrasait
+        // la nouvelle version qui uploade vers Supabase — voir plus haut dans ce script.)
         
         // ========== ENREGISTREMENT AUDIO ==========
         async function toggleRecording() {
@@ -5816,29 +6447,65 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
             document.body.style.overflow = '';
             currentPhotoUrl = null;
         }
+        // ========== ENREGISTREMENT FIABLE SUR L'APPAREIL (PC + iPhone + Android) ==========
+        // Sur iPhone/Android, un simple <a download> ouvre juste l'image/vidéo dans un nouvel
+        // onglet au lieu de l'enregistrer (Safari ignore l'attribut "download"). La solution
+        // fiable consiste à utiliser le menu de partage natif (Web Share API avec fichiers),
+        // qui propose directement "Enregistrer l'image" / "Enregistrer la vidéo" -> Galerie/Photos.
+        async function enregistrerMediaSurAppareil(url, filename, mimeType) {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const file = new File([blob], filename, { type: mimeType || blob.type || 'application/octet-stream' });
+
+            // 1) Mobile (iPhone/Android) : menu de partage natif -> "Enregistrer" sauvegarde
+            // directement dans la Galerie/Photos, sans page intermédiaire.
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file] });
+                    return true;
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return false; // l'utilisateur a annulé
+                    // Si le partage échoue pour une autre raison, on retombe sur le téléchargement classique
+                }
+            }
+
+            // 2) Repli (PC, ou navigateurs sans partage de fichiers) : téléchargement classique
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+            return true;
+        }
+
         async function downloadCurrentPhoto() {
             if (!currentPhotoUrl) return;
             const downloadBtn = document.getElementById('download-photo-btn');
             downloadBtn.classList.add('downloading');
             try {
-                if (currentPhotoUrl.startsWith('data:image')) {
-                    const link = document.createElement('a');
-                    link.href = currentPhotoUrl;
-                    link.download = 'photo_' + Date.now() + '.png';
-                    link.click();
-                } else {
-                    const response = await fetch(currentPhotoUrl);
-                    const blob = await response.blob();
-                    const blobUrl = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = 'photo_' + Date.now() + '.jpg';
-                    link.click();
-                    URL.revokeObjectURL(blobUrl);
-                }
-                 
-            } catch(e) { showTempNotification('❌ Erreur téléchargement'); }
+                await enregistrerMediaSurAppareil(currentPhotoUrl, 'photo_' + Date.now() + '.jpg', 'image/jpeg');
+            } catch (e) {
+                console.error('Erreur enregistrement photo:', e);
+                showTempNotification('❌ Erreur téléchargement');
+            }
             setTimeout(() => downloadBtn.classList.remove('downloading'), 500);
+        }
+
+        async function telechargerVideo(btnEl, url) {
+            if (!url) return;
+            const icon = btnEl.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fa-solid fa-spinner fa-spin';
+            try {
+                await enregistrerMediaSurAppareil(url, 'video_' + Date.now() + '.mp4', 'video/mp4');
+            } catch (e) {
+                console.error('Erreur enregistrement vidéo:', e);
+                showTempNotification('❌ Erreur téléchargement');
+            }
+            icon.className = originalClass;
         }
         
         // ========== OUTILS ET PANNEAUX ==========
@@ -7223,37 +7890,9 @@ async function envoyerAudioAvecFiltre() {
 }
 // ========== FIN NOUVEAU BLOC ==========
 
-function sendMediaMessage(type, base64Data) {
-    db.collection('chats').doc(CHAT_ID).collection('messages').add({
-        text: null,
-        senderId: currentUser.id,
-        senderName: currentUser.name,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        status: "sent",
-        readBy: [currentUser.id],
-        type: type,
-        mediaUrl: base64Data
-    }).then(() => {
-     }).catch(err => {
-        console.error("Erreur envoi média:", err);
-        showTempNotification("❌ Erreur lors de l'envoi");
-    });
-}
-
-// Modifier la fonction sendMediaMessage pour gérer les vidéos
-function sendMediaMessage(type, base64Data) {
-    db.collection('chats').doc(CHAT_ID).collection('messages').add({
-        text: null,
-        senderId: currentUser.id,
-        senderName: currentUser.name,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        status: "sent",
-        readBy: [currentUser.id],
-        type: type,
-        mediaUrl: base64Data
-    });
-    showTempNotification(type === 'video' ? "🎥 Vidéo envoyée" : "📷 Photo envoyée");
-}
+// (2 anciennes fonctions sendMediaMessage basées sur le base64 supprimées : elles
+// écrasaient la nouvelle version Supabase définie plus haut dans ce script, ce qui
+// causait la lenteur d'envoi/affichage des photos et vidéos.)
       
       function openFullscreenPhoto(event, imgElement) {
     if (event) event.stopPropagation();
@@ -8765,141 +9404,101 @@ document.addEventListener('DOMContentLoaded', function() {
     const triggerBtn = document.getElementById('gif-trigger-btn');
     
     // ========== COLLECTION DE GIFS ==========
-   // ========== COLLECTION DE GIFS - VERSION ULTRA COMPLÈTE ==========
+// ========== COLLECTION DE GIFS - VERSION CORRIGÉE (liens Giphy réels et vérifiés) ==========
 const gifsPopulaires = [
-    // HUMOUR
-    "https://media.tenor.com/zqHbKTg9NxEAAAAM/ray-liotta-laughing.gif",
-    "https://media.tenor.com/-XaDVlGtQeQAAAAM/laughing-rofl.gif",
-    "https://media.tenor.com/YwN9_2n7MAMAAAAM/tkthao219-bubududu.gif",
-    "https://media.tenor.com/9Hd3-Gl04OUAAAAM/funny-laugh.gif",
-    "https://media.tenor.com/5wW1dCgLJ7AAAAAM/funny-lol.gif",
-    "https://media.tenor.com/U7PL_rjKOyYAAAAM/funny-cat.gif",
-    "https://media.tenor.com/q5YqQfKvdoYAAAAM/funny-dog.gif",
-    "https://media.tenor.com/K4qZcVJmFqQAAAAM/funny-facepalm.gif",
-    "https://media.tenor.com/3mP6OG5sBlIAAAAM/funny-fail.gif",
-    "https://media.tenor.com/3fHbJvV9-dAAAAAM/funny-omg.gif",
-    "https://media.tenor.com/x8v1GpPtuAEAAAAM/funny-party.gif",
-    "https://media.tenor.com/2AFM1EGD2t4AAAAM/funny-celebrate.gif",
-    "https://media.tenor.com/po5Z8l7tQsMAAAAM/funny-dance.gif",
-    "https://media.tenor.com/kBbBzA8v7rUAAAAM/funny-move.gif",
-    
-    // AMOUR ET TENDRESSE
-    "https://media.tenor.com/A6mB6w_F5k0AAAAM/milk-and-mocha-hug.gif",
-    "https://media.tenor.com/7gM0VbVvI7MAAAAM/mochi-peachcat-kisses.gif",
-    "https://media.tenor.com/W7Sg5qTfU4IAAAAM/love-heart.gif",
-    "https://media.tenor.com/1GkUepqMCHYAAAAM/tu-me-manques-i-miss-you.gif",
-    "https://media.tenor.com/A9f697g_ZBcAAAAM/stitching-together-love.gif",
-    "https://media.tenor.com/b2b-mIuGZ7sAAAAM/milk-and-mocha-love.gif",
-    "https://media.tenor.com/gK6R8nOaECAAAAAM/love-couple.gif",
-    "https://media.tenor.com/A2T63w6yUo8AAAAM/cute-disney.gif",
-    "https://media.tenor.com/xnJMR7T9UvUAAAAM/ring-will-you-marry-me.gif",
-    "https://media.tenor.com/P4W8_Vv8pGIAAAAM/flying-kiss-love.gif",
-    "https://media.tenor.com/JrweJCyqShIAAAAM/i-love-you-love.gif",
-    "https://media.tenor.com/L0w3mX_nfjoAAAAM/love-couple.gif",
-    "https://media.tenor.com/lXeBw8nZPN0AAAAM/love-you.gif",
-    "https://media.tenor.com/jCH_crUByuoAAAAM/i-love-you.gif",
-    "https://media.tenor.com/0mJegOeLCmUAAAAM/cute-love.gif",
-    
-    // ANIMAUX
-    "https://media.tenor.com/_hUq1BSUsiMAAAAM/cat-cute.gif",
-    "https://media.tenor.com/TmNWrln1uJAAAAAC/bongo-cat-cute.gif",
-    "https://media.tenor.com/GfSX-u7VGM4AAAAC/pikachu-pokemon.gif",
-    "https://media.tenor.com/Hc3fCz6M5M0AAAAM/cute-cat.gif",
-    "https://media.tenor.com/o5xwQX-nvAYAAAAM/cute-puppy.gif",
-    "https://media.tenor.com/Hh9AsstPTHgAAAAM/cute-bunny.gif",
-    "https://media.tenor.com/FQoerIIQe-IAAAAM/cute-panda.gif",
-    "https://media.tenor.com/qpnGdyEfVoAAAAAM/cute-otter.gif",
-    "https://media.tenor.com/D5OyqVIh6AMAAAAM/cute-hamster.gif",
-    "https://media.tenor.com/RPpcoPMKxKgAAAAM/cute-koala.gif",
-    "https://media.tenor.com/1F3PDRTV_r4AAAAM/cute-shiba.gif",
-    "https://media.tenor.com/j1GB4nIE_9EAAAAM/cute-fox.gif",
-    "https://media.tenor.com/iZ9ETxH-nnQAAAAM/cute-raccoon.gif",
-    "https://media.tenor.com/vD0e0f0g0h0AAAAM/monkey-laughing.gif",
-    "https://media.tenor.com/wE1f1g1h1i1AAAAM/penguin-fall.gif",
-    "https://media.tenor.com/xF2g2h2i2j2AAAAM/llama-dance.gif",
-    "https://media.tenor.com/yG3h3i3j3k3AAAAM/alpaca-cute.gif",
-    "https://media.tenor.com/zH4i4j4k4l4AAAAM/parrot-talking.gif",
-    
-    // DANSE
-    "https://media.tenor.com/8zkTzFrcGZYAAAAM/goodbye-thank-you.gif",
-    "https://media.tenor.com/po5Z8l7tQsMAAAAM/dancing-dance.gif",
-    "https://media.tenor.com/t_UCbZOlZekAAAAM/happy-dance.gif",
-    "https://media.tenor.com/L0TwQdx4QlUAAAAM/dance-party.gif",
-    "https://media.tenor.com/WjH7N9Oz1bIAAAAM/dancing-celebrate.gif",
-    "https://media.tenor.com/x8v1GpPtuAEAAAAM/party-dance.gif",
-    "https://media.tenor.com/mD7lZf6D-RAAAAAM/dance-fun.gif",
-    "https://media.tenor.com/kBbBzA8v7rUAAAAM/dance-move.gif",
-    "https://media.tenor.com/2AFM1EGD2t4AAAAM/celebration-party.gif",
-    "https://media.tenor.com/3JbFfJtqNJ8AAAAM/happy-dance.gif",
-    
-    // RÉACTIONS
-    "https://media.tenor.com/3fHbJvV9-dAAAAAM/omg-shock.gif",
-    "https://media.tenor.com/K4qZcVJmFqQAAAAM/facepalm-frustration.gif",
-    "https://media.tenor.com/q5YqQfKvdoYAAAAM/angry-dog.gif",
-    "https://media.tenor.com/5wW1dCgLJ7AAAAAM/confused-cat.gif",
-    "https://media.tenor.com/U7PL_rjKOyYAAAAM/surprised-cat.gif",
-    "https://media.tenor.com/3mP6OG5sBlIAAAAM/embarrassed.gif",
-    "https://media.tenor.com/9Hd3-Gl04OUAAAAM/amazed.gif",
-    "https://media.tenor.com/KP0eE2S-ni0AAAAM/crying-sad.gif",
-    "https://media.tenor.com/O9RfQTgIYlYAAAAM/angry-rage.gif",
-    "https://media.tenor.com/e1R0Yt_CrLMAAAAM/sleepy-tired.gif",
-    "https://media.tenor.com/TG3VQr6v4GMAAAAM/hungry-eat.gif",
-    "https://media.tenor.com/0mJegOeLCmUAAAAM/thumbs-up.gif",
-    "https://media.tenor.com/Qp_-wVvYvJEAAAAM/homer-simpson.gif",
-    "https://media.tenor.com/YmHzk-8-3qIAAAAM/spongebob-squarepants.gif",
-    "https://media.tenor.com/TW-2FT92PjQAAAAM/patrick-star.gif",
-    
-    // PERSONNAGES CÉLÈBRES
-    "https://media.tenor.com/1hDAA0E-Gh8AAAAM/goku-dragon-ball.gif",
-    "https://media.tenor.com/2tQbQjMAsnAAAAAM/naruto.gif",
-    "https://media.tenor.com/QvN-Cn4LYWcAAAAM/michael-jordan.gif",
-    "https://media.tenor.com/7nRycS0rviwAAAAM/leonardo-dicaprio.gif",
-    "https://media.tenor.com/cO-hQfjKwncAAAAM/will-smith.gif",
-    "https://media.tenor.com/l1R3PmxG6XoAAAAM/the-rock-dwayne-johnson.gif",
-    "https://media.tenor.com/2YcUFf7sCFoAAAAM/jim-carrey.gif",
-    "https://media.tenor.com/5jJxKxLxMxNAAAAM/keanu-reeves.gif",
-    "https://media.tenor.com/6kKyLyMyNyOAAAAM/ryan-reynolds.gif",
-    "https://media.tenor.com/7lLzMzNzOzPAAAAM/tom-holland.gif",
-    
-    // SPORT
-    "https://media.tenor.com/EUHRz0NpHRoAAAAM/soccer-goal.gif",
-    "https://media.tenor.com/cvO9nQ80INsAAAAM/basketball-dunk.gif",
-    "https://media.tenor.com/1cXvRHLlQ1MAAAAM/football-goal.gif",
-    "https://media.tenor.com/8VCE6AaT-P0AAAAM/tennis-rafael-nadal.gif",
-    "https://media.tenor.com/QXzUYhRrHEsAAAAM/boxing-fight.gif",
-    "https://media.tenor.com/Jn8sR4rgfygAAAAM/skateboarding.gif",
-    "https://media.tenor.com/GLB6bKGApgoAAAAM/surfing-wave.gif",
-    "https://media.tenor.com/DQv6isDtBw0AAAAM/swimming.gif",
-    
-    // ALIMENTS
-    "https://media.tenor.com/pX4Y4Z4a4b4AAAAM/pizza-eat.gif",
-    "https://media.tenor.com/qY5Z5a5b5c5AAAAM/burger-eating.gif",
-    "https://media.tenor.com/rZ6a6b6c6d6AAAAM/coffee-drink.gif",
-    "https://media.tenor.com/sA7b7c7d7e7AAAAM/ice-cream.gif",
-    "https://media.tenor.com/tB8c8d8e8f8AAAAM/popcorn-movie.gif",
-    "https://media.tenor.com/uC9d9e9f9g9AAAAM/watermelon-eat.gif",
-    "https://media.tenor.com/vD0e0f0g0h0AAAAM/donut-eat.gif",
-    "https://media.tenor.com/wE1f1g1h1i1AAAAM/sushi-eat.gif",
-    
-    // MÉMES CLASSIQUES
-    "https://media.tenor.com/kJqOqOqOqOoAAAAM/dog-meme.gif",
-    "https://media.tenor.com/2XG4WvNvNvMAAAAM/cat-meme.gif",
-    "https://media.tenor.com/1aQbQcQdQeQAAAAM/old-meme.gif",
-    "https://media.tenor.com/3fGvHvIvJvKAAAAM/funny-meme.gif",
-    "https://media.tenor.com/4hIwJwKwLwMAAAAM/epic-meme.gif",
-    "https://media.tenor.com/5jJxKxLxMxNAAAAM/good-meme.gif",
-    "https://media.tenor.com/6kKyLyMyNyOAAAAM/best-meme.gif",
-    
-    // ÉMOTIONS
-    "https://media.tenor.com/8zkTzFrcGZYAAAAM/thank-you.gif",
-    "https://media.tenor.com/po5Z8l7tQsMAAAAM/congrats.gif",
-    "https://media.tenor.com/t_UCbZOlZekAAAAM/happy-dance.gif",
-    "https://media.tenor.com/L0TwQdx4QlUAAAAM/party-time.gif",
-    "https://media.tenor.com/WjH7N9Oz1bIAAAAM/celebrate.gif",
-    "https://media.tenor.com/x8v1GpPtuAEAAAAM/woohoo.gif",
-    "https://media.tenor.com/mD7lZf6D-RAAAAAM/yesss.gif",
-    "https://media.tenor.com/kBbBzA8v7rUAAAAM/lets-go.gif",
-    "https://media.tenor.com/2AFM1EGD2t4AAAAM/hooray.gif"
+    // HUMOUR / DRÔLE
+    "https://media.giphy.com/media/Q7FIgIOT6isTeuiWdR/funny-comedy-laugh.gif",
+    "https://media.giphy.com/media/9xecCDHO26Ect5nvAE/funny-reaction-laugh.gif",
+    "https://media.giphy.com/media/0x4xNUd8VoG9lNlL4T/funny-cartoon-laugh.gif",
+    "https://media.giphy.com/media/3ohzdLVanDdjkjcNry/funny-weird-laugh.gif",
+    "https://media.giphy.com/media/ihqHerIcYdBgWAUmVv/funny-lmao-laughing.gif",
+    "https://media.giphy.com/media/BYxoRyP5TLzuo/funny-laughing-tumblr.gif",
+    "https://media.giphy.com/media/3ohryou6kbKdobhYM8/funny-laughing-emoji.gif",
+    "https://media.giphy.com/media/hugMhXC5WM5V7dcqV4/funny-meme-laughing.gif",
+    "https://media.giphy.com/media/4IwQA7yZ3Z1q8/funny-laughing-hilarious.gif",
+
+    // AMOUR ET COUPLE
+    "https://media.giphy.com/media/l0K4gzSzP3ZNtQ0da/love-couple-hug.gif",
+    "https://media.giphy.com/media/xTiU1lJDfozarWRC3m/love-couple-hug-cute.gif",
+    "https://media.giphy.com/media/VHyMvWhvKvJNo2pVQ6/love-couple-in-love.gif",
+    "https://media.giphy.com/media/5KhEmmgOlk43ZJgR32/love-couple-i-love-you.gif",
+    "https://media.giphy.com/media/3oEjHNZBfOu56hvmcE/love-couple-hug-sweet.gif",
+    "https://media.giphy.com/media/VJrQgIxar9GwMDztbg/love-couple-cuddle.gif",
+    "https://media.giphy.com/media/sR4zahPAdQnFys0fpK/love-couple-reunited.gif",
+    "https://media.giphy.com/media/t1lU5SufRN3TFGcWV2/love-couple-romance.gif",
+    "https://media.giphy.com/media/fYMPdH9xcI2rxT74Mx/love-couple-i-love-you-hug.gif",
+
+    // BISOUS / COEUR
+    "https://media.giphy.com/media/vX1C2TejT6OCOz2kLd/love-heart-kiss.gif",
+    "https://media.giphy.com/media/BZkqDLLg5hmgFu5xtL/love-kiss-heart.gif",
+    "https://media.giphy.com/media/gKS0sFkDnM8OQ/love-kiss-heart-blow.gif",
+    "https://media.giphy.com/media/WrNDWmU4s3lFtyGJE8/love-kiss-couple-romance.gif",
+    "https://media.giphy.com/media/QjLwTezkLatUs/love-kiss-couple.gif",
+    "https://media.giphy.com/media/EL9bOEfA23RCqgkyCT/love-kiss-i-love-you.gif",
+    "https://media.giphy.com/media/aO29Cs03kQSOVMbEGJ/love-kiss-couple-in-love.gif",
+    "https://media.giphy.com/media/IP7hA34c5LxI5xQaLg/love-kiss-couple-relationship.gif",
+
+    // ANIMAUX MIGNONS (chats)
+    "https://media.giphy.com/media/3o6gbdrBDnixuP7GRa/cute-cat-kitten.gif",
+    "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/cute-cat-adorable.gif",
+    "https://media.giphy.com/media/2ve5m7UbRoNiM/cute-cat-adorable-2.gif",
+    "https://media.giphy.com/media/agCV65pUDkJnG/cute-cat-kittens.gif",
+    "https://media.giphy.com/media/cm5rMOvv7ZpHYlk1Wz/cute-kitten-licking.gif",
+    "https://media.giphy.com/media/rwluCdU8lDUt0oz7HG/cute-kitten-rawr.gif",
+    "https://media.giphy.com/media/YrIC2P56osjJ0Zld6m/cute-kitten-fluffy.gif",
+    "https://media.giphy.com/media/1BgrLbKH5qXnaAyApR/cute-cat-dodo.gif",
+    "https://media.giphy.com/media/3ohzdDbAnXMYOR3lIc/cute-cat-love.gif",
+
+    // ANIMAUX MIGNONS (chiens)
+    "https://media.giphy.com/media/3oz8xXS6gDYSNbqme4/cute-dog-puppy.gif",
+    "https://media.giphy.com/media/l3vR6Pi2E1ZyOl9AI/cute-dog-puppy-2.gif",
+    "https://media.giphy.com/media/IgKeRXLiKepHi8aDa3/cute-dog-puppy-happy.gif",
+    "https://media.giphy.com/media/l41m47JypM5GUYSY0/cute-dog-puppy-excited.gif",
+    "https://media.giphy.com/media/xT9IgFeg13zphZgLKM/cute-dog-puppy-sleepy.gif",
+
+    // DANSE ET CÉLÉBRATION
+    "https://media.giphy.com/media/9ieKwMkvD5O3yeFBeA/dance-celebration-happy.gif",
+    "https://media.giphy.com/media/3o7btYKPbnnjEMAGpG/dance-happy-celebration.gif",
+    "https://media.giphy.com/media/fsu0eIs7ta9v9JgarM/dance-celebration-wedding.gif",
+    "https://media.giphy.com/media/3oEjHR3lBk4LLu0xjy/dance-happy-party.gif",
+    "https://media.giphy.com/media/12oFkAoWAajS8M/dance-happy-celebration-2.gif",
+    "https://media.giphy.com/media/9jQs5J5qcxX9CLZ6Z0/dance-party-celebration.gif",
+    "https://media.giphy.com/media/l4FGyw3SIUe0R3jJm/dance-celebration-salsa.gif",
+    "https://media.giphy.com/media/WPpprZZ1m43WXdJbvA/dance-happy-wow.gif",
+    "https://media.giphy.com/media/H2ZWH0TJhqouVBIDas/dance-happy-celebration-3.gif",
+
+    // RÉACTIONS (wow / omg / choc)
+    "https://media.giphy.com/media/a5ZUA25bmUMCnSNtyA/wow-omg-shocked.gif",
+    "https://media.giphy.com/media/xT77XWum9yH7zNkFW0/wow-nice-well-done.gif",
+    "https://media.giphy.com/media/vtt195d94Awb5QNj5L/wow-omg-gasp.gif",
+    "https://media.giphy.com/media/1nuZY7ER8Rdp9CJsVh/wow-shocked-surprised.gif",
+    "https://media.giphy.com/media/7DAJFFmuWuSrhuC7m3/wow-shocked-amazed.gif",
+    "https://media.giphy.com/media/3oEduY2IBr0s8AdrIk/wow-omg-shocked-whoa.gif",
+    "https://media.giphy.com/media/viOA8DK2EyqHZ1ERIY/wow-omg-shocked-2.gif",
+    "https://media.giphy.com/media/73KNBSoHoM05OWpiEZ/wow-shocked-meme.gif",
+    "https://media.giphy.com/media/xUOwFVswT34mzHmaUE/wow-shocked-3.gif",
+
+    // BRAVO / POUCE EN L'AIR
+    "https://media.giphy.com/media/uIU1lxaUL5d7EvuK1e/thumbs-up-great-job.gif",
+    "https://media.giphy.com/media/loXZQA8hxGh3fSxgFi/thumbs-up-good-job.gif",
+    "https://media.giphy.com/media/kvCkexmR21TvVIqrt4/thumbs-up-great-job-2.gif",
+    "https://media.giphy.com/media/8bE0EERrvXkq5S9BCa/thumbs-up-good-nice.gif",
+    "https://media.giphy.com/media/xUA7b0UcdO2c8BGAec/thumbs-up-good-job-2.gif",
+    "https://media.giphy.com/media/3o7btUWSW0LtDPWjyU/thumbs-up-good-job-3.gif",
+    "https://media.giphy.com/media/TAaxb1sSPunCCjZkAS/thumbs-up-you-got-it.gif",
+    "https://media.giphy.com/media/3o7522FYHHIX1Kcxyw/thumbs-up-congrats.gif",
+
+    // COMIQUE / FACEPALM
+    "https://media.giphy.com/media/HJZtqS4vS0YTEu4tR5/comique-funny-facepalm.gif",
+    "https://media.giphy.com/media/3oKIPx6wW24ZAE55QY/comique-comedy-facepalm.gif",
+    "https://media.giphy.com/media/xUA7aOoyqYvN6Q1R84/comique-funny-ohno.gif",
+    "https://media.giphy.com/media/YmszCwM1FV7zCI8sgL/comique-facepalm-annoyed.gif",
+    "https://media.giphy.com/media/mhIk0lHu6jJ3jUuZIH/comique-facepalm-embarrassed.gif",
+    "https://media.giphy.com/media/l0MYCWfIFOMJGjM7C/comique-facepalm.gif",
+    "https://media.giphy.com/media/whQCarjn5Jv1Ktq2HH/comique-facepalm-office.gif",
+    "https://media.giphy.com/media/d5oYULdGLsqP5KFkk4/comique-laugh-facepalm.gif",
+    "https://media.giphy.com/media/xT1R9Q9quvWxyeyTXa/comique-omg-facepalm.gif",
+    "https://media.giphy.com/media/3o7TKMQ1rDsM0HEWje/comique-facepalm-triple.gif"
 ];
     
     // ========== COLLECTION DE STICKERS (FOND TRANSPARENT) ==========
@@ -11130,15 +11729,24 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
             }
         } else if (data.type === 'image') {
             bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+            if (data.text) {
+                bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
+            }
         } else if (data.type === 'drawing') {
             bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
         } else if (data.type === 'video') {
             const videoUrl = data.mediaUrl || data.fileUrl || "";
             bubbleHtml += `
-                <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px;">
+                <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px; position: relative;">
                     <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
+                    <button class="video-save-btn" onclick="event.stopPropagation(); telechargerVideo(this, '${videoUrl}')" title="Enregistrer la vidéo" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); color:#fff; border:none; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; font-size:0.9rem;">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
                 </div>
             `;
+            if (data.text) {
+                bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
+            }
         } else if (data.type === 'audio') {
             const audioId = `audio_${msgId}`;
             if (!data.isEphemeralAudio) {
