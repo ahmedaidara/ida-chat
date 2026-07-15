@@ -2339,19 +2339,61 @@ input, textarea {
 /* ========== APPELS AGORA ========== */
 .call-overlay {
     position: fixed; inset: 0; z-index: 999999;
-    background: linear-gradient(160deg, #1a0033, #000000);
-    color: #fff; display: none; flex-direction: column;
-    align-items: center; justify-content: space-between;
-    padding: 60px 20px 40px; text-align: center;
+    background: #000; color: #fff; display: none;
+    overflow: hidden;
 }
 .call-overlay.active { display: flex; }
-.call-remote-name { font-size: 1.6rem; font-weight: 600; margin-top: 10px; }
+
+/* Fond plein écran (mode vocal) : couleur ou image choisie dans Paramètres */
+.call-bg-layer {
+    position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(135deg, #1a0033, #000000);
+    background-size: cover; background-position: center;
+}
+
+/* Fond plein écran (mode vidéo) : caméra en cours */
+.call-video-fullscreen { position: absolute; inset: 0; z-index: 0; background: #000; display: none; }
+#call-main-video { width: 100%; height: 100%; }
+#call-main-video video { object-fit: cover !important; }
+
+/* Miniature vidéo déplaçable (glisser + taper pour échanger) */
+.call-pip {
+    position: absolute; bottom: 120px; right: 16px; display: none;
+    width: 108px; height: 156px; border-radius: 16px; overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.35); box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+    z-index: 5; cursor: grab; background: #111; touch-action: none;
+}
+.call-pip:active { cursor: grabbing; }
+#call-pip-video { width: 100%; height: 100%; }
+#call-pip-video video { object-fit: cover !important; }
+
+/* Barre du haut : rectangle arrondi, glassmorphism, flotte sans toucher les bords */
+.call-topbar {
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 10; padding: 11px 24px; border-radius: 20px;
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.6px;
+    max-width: 86%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Bloc central : avatar / nom / statut / chrono (mode vocal uniquement) */
+.call-center-info {
+    position: relative; z-index: 3; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 0 20px;
+}
+.call-remote-name { font-size: 1.6rem; font-weight: 600; margin-top: 14px; }
 .call-status-text { font-size: 0.95rem; color: #d0b3ff; margin-top: 8px; }
+.call-timer { font-size: 0.9rem; color: #d0b3ff; margin-top: 6px; letter-spacing: 1px; }
 .call-avatar-big {
     width: 130px; height: 130px; border-radius: 50%;
     background: linear-gradient(45deg, #a800ff, #0076ff);
     display: flex; align-items: center; justify-content: center;
-    font-size: 2.2rem; font-weight: 700; margin-top: 40px;
+    font-size: 2.2rem; font-weight: 700;
     box-shadow: 0 0 0 0 rgba(168,0,255,0.6);
     animation: callPulse 1.6s infinite;
 }
@@ -2360,22 +2402,47 @@ input, textarea {
     70% { box-shadow: 0 0 0 28px rgba(168,0,255,0); }
     100% { box-shadow: 0 0 0 0 rgba(168,0,255,0); }
 }
-.call-video-wrap { position: relative; width: 100%; height: 100%; flex: 1; border-radius: 18px; overflow: hidden; background:#000; }
-#call-remote-video { width: 100%; height: 100%; background: #000; }
-#call-local-video { position: absolute; bottom: 16px; right: 16px; width: 100px; height: 140px; border-radius: 12px; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); background:#111; z-index: 2; }
-.call-actions-row { display: flex; gap: 26px; align-items: center; justify-content: center; margin-top: 30px; }
+
+/* Boutons d'appel entrant (accepter / refuser) */
+.call-incoming-actions {
+    position: absolute; bottom: 70px; left: 0; right: 0; z-index: 10;
+    display: flex; gap: 50px; align-items: center; justify-content: center;
+}
 .call-btn {
-    width: 62px; height: 62px; border-radius: 50%; border: none;
+    width: 66px; height: 66px; border-radius: 50%; border: none;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem; cursor: pointer; color: #fff;
+    font-size: 1.4rem; cursor: pointer; color: #fff;
     background: rgba(255,255,255,0.15); transition: transform 0.15s ease;
 }
 .call-btn:active { transform: scale(0.92); }
-.call-btn.hangup { background: #ff3b30; width: 68px; height: 68px; font-size: 1.5rem; }
-.call-btn.accept { background: #34c759; width: 68px; height: 68px; font-size: 1.5rem; }
-.call-btn.active-toggle { background: #fff; color: #1a0033; }
-.call-incoming-actions { display: flex; gap: 50px; margin-top: 20px; }
-.call-timer { font-size: 0.9rem; color: #d0b3ff; margin-top: 6px; letter-spacing: 1px; }
+.call-btn.hangup { background: #ff3b30; }
+.call-btn.accept { background: #34c759; }
+
+/* Barre du bas : rectangle arrondi, glassmorphism, ne touche pas le bas complet */
+.call-bottombar {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    z-index: 10; display: flex; align-items: center; gap: 14px;
+    padding: 12px 18px; border-radius: 36px;
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+}
+.call-icon-btn {
+    width: 50px; height: 50px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.18); color: #fff; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.call-icon-btn:active { transform: scale(0.92); }
+.call-icon-btn.active-toggle { background: #fff; color: #1a0033; }
+.call-icon-btn.hangup-btn { background: #ff3b30; }
+.call-icon-btn.hangup-btn.armed {
+    background: #ff0000; transform: scale(1.14);
+    box-shadow: 0 0 0 7px rgba(255,59,48,0.32);
+}
+
 .call-mini-badge {
     position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
     background: #34c759; color: #fff; padding: 6px 16px; border-radius: 20px;
@@ -2383,6 +2450,19 @@ input, textarea {
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 .call-mini-badge.active { display: block; }
+
+/* ========== SECTION AUTORISATIONS (Paramètres) ========== */
+.permission-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+.permission-row:last-of-type { border-bottom: none; }
+.permission-icon {
+    width: 38px; height: 38px; border-radius: 50%; background: rgba(168,0,255,0.12);
+    display: flex; align-items: center; justify-content: center; color: #a800ff; flex-shrink: 0;
+}
+.permission-text { flex: 1; min-width: 0; }
+.permission-title { font-size: 0.88rem; font-weight: 600; color: var(--text-main); }
+.permission-status { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.permission-status.granted { color: #34c759; }
+.permission-status.denied { color: #ff3b30; }
     </style>
 </head>
 <body>
@@ -2950,6 +3030,57 @@ input, textarea {
                 </div>
             </div>
             <input type="file" id="bg-upload-input" accept="image/*" style="display:none;">
+        </div>
+
+        <!-- Section Autorisations (micro / caméra / notifications) -->
+        <div class="settings-section" style="animation-delay:0.20s;">
+            <h4><i class="fa-solid fa-shield-halved"></i> Autorisations</h4>
+            <p class="settings-section-desc">Active le micro et la caméra pour que les appels vocaux et vidéo fonctionnent correctement.</p>
+            <div class="permission-row" id="permission-row-mic">
+                <div class="permission-icon"><i class="fa-solid fa-microphone"></i></div>
+                <div class="permission-text">
+                    <div class="permission-title">Microphone</div>
+                    <div class="permission-status" id="permission-status-mic">Statut inconnu</div>
+                </div>
+                <button class="settings-btn-secondary" onclick="demanderAutorisation('mic')">Autoriser</button>
+            </div>
+            <div class="permission-row" id="permission-row-cam">
+                <div class="permission-icon"><i class="fa-solid fa-video"></i></div>
+                <div class="permission-text">
+                    <div class="permission-title">Caméra</div>
+                    <div class="permission-status" id="permission-status-cam">Statut inconnu</div>
+                </div>
+                <button class="settings-btn-secondary" onclick="demanderAutorisation('cam')">Autoriser</button>
+            </div>
+            <div class="permission-row" id="permission-row-notif">
+                <div class="permission-icon"><i class="fa-solid fa-bell"></i></div>
+                <div class="permission-text">
+                    <div class="permission-title">Notifications</div>
+                    <div class="permission-status" id="permission-status-notif">Statut inconnu</div>
+                </div>
+                <button class="settings-btn-secondary" onclick="demanderAutorisation('notif')">Autoriser</button>
+            </div>
+            <p class="settings-section-desc" style="margin-top:10px; font-size:0.7rem;">Si un bouton reste bloqué sur "❌ Refusé", il faut l'autoriser manuellement dans les réglages du navigateur (icône 🔒 ou ⓘ à côté de l'adresse du site), puis recharger la page.</p>
+        </div>
+
+        <!-- Section Fond d'appel (couleur ou image pour les appels vocaux) -->
+        <div class="settings-section" style="animation-delay:0.22s;">
+            <h4><i class="fa-solid fa-panorama"></i> Fond d'appel</h4>
+            <p class="settings-section-desc">Choisis la couleur ou l'image affichée en plein écran pendant un appel vocal.</p>
+            <div class="bg-options" id="call-bg-options">
+                <div class="bg-option" style="background: linear-gradient(135deg, #1a0033, #000000);" data-callbg="color:linear-gradient(135deg, #1a0033, #000000)" title="Par défaut"></div>
+                <div class="bg-option" style="background:#a800ff;" data-callbg="color:#a800ff"></div>
+                <div class="bg-option" style="background:#0076ff;" data-callbg="color:#0076ff"></div>
+                <div class="bg-option" style="background:#ff2d55;" data-callbg="color:#ff2d55"></div>
+                <div class="bg-option" style="background:#34c759;" data-callbg="color:#34c759"></div>
+                <div class="bg-option" style="background:#1c1c1e;" data-callbg="color:#1c1c1e"></div>
+                <div class="bg-option" id="call-bg-custom-color" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);" title="Couleur personnalisée"></div>
+                <div class="bg-option bg-option-add" id="call-bg-option-add" title="Ajouter une image">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+            </div>
+            <input type="color" id="call-bg-color-picker" style="display:none;">
+            <input type="file" id="call-bg-upload-input" accept="image/*" style="display:none;">
         </div>
     </div>
 </div>
@@ -7358,6 +7489,8 @@ function initSettingsBubbles() {
     });
     
     initBgOptions();
+    initCallBgOptions();
+    verifierStatutsPermissions();
     loadDefaultAccentColor();
     loadApparence();
     loadTailleTexte();
@@ -14157,12 +14290,18 @@ const AGORA_UID_MAP = { ida: 1, aidara: 2 };
 let agoraClient = null;
 let localAudioTrack = null;
 let localVideoTrack = null;
+let remoteVideoTrackRef = null;
+let mainViewIsLocal = true;
 let callUnsubscribe = null;
 let callTimerInterval = null;
 let callTimerSeconds = 0;
 let ringtoneTimer = null;
 let ringtoneAudioCtx = null;
-let outgoingTimeoutTimer = null;
+let hangupArmed = false;
+let hangupResetTimer = null;
+let speakerOn = true;
+let availableCameras = [];
+let currentCameraIndex = 0;
 
 function getCallDocRef() {
     return db.collection('calls').doc(CHAT_ID);
@@ -14172,6 +14311,7 @@ function getCallDocRef() {
 function initCallListener() {
     if (!currentUser) return;
     if (callUnsubscribe) { callUnsubscribe(); callUnsubscribe = null; }
+    initCallPipDrag();
     callUnsubscribe = getCallDocRef().onSnapshot((docSnap) => {
         if (!docSnap.exists) { resetCallUIIfIdle(); return; }
         const data = docSnap.data();
@@ -14194,9 +14334,6 @@ function initCallListener() {
             }
             cleanupCall();
         } else if (data.status === 'ended') {
-            if (data.endedReason === 'missed' && data.callerId === currentUser.id) {
-                showTempNotification('📵 Pas de réponse');
-            }
             cleanupCall();
         }
     });
@@ -14223,13 +14360,9 @@ async function startCall(type) {
             channel: CHAT_ID,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        // ⚠️ Pas de minuterie d'annulation automatique : l'appel sonne
+        // jusqu'à ce que l'un des deux raccroche/accepte/refuse manuellement.
         await joinAgoraChannel(type);
-        outgoingTimeoutTimer = setTimeout(async () => {
-            const snap = await getCallDocRef().get();
-            if (snap.exists && snap.data().status === 'ringing') {
-                await getCallDocRef().update({ status: 'ended', endedReason: 'missed' });
-            }
-        }, 45000);
     } catch (e) {
         console.error('Erreur startCall:', e);
         showTempNotification("❌ Impossible de démarrer l'appel");
@@ -14248,6 +14381,7 @@ async function acceptCall() {
 async function rejectCall() {
     stopRingtone();
     try { await getCallDocRef().update({ status: 'rejected' }); } catch (e) {}
+    cleanupCall();
     setTimeout(() => { getCallDocRef().set({ status: 'idle' }, { merge: true }).catch(() => {}); }, 1500);
 }
 
@@ -14255,6 +14389,25 @@ async function endCall() {
     try { await getCallDocRef().update({ status: 'ended' }); } catch (e) {}
     cleanupCall();
     setTimeout(() => { getCallDocRef().set({ status: 'idle' }, { merge: true }).catch(() => {}); }, 1500);
+}
+
+// Raccrocher nécessite 2 appuis rapprochés pour éviter les faux clics
+function tenterRaccrocher() {
+    const btn = document.getElementById('call-hangup-btn');
+    if (hangupArmed) {
+        clearTimeout(hangupResetTimer);
+        hangupArmed = false;
+        if (btn) btn.classList.remove('armed');
+        endCall();
+    } else {
+        hangupArmed = true;
+        if (btn) btn.classList.add('armed');
+        showTempNotification('☎️ Appuie encore une fois pour raccrocher');
+        hangupResetTimer = setTimeout(() => {
+            hangupArmed = false;
+            if (btn) btn.classList.remove('armed');
+        }, 2000);
+    }
 }
 
 async function joinAgoraChannel(type) {
@@ -14271,8 +14424,8 @@ async function joinAgoraChannel(type) {
         agoraClient.on('user-published', async (user, mediaType) => {
             await agoraClient.subscribe(user, mediaType);
             if (mediaType === 'video') {
-                document.getElementById('call-video-wrap').style.display = 'block';
-                user.videoTrack.play('call-remote-video');
+                remoteVideoTrackRef = user.videoTrack;
+                mettreAJourVuesVideo();
             }
             if (mediaType === 'audio') {
                 user.audioTrack.play();
@@ -14280,7 +14433,8 @@ async function joinAgoraChannel(type) {
         });
         agoraClient.on('user-unpublished', (user, mediaType) => {
             if (mediaType === 'video') {
-                document.getElementById('call-video-wrap').style.display = 'none';
+                remoteVideoTrackRef = null;
+                mettreAJourVuesVideo();
             }
         });
 
@@ -14291,25 +14445,94 @@ async function joinAgoraChannel(type) {
 
         if (type === 'video') {
             localVideoTrack = await AgoraRTC.createCameraVideoTrack();
-            localVideoTrack.play('call-local-video');
-            document.getElementById('call-video-wrap').style.display = 'block';
             tracksToPublish.push(localVideoTrack);
+            mettreAJourVuesVideo();
         }
         await agoraClient.publish(tracksToPublish);
     } catch (e) {
         console.error('Erreur Agora:', e);
-        showTempNotification("❌ Micro/caméra inaccessible ou token invalide");
+        let msg = "❌ Micro/caméra inaccessible ou token invalide";
+        if (e && e.message && /Permission denied|NotAllowedError/i.test(e.message)) {
+            msg = "❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations";
+        }
+        showTempNotification(msg);
         try { await getCallDocRef().update({ status: 'ended', endedReason: 'error' }); } catch (e2) {}
         cleanupCall();
     }
 }
 
+// Passer d'un appel vocal à un appel vidéo en cours d'appel
+async function passerEnAppelVideo() {
+    if (!agoraClient || localVideoTrack) return;
+    try {
+        localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        await agoraClient.publish([localVideoTrack]);
+        await getCallDocRef().update({ type: 'video' });
+        activerModeVideo();
+        mettreAJourVuesVideo();
+        document.getElementById('call-upgrade-video-btn').style.display = 'none';
+        document.getElementById('call-switch-cam-btn').style.display = 'flex';
+        showTempNotification('🎥 Appel vidéo activé');
+    } catch (e) {
+        console.error('Erreur passage vidéo:', e);
+        showTempNotification("❌ Impossible d'activer la caméra");
+    }
+}
+
+async function switchCallCamera() {
+    if (!localVideoTrack) return;
+    try {
+        if (availableCameras.length === 0) {
+            availableCameras = await AgoraRTC.getCameras();
+        }
+        if (availableCameras.length < 2) {
+            showTempNotification('📷 Une seule caméra détectée');
+            return;
+        }
+        currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+        await localVideoTrack.setDevice(availableCameras[currentCameraIndex].deviceId);
+        showTempNotification('🔄 Caméra changée');
+    } catch (e) {
+        console.error('Erreur changement caméra:', e);
+        showTempNotification('❌ Impossible de changer de caméra');
+    }
+}
+
+async function toggleCallSpeaker() {
+    speakerOn = !speakerOn;
+    const btn = document.getElementById('call-speaker-btn');
+    if (btn) {
+        btn.classList.toggle('active-toggle', speakerOn);
+        btn.innerHTML = speakerOn ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-low"></i>';
+    }
+    try {
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const outputs = devices.filter(d => d.kind === 'audiooutput');
+            if (outputs.length > 1 && agoraClient && agoraClient.remoteUsers) {
+                const speakerDevice = outputs.find(d => /speaker|haut.?parleur/i.test(d.label)) || outputs[0];
+                const earpieceDevice = outputs.find(d => d.deviceId !== speakerDevice.deviceId) || outputs[0];
+                const target = speakerOn ? speakerDevice : earpieceDevice;
+                agoraClient.remoteUsers.forEach(u => {
+                    if (u.audioTrack && u.audioTrack.setPlaybackDevice) {
+                        u.audioTrack.setPlaybackDevice(target.deviceId).catch(() => {});
+                    }
+                });
+            }
+        }
+    } catch (e) { /* pas critique si le navigateur ne le permet pas */ }
+}
+
 function cleanupCall() {
-    clearTimeout(outgoingTimeoutTimer);
     stopRingtone();
     stopCallTimer();
+    clearTimeout(hangupResetTimer);
+    hangupArmed = false;
     if (localAudioTrack) { localAudioTrack.close(); localAudioTrack = null; }
     if (localVideoTrack) { localVideoTrack.close(); localVideoTrack = null; }
+    remoteVideoTrackRef = null;
+    mainViewIsLocal = true;
+    availableCameras = [];
     if (agoraClient) {
         agoraClient.removeAllListeners();
         agoraClient.leave().catch(() => {});
@@ -14318,51 +14541,141 @@ function cleanupCall() {
     hideCallOverlay();
 }
 
-function showOutgoingUI(data) {
-    document.getElementById('call-overlay').classList.add('active');
-    document.getElementById('call-mini-badge').classList.remove('active');
-    document.getElementById('call-avatar-big').innerText = targetUser.name.substring(0, 3);
-    document.getElementById('call-remote-name').innerText = targetUser.name;
-    document.getElementById('call-status-text').innerText = data.type === 'video' ? 'Appel vidéo en cours...' : 'Appel en cours...';
-    document.getElementById('call-timer-text').style.display = 'none';
-    document.getElementById('call-video-wrap').style.display = 'none';
-    document.getElementById('call-outgoing-actions').style.display = 'flex';
-    document.getElementById('call-incoming-actions').style.display = 'none';
-    document.getElementById('call-active-actions').style.display = 'none';
+function setCallTopbarText(data) {
+    const el = document.getElementById('call-topbar-text');
+    if (!el || !targetUser) return;
+    const label = data.type === 'video' ? 'APPEL VIDÉO DE ' : 'APPEL VOCAL DE ';
+    el.innerText = label + targetUser.name.toUpperCase();
 }
 
+function activerModeAudio() {
+    document.getElementById('call-bg-layer').style.display = 'block';
+    document.getElementById('call-video-fullscreen').style.display = 'none';
+    appliquerFondAppelActuel();
+}
+
+function activerModeVideo() {
+    document.getElementById('call-bg-layer').style.display = 'none';
+    document.getElementById('call-video-fullscreen').style.display = 'block';
+}
+
+function mettreAJourVuesVideo() {
+    const pipWrap = document.getElementById('call-pip');
+    if (!pipWrap) return;
+    if (mainViewIsLocal) {
+        if (localVideoTrack) localVideoTrack.play('call-main-video');
+        if (remoteVideoTrackRef) { remoteVideoTrackRef.play('call-pip-video'); pipWrap.style.display = 'block'; }
+        else { pipWrap.style.display = 'none'; }
+    } else {
+        if (remoteVideoTrackRef) remoteVideoTrackRef.play('call-main-video');
+        if (localVideoTrack) { localVideoTrack.play('call-pip-video'); pipWrap.style.display = 'block'; }
+        else { pipWrap.style.display = 'none'; }
+    }
+}
+
+function basculerVuePrincipale() {
+    if (!remoteVideoTrackRef) return;
+    mainViewIsLocal = !mainViewIsLocal;
+    mettreAJourVuesVideo();
+}
+
+// Permet de faire glisser la miniature (PiP) n'importe où à l'écran,
+// et de taper dessus (sans glisser) pour échanger vue principale / miniature
+function initCallPipDrag() {
+    const pip = document.getElementById('call-pip');
+    if (!pip || pip.dataset.dragBound === 'true') return;
+    pip.dataset.dragBound = 'true';
+    let dragging = false, startX = 0, startY = 0, origX = 0, origY = 0, moved = false;
+
+    function onDown(e) {
+        dragging = true; moved = false;
+        const point = e.touches ? e.touches[0] : e;
+        startX = point.clientX; startY = point.clientY;
+        const rect = pip.getBoundingClientRect();
+        origX = rect.left; origY = rect.top;
+        pip.style.right = 'auto'; pip.style.bottom = 'auto';
+        pip.style.left = origX + 'px';
+        pip.style.top = origY + 'px';
+    }
+    function onMove(e) {
+        if (!dragging) return;
+        const point = e.touches ? e.touches[0] : e;
+        const dx = point.clientX - startX;
+        const dy = point.clientY - startY;
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+        let newLeft = origX + dx;
+        let newTop = origY + dy;
+        const maxLeft = window.innerWidth - pip.offsetWidth - 8;
+        const maxTop = window.innerHeight - pip.offsetHeight - 8;
+        newLeft = Math.max(8, Math.min(newLeft, maxLeft));
+        newTop = Math.max(8, Math.min(newTop, maxTop));
+        pip.style.left = newLeft + 'px';
+        pip.style.top = newTop + 'px';
+    }
+    function onUp() {
+        if (!dragging) return;
+        dragging = false;
+        if (!moved) basculerVuePrincipale();
+    }
+
+    pip.addEventListener('mousedown', onDown);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    pip.addEventListener('touchstart', onDown, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: true });
+    document.addEventListener('touchend', onUp);
+}
+
+function showOutgoingUI(data) { baseCallUI(data, 'outgoing'); }
+
 function showIncomingUI(data) {
-    document.getElementById('call-overlay').classList.add('active');
-    document.getElementById('call-mini-badge').classList.remove('active');
-    document.getElementById('call-avatar-big').innerText = targetUser.name.substring(0, 3);
-    document.getElementById('call-remote-name').innerText = targetUser.name;
-    document.getElementById('call-status-text').innerText = data.type === 'video' ? 'Appel vidéo entrant...' : 'Appel entrant...';
-    document.getElementById('call-timer-text').style.display = 'none';
-    document.getElementById('call-video-wrap').style.display = 'none';
-    document.getElementById('call-outgoing-actions').style.display = 'none';
-    document.getElementById('call-incoming-actions').style.display = 'flex';
-    document.getElementById('call-active-actions').style.display = 'none';
+    baseCallUI(data, 'incoming');
     playRingtone();
 }
 
 function showActiveUI(data) {
     stopRingtone();
-    document.getElementById('call-overlay').classList.add('active');
-    document.getElementById('call-status-text').innerText = 'En appel';
-    document.getElementById('call-timer-text').style.display = 'block';
-    document.getElementById('call-outgoing-actions').style.display = 'none';
-    document.getElementById('call-incoming-actions').style.display = 'none';
-    document.getElementById('call-active-actions').style.display = 'flex';
-    document.getElementById('call-cam-btn').style.display = data.type === 'video' ? 'flex' : 'none';
+    baseCallUI(data, 'active');
     startCallTimer();
+}
+
+function baseCallUI(data, phase) {
+    document.getElementById('call-overlay').classList.add('active');
+    document.getElementById('call-mini-badge').classList.remove('active');
+    setCallTopbarText(data);
+
+    const isVideo = data.type === 'video';
+    if (isVideo) activerModeVideo(); else activerModeAudio();
+
+    const showCenter = !isVideo;
+    document.getElementById('call-center-info').style.display = showCenter ? 'flex' : 'none';
+    if (showCenter && targetUser) {
+        document.getElementById('call-avatar-big').innerText = targetUser.name.substring(0, 3);
+        document.getElementById('call-remote-name').innerText = targetUser.name;
+    }
+    document.getElementById('call-status-text').innerText =
+        phase === 'incoming' ? (isVideo ? 'Appel vidéo entrant...' : 'Appel entrant...') :
+        phase === 'outgoing' ? (isVideo ? 'Appel vidéo en cours...' : 'Appel en cours...') :
+        'En appel';
+    document.getElementById('call-timer-text').style.display = phase === 'active' ? 'block' : 'none';
+
+    document.getElementById('call-incoming-actions').style.display = phase === 'incoming' ? 'flex' : 'none';
+    document.getElementById('call-bottombar').style.display = phase === 'incoming' ? 'none' : 'flex';
+
+    document.getElementById('call-upgrade-video-btn').style.display = (!isVideo && phase !== 'incoming') ? 'flex' : 'none';
+    document.getElementById('call-switch-cam-btn').style.display = (isVideo && phase !== 'incoming') ? 'flex' : 'none';
 }
 
 function hideCallOverlay() {
     document.getElementById('call-overlay').classList.remove('active');
     document.getElementById('call-mini-badge').classList.remove('active');
-    document.getElementById('call-video-wrap').style.display = 'none';
-    document.getElementById('call-remote-video').innerHTML = '';
-    document.getElementById('call-local-video').innerHTML = '';
+    document.getElementById('call-main-video').innerHTML = '';
+    document.getElementById('call-pip-video').innerHTML = '';
+    document.getElementById('call-pip').style.display = 'none';
+    document.getElementById('call-pip').style.left = '';
+    document.getElementById('call-pip').style.top = '';
+    document.getElementById('call-pip').style.right = '16px';
+    document.getElementById('call-pip').style.bottom = '120px';
 }
 
 function resetCallUIIfIdle() {
@@ -14433,11 +14746,192 @@ async function toggleCallMic() {
     btn.innerHTML = wasEnabled ? '<i class="fa-solid fa-microphone-slash"></i>' : '<i class="fa-solid fa-microphone"></i>';
 }
 
-async function toggleCallCam() {
-    if (!localVideoTrack) return;
-    const wasEnabled = localVideoTrack.enabled;
-    await localVideoTrack.setEnabled(!wasEnabled);
-    document.getElementById('call-cam-btn').classList.toggle('active-toggle', wasEnabled);
+// ========== FOND D'APPEL (couleur ou image, réglable dans Paramètres) ==========
+
+function appliquerFondAppelActuel() {
+    const layer = document.getElementById('call-bg-layer');
+    if (!layer) return;
+    const valeur = localStorage.getItem('call_background') || 'color:linear-gradient(135deg, #1a0033, #000000)';
+    if (valeur.startsWith('image:')) {
+        const url = valeur.slice(6);
+        layer.style.background = '#000';
+        layer.style.backgroundImage = `url('${url}')`;
+        layer.style.backgroundSize = 'cover';
+        layer.style.backgroundPosition = 'center';
+    } else {
+        const c = valeur.slice(6);
+        layer.style.backgroundImage = 'none';
+        layer.style.background = c;
+    }
+}
+
+function marquerFondAppelActif(valeur) {
+    document.querySelectorAll('#call-bg-options .bg-option[data-callbg]').forEach(o => {
+        o.classList.toggle('active', o.getAttribute('data-callbg') === valeur);
+    });
+}
+
+function creerVignetteFondAppelPerso(dataUrl) {
+    const opt = document.createElement('div');
+    opt.className = 'bg-option';
+    opt.setAttribute('data-custom', 'true');
+    opt.style.backgroundImage = `url('${dataUrl}')`;
+    const valeur = 'image:' + dataUrl;
+    opt.setAttribute('data-callbg', valeur);
+    opt.title = 'Ton image';
+
+    const removeBtn = document.createElement('div');
+    removeBtn.className = 'bg-option-remove';
+    removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    removeBtn.onclick = function(e) {
+        e.stopPropagation();
+        supprimerFondAppelPerso(valeur, opt);
+    };
+    opt.appendChild(removeBtn);
+
+    opt.addEventListener('click', function(e) {
+        if (e.target.closest('.bg-option-remove')) return;
+        localStorage.setItem('call_background', valeur);
+        marquerFondAppelActif(valeur);
+    });
+
+    return opt;
+}
+
+function supprimerFondAppelPerso(valeur, opt) {
+    let fonds = JSON.parse(localStorage.getItem('custom_call_backgrounds') || '[]');
+    fonds = fonds.filter(f => f !== valeur);
+    localStorage.setItem('custom_call_backgrounds', JSON.stringify(fonds));
+    opt.remove();
+    if (localStorage.getItem('call_background') === valeur) {
+        const def = 'color:linear-gradient(135deg, #1a0033, #000000)';
+        localStorage.setItem('call_background', def);
+        marquerFondAppelActif(def);
+    }
+}
+
+function initCallBgOptions() {
+    document.querySelectorAll('#call-bg-options .bg-option[data-callbg]').forEach(opt => {
+        if (opt.dataset.bound === 'true') return;
+        opt.dataset.bound = 'true';
+        opt.addEventListener('click', () => {
+            const v = opt.getAttribute('data-callbg');
+            localStorage.setItem('call_background', v);
+            marquerFondAppelActif(v);
+        });
+    });
+
+    const container = document.getElementById('call-bg-options');
+    const addTile = document.getElementById('call-bg-option-add');
+    if (!container || !addTile) return;
+    container.querySelectorAll('.bg-option[data-custom="true"]').forEach(el => el.remove());
+
+    const fondsPersos = JSON.parse(localStorage.getItem('custom_call_backgrounds') || '[]');
+    fondsPersos.forEach(v => {
+        const dataUrl = v.startsWith('image:') ? v.slice(6) : v;
+        const vignette = creerVignetteFondAppelPerso(dataUrl);
+        container.insertBefore(vignette, addTile);
+    });
+
+    if (addTile.dataset.bound !== 'true') {
+        addTile.dataset.bound = 'true';
+        addTile.addEventListener('click', () => {
+            document.getElementById('call-bg-upload-input').click();
+        });
+    }
+
+    const customColorTile = document.getElementById('call-bg-custom-color');
+    if (customColorTile && customColorTile.dataset.bound !== 'true') {
+        customColorTile.dataset.bound = 'true';
+        customColorTile.addEventListener('click', () => document.getElementById('call-bg-color-picker').click());
+    }
+    const colorPicker = document.getElementById('call-bg-color-picker');
+    if (colorPicker && colorPicker.dataset.bound !== 'true') {
+        colorPicker.dataset.bound = 'true';
+        colorPicker.addEventListener('input', () => {
+            const v = 'color:' + colorPicker.value;
+            localStorage.setItem('call_background', v);
+            marquerFondAppelActif(v);
+            showTempNotification("🎨 Couleur d'appel enregistrée");
+        });
+    }
+
+    const uploadInput = document.getElementById('call-bg-upload-input');
+    if (uploadInput && uploadInput.dataset.bound !== 'true') {
+        uploadInput.dataset.bound = 'true';
+        uploadInput.addEventListener('change', function() {
+            const file = this.files && this.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { showTempNotification('❌ Choisis un fichier image'); return; }
+            redimensionnerImage(file, 1080, (dataUrl) => {
+                const valeur = 'image:' + dataUrl;
+                const fonds = JSON.parse(localStorage.getItem('custom_call_backgrounds') || '[]');
+                fonds.push(valeur);
+                localStorage.setItem('custom_call_backgrounds', JSON.stringify(fonds));
+                const vignette = creerVignetteFondAppelPerso(dataUrl);
+                container.insertBefore(vignette, addTile);
+                localStorage.setItem('call_background', valeur);
+                marquerFondAppelActif(valeur);
+                showTempNotification("🖼️ Image d'appel enregistrée");
+            });
+            uploadInput.value = '';
+        });
+    }
+
+    const sauvegarde = localStorage.getItem('call_background') || 'color:linear-gradient(135deg, #1a0033, #000000)';
+    marquerFondAppelActif(sauvegarde);
+}
+
+// ========== AUTORISATIONS (micro / caméra / notifications) ==========
+
+function majStatutPermission(type, statut) {
+    const el = document.getElementById(`permission-status-${type}`);
+    if (!el) return;
+    el.classList.remove('granted', 'denied');
+    if (statut === 'granted') { el.textContent = '✅ Autorisé'; el.classList.add('granted'); }
+    else if (statut === 'denied') { el.textContent = '❌ Refusé'; el.classList.add('denied'); }
+    else { el.textContent = 'Statut inconnu'; }
+}
+
+async function verifierStatutsPermissions() {
+    if (navigator.permissions && navigator.permissions.query) {
+        try {
+            const mic = await navigator.permissions.query({ name: 'microphone' });
+            majStatutPermission('mic', mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null));
+            mic.onchange = () => majStatutPermission('mic', mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null));
+        } catch (e) {}
+        try {
+            const cam = await navigator.permissions.query({ name: 'camera' });
+            majStatutPermission('cam', cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null));
+            cam.onchange = () => majStatutPermission('cam', cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null));
+        } catch (e) {}
+    }
+    if ('Notification' in window) {
+        majStatutPermission('notif', Notification.permission === 'granted' ? 'granted' : (Notification.permission === 'denied' ? 'denied' : null));
+    }
+}
+
+async function demanderAutorisation(type) {
+    if (type === 'mic' || type === 'cam') {
+        const constraints = type === 'mic' ? { audio: true } : { video: true };
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            stream.getTracks().forEach(t => t.stop());
+            majStatutPermission(type, 'granted');
+            showTempNotification(type === 'mic' ? '🎤 Microphone autorisé' : '📷 Caméra autorisée');
+        } catch (e) {
+            console.error(e);
+            majStatutPermission(type, 'denied');
+            showTempNotification("❌ Accès refusé. Autorise-le via l'icône 🔒 à côté de l'adresse du site.");
+        }
+    } else if (type === 'notif') {
+        if (!('Notification' in window)) { showTempNotification('❌ Notifications non supportées'); return; }
+        const res = await Notification.requestPermission();
+        majStatutPermission('notif', res === 'granted' ? 'granted' : 'denied');
+        if (res === 'granted' && typeof demanderPermissionNotifications === 'function') {
+            demanderPermissionNotifications();
+        }
+    }
 }
 // ==================== FIN APPELS AGORA ====================
   </script>
@@ -14488,37 +14982,43 @@ async function toggleCallCam() {
 <div class="call-mini-badge" id="call-mini-badge" onclick="ouvrirEcranAppelEnCours()">📞 Appel en cours — <span id="call-mini-timer">00:00</span></div>
 
 <div class="call-overlay" id="call-overlay">
-    <div>
+    <!-- Fond plein écran pour un appel VOCAL : couleur ou image choisie dans Paramètres -->
+    <div class="call-bg-layer" id="call-bg-layer"></div>
+
+    <!-- Fond plein écran pour un appel VIDÉO : caméra locale + miniature déplaçable -->
+    <div class="call-video-fullscreen" id="call-video-fullscreen">
+        <div id="call-main-video"></div>
+        <div class="call-pip" id="call-pip">
+            <div id="call-pip-video"></div>
+        </div>
+    </div>
+
+    <!-- Barre du haut : nom de l'appel, glassmorphism -->
+    <div class="call-topbar" id="call-topbar">
+        <span id="call-topbar-text">APPEL VOCAL</span>
+    </div>
+
+    <!-- Avatar / nom / statut / chrono (mode vocal uniquement) -->
+    <div class="call-center-info" id="call-center-info">
         <div class="call-avatar-big" id="call-avatar-big">--</div>
         <div class="call-remote-name" id="call-remote-name">Correspondant</div>
         <div class="call-status-text" id="call-status-text">Appel en cours...</div>
         <div class="call-timer" id="call-timer-text" style="display:none;">00:00</div>
     </div>
 
-    <div class="call-video-wrap" id="call-video-wrap" style="display:none;">
-        <div id="call-remote-video"></div>
-        <div id="call-local-video"></div>
+    <!-- Boutons pour appel entrant -->
+    <div class="call-incoming-actions" id="call-incoming-actions" style="display:none;">
+        <button class="call-btn hangup" onclick="rejectCall()" title="Refuser"><i class="fa-solid fa-phone-slash"></i></button>
+        <button class="call-btn accept" onclick="acceptCall()" title="Accepter"><i class="fa-solid fa-phone"></i></button>
     </div>
 
-    <div>
-        <!-- Boutons pendant appel sortant (ringing, callé) -->
-        <div class="call-actions-row" id="call-outgoing-actions" style="display:none;">
-            <button class="call-btn hangup" onclick="endCall()" title="Annuler"><i class="fa-solid fa-phone-slash"></i></button>
-        </div>
-
-        <!-- Boutons pour appel entrant -->
-        <div class="call-incoming-actions" id="call-incoming-actions" style="display:none;">
-            <button class="call-btn hangup" onclick="rejectCall()" title="Refuser"><i class="fa-solid fa-phone-slash"></i></button>
-            <button class="call-btn accept" onclick="acceptCall()" title="Accepter"><i class="fa-solid fa-phone"></i></button>
-        </div>
-
-        <!-- Boutons pendant appel actif -->
-        <div class="call-actions-row" id="call-active-actions" style="display:none;">
-            <button class="call-btn" id="call-mute-btn" onclick="toggleCallMic()" title="Micro"><i class="fa-solid fa-microphone"></i></button>
-            <button class="call-btn" id="call-cam-btn" onclick="toggleCallCam()" title="Caméra" style="display:none;"><i class="fa-solid fa-video"></i></button>
-            <button class="call-btn hangup" onclick="endCall()" title="Raccrocher"><i class="fa-solid fa-phone-slash"></i></button>
-            <button class="call-btn" onclick="minimiserAppel()" title="Réduire"><i class="fa-solid fa-chevron-down"></i></button>
-        </div>
+    <!-- Barre du bas : glassmorphism, arrondie, ne touche pas les bords -->
+    <div class="call-bottombar" id="call-bottombar" style="display:none;">
+        <button class="call-icon-btn" id="call-upgrade-video-btn" onclick="passerEnAppelVideo()" title="Passer en vidéo"><i class="fa-solid fa-video"></i></button>
+        <button class="call-icon-btn" id="call-switch-cam-btn" onclick="switchCallCamera()" title="Changer de caméra" style="display:none;"><i class="fa-solid fa-camera-rotate"></i></button>
+        <button class="call-icon-btn" id="call-mute-btn" onclick="toggleCallMic()" title="Micro"><i class="fa-solid fa-microphone"></i></button>
+        <button class="call-icon-btn active-toggle" id="call-speaker-btn" onclick="toggleCallSpeaker()" title="Haut-parleur"><i class="fa-solid fa-volume-high"></i></button>
+        <button class="call-icon-btn hangup-btn" id="call-hangup-btn" onclick="tenterRaccrocher()" title="Raccrocher (appuyer 2 fois)"><i class="fa-solid fa-phone-slash"></i></button>
     </div>
 </div>
 
