@@ -14590,7 +14590,7 @@ async function startCall(type) {
             channel: CHAT_ID,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        envoyerNotifTelegram(`📞 ${currentUser.name} lance un appel ${type === 'video' ? 'vidéo' : 'vocal'} avec ${targetUser.name} — Appel en cours...`);
+        envoyerNotifTelegram(`📞 Appel ${type === 'video' ? 'vidéo' : 'vocal'} entrant : ${currentUser.name} appelle ${targetUser.name} maintenant !`);
         // ⚠️ Pas de minuterie d'annulation automatique : l'appel sonne
         // jusqu'à ce que l'un des deux raccroche/accepte/refuse manuellement.
         await joinAgoraChannel(type);
@@ -15280,10 +15280,12 @@ function getScreenShareDocRef() {
 }
 
 // Envoie l'invitation dans le chat (bouton "Partage" de la barre d'outils)
+let screenShareInviteUnsubscribe = null;
+
 async function proposerPartageEcran() {
     if (!currentUser || !targetUser) return;
     try {
-        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+        const msgRef = await db.collection('chats').doc(CHAT_ID).collection('messages').add({
             type: 'screenshare_invite',
             text: `🖥️ ${currentUser.name} vous invite à un partage d'écran`,
             senderId: currentUser.id,
@@ -15294,10 +15296,32 @@ async function proposerPartageEcran() {
         });
         showTempNotification('🖥️ Invitation envoyée');
         if (typeof fermerToolbarMedias === 'function') fermerToolbarMedias();
+        // Écoute directe et fiable sur CE message précis : ne dépend pas du
+        // rafraîchissement de la liste des messages (qui ne se redéclenche
+        // pas toujours sur une simple modification d'un message existant).
+        ecouterReponseInvitationPartageEcran(msgRef.id);
     } catch (e) {
         console.error('Erreur invitation partage écran:', e);
         showTempNotification("❌ Impossible d'envoyer l'invitation");
     }
+}
+
+// Détecte en direct quand l'autre a répondu "Oui"/"Non" à l'invitation qu'on a envoyée
+function ecouterReponseInvitationPartageEcran(msgId) {
+    if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
+    screenShareInviteUnsubscribe = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot((docSnap) => {
+            if (!docSnap.exists) return;
+            const data = docSnap.data();
+            if (data.status === 'accepted' && !screenShareClient) {
+                afficherBandeauDemarragePartageEcran();
+                showTempNotification('✅ Invitation acceptée — clique sur "Démarrer"');
+                if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
+            } else if (data.status === 'declined') {
+                showTempNotification('❌ Invitation refusée');
+                if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
+            }
+        });
 }
 
 // Clic sur "Oui" / "Non" dans la bulle d'invitation (voir rendu des messages)
@@ -15319,6 +15343,7 @@ async function repondreInvitationPartageEcran(msgId, accepter) {
 // "Démarrer" apparaît dans le chat — ce bouton appelle cette fonction.
 async function demarrerEnvoiPartageEcran() {
     if (screenShareClient) return;
+    if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
     try {
         screenShareRole = 'sender';
         const channel = 'screenshare_' + CHAT_ID;
@@ -15592,4 +15617,4 @@ function nettoyerPartageEcran() {
 
 </body>   
   
-</html>
+</html>   
