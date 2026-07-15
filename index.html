@@ -14147,6 +14147,9 @@ async function removeCustomColorFromMessage() {
 // ⚠️ Vérifie sur console.agora.io que c'est bien le bon ordre :
 // App ID (visible en clair) puis App Certificate (Primary Certificate, secret).
 const AGORA_APP_ID = "ecab018bb0114d7fa6e65390df6aeebc";
+// ⚠️ Projet Supabase DÉDIÉ à Agora (différent de celui du stockage audio/photos).
+// C'est volontaire : la fonction agora-token est déployée sur mxzupngxmnfnldbyooqf.
+const AGORA_FUNCTIONS_URL = "https://mxzupngxmnfnldbyooqf.supabase.co/functions/v1/agora-token";
 // Le certificat NE DOIT JAMAIS être ici : il vit uniquement côté serveur
 // (Supabase Edge Function), voir supabase/functions/agora-token/index.ts
 const AGORA_UID_MAP = { ida: 1, aidara: 2 };
@@ -14258,7 +14261,7 @@ async function joinAgoraChannel(type) {
     if (agoraClient) return;
     const uid = AGORA_UID_MAP[currentUser.id];
     try {
-        const tokenResp = await fetch(`${SUPABASE_URL}/functions/v1/agora-token?channel=${encodeURIComponent(CHAT_ID)}&uid=${uid}`);
+        const tokenResp = await fetch(`${AGORA_FUNCTIONS_URL}?channel=${encodeURIComponent(CHAT_ID)}&uid=${uid}`);
         if (!tokenResp.ok) throw new Error('token http ' + tokenResp.status);
         const tokenData = await tokenResp.json();
         if (!tokenData.token) throw new Error('token manquant dans la réponse');
