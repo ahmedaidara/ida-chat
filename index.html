@@ -485,6 +485,9 @@
         .me-crop-handle.sw { bottom: -10px; left: -10px; cursor: nesw-resize; }
         .me-crop-handle.se { bottom: -10px; right: -10px; cursor: nwse-resize; }
 
+        .me-crop-box.locked { pointer-events: none; border-style: dashed; border-color: #a800ff; }
+        .me-crop-box.locked .me-crop-handle { display: none; }
+
         .me-uploading-overlay {
             position: absolute; inset: 0; background: rgba(0,0,0,0.6);
             display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px; z-index: 5;
@@ -2642,7 +2645,7 @@ input, textarea {
 
             <div class="me-toolbar" id="me-toolbar">
                 <button class="me-tool-btn" data-tool="rotate" title="Pivoter" onclick="meRotate()"><i class="fa-solid fa-rotate-right"></i></button>
-                <button class="me-tool-btn" data-tool="crop" title="Rogner" onclick="meToggleCrop()"><i class="fa-solid fa-crop-simple"></i></button>
+                <button class="me-tool-btn" data-tool="crop" title="Rogner" onclick="meToggleCrop()" style="position:relative;"><i class="fa-solid fa-crop-simple"></i><span id="me-crop-badge" style="display:none; position:absolute; top:2px; right:2px; width:9px; height:9px; border-radius:50%; background:#00e676; border:2px solid #0b0b0d;"></span></button>
                 <button class="me-tool-btn" data-tool="draw" title="Dessiner" onclick="meToggleDraw()"><i class="fa-solid fa-pen"></i></button>
                 <div class="me-color-swatches" id="me-color-swatches">
                     <span class="me-color-dot selected" data-color="#ff1744" style="background:#ff1744;" onclick="meSetColor('#ff1744')"></span>
@@ -2942,6 +2945,7 @@ let meCropDrag = null;
 let meVideoDuration = 0;
 let meTrimStart = 0;
 let meTrimEnd = 0;
+let meVideoCropRect = null; // {x,y,w,h} en pixels vidéo réels, appliqué via ffmpeg à l'envoi
 
 const MEDIA_EDITOR_MAX_DIM = 1600; // redimensionnement pour un envoi rapide
 
@@ -2964,7 +2968,15 @@ function ouvrirEditeurMedia(file) {
     const isVideo = file.type.startsWith('video/');
     meType = isVideo ? 'video' : 'image';
     document.getElementById('me-header-title').textContent = isVideo ? 'Vidéo' : 'Photo';
-    toolbar.style.display = isVideo ? 'none' : 'flex';
+    toolbar.style.display = 'flex';
+    // Rotation et dessin ne sont disponibles que pour les photos (nécessitent un re-rendu
+    // pixel par pixel non applicable simplement à une vidéo). Le rognage, lui, fonctionne
+    // aussi pour la vidéo (appliqué via ffmpeg au moment de l'envoi).
+    document.querySelector('.me-tool-btn[data-tool="rotate"]').style.display = isVideo ? 'none' : 'flex';
+    document.querySelector('.me-tool-btn[data-tool="draw"]').style.display = isVideo ? 'none' : 'flex';
+    meVideoCropRect = null;
+    document.getElementById('me-crop-box').classList.remove('locked');
+    document.getElementById('me-crop-badge').style.display = 'none';
 
     if (isVideo) {
         meVideoFile = file;
@@ -3009,6 +3021,9 @@ function fermerEditeurMedia() {
     meVideoDuration = 0;
     meTrimStart = 0;
     meTrimEnd = 0;
+    meVideoCropRect = null;
+    document.getElementById('me-crop-box').classList.remove('locked');
+    document.getElementById('me-crop-badge').style.display = 'none';
     document.getElementById('me-video-trim').style.display = 'none';
     meCropMode = false;
     meDrawMode = false;
@@ -3110,7 +3125,10 @@ async function meGetFFmpeg() {
             // Core mono-thread : fonctionne sans les en-têtes serveur COOP/COEP
             // (nécessaires uniquement pour la variante multi-thread), donc compatible
             // avec un simple fichier HTML statique, y compris sur Safari/iOS.
-            corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js'
+            corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+            // Requis par la variante "core-st" : sans cette option le WASM plante avec
+            // "Cannot call unknown function proxy_main" (testé et confirmé).
+            mainName: 'main'
         });
     }
     if (!meFFmpegInstance.isLoaded()) {
@@ -3119,15 +3137,29 @@ async function meGetFFmpeg() {
     return meFFmpegInstance;
 }
 
-async function meTrimVideo(file, start, end) {
+async function meTrimVideo(file, start, end, cropRect) {
     const ffmpeg = await meGetFFmpeg();
     const { fetchFile } = window.FFmpeg;
     const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
     const inputName = 'entree.' + ext;
     ffmpeg.FS('writeFile', inputName, await fetchFile(file));
     const duration = Math.max(0.1, end - start).toFixed(2);
-    // -ss avant -i = découpage rapide par mots-clés, -c copy = pas de ré-encodage (rapide)
-    await ffmpeg.run('-ss', String(start), '-i', inputName, '-t', duration, '-c', 'copy', '-avoid_negative_ts', 'make_zero', 'sortie.mp4');
+
+    const args = ['-ss', String(start), '-i', inputName, '-t', duration];
+    if (cropRect && cropRect.w > 0 && cropRect.h > 0) {
+        // Un recadrage nécessite un ré-encodage (impossible de "copier" un flux recadré)
+        args.push(
+            '-vf', `crop=${cropRect.w}:${cropRect.h}:${cropRect.x}:${cropRect.y}`,
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23',
+            '-c:a', 'aac'
+        );
+    } else {
+        // Pas de recadrage : copie directe des flux, beaucoup plus rapide
+        args.push('-c', 'copy');
+    }
+    args.push('-avoid_negative_ts', 'make_zero', 'sortie.mp4');
+
+    await ffmpeg.run(...args);
     const data = ffmpeg.FS('readFile', 'sortie.mp4');
     try { ffmpeg.FS('unlink', inputName); } catch (e) {}
     try { ffmpeg.FS('unlink', 'sortie.mp4'); } catch (e) {}
@@ -3160,6 +3192,10 @@ function meRotate() {
 }
 
 // ----- RECADRAGE (rognage) -----
+function meGetActiveMediaEl() {
+    return meType === 'video' ? document.getElementById('me-video-preview') : document.getElementById('me-canvas');
+}
+
 function meToggleCrop() {
     if (meCropMode) { meFinCrop(false); return; }
     meDrawMode = false;
@@ -3167,27 +3203,40 @@ function meToggleCrop() {
     setMeToolActive('crop');
     meCropMode = true;
 
-    const canvas = document.getElementById('me-canvas');
+    const mediaEl = meGetActiveMediaEl();
     const stage = document.getElementById('me-stage').getBoundingClientRect();
-    const rect = canvas.getBoundingClientRect();
+    const rect = mediaEl.getBoundingClientRect();
     const box = document.getElementById('me-crop-box');
-    const margin = 0.1;
+    box.classList.remove('locked');
 
-    const canvasLeft = rect.left - stage.left;
-    const canvasTop = rect.top - stage.top;
+    const mediaLeft = rect.left - stage.left;
+    const mediaTop = rect.top - stage.top;
 
-    box.dataset.canvasLeft = canvasLeft;
-    box.dataset.canvasTop = canvasTop;
+    box.dataset.canvasLeft = mediaLeft;
+    box.dataset.canvasTop = mediaTop;
     box.dataset.canvasW = rect.width;
     box.dataset.canvasH = rect.height;
 
-    box.style.left = (canvasLeft + rect.width * margin) + 'px';
-    box.style.top = (canvasTop + rect.height * margin) + 'px';
-    box.style.width = (rect.width * (1 - 2 * margin)) + 'px';
-    box.style.height = (rect.height * (1 - 2 * margin)) + 'px';
+    if (meType === 'video' && meVideoCropRect && meVideoFile) {
+        // Ré-ouvrir l'édition avec la sélection précédente (en pixels vidéo -> écran)
+        const video = mediaEl;
+        const scaleX = rect.width / (video.videoWidth || rect.width);
+        const scaleY = rect.height / (video.videoHeight || rect.height);
+        box.style.left = (mediaLeft + meVideoCropRect.x * scaleX) + 'px';
+        box.style.top = (mediaTop + meVideoCropRect.y * scaleY) + 'px';
+        box.style.width = (meVideoCropRect.w * scaleX) + 'px';
+        box.style.height = (meVideoCropRect.h * scaleY) + 'px';
+    } else {
+        const margin = 0.1;
+        box.style.left = (mediaLeft + rect.width * margin) + 'px';
+        box.style.top = (mediaTop + rect.height * margin) + 'px';
+        box.style.width = (rect.width * (1 - 2 * margin)) + 'px';
+        box.style.height = (rect.height * (1 - 2 * margin)) + 'px';
+    }
     box.style.display = 'block';
 
     document.getElementById('me-toolbar').style.display = 'none';
+    document.getElementById('me-video-trim').style.display = 'none';
     document.getElementById('me-crop-actions').style.display = 'flex';
 }
 
@@ -3263,7 +3312,29 @@ function meCropPointerUp() {
 
 function meFinCrop(appliquer) {
     const box = document.getElementById('me-crop-box');
-    if (appliquer) {
+    if (appliquer && meType === 'video') {
+        const video = document.getElementById('me-video-preview');
+        const rect = video.getBoundingClientRect();
+        const scaleX = (video.videoWidth || rect.width) / rect.width;
+        const scaleY = (video.videoHeight || rect.height) / rect.height;
+        const boxLeft = parseFloat(box.style.left);
+        const boxTop = parseFloat(box.style.top);
+        const boxW = parseFloat(box.style.width);
+        const boxH = parseFloat(box.style.height);
+        const mediaLeft = parseFloat(box.dataset.canvasLeft);
+        const mediaTop = parseFloat(box.dataset.canvasTop);
+
+        meVideoCropRect = {
+            x: Math.max(0, Math.round((boxLeft - mediaLeft) * scaleX)),
+            y: Math.max(0, Math.round((boxTop - mediaTop) * scaleY)),
+            w: Math.round(boxW * scaleX),
+            h: Math.round(boxH * scaleY)
+        };
+        // La zone reste affichée (verrouillée) pour montrer ce qui sera envoyé
+        box.classList.add('locked');
+        document.getElementById('me-crop-badge').style.display = 'block';
+        showTempNotification("✅ Zone de recadrage vidéo définie");
+    } else if (appliquer) {
         const canvas = document.getElementById('me-canvas');
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
@@ -3288,12 +3359,24 @@ function meFinCrop(appliquer) {
         canvas.width = tmp.width;
         canvas.height = tmp.height;
         canvas.getContext('2d').drawImage(tmp, 0, 0);
+    } else {
+        // Annuler : on efface toute sélection vidéo en attente
+        if (meType === 'video') {
+            meVideoCropRect = null;
+            document.getElementById('me-crop-badge').style.display = 'none';
+        }
     }
-    box.style.display = 'none';
+
+    if (!(appliquer && meType === 'video')) {
+        box.style.display = 'none';
+    }
     meCropMode = false;
     setMeToolActive(null);
     document.getElementById('me-crop-actions').style.display = 'none';
     document.getElementById('me-toolbar').style.display = 'flex';
+    if (meType === 'video' && meVideoDuration > 2) {
+        document.getElementById('me-video-trim').style.display = 'block';
+    }
 }
 
 // ----- DESSIN -----
@@ -3374,13 +3457,14 @@ async function envoyerMediaEdite() {
         } else if (meVideoFile) {
             let fichierAEnvoyer = meVideoFile;
             const estDecoupee = meVideoDuration > 0 && (meTrimStart > 0.05 || meTrimEnd < meVideoDuration - 0.05);
-            if (estDecoupee) {
-                uploadingText.textContent = "Découpage de la vidéo...";
+            const estRognee = !!meVideoCropRect;
+            if (estDecoupee || estRognee) {
+                uploadingText.textContent = estRognee ? "Recadrage de la vidéo..." : "Découpage de la vidéo...";
                 try {
-                    fichierAEnvoyer = await meTrimVideo(meVideoFile, meTrimStart, meTrimEnd);
+                    fichierAEnvoyer = await meTrimVideo(meVideoFile, meTrimStart, meTrimEnd, meVideoCropRect);
                 } catch (err) {
-                    console.error("Erreur découpage vidéo:", err);
-                    showTempNotification("⚠️ Découpage indisponible, envoi de la vidéo complète");
+                    console.error("Erreur traitement vidéo:", err);
+                    showTempNotification("⚠️ Montage indisponible, envoi de la vidéo complète");
                     fichierAEnvoyer = meVideoFile;
                 }
                 uploadingText.textContent = "Envoi de la vidéo...";
@@ -9404,102 +9488,96 @@ document.addEventListener('DOMContentLoaded', function() {
     const triggerBtn = document.getElementById('gif-trigger-btn');
     
     // ========== COLLECTION DE GIFS ==========
-// ========== COLLECTION DE GIFS - VERSION CORRIGÉE (liens Giphy réels et vérifiés) ==========
-const gifsPopulaires = [
-    // HUMOUR / DRÔLE
-    "https://media.giphy.com/media/Q7FIgIOT6isTeuiWdR/funny-comedy-laugh.gif",
-    "https://media.giphy.com/media/9xecCDHO26Ect5nvAE/funny-reaction-laugh.gif",
-    "https://media.giphy.com/media/0x4xNUd8VoG9lNlL4T/funny-cartoon-laugh.gif",
-    "https://media.giphy.com/media/3ohzdLVanDdjkjcNry/funny-weird-laugh.gif",
-    "https://media.giphy.com/media/ihqHerIcYdBgWAUmVv/funny-lmao-laughing.gif",
-    "https://media.giphy.com/media/BYxoRyP5TLzuo/funny-laughing-tumblr.gif",
-    "https://media.giphy.com/media/3ohryou6kbKdobhYM8/funny-laughing-emoji.gif",
-    "https://media.giphy.com/media/hugMhXC5WM5V7dcqV4/funny-meme-laughing.gif",
-    "https://media.giphy.com/media/4IwQA7yZ3Z1q8/funny-laughing-hilarious.gif",
-
-    // AMOUR ET COUPLE
-    "https://media.giphy.com/media/l0K4gzSzP3ZNtQ0da/love-couple-hug.gif",
-    "https://media.giphy.com/media/xTiU1lJDfozarWRC3m/love-couple-hug-cute.gif",
-    "https://media.giphy.com/media/VHyMvWhvKvJNo2pVQ6/love-couple-in-love.gif",
-    "https://media.giphy.com/media/5KhEmmgOlk43ZJgR32/love-couple-i-love-you.gif",
-    "https://media.giphy.com/media/3oEjHNZBfOu56hvmcE/love-couple-hug-sweet.gif",
-    "https://media.giphy.com/media/VJrQgIxar9GwMDztbg/love-couple-cuddle.gif",
-    "https://media.giphy.com/media/sR4zahPAdQnFys0fpK/love-couple-reunited.gif",
-    "https://media.giphy.com/media/t1lU5SufRN3TFGcWV2/love-couple-romance.gif",
-    "https://media.giphy.com/media/fYMPdH9xcI2rxT74Mx/love-couple-i-love-you-hug.gif",
-
-    // BISOUS / COEUR
-    "https://media.giphy.com/media/vX1C2TejT6OCOz2kLd/love-heart-kiss.gif",
-    "https://media.giphy.com/media/BZkqDLLg5hmgFu5xtL/love-kiss-heart.gif",
-    "https://media.giphy.com/media/gKS0sFkDnM8OQ/love-kiss-heart-blow.gif",
-    "https://media.giphy.com/media/WrNDWmU4s3lFtyGJE8/love-kiss-couple-romance.gif",
-    "https://media.giphy.com/media/QjLwTezkLatUs/love-kiss-couple.gif",
-    "https://media.giphy.com/media/EL9bOEfA23RCqgkyCT/love-kiss-i-love-you.gif",
-    "https://media.giphy.com/media/aO29Cs03kQSOVMbEGJ/love-kiss-couple-in-love.gif",
-    "https://media.giphy.com/media/IP7hA34c5LxI5xQaLg/love-kiss-couple-relationship.gif",
-
-    // ANIMAUX MIGNONS (chats)
-    "https://media.giphy.com/media/3o6gbdrBDnixuP7GRa/cute-cat-kitten.gif",
-    "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/cute-cat-adorable.gif",
-    "https://media.giphy.com/media/2ve5m7UbRoNiM/cute-cat-adorable-2.gif",
-    "https://media.giphy.com/media/agCV65pUDkJnG/cute-cat-kittens.gif",
-    "https://media.giphy.com/media/cm5rMOvv7ZpHYlk1Wz/cute-kitten-licking.gif",
-    "https://media.giphy.com/media/rwluCdU8lDUt0oz7HG/cute-kitten-rawr.gif",
-    "https://media.giphy.com/media/YrIC2P56osjJ0Zld6m/cute-kitten-fluffy.gif",
-    "https://media.giphy.com/media/1BgrLbKH5qXnaAyApR/cute-cat-dodo.gif",
-    "https://media.giphy.com/media/3ohzdDbAnXMYOR3lIc/cute-cat-love.gif",
-
-    // ANIMAUX MIGNONS (chiens)
-    "https://media.giphy.com/media/3oz8xXS6gDYSNbqme4/cute-dog-puppy.gif",
-    "https://media.giphy.com/media/l3vR6Pi2E1ZyOl9AI/cute-dog-puppy-2.gif",
-    "https://media.giphy.com/media/IgKeRXLiKepHi8aDa3/cute-dog-puppy-happy.gif",
-    "https://media.giphy.com/media/l41m47JypM5GUYSY0/cute-dog-puppy-excited.gif",
-    "https://media.giphy.com/media/xT9IgFeg13zphZgLKM/cute-dog-puppy-sleepy.gif",
-
-    // DANSE ET CÉLÉBRATION
-    "https://media.giphy.com/media/9ieKwMkvD5O3yeFBeA/dance-celebration-happy.gif",
-    "https://media.giphy.com/media/3o7btYKPbnnjEMAGpG/dance-happy-celebration.gif",
-    "https://media.giphy.com/media/fsu0eIs7ta9v9JgarM/dance-celebration-wedding.gif",
-    "https://media.giphy.com/media/3oEjHR3lBk4LLu0xjy/dance-happy-party.gif",
-    "https://media.giphy.com/media/12oFkAoWAajS8M/dance-happy-celebration-2.gif",
-    "https://media.giphy.com/media/9jQs5J5qcxX9CLZ6Z0/dance-party-celebration.gif",
-    "https://media.giphy.com/media/l4FGyw3SIUe0R3jJm/dance-celebration-salsa.gif",
-    "https://media.giphy.com/media/WPpprZZ1m43WXdJbvA/dance-happy-wow.gif",
-    "https://media.giphy.com/media/H2ZWH0TJhqouVBIDas/dance-happy-celebration-3.gif",
-
-    // RÉACTIONS (wow / omg / choc)
-    "https://media.giphy.com/media/a5ZUA25bmUMCnSNtyA/wow-omg-shocked.gif",
-    "https://media.giphy.com/media/xT77XWum9yH7zNkFW0/wow-nice-well-done.gif",
-    "https://media.giphy.com/media/vtt195d94Awb5QNj5L/wow-omg-gasp.gif",
-    "https://media.giphy.com/media/1nuZY7ER8Rdp9CJsVh/wow-shocked-surprised.gif",
-    "https://media.giphy.com/media/7DAJFFmuWuSrhuC7m3/wow-shocked-amazed.gif",
-    "https://media.giphy.com/media/3oEduY2IBr0s8AdrIk/wow-omg-shocked-whoa.gif",
-    "https://media.giphy.com/media/viOA8DK2EyqHZ1ERIY/wow-omg-shocked-2.gif",
-    "https://media.giphy.com/media/73KNBSoHoM05OWpiEZ/wow-shocked-meme.gif",
-    "https://media.giphy.com/media/xUOwFVswT34mzHmaUE/wow-shocked-3.gif",
-
-    // BRAVO / POUCE EN L'AIR
-    "https://media.giphy.com/media/uIU1lxaUL5d7EvuK1e/thumbs-up-great-job.gif",
-    "https://media.giphy.com/media/loXZQA8hxGh3fSxgFi/thumbs-up-good-job.gif",
-    "https://media.giphy.com/media/kvCkexmR21TvVIqrt4/thumbs-up-great-job-2.gif",
-    "https://media.giphy.com/media/8bE0EERrvXkq5S9BCa/thumbs-up-good-nice.gif",
-    "https://media.giphy.com/media/xUA7b0UcdO2c8BGAec/thumbs-up-good-job-2.gif",
-    "https://media.giphy.com/media/3o7btUWSW0LtDPWjyU/thumbs-up-good-job-3.gif",
-    "https://media.giphy.com/media/TAaxb1sSPunCCjZkAS/thumbs-up-you-got-it.gif",
-    "https://media.giphy.com/media/3o7522FYHHIX1Kcxyw/thumbs-up-congrats.gif",
-
-    // COMIQUE / FACEPALM
-    "https://media.giphy.com/media/HJZtqS4vS0YTEu4tR5/comique-funny-facepalm.gif",
-    "https://media.giphy.com/media/3oKIPx6wW24ZAE55QY/comique-comedy-facepalm.gif",
-    "https://media.giphy.com/media/xUA7aOoyqYvN6Q1R84/comique-funny-ohno.gif",
-    "https://media.giphy.com/media/YmszCwM1FV7zCI8sgL/comique-facepalm-annoyed.gif",
-    "https://media.giphy.com/media/mhIk0lHu6jJ3jUuZIH/comique-facepalm-embarrassed.gif",
-    "https://media.giphy.com/media/l0MYCWfIFOMJGjM7C/comique-facepalm.gif",
-    "https://media.giphy.com/media/whQCarjn5Jv1Ktq2HH/comique-facepalm-office.gif",
-    "https://media.giphy.com/media/d5oYULdGLsqP5KFkk4/comique-laugh-facepalm.gif",
-    "https://media.giphy.com/media/xT1R9Q9quvWxyeyTXa/comique-omg-facepalm.gif",
-    "https://media.giphy.com/media/3o7TKMQ1rDsM0HEWje/comique-facepalm-triple.gif"
-];
+    // ========== COLLECTION DE GIFS - VERSION CORRIGÉE (i.giphy.com = fichier brut, media.giphy.com sert une page HTML et casse les <img>) ==========
+    // Chaque GIF est un objet {url, tags} : tags sert à la recherche (le nom de fichier doit
+    // rester exactement "giphy.gif", Giphy n'accepte pas de nom de fichier arbitraire).
+    const gifsPopulaires = [
+        // HUMOUR / DRÔLE
+        { url: "https://i.giphy.com/media/Q7FIgIOT6isTeuiWdR/giphy.gif", tags: "humour drole rire comedy laugh" },
+        { url: "https://i.giphy.com/media/9xecCDHO26Ect5nvAE/giphy.gif", tags: "humour drole rire funny reaction" },
+        { url: "https://i.giphy.com/media/0x4xNUd8VoG9lNlL4T/giphy.gif", tags: "humour drole rire cartoon laugh" },
+        { url: "https://i.giphy.com/media/3ohzdLVanDdjkjcNry/giphy.gif", tags: "humour drole rire weird laugh" },
+        { url: "https://i.giphy.com/media/ihqHerIcYdBgWAUmVv/giphy.gif", tags: "humour drole rire lmao laughing" },
+        { url: "https://i.giphy.com/media/BYxoRyP5TLzuo/giphy.gif", tags: "humour drole rire laughing tumblr" },
+        { url: "https://i.giphy.com/media/3ohryou6kbKdobhYM8/giphy.gif", tags: "humour drole rire laughing emoji" },
+        { url: "https://i.giphy.com/media/hugMhXC5WM5V7dcqV4/giphy.gif", tags: "humour drole rire meme laughing" },
+        { url: "https://i.giphy.com/media/4IwQA7yZ3Z1q8/giphy.gif", tags: "humour drole rire laughing hilarious" },
+        // AMOUR ET COUPLE
+        { url: "https://i.giphy.com/media/l0K4gzSzP3ZNtQ0da/giphy.gif", tags: "amour couple love hug" },
+        { url: "https://i.giphy.com/media/xTiU1lJDfozarWRC3m/giphy.gif", tags: "amour couple love hug cute" },
+        { url: "https://i.giphy.com/media/VHyMvWhvKvJNo2pVQ6/giphy.gif", tags: "amour couple love in love" },
+        { url: "https://i.giphy.com/media/5KhEmmgOlk43ZJgR32/giphy.gif", tags: "amour couple love i love you" },
+        { url: "https://i.giphy.com/media/3oEjHNZBfOu56hvmcE/giphy.gif", tags: "amour couple love hug sweet" },
+        { url: "https://i.giphy.com/media/VJrQgIxar9GwMDztbg/giphy.gif", tags: "amour couple love cuddle" },
+        { url: "https://i.giphy.com/media/sR4zahPAdQnFys0fpK/giphy.gif", tags: "amour couple love reunited" },
+        { url: "https://i.giphy.com/media/t1lU5SufRN3TFGcWV2/giphy.gif", tags: "amour couple love romance" },
+        { url: "https://i.giphy.com/media/fYMPdH9xcI2rxT74Mx/giphy.gif", tags: "amour couple love i love you hug" },
+        // BISOUS / COEUR
+        { url: "https://i.giphy.com/media/vX1C2TejT6OCOz2kLd/giphy.gif", tags: "bisous coeur love heart kiss" },
+        { url: "https://i.giphy.com/media/BZkqDLLg5hmgFu5xtL/giphy.gif", tags: "bisous coeur love kiss heart" },
+        { url: "https://i.giphy.com/media/gKS0sFkDnM8OQ/giphy.gif", tags: "bisous coeur love kiss blow" },
+        { url: "https://i.giphy.com/media/WrNDWmU4s3lFtyGJE8/giphy.gif", tags: "bisous coeur love kiss romance" },
+        { url: "https://i.giphy.com/media/QjLwTezkLatUs/giphy.gif", tags: "bisous coeur love kiss couple" },
+        { url: "https://i.giphy.com/media/EL9bOEfA23RCqgkyCT/giphy.gif", tags: "bisous coeur love kiss i love you" },
+        { url: "https://i.giphy.com/media/aO29Cs03kQSOVMbEGJ/giphy.gif", tags: "bisous coeur love kiss in love" },
+        { url: "https://i.giphy.com/media/IP7hA34c5LxI5xQaLg/giphy.gif", tags: "bisous coeur love kiss relationship" },
+        // ANIMAUX MIGNONS (chats)
+        { url: "https://i.giphy.com/media/3o6gbdrBDnixuP7GRa/giphy.gif", tags: "animaux mignon chat cat kitten cute" },
+        { url: "https://i.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif", tags: "animaux mignon chat cat adorable" },
+        { url: "https://i.giphy.com/media/2ve5m7UbRoNiM/giphy.gif", tags: "animaux mignon chat cat adorable" },
+        { url: "https://i.giphy.com/media/agCV65pUDkJnG/giphy.gif", tags: "animaux mignon chat cat kittens" },
+        { url: "https://i.giphy.com/media/cm5rMOvv7ZpHYlk1Wz/giphy.gif", tags: "animaux mignon chat kitten licking" },
+        { url: "https://i.giphy.com/media/rwluCdU8lDUt0oz7HG/giphy.gif", tags: "animaux mignon chat kitten rawr" },
+        { url: "https://i.giphy.com/media/YrIC2P56osjJ0Zld6m/giphy.gif", tags: "animaux mignon chat kitten fluffy" },
+        { url: "https://i.giphy.com/media/1BgrLbKH5qXnaAyApR/giphy.gif", tags: "animaux mignon chat cat dodo" },
+        { url: "https://i.giphy.com/media/3ohzdDbAnXMYOR3lIc/giphy.gif", tags: "animaux mignon chat cat love" },
+        // ANIMAUX MIGNONS (chiens)
+        { url: "https://i.giphy.com/media/3oz8xXS6gDYSNbqme4/giphy.gif", tags: "animaux mignon chien dog puppy cute" },
+        { url: "https://i.giphy.com/media/l3vR6Pi2E1ZyOl9AI/giphy.gif", tags: "animaux mignon chien dog puppy adorable" },
+        { url: "https://i.giphy.com/media/IgKeRXLiKepHi8aDa3/giphy.gif", tags: "animaux mignon chien dog puppy happy" },
+        { url: "https://i.giphy.com/media/l41m47JypM5GUYSY0/giphy.gif", tags: "animaux mignon chien dog puppy excited" },
+        { url: "https://i.giphy.com/media/xT9IgFeg13zphZgLKM/giphy.gif", tags: "animaux mignon chien dog puppy sleepy" },
+        // DANSE ET CÉLÉBRATION
+        { url: "https://i.giphy.com/media/9ieKwMkvD5O3yeFBeA/giphy.gif", tags: "danse fete dance celebration happy" },
+        { url: "https://i.giphy.com/media/3o7btYKPbnnjEMAGpG/giphy.gif", tags: "danse fete dance happy celebration" },
+        { url: "https://i.giphy.com/media/fsu0eIs7ta9v9JgarM/giphy.gif", tags: "danse fete dance celebration wedding" },
+        { url: "https://i.giphy.com/media/3oEjHR3lBk4LLu0xjy/giphy.gif", tags: "danse fete dance happy party" },
+        { url: "https://i.giphy.com/media/12oFkAoWAajS8M/giphy.gif", tags: "danse fete dance happy celebration" },
+        { url: "https://i.giphy.com/media/9jQs5J5qcxX9CLZ6Z0/giphy.gif", tags: "danse fete dance party celebration" },
+        { url: "https://i.giphy.com/media/l4FGyw3SIUe0R3jJm/giphy.gif", tags: "danse fete dance celebration salsa" },
+        { url: "https://i.giphy.com/media/WPpprZZ1m43WXdJbvA/giphy.gif", tags: "danse fete dance happy wow" },
+        { url: "https://i.giphy.com/media/H2ZWH0TJhqouVBIDas/giphy.gif", tags: "danse fete dance happy celebration" },
+        // RÉACTIONS (wow / omg / choc)
+        { url: "https://i.giphy.com/media/a5ZUA25bmUMCnSNtyA/giphy.gif", tags: "reaction wow omg shocked" },
+        { url: "https://i.giphy.com/media/xT77XWum9yH7zNkFW0/giphy.gif", tags: "reaction wow nice well done" },
+        { url: "https://i.giphy.com/media/vtt195d94Awb5QNj5L/giphy.gif", tags: "reaction wow omg gasp" },
+        { url: "https://i.giphy.com/media/1nuZY7ER8Rdp9CJsVh/giphy.gif", tags: "reaction wow shocked surprised" },
+        { url: "https://i.giphy.com/media/7DAJFFmuWuSrhuC7m3/giphy.gif", tags: "reaction wow shocked amazed" },
+        { url: "https://i.giphy.com/media/3oEduY2IBr0s8AdrIk/giphy.gif", tags: "reaction wow omg shocked whoa" },
+        { url: "https://i.giphy.com/media/viOA8DK2EyqHZ1ERIY/giphy.gif", tags: "reaction wow omg shocked" },
+        { url: "https://i.giphy.com/media/73KNBSoHoM05OWpiEZ/giphy.gif", tags: "reaction wow shocked meme" },
+        { url: "https://i.giphy.com/media/xUOwFVswT34mzHmaUE/giphy.gif", tags: "reaction wow shocked" },
+        // BRAVO / POUCE EN L'AIR
+        { url: "https://i.giphy.com/media/uIU1lxaUL5d7EvuK1e/giphy.gif", tags: "bravo pouce thumbs up great job" },
+        { url: "https://i.giphy.com/media/loXZQA8hxGh3fSxgFi/giphy.gif", tags: "bravo pouce thumbs up good job" },
+        { url: "https://i.giphy.com/media/kvCkexmR21TvVIqrt4/giphy.gif", tags: "bravo pouce thumbs up great job" },
+        { url: "https://i.giphy.com/media/8bE0EERrvXkq5S9BCa/giphy.gif", tags: "bravo pouce thumbs up good nice" },
+        { url: "https://i.giphy.com/media/xUA7b0UcdO2c8BGAec/giphy.gif", tags: "bravo pouce thumbs up good job" },
+        { url: "https://i.giphy.com/media/3o7btUWSW0LtDPWjyU/giphy.gif", tags: "bravo pouce thumbs up good job" },
+        { url: "https://i.giphy.com/media/TAaxb1sSPunCCjZkAS/giphy.gif", tags: "bravo pouce thumbs up you got it" },
+        { url: "https://i.giphy.com/media/3o7522FYHHIX1Kcxyw/giphy.gif", tags: "bravo pouce thumbs up congrats" },
+        // COMIQUE / FACEPALM
+        { url: "https://i.giphy.com/media/HJZtqS4vS0YTEu4tR5/giphy.gif", tags: "comique facepalm meme funny" },
+        { url: "https://i.giphy.com/media/3oKIPx6wW24ZAE55QY/giphy.gif", tags: "comique facepalm comedy funny" },
+        { url: "https://i.giphy.com/media/xUA7aOoyqYvN6Q1R84/giphy.gif", tags: "comique facepalm funny ohno" },
+        { url: "https://i.giphy.com/media/YmszCwM1FV7zCI8sgL/giphy.gif", tags: "comique facepalm annoyed office" },
+        { url: "https://i.giphy.com/media/mhIk0lHu6jJ3jUuZIH/giphy.gif", tags: "comique facepalm embarrassed" },
+        { url: "https://i.giphy.com/media/l0MYCWfIFOMJGjM7C/giphy.gif", tags: "comique facepalm" },
+        { url: "https://i.giphy.com/media/whQCarjn5Jv1Ktq2HH/giphy.gif", tags: "comique facepalm office" },
+        { url: "https://i.giphy.com/media/d5oYULdGLsqP5KFkk4/giphy.gif", tags: "comique facepalm laugh cringe" },
+        { url: "https://i.giphy.com/media/xT1R9Q9quvWxyeyTXa/giphy.gif", tags: "comique facepalm omg" },
+        { url: "https://i.giphy.com/media/3o7TKMQ1rDsM0HEWje/giphy.gif", tags: "comique facepalm triple" },
+    ];
     
     // ========== COLLECTION DE STICKERS (FOND TRANSPARENT) ==========
     const stickersCollection = [
@@ -9580,9 +9658,9 @@ const gifsPopulaires = [
     
     function filtrerContenu(query) {
         if (currentType === "gifs") {
-            // Filtrer les GIFs par mot-clé (simple)
-            const filtres = gifsPopulaires.filter(gif => 
-                gif.toLowerCase().includes(query)
+            // Filtrer les GIFs par mot-clé (via le champ tags, pas l'URL)
+            const filtres = gifsPopulaires.filter(gif =>
+                gif.tags.toLowerCase().includes(query)
             );
             afficherGifs(filtres.length > 0 ? filtres : gifsPopulaires);
         } else {
@@ -9600,12 +9678,15 @@ const gifsPopulaires = [
             return;
         }
         
-        gifs.forEach(gifUrl => {
+        gifs.forEach(gif => {
+            const gifUrl = gif.url;
             const img = document.createElement('img');
             img.src = gifUrl;
-            img.style.cssText = "width: 100%; height: 90px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color);";
+            img.loading = 'lazy';
+            img.style.cssText = "width: 100%; height: 90px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color); background: var(--input-bg);";
             img.onmouseover = () => img.style.transform = "scale(1.05)";
             img.onmouseout = () => img.style.transform = "scale(1)";
+            img.onerror = () => { img.style.display = 'none'; };
             
             img.onclick = () => {
                 envoyerMedia(currentType === "gifs" ? "gif" : "sticker", gifUrl);
