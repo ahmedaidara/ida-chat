@@ -5338,7 +5338,7 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
                 return;
             }
             if (data.playedBy && data.playedBy.includes(currentUser.id)) {
-                showTempNotification("🔇 Tu as déjà écouté cet audio");
+                showTempNotification("🔇 .déjà écouté cet audio");
                 audioElement.pause();
                 return;
             }
@@ -12387,8 +12387,7 @@ function rendreCarteVueUnique(msgId, data, type) {
     `;
 }
 
-// Ouvre la photo/vidéo en vue unique. Le fichier n'est PAS supprimé de Supabase —
-// on ajoute seulement mon id à la liste "viewOnceOpenedBy" dans Firestore, ce qui fait
+ // on ajoute seulement mon id à la liste "viewOnceOpenedBy" dans Firestore, ce qui fait
 // que le prochain rendu m'affichera la carte "déjà vue" à MOI, sans affecter la vue
 // de l'autre personne (qui garde son propre droit à une vue unique).
 let vueUniqueMsgIdActif = null;
@@ -12399,8 +12398,7 @@ async function ouvrirVueUnique(msgId) {
         const data = doc.data();
         const dejaVuParMoi = Array.isArray(data.viewOnceOpenedBy) && data.viewOnceOpenedBy.includes(currentUser.id);
         if (dejaVuParMoi) {
-            showTempNotification("👁️ Tu as déjà vu ce média, il n'est plus disponible pour toi");
-            return;
+             return;
         }
 
         vueUniqueMsgIdActif = msgId;
