@@ -250,7 +250,7 @@
         .bg-thumb { flex: 1; height: 50px; border-radius: 6px; cursor: pointer; background-size: cover; border: 2px solid transparent; }
         .bg-thumb.active { border-color: #a800ff; }
 
-        .context-menu { display: none; position: absolute; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); overflow: hidden; }
+        .context-menu { display: none; position: absolute; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); overflow-y: auto; overflow-x: hidden; max-height: 75vh; }
         .context-menu#style-submenu { z-index: 1001; background: var(--panel-bg); min-width: 180px; }
         .context-item { padding: 10px 20px; cursor: pointer; font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
         .context-item:hover { background: rgba(168, 0, 255, 0.1); }
@@ -957,172 +957,7 @@
     color: var(--text-main);
 }
       
-      /* Bouton Carnet Secret */
-.secret-notebook-btn {
-    position: fixed;
-    bottom: 100px;
-    right: 15px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-image: url('TON_IMAGE_POSTIMAGE_URL');
-    background-size: cover;
-    background-position: center;
-    cursor: pointer;
-    z-index: 100;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 2px solid #a800ff;
-}
-
-.secret-notebook-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(168,0,255,0.4);
-}
-
-/* Page du Carnet Secret */
-.secret-page {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-main);
-    z-index: 20000;
-    display: none;
-    flex-direction: column;
-    animation: slideUpSecret 0.3s ease-out;
-}
-
-@keyframes slideUpSecret {
-    from { transform: translateY(100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.secret-header {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    color: white;
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    border-bottom: 2px solid #a800ff;
-}
-
-.secret-header h3 {
-    flex: 1;
-    font-size: 1.2rem;
-}
-
-.secret-header i {
-    cursor: pointer;
-    font-size: 1.3rem;
-    transition: transform 0.2s;
-}
-
-.secret-header i:hover {
-    transform: scale(1.1);
-}
-
-.secret-messages-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: var(--bg-chat);
-}
-
-.secret-message-row {
-    display: flex;
-    width: 100%;
-}
-
-.secret-message-row.sent {
-    justify-content: flex-end;
-}
-
-.secret-message-row.received {
-    justify-content: flex-start;
-}
-
-.secret-message-bubble {
-    max-width: 70%;
-    padding: 10px 16px;
-    border-radius: 18px;
-    font-size: 0.9rem;
-    position: relative;
-    word-wrap: break-word;
-}
-
-.secret-message-row.sent .secret-message-bubble {
-    background: linear-gradient(135deg, #a800ff, #ff007f);
-    color: white;
-    border-bottom-right-radius: 4px;
-}
-
-.secret-message-row.received .secret-message-bubble {
-    background: var(--bubble-received);
-    color: var(--text-main);
-    border-bottom-left-radius: 4px;
-}
-
-.secret-msg-meta {
-    font-size: 0.65rem;
-    opacity: 0.7;
-    margin-top: 5px;
-    text-align: right;
-}
-
-.secret-input-bar {
-    padding: 12px;
-    background: var(--bg-main);
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.secret-input {
-    flex: 1;
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 25px;
-    padding: 10px 15px;
-    font-size: 0.9rem;
-    color: var(--text-main);
-    outline: none;
-}
-
-.secret-send-btn {
-    background: linear-gradient(135deg, #a800ff, #ff007f);
-    border: none;
-    border-radius: 25px;
-    padding: 10px 20px;
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-    transition: transform 0.2s;
-}
-
-.secret-send-btn:hover {
-    transform: scale(1.05);
-}
-
-.secret-lock-icon {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    font-size: 0.7rem;
-    background: #ff4444;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+      /* (CSS de l'ancien Carnet Secret des paramètres supprimé, fonctionnalité retirée) */
       
       /* Nouveaux styles de bulles */
 .message-bubble.glassmorphism {
@@ -2096,10 +1931,7 @@ input, textarea {
                         <span id="other-mood-emoji" style="margin-left: 8px; font-size: 1rem; display: inline-block;">😊</span> 
                     </div>
                     <div class="h-status" id="header-status-text">
-                        En ligne
-                             <span class="battery-icon" id="battery-icon">🔋</span>
-                            <span class="battery-percent" id="battery-percent">--%</span>
-                        </span>
+                        <span style="color: var(--text-muted);">...</span>
                     </div>
                 </div>
                 <div class="mood-panel" id="mood-panel">
@@ -2390,27 +2222,6 @@ input, textarea {
             </div>
         </div>
 
-        <div class="floating-panel" id="settings-panel">
-            <div class="settings-grid">
-                <div>
-                    <h4 style="margin-bottom:8px; font-size:0.85rem;">Couleur des bulles</h4>
-                    <div class="color-pickers">
-                        <div class="color-dot active" style="background:linear-gradient(45deg, #a800ff, #0076ff);" onclick="setBubbleColor('linear-gradient(45deg, #a800ff, #0076ff)', this)"></div>
-                        <div class="color-dot" style="background:linear-gradient(45deg, #ff007f, #7300ff);" onclick="setBubbleColor('linear-gradient(45deg, #ff007f, #7300ff)', this)"></div>
-                        <div class="color-dot" style="background:linear-gradient(45deg, #00b4db, #00ffab);" onclick="setBubbleColor('linear-gradient(45deg, #00b4db, #00ffab)', this)"></div>
-                        <div class="color-dot" style="background:#333;" onclick="setBubbleColor('#333', this)"></div>
-                    </div>
-                </div>
-                <div>
-                    <h4 style="margin-bottom:8px; font-size:0.85rem;">Fond d'écran</h4>
-                    <div class="bg-pickers">
-                        <div class="bg-thumb active" style="background:#111;" onclick="setChatBg('none', this)"></div>
-                        <div class="bg-thumb" style="background-image:url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=150');" onclick="setChatBg('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=500', this)"></div>
-                        <div class="bg-thumb" style="background-image:url('https://images.unsplash.com/photo-1557683316-973673baf926?w=150');" onclick="setChatBg('https://images.unsplash.com/photo-1557683316-973673baf926?w=500', this)"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
       <div class="context-menu" id="ctx-menu">
     <div class="context-item" onclick="initiateReply()"><i class="fa-solid fa-reply"></i> Répondre</div>
@@ -2579,15 +2390,22 @@ input, textarea {
                 <div class="bg-option" style="background: linear-gradient(135deg, #ff6b6b, #feca57);" data-bg="gradient:linear-gradient(135deg, #ff6b6b, #feca57)" title="Dégradé coucher de soleil"></div>
                 <div class="bg-option" style="background: linear-gradient(135deg, #134e5e, #71b280);" data-bg="gradient:linear-gradient(135deg, #134e5e, #71b280)" title="Dégradé forêt"></div>
                 <div class="bg-option" style="background: linear-gradient(135deg, #232526, #414345);" data-bg="gradient:linear-gradient(135deg, #232526, #414345)" title="Dégradé sombre"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #ff9a9e, #fecfef, #fecfef);" data-bg="gradient:linear-gradient(135deg, #ff9a9e, #fecfef, #fecfef)" title="Rose pastel"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #43cea2, #185a9d);" data-bg="gradient:linear-gradient(135deg, #43cea2, #185a9d)" title="Océan"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #ee9ca7, #ffdde1);" data-bg="gradient:linear-gradient(135deg, #ee9ca7, #ffdde1)" title="Rose doré"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);" data-bg="gradient:linear-gradient(135deg, #0f2027, #203a43, #2c5364)" title="Minuit"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #f7971e, #ffd200);" data-bg="gradient:linear-gradient(135deg, #f7971e, #ffd200)" title="Soleil"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #667eea, #764ba2);" data-bg="gradient:linear-gradient(135deg, #667eea, #764ba2)" title="Aurore"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #11998e, #38ef7d);" data-bg="gradient:linear-gradient(135deg, #11998e, #38ef7d)" title="Menthe"></div>
+                <div class="bg-option" style="background: linear-gradient(135deg, #360033, #0b8793);" data-bg="gradient:linear-gradient(135deg, #360033, #0b8793)" title="Galaxie"></div>
+                <div class="bg-option" style="background: #0b1a2b; background-image: radial-gradient(rgba(255,255,255,0.35) 1px, transparent 1.5px); background-size: 22px 22px;" data-bg="gradient:radial-gradient(rgba(255,255,255,0.35) 1px, transparent 1.5px)|#0b1a2b|22px 22px" title="Nuit étoilée (motif)"></div>
+                <div class="bg-option" style="background: #f4ede4; background-image: radial-gradient(rgba(168,0,255,0.18) 1.5px, transparent 1.5px); background-size: 20px 20px;" data-bg="gradient:radial-gradient(rgba(168,0,255,0.18) 1.5px, transparent 1.5px)|#f4ede4|20px 20px" title="Pois doux (motif)"></div>
                 <div class="bg-option bg-option-add" id="bg-option-add" title="Ajouter une image">
                     <i class="fa-solid fa-plus"></i>
                 </div>
             </div>
             <input type="file" id="bg-upload-input" accept="image/*" style="display:none;">
         </div>
-
-        <!-- Bouton Carnet Secret -->
-        <div class="secret-notebook-btn" id="secret-notebook-btn" onclick="openSecretPage()" style="background-image: url('https://i.postimg.cc/HnSc4vz4/Design-sans-titre-(3).png');"></div>
     </div>
 </div>
         <!-- Modal Photo -->
@@ -2662,27 +2480,6 @@ input, textarea {
             </div>
         </div>
 
-      <!-- Page Carnet Secret -->
-<div class="secret-page" id="secret-page">
-    <div class="secret-header">
-        <i class="fa-solid fa-arrow-left" onclick="closeSecretPage()"></i>
-        <h3><i class="fa-solid fa-lock"></i> Messages 🔒</h3>
-        <i class="fa-solid fa-trash" onclick="clearSecretChat()" style="color:#ff4444;"></i>
-    </div>
-    
-    <div class="secret-messages-area" id="secret-msg-area">
-        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
-            <i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 10px;"></i>
-            <p>Messages privés  </p>
-        </div>
-    </div>
-    
-    <div class="secret-input-bar">
-        <input type="text" class="secret-input" id="secret-input" placeholder="Message secret...">
-        <button class="secret-send-btn" onclick="sendSecretMessage()">Envoyer <i class="fa-solid fa-paper-plane"></i></button>
-    </div>
-</div>
-      
       <!-- Menu Audio avec filtres -->
 <div class="floating-panel" id="audio-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
     <h4 style="margin-bottom: 10px; font-size: 0.9rem;">🎤 Message vocal</h4>
@@ -3578,6 +3375,9 @@ async function demanderPermissionNotifications() {
         let targetUser = null;  
         let unsubscribeMessages = null;
         let unsubscribeTyping = null;
+        // Mémorise les messages déjà affichés au moins une fois, pour que l'animation
+        // d'envoi ne rejoue jamais sur les anciens messages lors d'un nouveau rendu.
+        const idsMessagesDejaAnimes = new Set();
         let typingTimeout = null;
         let selectedMessageId = null;
         let replyToId = null;
@@ -4911,29 +4711,43 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
     selectedMessageId = msgId;
     
     const menu = document.getElementById('ctx-menu');
-    
-    // Positionner le menu au centre de l'écran sur mobile
-    let topPos, leftPos;
-    
-    if (e.touches || (e.clientX === undefined && e.pageX === undefined)) {
-        // C'est un toucher mobile - centrer le menu
-        topPos = (window.innerHeight / 2) - 100;
-        leftPos = (window.innerWidth / 2) - 100;
-    } else {
-        // C'est un clic souris - positionner près du curseur
-        topPos = Math.min(e.pageY, window.innerHeight - 150);
-        leftPos = Math.min(e.pageX, window.innerWidth - 150);
-    }
-    
-    // S'assurer que le menu reste dans l'écran
-    topPos = Math.max(10, Math.min(topPos, window.innerHeight - 200));
-    leftPos = Math.max(10, Math.min(leftPos, window.innerWidth - 180));
-    
+
+    // On affiche d'abord le menu (hors-écran) pour pouvoir mesurer sa VRAIE taille :
+    // l'ancien code supposait une hauteur fixe de 200px, trop petite pour tous les
+    // éléments du menu (Répondre, Copier, Supprimer, Modifier, style de bulle,
+    // couleur, dégradé, Traduire...), ce qui le faisait déborder en bas d'écran.
     menu.style.display = 'block';
     menu.style.position = 'fixed';
+    menu.style.visibility = 'hidden';
+    menu.style.top = '0px';
+    menu.style.left = '0px';
+
+    const margin = 10;
+    const menuWidth = menu.offsetWidth || 180;
+    const menuHeight = menu.offsetHeight || 200;
+
+    let topPos, leftPos;
+
+    if (e.touches || (e.clientX === undefined && e.pageX === undefined)) {
+        // C'est un toucher mobile - centrer le menu
+        topPos = (window.innerHeight / 2) - (menuHeight / 2);
+        leftPos = (window.innerWidth / 2) - (menuWidth / 2);
+    } else {
+        // C'est un clic souris - positionner près du curseur
+        topPos = e.pageY;
+        leftPos = e.pageX;
+    }
+
+    // S'assurer que le menu reste ENTIÈREMENT visible, quelle que soit sa hauteur réelle
+    // (donc aussi bien en haut qu'en bas de l'écran, y compris quand le message cliqué
+    // est tout en bas du chat).
+    topPos = Math.max(margin, Math.min(topPos, window.innerHeight - menuHeight - margin));
+    leftPos = Math.max(margin, Math.min(leftPos, window.innerWidth - menuWidth - margin));
+
     menu.style.top = topPos + 'px';
     menu.style.left = leftPos + 'px';
     menu.style.zIndex = '9999';
+    menu.style.visibility = 'visible';
     
     // Fermer le menu si on clique ailleurs
     setTimeout(() => {
@@ -6623,6 +6437,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (theme) {
         document.documentElement.setAttribute('data-theme', theme);
     }
+    // ✅ Restaure aussi le fond d'écran choisi : avant ce correctif, il n'était appliqué
+    // que si on rouvrait la page Paramètres, jamais au chargement/rafraîchissement de l'appli.
+    const fondSauvegarde = localStorage.getItem('chat_background');
+    if (fondSauvegarde && typeof appliquerFondEcran === 'function') {
+        appliquerFondEcran(fondSauvegarde);
+    }
 }); 
         function setBubbleColor(color, dot) {
             document.documentElement.style.setProperty('--bubble-sent', color);
@@ -6630,11 +6450,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
             dot.classList.add('active');
         }
-        function setChatBg(url, thumb) {
-            document.getElementById('msg-area').style.backgroundImage = url === 'none' ? 'none' : `url('${url}')`;
-            document.querySelectorAll('.bg-thumb').forEach(t => t.classList.remove('active'));
-            thumb.classList.add('active');
-        }
+        // (Ancienne fonction setChatBg supprimée avec le panneau settings-panel inaccessible ;
+        // le fond d'écran est désormais géré exclusivement par appliquerFondEcran/selectionnerFond.)
         
         // Initialisation des thèmes
         if(localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
@@ -6663,6 +6480,7 @@ function openSettingsPage() {
     const settingsPage = document.getElementById('settings-page');
     settingsPage.style.display = 'flex';
     updateSettingsInfo();
+    initSettingsBubbles();
 }
 
 function closeSettingsPage() {
@@ -6718,10 +6536,25 @@ function appliquerFondEcran(bg) {
     if (!msgArea) return;
     if (!bg || bg === 'none') {
         msgArea.style.backgroundImage = 'none';
+        msgArea.style.backgroundColor = '';
+        msgArea.style.backgroundSize = '';
     } else if (bg.startsWith('gradient:')) {
-        msgArea.style.backgroundImage = bg.slice('gradient:'.length);
+        const valeur = bg.slice('gradient:'.length);
+        if (valeur.includes('|')) {
+            // Fond à motif : "image-de-fond|couleur-de-fond|taille-du-motif"
+            const [image, couleur, taille] = valeur.split('|');
+            msgArea.style.backgroundImage = image;
+            msgArea.style.backgroundColor = couleur || '';
+            msgArea.style.backgroundSize = taille || '';
+        } else {
+            msgArea.style.backgroundImage = valeur;
+            msgArea.style.backgroundColor = '';
+            msgArea.style.backgroundSize = 'cover';
+        }
     } else {
         msgArea.style.backgroundImage = `url('${bg}')`;
+        msgArea.style.backgroundColor = '';
+        msgArea.style.backgroundSize = 'cover';
     }
     localStorage.setItem('chat_background', bg || 'none');
 }
@@ -6743,6 +6576,7 @@ function selectionnerFond(optionEl) {
 function creerVignetteFondPerso(dataUrl) {
     const opt = document.createElement('div');
     opt.className = 'bg-option';
+    opt.setAttribute('data-custom', 'true');
     opt.style.backgroundImage = `url('${dataUrl}')`;
     opt.setAttribute('data-bg', dataUrl);
     opt.title = 'Ton image';
@@ -6796,30 +6630,39 @@ function redimensionnerImage(file, maxLargeur, callback) {
 }
 
 function initBgOptions() {
-    // Vignettes prédéfinies (couleurs, dégradés, photos)
+    // Vignettes prédéfinies (couleurs, dégradés, photos) : on n'attache l'écouteur
+    // qu'une seule fois par vignette, même si les paramètres sont réouverts plusieurs fois.
     document.querySelectorAll('.bg-option[data-bg]').forEach(opt => {
+        if (opt.dataset.bound === 'true') return;
+        opt.dataset.bound = 'true';
         opt.addEventListener('click', () => selectionnerFond(opt));
     });
 
-    // Charge les fonds personnalisés déjà ajoutés précédemment
+    // Retirer d'éventuelles vignettes personnalisées déjà insérées (cas d'une réouverture
+    // des paramètres) avant de les recharger depuis le localStorage, pour éviter les doublons.
     const bgOptionsContainer = document.getElementById('bg-options');
     const addTile = document.getElementById('bg-option-add');
+    bgOptionsContainer.querySelectorAll('.bg-option[data-custom="true"]').forEach(el => el.remove());
+
+    // Charge les fonds personnalisés déjà ajoutés précédemment
     const fondsPersos = JSON.parse(localStorage.getItem('custom_backgrounds') || '[]');
     fondsPersos.forEach(dataUrl => {
         const vignette = creerVignetteFondPerso(dataUrl);
         bgOptionsContainer.insertBefore(vignette, addTile);
     });
 
-    // Tuile "+" : ouvre le sélecteur de fichier
-    if (addTile) {
+    // Tuile "+" : ouvre le sélecteur de fichier (écouteur attaché une seule fois)
+    if (addTile && addTile.dataset.bound !== 'true') {
+        addTile.dataset.bound = 'true';
         addTile.addEventListener('click', () => {
             document.getElementById('bg-upload-input').click();
         });
     }
 
-    // Gestion de l'upload d'une image personnalisée
+    // Gestion de l'upload d'une image personnalisée (écouteur attaché une seule fois)
     const uploadInput = document.getElementById('bg-upload-input');
-    if (uploadInput) {
+    if (uploadInput && uploadInput.dataset.bound !== 'true') {
+        uploadInput.dataset.bound = 'true';
         uploadInput.addEventListener('change', function() {
             const file = this.files && this.files[0];
             if (!file) return;
@@ -6834,8 +6677,10 @@ function initBgOptions() {
                 localStorage.setItem('custom_backgrounds', JSON.stringify(fonds));
 
                 // Ajouter la vignette juste avant le bouton "+"
+                const container = document.getElementById('bg-options');
+                const tile = document.getElementById('bg-option-add');
                 const vignette = creerVignetteFondPerso(dataUrl);
-                bgOptionsContainer.insertBefore(vignette, addTile);
+                container.insertBefore(vignette, tile);
 
                 // Appliquer immédiatement comme fond d'écran
                 appliquerFondEcran(dataUrl);
@@ -6877,129 +6722,10 @@ async function updateUserProfile(birthdate, email, location) {
 let secretMessages = [];
 let currentSecretUser = null;
 
-// Code secret à taper (tu peux le changer)
-// ========== CARNET SECRET (Messages partagés entre les 2 users) ==========
-// ========== CARNET SECRET (Messages partagés entre les 2 users) ==========
-let secretMessagesUnsubscribe = null;
-const SECRET_CHAT_ID = "secret_carnet_ida_aidara";
-const SECRET_NOTEBOOK_PIN = "@#IDA";
+// (Ancienne fonctionnalité "Carnet Secret" accessible via un bouton dans les paramètres,
+// supprimée : elle faisait doublon avec le code secret déjà géré directement dans le chat.)
 
-// Ouvrir le carnet secret avec demande de code
-function openSecretPage() {
-    const userPin = prompt("🔒 CARNET SECRET - Entrez le code d'accès :");
-    
-    if (userPin === null) return;
-    
-    if (userPin === SECRET_NOTEBOOK_PIN) {
-        const secretPage = document.getElementById('secret-page');
-        secretPage.style.display = 'flex';
-        listenToSecretMessages();
-     } else {
-     }
-}
-
-// Fermer le carnet secret
-function closeSecretPage() {
-    const secretPage = document.getElementById('secret-page');
-    secretPage.style.display = 'none';
-    if (secretMessagesUnsubscribe) {
-        secretMessagesUnsubscribe();
-        secretMessagesUnsubscribe = null;
-    }
-}
-
-// Écouter les messages secrets dans Firestore (collection séparée)
-function listenToSecretMessages() {
-    if (secretMessagesUnsubscribe) secretMessagesUnsubscribe();
-    
-    if (!currentUser) return;
-    
-    secretMessagesUnsubscribe = db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages')
-        .orderBy('timestamp', 'asc')
-  
-        .limitToLast(50)
-        .onSnapshot(snapshot => {
-            const secretMsgArea = document.getElementById('secret-msg-area');
-            secretMsgArea.innerHTML = '';
-            
-            if (snapshot.empty) {
-                secretMsgArea.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;"><i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 10px;"></i><p>Aucun message secret</p><p style="font-size:0.8rem;">💬 Envoyez votre premier message privé !</p></div>';
-                return;
-            }
-            
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const isSent = data.senderId === currentUser?.id;
-                const row = document.createElement('div');
-                row.className = `secret-message-row ${isSent ? 'sent' : 'received'}`;
-                
-                const bubble = document.createElement('div');
-                bubble.className = 'secret-message-bubble';
-                
-                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-                
-                bubble.innerHTML = `
-                    <div>${escapeHTML(data.text)}</div>
-                    <div class="secret-msg-meta">${timeStr} ${!isSent ? '<i class="fa-solid fa-lock" style="margin-left: 5px;"></i>' : ''}</div>
-                `;
-                
-                row.appendChild(bubble);
-                secretMsgArea.appendChild(row);
-            });
-            
-            secretMsgArea.scrollTop = secretMsgArea.scrollHeight;
-        });
-}
-
-// Envoyer un message secret (visible par les 2)
-async function sendSecretMessage() {
-    const input = document.getElementById('secret-input');
-    let text = input.value.trim();
-    
-    if (!text || !currentUser) {
-        showTempNotification("❌ Vous devez être connecté pour envoyer un message");
-        return;
-    }
-    
-    const msgData = {
-        text: text,
-        senderId: currentUser.id,
-        senderName: currentUser.name,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        type: "text"
-    };
-    
-    input.value = '';
-  autoResizeTextarea();
-
-    
-    try {
-        await db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages').add(msgData);
-     } catch(error) {
-        console.error("Erreur:", error);
-     }
-}
-
-// Supprimer TOUS les messages secrets
-async function clearSecretChat() {
-    if (!confirm("🗑️ Supprimer TOUS les messages secrets ? Cette action est irréversible !")) return;
-    
-    const secretCode = prompt("🔐 Confirmez le code secret pour effacer tous les messages :");
-    if (secretCode !== SECRET_NOTEBOOK_PIN) {
-         return;
-    }
-    
-    try {
-        const snapshot = await db.collection('secret_chats').doc(SECRET_CHAT_ID).collection('messages').get();
-        const batch = db.batch();
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-     } catch(error) {
-        console.error("Erreur:", error);
-     }
-}
-      
-      // Sauvegarder le style de bulle par défaut
+// Sauvegarder le style de bulle par défaut
 // Sauvegarder le style de bulle par défaut et appliquer immédiatement
 function saveDefaultBubbleStyle() {
     const select = document.getElementById('default-bubble-style');
@@ -11406,18 +11132,9 @@ function closeSecretIframe() {
     }
 }
 
-// Modifier le bouton existant
-document.addEventListener('DOMContentLoaded', function() {
-    const secretBtn = document.getElementById('secret-notebook-btn');
-    if (secretBtn) {
-        secretBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            openSecretPageInIframe();
-        };
-    }
-});
-      
+// (Ancien bloc de branchement du bouton "carnet secret" des paramètres supprimé :
+// le bouton n'existe plus, ce carnet reste accessible via le code secret dans le chat.)
+
       // ========== FONCTION POUR RÉCUPÉRER L'UTILISATEUR ==========
 function getChatUser() {
     if (currentUser && targetUser) {
@@ -11586,29 +11303,7 @@ function openSecretNotebook() {
     }
 }
 
-// ========== MODIFICATION DU BOUTON EXISTANT ==========
-// Attendre que le DOM soit chargé pour modifier le comportement du bouton
-document.addEventListener('DOMContentLoaded', function() {
-    // Trouver le bouton du carnet secret (par son ID ou sa classe)
-    const secretBtn = document.getElementById('secret-notebook-btn');
-    
-    if (secretBtn) {
-        // Supprimer les anciens écouteurs (s'il y en a)
-        const newBtn = secretBtn.cloneNode(true);
-        secretBtn.parentNode.replaceChild(newBtn, secretBtn);
-        
-        // Ajouter le nouvel écouteur
-        newBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            openSecretNotebook();
-        });
-        
-        console.log('🔒 Bouton Carnet Secret initialisé avec succès');
-    } else {
-        console.warn('⚠️ Bouton Carnet Secret non trouvé - vérifiez l\'ID "secret-notebook-btn"');
-    }
-});
+// (Ancien bloc de branchement du bouton "carnet secret" des paramètres supprimé.)
 
 // ========== TOUCHE ÉCHAP POUR FERMER L'IFRAME ==========
 document.addEventListener('keydown', function(e) {
@@ -11699,6 +11394,13 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
     docsTries.forEach(doc => {
         const data = doc.data();
         const msgId = doc.id;
+
+        // ✅ L'animation d'envoi ne doit jouer qu'UNE SEULE FOIS, sur le message qui vient
+        // literalement d'apparaître — jamais sur les anciens messages ré-affichés lors d'un
+        // nouveau rendu complet du chat (nouveau message, accusé de lecture, etc.), ni au
+        // chargement initial de la conversation.
+        const estNouveauMessage = !isInitialLoad && !idsMessagesDejaAnimes.has(msgId);
+        idsMessagesDejaAnimes.add(msgId);
         
         // Ajouter le séparateur de date
         if (data.timestamp) {
@@ -11754,7 +11456,7 @@ if (data.customColor) {
             lockBadge = `<div class="locked-badge" onclick="event.stopPropagation(); showPinModal('${msgId}')">🔒</div>`;
         }
         
-        const sendAnimClass = isSent ? getSendAnimationClass() : '';
+        const sendAnimClass = (isSent && estNouveauMessage) ? getSendAnimationClass() : '';
         
         // ✅ MODIFICATION : ajout de style="${inlineStyle}"
         let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass} ${sendAnimClass}" 
