@@ -7,7 +7,7 @@
 // Cette fonction reste la SEULE à connaître le certificat, en variable
 // d'environnement Supabase (jamais dans le code, jamais sur GitHub).
 
-import { RtcTokenBuilder, RtcRole } from "npm:agora-token@2.0.6";
+import { RtcTokenBuilder, RtcRole } from "npm:agora-token@2.0.5";
 
 const APP_ID = Deno.env.get("AGORA_APP_ID") ?? "";
 const APP_CERTIFICATE = Deno.env.get("AGORA_APP_CERTIFICATE") ?? "";
