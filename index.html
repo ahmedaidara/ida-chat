@@ -4,6 +4,8 @@
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+   <meta name="theme-color" content="#FAFAFA" media="(prefers-color-scheme: light)">
+   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-tap-highlight" content="no">
     <title>CHAT-IDA</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -53,7 +55,32 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: #000; color: #fff; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        html {
+            height: 100%;
+            /* Empêche tout rebond de défilement de la page elle-même sur iOS/Android :
+               seule la zone de messages (voir .messages-area) doit pouvoir défiler. */
+            position: fixed;
+            overscroll-behavior: none;
+            width: 100%;
+        }
+        body {
+            background: #FAFAFA; /* mode clair : "blanc cassé" propre dans les zones safe-area */
+            color: #fff;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: fixed;
+            inset: 0;
+            overscroll-behavior: none;
+        }
+        @media (prefers-color-scheme: dark) {
+            body { background: #000000; }
+        }
+        [data-theme="dark"] body { background: #000000; }
+        [data-theme="light"] body { background: #FAFAFA; }
 
 .app-container { 
     width: 100%; 
@@ -92,7 +119,7 @@
         .header-actions { display: flex; gap: 18px; font-size: 1.2rem; cursor: pointer; color: var(--text-main); }
 
         /* ZONE MESSAGES */
-        .messages-area { flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-chat); display: flex; flex-direction: column; gap: 10px; position: relative; background-size: cover; background-position: center; }
+        .messages-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; padding: 15px; background: var(--bg-chat); display: flex; flex-direction: column; gap: 10px; position: relative; background-size: cover; background-position: center; }
      /* ===== MESSAGES ===== */
 /* ===== MESSAGES ===== */
 .message-row { 
@@ -150,6 +177,15 @@
     color: var(--text-main) !important; 
     border-bottom-left-radius: 4px !important;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+}
+
+/* Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs et stickers */
+.message-row .message-bubble.media-no-bubble {
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-bottom-right-radius: 12px !important;
+    border-bottom-left-radius: 12px !important;
 }
       
 .message-bubble.bicolor { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; }
@@ -404,7 +440,7 @@
       
         .photo-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); animation: fadeInModal 0.2s ease-out; }
         @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
-        .photo-modal img { max-width: 95%; max-height: 85%; object-fit: contain; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5); cursor: zoom-out; }
+        .photo-modal img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0; box-shadow: none; cursor: zoom-out; }
         .photo-modal-close { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10001; }
         .photo-modal-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
         .download-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 30px; padding: 12px 24px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; z-index: 10001; font-weight: 600; }
@@ -441,6 +477,10 @@
             transition: background 0.2s;
         }
         .me-icon-btn:active { background: rgba(255,255,255,0.25); }
+        #me-viewonce-btn.active {
+            background: linear-gradient(45deg, #a800ff, #0076ff);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+        }
         .me-title { color: #fff; font-size: 0.95rem; font-weight: 600; opacity: 0.9; }
         .me-send-btn {
             background: linear-gradient(45deg, #a800ff, #0076ff);
@@ -715,6 +755,74 @@
 }
 .message-bubble.highlight-from-search {
     animation: messageHighlightShine 1.6s ease-out;
+}
+
+/* ========== VUE UNIQUE (photo/vidéo) ========== */
+.viewonce-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: linear-gradient(45deg, #a800ff, #0076ff);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    max-width: 230px;
+    transition: transform 0.12s ease;
+}
+.viewonce-card:active { transform: scale(0.97); }
+.viewonce-card i { font-size: 1.2rem; flex-shrink: 0; }
+.viewonce-card.opened {
+    background: var(--bubble-received);
+    color: var(--text-muted);
+    cursor: default;
+}
+
+.viewonce-viewer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 10060;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInModal 0.2s ease-out;
+}
+.viewonce-viewer-overlay.active { display: flex; }
+.viewonce-viewer-overlay img,
+.viewonce-viewer-overlay video {
+    max-width: 100%;
+    max-height: 85%;
+    object-fit: contain;
+}
+.viewonce-viewer-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: none;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.viewonce-viewer-notice {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.7);
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 0 20px;
 }
 
 .settings-page {
@@ -1321,6 +1429,27 @@ input, textarea {
     white-space: pre-wrap;        /* Conserve les espaces multiples et retours ligne */
     display: block;
 }
+
+.message-link {
+    color: #4ba3ff;
+    text-decoration: underline;
+    word-break: break-all;
+}
+.sent .message-link { color: #d6ecff; }
+[data-theme="dark"] .received .message-link { color: #6cb4ff; }
+
+.video-play-overlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    pointer-events: none;
+}
       
         #translate-btn.active {
     color: #ffaa00 !important;
@@ -1500,7 +1629,7 @@ input, textarea {
       /* ========== BOUTON FLOATTANT NOUVEAU MESSAGE ========== */
 .new-message-floating-btn {
     position: absolute;
-    bottom: 80px;
+    bottom: 150px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(255, 255, 255, 0.55);
@@ -1553,7 +1682,7 @@ input, textarea {
 .scroll-to-bottom-btn {
     position: absolute;
     right: 16px;
-    bottom: 84px;
+    bottom: 154px;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -2165,7 +2294,7 @@ input, textarea {
                         <div class="mood-item" onclick="setMood('🎮', 'Jeux')"><span class="mood-emoji">🎮</span><span class="mood-label">Jeux</span></div>
                         <div class="mood-item" onclick="setMood('😴', 'Dodo')"><span class="mood-emoji">😴</span><span class="mood-label">Dodo</span></div>
                         <div class="mood-item" onclick="setMood('🏃', 'Sport')"><span class="mood-emoji">🏃</span><span class="mood-label">Sport</span></div>
-                        <div class="mood-item" onclick="setMood('🎵', 'Musique')"><span class="mood-emoji">🎵</span><span class="mood-label">Musique</span></div>
+                        <div class="mood-item" onclick="setMood('😠', 'En colère')"><span class="mood-emoji">😠</span><span class="mood-label">En colère</span></div>
                         <div class="mood-item" onclick="setMood('📺', 'Netflix')"><span class="mood-emoji">📺</span><span class="mood-label">Netflix</span></div>
                         <div class="mood-item" onclick="setMood('☕', 'Café')"><span class="mood-emoji">☕</span><span class="mood-label">Café</span></div>
                         <div class="clear-mood" onclick="clearMood()">❌ Effacer mon statut</div>
@@ -2401,15 +2530,6 @@ input, textarea {
         </div>
         <!-- Deuxième ligne -->
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
-            <div class="tool-item" onclick="togglePanel('emoji-panel'); closeToolsPanel();"><i class="fa-regular fa-face-smile" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Émojis</span></div>
-          <div class="tool-item" onclick="creerSessionMorpion()" style="cursor: pointer;">
-    <i class="fa-solid fa-gamepad" style="font-size: 2rem; color: #a800ff;"></i>
-    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Morpion</span>
-</div>
-          <div class="tool-item" onclick="creerTableauBlanc(); closeToolsPanel();" style="cursor: pointer;">
-    <i class="fa-solid fa-paintbrush" style="font-size: 1.8rem; color: #ff6b6b;"></i>
-    <span style="font-size: 0.7rem; display: block; margin-top: 5px;">Dessin en direct</span>
-</div>
             <div class="tool-item" onclick="toggleTheme(); closeToolsPanel();"><i class="fa-solid fa-moon" style="font-size: 1.8rem;"></i><span style="font-size: 0.7rem;">Thème</span></div>
         </div>
         <div class="tools-divider" style="height: 1px; background: var(--border-color); margin: 5px 0;"></div>
@@ -2696,6 +2816,13 @@ input, textarea {
         </div>
     </div>
 </div>
+
+<!-- ========== VISUALISEUR VUE UNIQUE (photo/vidéo qui disparaît après ouverture) ========== -->
+<div class="viewonce-viewer-overlay" id="viewonce-viewer-overlay">
+    <button class="viewonce-viewer-close" onclick="fermerVueUnique()"><i class="fa-solid fa-xmark"></i></button>
+    <div id="viewonce-viewer-content"></div>
+    <div class="viewonce-viewer-notice">Cette photo/vidéo disparaîtra du chat à la fermeture</div>
+</div>
         <!-- Modal Photo -->
         <div class="photo-modal" id="photo-modal" onclick="closePhotoModal()">
             <button class="photo-modal-close" onclick="closePhotoModal()"><i class="fa-solid fa-times"></i></button>
@@ -2765,6 +2892,9 @@ input, textarea {
 
             <div class="me-caption-bar">
                 <input type="text" class="me-caption-input" id="me-caption-input" placeholder="Ajouter une légende..." maxlength="300">
+                <button class="me-icon-btn" id="me-viewonce-btn" onclick="toggleMeViewOnce()" title="Vue unique" style="flex-shrink:0; width:40px; height:40px; font-size:0.95rem;">
+                    <span style="font-size:1.05rem; line-height:1;">1️⃣</span>
+                </button>
             </div>
         </div>
 
@@ -2992,7 +3122,7 @@ function ouvrirGalerieSupabase() {
 }
 
 // ========== ENVOI UNIFIÉ VERS SUPABASE + FIRESTORE (URL légère, jamais de base64) ==========
-async function sendMediaMessage(type, file, caption) {
+async function sendMediaMessage(type, file, caption, viewOnce) {
     const url = await uploadVersSupabase(file, type);
     if (!url) {
         showTempNotification("❌ Échec de l'upload");
@@ -3009,6 +3139,12 @@ async function sendMediaMessage(type, file, caption) {
         mediaUrl: url,
         storage: 'supabase'
     };
+    // ✅ Vue unique : le fichier reste sur Supabase (jamais supprimé), mais dans le chat
+    // il ne sera affichable qu'une seule fois (voir le rendu des bulles + ouvrirVueUnique).
+    if (viewOnce) {
+        msgData.viewOnce = true;
+        msgData.viewOnceOpenedBy = []; // liste des id utilisateur ayant déjà consulté (chacun 1 fois)
+    }
     const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
     await messageRef.set(msgData);
     setTimeout(() => checkMessageDelivery(messageRef.id), 3000);
@@ -3031,8 +3167,15 @@ let meVideoDuration = 0;
 let meTrimStart = 0;
 let meTrimEnd = 0;
 let meVideoCropRect = null; // {x,y,w,h} en pixels vidéo réels, appliqué via ffmpeg à l'envoi
+let meViewOnce = false; // vue unique : le média disparaît du chat après ouverture
 
 const MEDIA_EDITOR_MAX_DIM = 1600; // redimensionnement pour un envoi rapide
+
+function toggleMeViewOnce() {
+    meViewOnce = !meViewOnce;
+    document.getElementById('me-viewonce-btn').classList.toggle('active', meViewOnce);
+    showTempNotification(meViewOnce ? "1️⃣ Vue unique activée" : "Vue unique désactivée");
+}
 
 function ouvrirEditeurMedia(file) {
     const overlay = document.getElementById('media-editor-overlay');
@@ -3045,6 +3188,8 @@ function ouvrirEditeurMedia(file) {
     captionInput.value = '';
     meCropMode = false;
     meDrawMode = false;
+    meViewOnce = false;
+    document.getElementById('me-viewonce-btn').classList.remove('active');
     document.getElementById('me-crop-box').style.display = 'none';
     document.getElementById('me-color-swatches').style.display = 'none';
     cropActions.style.display = 'none';
@@ -3538,7 +3683,7 @@ async function envoyerMediaEdite() {
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
             if (!blob) throw new Error('canvas-vide');
             const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-            ok = await sendMediaMessage('image', file, caption);
+            ok = await sendMediaMessage('image', file, caption, meViewOnce);
         } else if (meVideoFile) {
             let fichierAEnvoyer = meVideoFile;
             const estDecoupee = meVideoDuration > 0 && (meTrimStart > 0.05 || meTrimEnd < meVideoDuration - 0.05);
@@ -3554,7 +3699,7 @@ async function envoyerMediaEdite() {
                 }
                 uploadingText.textContent = "Envoi de la vidéo...";
             }
-            ok = await sendMediaMessage('video', fichierAEnvoyer, caption);
+            ok = await sendMediaMessage('video', fichierAEnvoyer, caption, meViewOnce);
         }
         if (ok) fermerEditeurMedia();
     } catch (err) {
@@ -3728,6 +3873,16 @@ let lastReadUpdate = null;        // ← AJOUTE ICI
             formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
             formatted = formatted.replace(/~~(.*?)~~/g, '<del>$1</del>');
+            // ✅ Liens cliquables : détecte les URL (http/https ou www.) et les transforme
+            // en liens ouvrant un nouvel onglet — sur mobile, cela redirige automatiquement
+            // vers l'application concernée (Maps, YouTube, Instagram...) si elle est installée.
+            formatted = formatted.replace(
+                /((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)\]])/gi,
+                (match) => {
+                    const href = /^https?:\/\//i.test(match) ? match : 'https://' + match;
+                    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="message-link" onclick="event.stopPropagation();">${match}</a>`;
+                }
+            );
             return formatted;
         }
 
@@ -3968,16 +4123,23 @@ async function enregistrerTokenPush() {
             listenForFlashSignals();
              
             listenToUserMood(); // ✅ correction : cette écoute existait mais n'était jamais démarrée
-            activerLesNotifications();
+            // ✅ Correction : "activerLesNotifications" n'était définie nulle part (bug qui
+            // interrompait ici toute la suite de selectUser). demanderPermissionNotifications()
+            // juste en dessous fait déjà ce travail.
           demanderPermissionNotifications();
-              ecouterChangementsStyle();
+              // ✅ Correction : "ecouterChangementsStyle" n'était définie nulle part (même bug
+              // que plus haut). La fonction équivalente réellement définie est ecouterChangementsCouleurs.
+              ecouterChangementsCouleurs();
            localStorage.setItem('lastUser', userKey);
           activerMarquageMessagesLus();
 ecouterMessagesSupprimes();
           listenToMessageStatus();                    // ← AJOUTE ICI
-setTimeout(markMessagesAsRead, 1000);      // ← AJOUTE ICI
+setTimeout(() => { if (!document.hidden && estProcheDuBasDuChat()) markMessagesAsRead(); }, 1000);      // ← AJOUTE ICI
               activerSuiviStatuts();
-              setTimeout(marquerMessagesCommeLus, 2000);
+              // ✅ Correction : "marquerMessagesCommeLus" n'existait pas non plus (nom réel :
+              // marquerTousMessagesCommeLus). Ce bug empêchait aussi restaurerMonMood (juste
+              // après) de s'exécuter, car il levait une exception avant d'y arriver.
+              setTimeout(marquerTousMessagesCommeLus, 2000);
 setTimeout(restaurerMonMood, 500);
 
         }
@@ -4079,17 +4241,16 @@ function marquerTousMessagesCommeLus() {
 
 // ========== DÉTECTER QUAND L'UTILISATEUR EST ACTIF ==========
 function detecterActiviteUtilisateur() {
-    // Marquer comme lu quand l'utilisateur interagit avec le chat
+    // Marquer comme lu seulement quand l'utilisateur interagit ET regarde vraiment
+    // le bas du chat (pas juste parce qu'il a cliqué n'importe où sur la page).
     const events = ['click', 'touchstart', 'scroll', 'focus', 'keydown'];
     
     events.forEach(event => {
         document.addEventListener(event, function marquer() {
-            marquerTousMessagesCommeLus();
-            // Supprimer l'écouteur après 5 secondes pour éviter trop d'appels
-            setTimeout(() => {
-                document.removeEventListener(event, marquer);
-            }, 1000);
-        }, { once: true });
+            if (!document.hidden && estProcheDuBasDuChat()) {
+                marquerTousMessagesCommeLus();
+            }
+        });
     });
 }
 
@@ -4098,16 +4259,21 @@ function activerSuiviStatuts() {
     // 1. Écouter les statuts en temps réel
     ecouterStatutsTempsReel();
     
-    // 2. Marquer les messages comme lus au chargement
-    setTimeout(marquerTousMessagesCommeLus, 1000);
+    // 2. Marquer les messages comme lus au chargement, SEULEMENT si on est visible
+    // et positionné en bas du chat (sinon on attendra un vrai scroll/interaction).
+    setTimeout(() => {
+        if (!document.hidden && estProcheDuBasDuChat()) {
+            marquerTousMessagesCommeLus();
+        }
+    }, 1000);
     
     // 3. Détecter l'activité pour marquer en temps réel
     detecterActiviteUtilisateur();
     
-    // 4. Marquer quand l'utilisateur revient sur la page
+    // 4. Marquer quand l'utilisateur revient sur la page (si en bas du chat)
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            console.log("👀 Page visible - Marquage des messages comme lus");
+        if (!document.hidden && estProcheDuBasDuChat()) {
+            console.log("👀 Page visible et en bas du chat - Marquage des messages comme lus");
             marquerTousMessagesCommeLus();
         }
     });
@@ -4849,7 +5015,11 @@ function listenToTyping() {
         }, (error) => {
             console.error("Erreur d'écoute typing:", error);
         });
-      ecouterStatutsEnTempsReel();
+      // ✅ Correction d'une faute de frappe critique : "ecouterStatutsEnTempsReel" (inexistante)
+      // au lieu de "ecouterStatutsTempsReel". Cette erreur silencieuse interrompait TOUTE la
+      // suite de selectUser() à chaque connexion (restauration du statut d'humeur, suivi des
+      // accusés de lecture, marquage des messages lus, etc. ne s'exécutaient jamais).
+      ecouterStatutsTempsReel();
 
 }
         
@@ -5665,24 +5835,27 @@ async function applyStyleToMessage(styleName) {
 }
         
         // ========== TRADUCTION ========== 
-        async function translateTextToLanguage(text, targetLang) {
-            if (!text || text.trim() === '') return null;
-            const langMap = { 'en': 'en|fr', 'ar': 'ar|fr', 'es': 'es|fr', 'ja': 'ja|fr' };
-            const langPair = langMap[targetLang] || 'en|fr';
+        // ========== TRADUCTION — MÉTHODE SIMPLE ET FIABLE ==========
+        // Un seul point d'entrée pour toute l'app : l'API publique de Google Translate,
+        // gratuite et sans clé, utilisée par de très nombreux projets pour sa fiabilité.
+        async function traduireTexteSimple(texte, langueCible, langueSource) {
+            if (!texte || !texte.trim()) return null;
+            langueSource = langueSource || 'auto';
             try {
-                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${langueSource}&tl=${langueCible}&dt=t&q=${encodeURIComponent(texte)}`;
                 const response = await fetch(url);
+                if (!response.ok) return null;
                 const data = await response.json();
-                if (data && data.responseData && data.responseData.translatedText) {
-                    let translated = data.responseData.translatedText;
-                    translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-                    return translated;
-                }
-                return null;
-            } catch(error) {
-                console.error("Erreur de traduction:", error);
+                // data[0] est une liste de segments traduits : [[texteTraduit, texteOriginal, ...], ...]
+                return data[0].map(segment => segment[0]).join('');
+            } catch (err) {
+                console.error("Erreur de traduction:", err);
                 return null;
             }
+        }
+
+        async function translateTextToLanguage(text, targetLang) {
+            return await traduireTexteSimple(text, targetLang);
         }
         
         function toggleTranslateMenu(event) {
@@ -5713,7 +5886,7 @@ async function applyStyleToMessage(styleName) {
             }
         }
         
-  // ========== TRADUCTION AVEC LIBRETRANSLATE (QUALITÉ PROFESSIONNELLE) ==========
+  // ========== TRADUCTION D'UN MESSAGE (clic droit / appui long → Traduire) ==========
 async function translateSelectedMessage() {
     if (!selectedMessageId) return;
     
@@ -5726,79 +5899,24 @@ async function translateSelectedMessage() {
     const originalText = messageSpan.innerText;
     const originalHTML = messageSpan.innerHTML;
     
-    // Détection rapide de la langue
+    // Traduit vers le français si le message ne l'est pas déjà, sinon vers l'anglais
     const estFrancais = detecterFrancais(originalText);
-    const langueSource = estFrancais ? 'fr' : 'auto';
     const langueCible = estFrancais ? 'en' : 'fr';
     const langueNom = estFrancais ? 'Anglais 🇬🇧' : 'Français 🇫🇷';
     
     messageSpan.innerHTML = '<span style="opacity:0.6;">🔄 Traduction...</span>';
     
-    try {
-        // Utiliser LibreTranslate (gratuit, sans clé, bonne qualité)
-        const url = `https://translate.terraprint.co/translate`;
-        
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                q: originalText,
-                source: langueSource,
-                target: langueCible,
-                format: 'text'
-            })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            let translated = data.translatedText;
-            
-            if (translated && translated !== originalText) {
-                messageSpan.setAttribute('data-original', originalText);
-                messageSpan.innerHTML = `${translated} <span style="font-size:0.65rem; opacity:0.5; cursor:pointer;" onclick="restaurerMessageOriginal(this.parentElement)">[${langueNom}]</span>`;
-            } else {
-                messageSpan.innerHTML = originalHTML;
-                showTempNotification("❌ Traduction identique ou impossible");
-            }
-        } else {
-            // Si LibreTranslate échoue, essayer MyMemory en secours
-            await fallbackTranslation(originalText, originalHTML, messageSpan, estFrancais);
-        }
-        
-    } catch(error) {
-        console.error("Erreur LibreTranslate:", error);
-        // Secours vers MyMemory
-        await fallbackTranslation(originalText, originalHTML, messageSpan, estFrancais);
+    const translated = await traduireTexteSimple(originalText, langueCible);
+    
+    if (translated && translated.trim().toLowerCase() !== originalText.trim().toLowerCase()) {
+        messageSpan.setAttribute('data-original', originalText);
+        messageSpan.innerHTML = `${escapeHTML(translated)} <span style="font-size:0.65rem; opacity:0.5; cursor:pointer;" onclick="restaurerMessageOriginal(this.parentElement)">[${langueNom}]</span>`;
+    } else {
+        messageSpan.innerHTML = originalHTML;
+        showTempNotification(translated ? "⚠️ Le message est déjà dans cette langue" : "❌ Service de traduction indisponible, réessaie");
     }
     
     hideContextMenus();
-}
-
-// ========== API DE SECOURS (MyMemory) ==========
-async function fallbackTranslation(originalText, originalHTML, messageSpan, estFrancais) {
-    const langueCible = estFrancais ? 'en|fr' : 'fr|en';
-    const langueNom = estFrancais ? 'Anglais 🇬🇧' : 'Français 🇫🇷';
-    
-    try {
-        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=${langueCible}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data && data.responseData && data.responseData.translatedText) {
-            let translated = data.responseData.translatedText;
-            translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-            messageSpan.setAttribute('data-original', originalText);
-            messageSpan.innerHTML = `${translated} <span style="font-size:0.65rem; opacity:0.5; cursor:pointer;" onclick="restaurerMessageOriginal(this.parentElement)">[${langueNom}*]</span>`;
-        } else {
-            messageSpan.innerHTML = originalHTML;
-            showTempNotification("❌ Erreur de traduction");
-        }
-    } catch(e) {
-        messageSpan.innerHTML = originalHTML;
-        showTempNotification("❌ Service de traduction indisponible");
-    }
 }
 
 // ========== DÉTECTION FRANÇAIS (SIMPLIFIÉE) ==========
@@ -5863,20 +5981,11 @@ function restaurerMessageOriginal(element) {
         option.style.cssText = 'padding:10px 20px; cursor:pointer; display:flex; align-items:center; gap:10px;';
         option.innerHTML = `<span class="flag">${lang.flag}</span><span>${lang.name}</span>`;
         option.onclick = () => { 
-            activerModeTraduction(lang.code, lang.name, lang.flag);
+            traduireEtRemplacerInput(lang.code, lang.name);
             menu.remove(); 
         };
         menu.appendChild(option);
     });
-    
-    const closeOpt = document.createElement('div');
-    closeOpt.style.cssText = 'padding:10px 20px; cursor:pointer; border-top:1px solid var(--border-color); color:#ed4956;';
-    closeOpt.innerHTML = '<i class="fa-solid fa-ban"></i> Désactiver la traduction';
-    closeOpt.onclick = () => { 
-        desactiverModeTraduction();
-        menu.remove(); 
-    };
-    menu.appendChild(closeOpt);
     
     document.body.appendChild(menu);
     
@@ -5890,156 +5999,32 @@ function restaurerMessageOriginal(element) {
     }, 10);
 }
 
-// ========== VARIABLES POUR LA TRADUCTION ==========
-let modeTraductionActif = false;
-let langueTraduction = null;
-let nomLangueTraduction = null;
-let drapeauTraduction = null;
-
-function activerModeTraduction(code, nom, drapeau) {
-    modeTraductionActif = true;
-    langueTraduction = code;
-    nomLangueTraduction = nom;
-    drapeauTraduction = drapeau;
-    
-    const translateBtn = document.getElementById('translate-btn');
-    translateBtn.style.color = '#ffaa00';
-    translateBtn.style.textShadow = '0 0 3px #ffaa00';
-    translateBtn.style.transform = 'scale(1.1)';
-    translateBtn.title = `Traduction active vers ${nom}`;
-    
-   
-}
-
-function desactiverModeTraduction() {
-    modeTraductionActif = false;
-    langueTraduction = null;
-    nomLangueTraduction = null;
-    drapeauTraduction = null;
-    
-    const translateBtn = document.getElementById('translate-btn');
-    translateBtn.style.color = '';
-    translateBtn.style.textShadow = '';
-    translateBtn.style.transform = '';
-    translateBtn.title = 'Traduire le message';
-    
- }
-
-// ========== FONCTION DE TRADUCTION (VERSION PROPRE) ==========
-// ========== FONCTION DE TRADUCTION (CORRIGÉE) ==========
-async function traduireTexte(texte, langueCible) {
-    if (!texte || !langueCible || texte.trim() === '') return texte;
-    
-    // Si la langue cible est le français, on détecte si c'est déjà français
-    if (langueCible === 'fr') {
-        const estFrancais = detecterFrancaisRapide(texte);
-        if (estFrancais) return texte;
+// ✅ Traduit directement le message en cours de saisie et le remplace dans le champ texte,
+// prêt à être envoyé. Simple : tu écris, tu choisis une langue, ton texte est traduit.
+async function traduireEtRemplacerInput(code, nom) {
+    const input = document.getElementById('chat-in');
+    const texte = input.value.trim();
+    if (!texte) {
+        showTempNotification("📝 Écris d'abord un message !");
+        return;
     }
-    
-    try {
-        // Déterminer la paire de langue correcte
-        let langPair = '';
-        
-        if (langueCible === 'fr') {
-            // Traduire vers le français
-            langPair = 'fr|en';
-        } else if (langueCible === 'en') {
-            // Traduire vers l'anglais
-            langPair = 'en|fr';
-        } else if (langueCible === 'ar') {
-            langPair = 'ar|fr';
-        } else if (langueCible === 'es') {
-            langPair = 'es|fr';
-        } else if (langueCible === 'it') {
-            langPair = 'it|fr';
-        } else if (langueCible === 'de') {
-            langPair = 'de|fr';
-        } else if (langueCible === 'pt') {
-            langPair = 'pt|fr';
-        } else if (langueCible === 'ru') {
-            langPair = 'ru|fr';
-        } else if (langueCible === 'ja') {
-            langPair = 'ja|fr';
-        } else if (langueCible === 'zh') {
-            langPair = 'zh|fr';
-        } else {
-            langPair = 'en|fr';
-        }
-        
-        // MyMemory utilise le format "source|target"
-        // Exemple: "en|fr" = de l'anglais vers le français
-        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(texte)}&langpair=${langPair}`;
-        console.log("🌐 URL:", url);
-        
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        console.log("📦 Réponse:", data);
-        
-        if (data && data.responseData && data.responseData.translatedText) {
-            let translated = data.responseData.translatedText;
-            translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-            
-            // Enlever les espaces et retours à la ligne
-            translated = translated.trim();
-            
-            console.log(`✅ Traduction: "${texte}" → "${translated}"`);
-            
-            if (translated.toLowerCase() === texte.toLowerCase()) {
-                return texte;
-            }
-            return translated;
-        }
-        return texte;
-    } catch(error) {
-        console.error("❌ Erreur traduction:", error);
-        return texte;
+    showTempNotification(`🔄 Traduction en ${nom}...`);
+    const traduit = await traduireTexteSimple(texte, code);
+    if (traduit && traduit.trim().toLowerCase() !== texte.toLowerCase()) {
+        input.value = traduit;
+        handleTyping();
+        autoResizeTextarea();
+        showTempNotification(`✅ Traduit en ${nom}`);
+    } else if (traduit) {
+        showTempNotification(`⚠️ Le texte est déjà en ${nom}`);
+    } else {
+        showTempNotification("❌ Service de traduction indisponible, réessaie");
     }
 }
 
-async function fallbackTraduction(texte, langueCible) {
-    try {
-        const mapLangue = {
-            'fr': 'fr|en',
-            'en': 'en|fr',
-            'ar': 'ar|fr',
-            'es': 'es|fr',
-            'it': 'it|fr',
-            'de': 'de|fr',
-            'pt': 'pt|fr',
-            'ru': 'ru|fr',
-            'ja': 'ja|fr',
-            'zh': 'zh|fr'
-        };
-        const langPair = mapLangue[langueCible] || 'en|fr';
-        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(texte)}&langpair=${langPair}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data && data.responseData && data.responseData.translatedText) {
-            let translated = data.responseData.translatedText;
-            translated = translated.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-            return translated;
-        }
-        return texte;
-    } catch(e) {
-        console.error("Fallback error:", e);
-        return texte;
-    }
-}
-
-function detecterFrancaisRapide(texte) {
-    if (!texte) return false;
-    const accents = /[éèêëàâäôöùûüçœ]/i;
-    if (accents.test(texte)) return true;
-    const motsFr = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles', 'le', 'la', 'les', 'un', 'une', 'est', 'sont'];
-    const texteLower = texte.toLowerCase();
-    let count = 0;
-    for (const mot of motsFr) {
-        if (texteLower.includes(mot)) count++;
-        if (count >= 2) return true;
-    }
-    return false;
-}
+// (Anciennes fonctions de traduction obsolètes supprimées : traduireTexte, fallbackTraduction,
+// detecterFrancaisRapide. Elles n'étaient jamais appelées et contenaient le même bug de sens
+// de traduction inversé que translateTextToLanguage — tout est unifié dans traduireTexteSimple.)
         
         // ========== MODE CODE ==========
         function toggleCodeMode() { codeModeActive = !codeModeActive; showTempNotification(codeModeActive ? "🔒 Mode Codé ACTIVÉ" : "🔓 Mode Codé DÉSACTIVÉ"); }
@@ -6609,30 +6594,8 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
        
         
         // ========== PHOTO PLEIN ÉCRAN ==========
-       function openFullscreenPhoto(event, imgElement) {
-    if (event) event.stopPropagation();
-    
-    currentPhotoUrl = imgElement.getAttribute('data-fullsrc') || imgElement.src;
-    const modal = document.getElementById('photo-modal');
-    const modalImg = document.getElementById('modal-image');
-    
-    // Afficher le modal
-    modal.style.display = 'flex';
-    modalImg.src = currentPhotoUrl;
-    document.body.style.overflow = 'hidden';
-    
-    // Centrer l'image et la redimensionner automatiquement
-    modalImg.style.maxWidth = '95%';
-    modalImg.style.maxHeight = '85%';
-    modalImg.style.objectFit = 'contain';
-    modalImg.style.margin = 'auto';
-    modalImg.style.display = 'block';
-}
-        function closePhotoModal() {
-            document.getElementById('photo-modal').style.display = 'none';
-            document.body.style.overflow = '';
-            currentPhotoUrl = null;
-        }
+        // (Anciennes définitions dupliquées de openFullscreenPhoto/closePhotoModal supprimées :
+        // elles étaient écrasées de toute façon par les versions définies plus bas.)
         // ========== ENREGISTREMENT FIABLE SUR L'APPAREIL (PC + iPhone + Android) ==========
         // Sur iPhone/Android, un simple <a download> ouvre juste l'image/vidéo dans un nouvel
         // onglet au lieu de l'enregistrer (Safari ignore l'attribut "download"). La solution
@@ -8280,32 +8243,124 @@ async function envoyerAudioAvecFiltre() {
 // écrasaient la nouvelle version Supabase définie plus haut dans ce script, ce qui
 // causait la lenteur d'envoi/affichage des photos et vidéos.)
       
-      function openFullscreenPhoto(event, imgElement) {
-    if (event) event.stopPropagation();
-    
-    currentPhotoUrl = imgElement.getAttribute('data-fullsrc') || imgElement.src;
-    const modal = document.getElementById('photo-modal');
-    const modalImg = document.getElementById('modal-image');
-    
-    modal.style.display = 'flex';
-    modalImg.src = currentPhotoUrl;
-    document.body.style.overflow = 'hidden';
-    
-    // Styles pour centrage parfait
-    modalImg.style.maxWidth = '95%';
-    modalImg.style.maxHeight = '85%';
-    modalImg.style.objectFit = 'contain';
-    modalImg.style.margin = 'auto';
-    modalImg.style.display = 'block';
-    modalImg.style.cursor = 'zoom-out';
-    
-    // Support du pincement pour zoomer (mobile)
-    modalImg.style.touchAction = 'pan-x pan-y';
+      // ========== GALERIE PLEIN ÉCRAN (photo + vidéo) avec navigation par glissement ==========
+let mediaGalerieListe = [];   // [{msgId, type, url}] dans l'ordre d'affichage du chat
+let mediaGalerieIndex = 0;
+let photoModalSwiped = false;
+
+function construireListeMediasGalerie() {
+    mediaGalerieListe = [];
+    document.querySelectorAll('#msg-area .message-row').forEach(row => {
+        const msgId = row.getAttribute('data-id');
+        const img = row.querySelector('.img-msg');
+        const video = row.querySelector('.video-wrapper video');
+        if (img) {
+            mediaGalerieListe.push({ msgId, type: 'image', url: img.getAttribute('data-fullsrc') || img.src });
+        } else if (video) {
+            mediaGalerieListe.push({ msgId, type: 'video', url: video.getAttribute('src') });
+        }
+    });
 }
 
+function openFullscreenPhoto(event, imgElement) {
+    if (event) event.stopPropagation();
+    construireListeMediasGalerie();
+    const msgId = imgElement.closest('.message-row')?.getAttribute('data-id');
+    const idx = mediaGalerieListe.findIndex(m => m.msgId === msgId);
+    afficherMediaGalerie(idx >= 0 ? idx : 0);
+}
+
+// Ouvre une vidéo du chat en plein écran, avec la même galerie navigable que les photos
+function ouvrirVideoPleinEcran(event, videoElement) {
+    if (event) event.stopPropagation();
+    construireListeMediasGalerie();
+    const msgId = videoElement.closest('.message-row')?.getAttribute('data-id');
+    const idx = mediaGalerieListe.findIndex(m => m.msgId === msgId);
+    afficherMediaGalerie(idx >= 0 ? idx : 0);
+}
+
+function afficherMediaGalerie(index) {
+    if (index < 0 || index >= mediaGalerieListe.length) return;
+    mediaGalerieIndex = index;
+    const media = mediaGalerieListe[index];
+    currentPhotoUrl = media.url;
+
+    const modal = document.getElementById('photo-modal');
+    const modalImg = document.getElementById('modal-image');
+    let modalVideo = document.getElementById('modal-video');
+    if (!modalVideo) {
+        modalVideo = document.createElement('video');
+        modalVideo.id = 'modal-video';
+        modalVideo.controls = true;
+        modalVideo.playsInline = true;
+        modalVideo.style.cssText = 'max-width:100%; max-height:100%; object-fit:contain; display:none;';
+        modalImg.insertAdjacentElement('afterend', modalVideo);
+    }
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    if (media.type === 'video') {
+        modalImg.style.display = 'none';
+        modalVideo.src = media.url;
+        modalVideo.style.display = 'block';
+        modalVideo.currentTime = 0;
+        modalVideo.play().catch(() => {});
+    } else {
+        modalVideo.pause();
+        modalVideo.removeAttribute('src');
+        modalVideo.style.display = 'none';
+        modalImg.src = media.url;
+        modalImg.style.display = 'block';
+        modalImg.style.maxWidth = '100%';
+        modalImg.style.maxHeight = '100%';
+        modalImg.style.width = 'auto';
+        modalImg.style.height = 'auto';
+        modalImg.style.objectFit = 'contain';
+        modalImg.style.margin = '0';
+        modalImg.style.borderRadius = '0';
+        modalImg.style.boxShadow = 'none';
+        modalImg.style.cursor = 'zoom-out';
+        modalImg.style.touchAction = 'pan-x pan-y';
+    }
+}
+
+function mediaGalerieSuivant() {
+    if (mediaGalerieIndex < mediaGalerieListe.length - 1) afficherMediaGalerie(mediaGalerieIndex + 1);
+}
+function mediaGaleriePrecedent() {
+    if (mediaGalerieIndex > 0) afficherMediaGalerie(mediaGalerieIndex - 1);
+}
+
+// Navigation par glissement gauche/droite — volontairement SANS bouton visible, comme demandé
+(function initGalerieSwipe() {
+    let startX = 0, startY = 0;
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('photo-modal');
+        if (!modal) return;
+        modal.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+        modal.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - startX;
+            const dy = e.changedTouches[0].clientY - startY;
+            if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+                photoModalSwiped = true;
+                if (dx < 0) mediaGalerieSuivant(); else mediaGaleriePrecedent();
+                setTimeout(() => { photoModalSwiped = false; }, 300);
+            }
+        }, { passive: true });
+    });
+})();
+
 function closePhotoModal() {
+    if (photoModalSwiped) return; // un glissement ne doit jamais fermer la vue
     document.getElementById('photo-modal').style.display = 'none';
+    const modalVideo = document.getElementById('modal-video');
+    if (modalVideo) { modalVideo.pause(); modalVideo.removeAttribute('src'); }
     document.body.style.overflow = '';
+    currentPhotoUrl = null;
 }
       
  // ========== CONNEXION AUTOMATIQUE UNIQUE ==========
@@ -9091,15 +9146,30 @@ if (zoneDeChatVocal) {
       // ==========================================
 // MOTEUR DE COCHES WHATSAPP (À COLLER EN BAS)
 // ==========================================
+// ✅ Fonction ajoutée : vérifie si l'utilisateur regarde vraiment le bas de la conversation
+// (là où arrivent les nouveaux messages), condition nécessaire avant de marquer "lu".
+function estProcheDuBasDuChat() {
+    const msgArea = document.getElementById('msg-area');
+    if (!msgArea) return false;
+    return (msgArea.scrollHeight - msgArea.scrollTop - msgArea.clientHeight) < 150;
+}
+
 function activerMarquageMessagesLus() {
     if (!currentUser || !targetUser) return;
 
-    // Écoute en temps réel si l'autre m'envoie des messages non lus
+    // Écoute en temps réel les messages non lus de l'autre, mais on ne les marque
+    // "lus" QUE si la page est réellement visible ET qu'on est positionné en bas du
+    // chat — c'est-à-dire qu'on regarde vraiment les messages récents. Avant ce
+    // correctif, cette fonction marquait TOUT message reçu comme "lu" instantanément
+    // dès qu'il arrivait, même onglet en arrière-plan ou app fermée sur mobile —
+    // d'où les fausses coches bleues alors que le message n'avait jamais été vu.
     db.collection('chats')
       .doc(CHAT_ID)
       .collection('messages')
       .where('senderId', '==', targetUser.id)
       .onSnapshot((snapshot) => {
+          if (document.hidden || !estProcheDuBasDuChat()) return;
+
           const batch = db.batch();
           let modifications = false;
 
@@ -10622,6 +10692,12 @@ if (zoneChatMorpion) {
 // 1. Quand l'utilisateur ouvre le chat, marquer tous les messages comme "read"
 function markAllAsRead() {
     if (!currentUser || !targetUser) return;
+    // ✅ CORRECTIF DÉFINITIF : cette fonction se déclenchait à CHAQUE connexion et à
+    // CHAQUE scroll n'importe où sur la page, sans aucune condition — c'était la
+    // véritable cause des fausses coches bleues (message marqué "lu" alors que le
+    // destinataire n'avait rien vu). Comme sur WhatsApp : on ne marque "lu" que si
+    // la page est réellement visible ET qu'on regarde le bas du chat.
+    if (document.hidden || !estProcheDuBasDuChat()) return;
     
     db.collection('chats').doc(CHAT_ID).collection('messages')
         .where('senderId', '==', targetUser.id)
@@ -10762,6 +10838,12 @@ STATUTS_CACHE.load();
 // 2. MARQUAGE INSTANTANÉ (sans attendre Firebase)
 function marquerMessagesInstantanement() {
     if (!currentUser || !targetUser) return;
+    // ✅ Comme sur WhatsApp : on ne marque "lu" que si la page est visible ET qu'on est
+    // positionné en bas du chat (donc qu'on regarde vraiment les messages récents).
+    // Avant ce correctif, cette fonction tournait TOUTES LES 5 SECONDES en boucle
+    // (voir activerMarquageUltraRapide) sans aucune condition, marquant tout comme lu
+    // même onglet en arrière-plan — d'où les fausses coches bleues.
+    if (document.hidden || !estProcheDuBasDuChat()) return;
     
     console.log("⚡ Marquage INSTANTANÉ des messages...");
     
@@ -11934,6 +12016,76 @@ document.addEventListener('click', function(e) {
       // ============================================================
 // ✅ FONCTION POUR AFFICHER TOUS LES MESSAGES
 // ============================================================
+// ========== VUE UNIQUE (photo/vidéo) — rendu de la carte dans la bulle ==========
+// ✅ Chacun des deux (l'envoyeur ET le destinataire) a droit à SA PROPRE vue unique,
+// indépendamment l'un de l'autre — on suit donc une LISTE des personnes ayant déjà
+// consulté (viewOnceOpenedBy), pas un simple booléen partagé.
+function rendreCarteVueUnique(msgId, data, type) {
+    const icone = type === 'video' ? 'fa-video' : 'fa-image';
+    const dejaVuParMoi = Array.isArray(data.viewOnceOpenedBy) && data.viewOnceOpenedBy.includes(currentUser.id);
+    if (dejaVuParMoi) {
+        return `
+            <div class="viewonce-card opened">
+                <i class="fa-solid fa-eye-slash"></i>
+                <span>${type === 'video' ? 'Vidéo' : 'Photo'} déjà vue</span>
+            </div>
+        `;
+    }
+    return `
+        <div class="viewonce-card" onclick="ouvrirVueUnique('${msgId}')">
+            <i class="fa-solid ${icone}"></i>
+            <span>1️⃣ ${type === 'video' ? 'Vidéo' : 'Photo'} vue unique — appuie pour voir</span>
+        </div>
+    `;
+}
+
+// Ouvre la photo/vidéo en vue unique. Le fichier n'est PAS supprimé de Supabase —
+// on ajoute seulement mon id à la liste "viewOnceOpenedBy" dans Firestore, ce qui fait
+// que le prochain rendu m'affichera la carte "déjà vue" à MOI, sans affecter la vue
+// de l'autre personne (qui garde son propre droit à une vue unique).
+let vueUniqueMsgIdActif = null;
+async function ouvrirVueUnique(msgId) {
+    try {
+        const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).get();
+        if (!doc.exists) return;
+        const data = doc.data();
+        const dejaVuParMoi = Array.isArray(data.viewOnceOpenedBy) && data.viewOnceOpenedBy.includes(currentUser.id);
+        if (dejaVuParMoi) {
+            showTempNotification("👁️ Tu as déjà vu ce média, il n'est plus disponible pour toi");
+            return;
+        }
+
+        vueUniqueMsgIdActif = msgId;
+        const content = document.getElementById('viewonce-viewer-content');
+        if (data.type === 'video') {
+            content.innerHTML = `<video src="${data.mediaUrl}" controls autoplay playsinline></video>`;
+        } else {
+            content.innerHTML = `<img src="${data.mediaUrl}" alt="Photo vue unique">`;
+        }
+        document.getElementById('viewonce-viewer-overlay').classList.add('active');
+    } catch (err) {
+        console.error("Erreur ouverture vue unique:", err);
+        showTempNotification("❌ Impossible d'ouvrir ce média");
+    }
+}
+
+async function fermerVueUnique() {
+    document.getElementById('viewonce-viewer-overlay').classList.remove('active');
+    document.getElementById('viewonce-viewer-content').innerHTML = '';
+    if (vueUniqueMsgIdActif) {
+        const msgId = vueUniqueMsgIdActif;
+        vueUniqueMsgIdActif = null;
+        try {
+            await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({
+                viewOnceOpenedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.id),
+                viewOnceOpenedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (err) {
+            console.error("Erreur fermeture vue unique:", err);
+        }
+    }
+}
+
 function afficherTousLesMessages(snapshot, isInitialLoad) {
     const msgArea = document.getElementById('msg-area');
     if (!msgArea) return;
@@ -11997,6 +12149,10 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         row.setAttribute('data-id', msgId);
         
         const isGiant = isOnlyEmojis(data.text);
+        // ✅ Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs et stickers —
+        // ces derniers sont stockés avec type "image" (voir isGif/isSticker), donc ce test
+        // couvre bien tous les cas demandés.
+        const isMediaNoBubble = data.type === 'image' || data.type === 'video';
         let customStyle = '';
         let inlineStyle = '';
 // 🚨 PRIORITÉ : Si une couleur personnalisée existe, on désactive les styles de classe
@@ -12038,7 +12194,7 @@ if (hasCustomColor) {
         const sendAnimClass = (isSent && estNouveauMessage) ? getSendAnimationClass() : '';
         
         // ✅ MODIFICATION : ajout de style="${inlineStyle}"
-        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${customStyle} ${codedClass} ${sendAnimClass}" 
+        let bubbleHtml = `<div class="message-bubble ${isGiant ? 'giant-emoji' : ''} ${isMediaNoBubble ? 'media-no-bubble' : ''} ${customStyle} ${codedClass} ${sendAnimClass}" 
             style="${inlineStyle}"
             onclick="${data.isCoded === true ? `showPinModal('${msgId}')` : ''}"
             oncontextmenu="handleContextMenu(event, '${msgId}'); return false;" 
@@ -12090,24 +12246,33 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                 bubbleHtml += `<span style="white-space: pre-wrap; display: block;">${displayText}</span>`;
             }
         } else if (data.type === 'image') {
-            bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
-            if (data.text) {
-                bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
+            if (data.viewOnce) {
+                bubbleHtml += rendreCarteVueUnique(msgId, data, 'image');
+            } else {
+                bubbleHtml += `<img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(event, this)"/>`;
+                if (data.text) {
+                    bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
+                }
             }
         } else if (data.type === 'drawing') {
             bubbleHtml += `<div><img src="${data.mediaUrl}" class="img-msg" data-fullsrc="${data.mediaUrl}" onclick="openFullscreenPhoto(this)" style="max-width:200px; max-height:200px; border-radius:12px; background:white; cursor:pointer;"></div>`;
         } else if (data.type === 'video') {
-            const videoUrl = data.mediaUrl || data.fileUrl || "";
-            bubbleHtml += `
-                <div class="video-wrapper" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px; position: relative;">
-                    <video src="${videoUrl}" controls playsinline preload="metadata" style="width:100%; display:block; object-fit:cover;"></video>
-                    <button class="video-save-btn" onclick="event.stopPropagation(); telechargerVideo(this, '${videoUrl}')" title="Enregistrer la vidéo" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); color:#fff; border:none; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; font-size:0.9rem;">
-                        <i class="fa-solid fa-download"></i>
-                    </button>
-                </div>
-            `;
-            if (data.text) {
-                bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
+            if (data.viewOnce) {
+                bubbleHtml += rendreCarteVueUnique(msgId, data, 'video');
+            } else {
+                const videoUrl = data.mediaUrl || data.fileUrl || "";
+                bubbleHtml += `
+                    <div class="video-wrapper" onclick="ouvrirVideoPleinEcran(event, this.querySelector('video'))" style="max-width: 250px; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 5px; position: relative; cursor: pointer;">
+                        <video src="${videoUrl}" playsinline preload="metadata" style="width:100%; display:block; object-fit:cover; pointer-events:none;"></video>
+                        <div class="video-play-overlay"><i class="fa-solid fa-play"></i></div>
+                        <button class="video-save-btn" onclick="event.stopPropagation(); telechargerVideo(this, '${videoUrl}')" title="Enregistrer la vidéo" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); color:#fff; border:none; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; font-size:0.9rem;">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                    </div>
+                `;
+                if (data.text) {
+                    bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
+                }
             }
         } else if (data.type === 'audio') {
             const audioId = `audio_${msgId}`;
@@ -12955,38 +13120,9 @@ afficherWb = function(msgId, data) {
     }, 1000);
 };
 
-// 5. FORCER LA MISE À JOUR QUAND UN TRAIT EST AJOUTÉ
-const originalSauvegarderTraitWb = sauvegarderTraitWb;
-sauvegarderTraitWb = function(msgId, x1, y1, x2, y2) {
-    if (!msgId) return;
-
-    const line = {
-        x1, y1, x2, y2,
-        color: wb.eraser ? '#ffffff' : wb.color,
-        size: wb.eraser ? wb.size * 2 : wb.size
-    };
-
-    const docRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId);
-    docRef.update({
-        'whiteboardData.lines': firebase.firestore.FieldValue.arrayUnion(line),
-        'whiteboardData.color': wb.color,
-        'whiteboardData.size': wb.size,
-        'whiteboardData.lastUpdate': firebase.firestore.FieldValue.serverTimestamp()
-    }).then(function() {
-        // Après la sauvegarde, forcer la mise à jour locale
-        const canvas = document.getElementById(`wb-canvas-${msgId}`);
-        if (canvas && !wb.drawing) {
-            // Redessiner TOUT depuis Firestore
-            docRef.get().then(function(doc) {
-                if (doc.exists && doc.data().whiteboardData) {
-                    dessinerLignesWbTempsReel(msgId, doc.data().whiteboardData.lines);
-                }
-            });
-        }
-    }).catch(function(err) {
-        console.error("Erreur sauvegarde:", err);
-    });
-};
+// (Ancien correctif "FORCER LA MISE À JOUR QUAND UN TRAIT EST AJOUTÉ" supprimé : il
+// tentait de surcharger une fonction "sauvegarderTraitWb" qui n'a jamais existé dans ce
+// fichier, ce qui provoquait une erreur JS bloquant l'exécution du reste du script.)
 
 // 6. AJOUTER UN ÉCOUTEUR GLOBAL POUR TOUS LES TABLEAUX
 function ecouterTousLesTableaux() {
@@ -13353,7 +13489,7 @@ function fermerEtude() {
 
 // ========== BOUTONS JEUX ET EFFETS (optionnels) ==========
 function ouvrirJeux() {
-    showTempNotification("🎮 Page Jeux - bientôt disponible");
+    creerSessionMorpion();
 }
 
 function ouvrirEffets() {
