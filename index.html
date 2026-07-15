@@ -2463,6 +2463,96 @@ input, textarea {
 .permission-status { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
 .permission-status.granted { color: #34c759; }
 .permission-status.denied { color: #ff3b30; }
+
+/* Interrupteur façon iOS, coloré avec l'accent/dégradé des bulles */
+.ios-toggle-switch {
+    position: relative; width: 46px; height: 27px; flex-shrink: 0;
+    border-radius: 999px; background: var(--border-color);
+    cursor: pointer; transition: background 0.25s ease;
+}
+.ios-toggle-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 23px; height: 23px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: transform 0.25s ease;
+}
+.ios-toggle-switch.on { background: var(--bubble-sent); }
+.ios-toggle-switch.on::after { transform: translateX(19px); }
+.ios-toggle-switch.denied { background: #ff3b30; }
+
+/* Petites vignettes rondes (tuile "+" / couleur perso) dans la grille d'accent */
+.accent-color-dot.tile-icon {
+    display: flex; align-items: center; justify-content: center;
+    border: 2px dashed var(--border-color); color: var(--text-muted); font-size: 0.85rem;
+    background: var(--input-bg);
+}
+.accent-color-dot { position: relative; }
+.dot-remove-btn {
+    position: absolute; top: -4px; right: -4px; width: 15px; height: 15px;
+    background: #ff3b30; color: #fff; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 0.5rem; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4); z-index: 2;
+}
+
+/* Bandeau d'appel / partage d'écran affiché dans le fil du chat */
+.chat-call-banner, .chat-screenshare-banner {
+    display: none; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 10px 14px; margin: 8px 12px 0;
+    background: var(--bubble-sent); color: #fff; border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15); flex-shrink: 0;
+}
+.chat-call-banner-info, .chat-screenshare-banner-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.chat-call-banner-icon, .chat-screenshare-banner-icon { font-size: 1rem; flex-shrink: 0; }
+.chat-call-banner-title, .chat-screenshare-banner-title { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-call-banner-timer, .chat-screenshare-banner-timer { font-size: 0.72rem; opacity: 0.85; margin-top: 1px; }
+.chat-call-banner-actions, .chat-screenshare-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.chat-call-banner-btn, .chat-screenshare-banner-btn {
+    border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; background: rgba(255,255,255,0.25); color: #fff; white-space: nowrap;
+}
+.chat-call-banner-btn.refuse, .chat-call-banner-btn.end,
+.chat-screenshare-banner-btn.leave, .chat-screenshare-banner-btn.stop { background: #ff3b30; }
+.chat-screenshare-banner-btn.start { background: #34c759; }
+
+/* Carte d'invitation au partage d'écran (dans une bulle de message) */
+.screenshare-invite-card {
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+    padding: 4px 2px; min-width: 200px;
+}
+.screenshare-invite-card > span:first-of-type,
+.screenshare-invite-card .screenshare-invite-text { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+.screenshare-invite-actions { display: flex; gap: 10px; width: 100%; margin-top: 4px; }
+.screenshare-invite-actions button {
+    flex: 1; border: none; border-radius: 14px; padding: 7px 0; font-size: 0.78rem;
+    font-weight: 600; cursor: pointer; background: rgba(0,0,0,0.08); color: inherit;
+}
+.screenshare-invite-actions button.accept { background: #34c759; color: #fff; }
+
+/* Visionneuse plein écran du partage d'écran reçu */
+.screenshare-viewer-overlay {
+    position: fixed; inset: 0; z-index: 999998; background: #000;
+    display: none; align-items: center; justify-content: center;
+}
+.screenshare-viewer-overlay.active { display: flex; }
+#screenshare-viewer-video { width: 100%; height: 100%; }
+#screenshare-viewer-video video { object-fit: contain !important; background: #000; }
+.screenshare-viewer-topbar {
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 10; padding: 10px 22px; border-radius: 20px;
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff; font-size: 0.78rem; font-weight: 700; text-align: center;
+}
+.screenshare-viewer-bottombar {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    z-index: 10; padding: 10px 22px; border-radius: 24px;
+    background: rgba(255,59,48,0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #fff; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none;
+}
     </style>
 </head>
 <body>
@@ -2544,6 +2634,36 @@ input, textarea {
             </div>
         </div>
         <div class="live-bar" id="live-bar"></div>
+
+        <div class="chat-call-banner" id="chat-call-banner">
+            <div class="chat-call-banner-info">
+                <i class="fa-solid fa-phone chat-call-banner-icon"></i>
+                <div>
+                    <div class="chat-call-banner-title" id="chat-call-banner-title">Appel en cours</div>
+                    <div class="chat-call-banner-timer" id="chat-call-banner-timer"></div>
+                </div>
+            </div>
+            <div class="chat-call-banner-actions">
+                <button class="chat-call-banner-btn refuse" id="chat-call-banner-refuse-btn" onclick="rejectCall()" style="display:none;">Refuser</button>
+                <button class="chat-call-banner-btn end" id="chat-call-banner-end-btn" onclick="endCall()" style="display:none;">Terminer</button>
+            </div>
+        </div>
+
+        <div class="chat-screenshare-banner" id="chat-screenshare-banner">
+            <div class="chat-screenshare-banner-info">
+                <i class="fa-solid fa-display chat-screenshare-banner-icon"></i>
+                <div>
+                    <div class="chat-screenshare-banner-title" id="chat-screenshare-banner-title">Partage d'écran</div>
+                    <div class="chat-screenshare-banner-timer" id="chat-screenshare-banner-timer"></div>
+                </div>
+            </div>
+            <div class="chat-screenshare-banner-actions">
+                <button class="chat-screenshare-banner-btn start" id="chat-screenshare-banner-start-btn" onclick="demarrerEnvoiPartageEcran()" style="display:none;">Démarrer</button>
+                <button class="chat-screenshare-banner-btn stop" id="chat-screenshare-banner-stop-btn" onclick="terminerPartageEcran()" style="display:none;">Terminer</button>
+                <button class="chat-screenshare-banner-btn leave" id="chat-screenshare-banner-leave-btn" onclick="quitterPartageEcran()" style="display:none;">Quitter</button>
+            </div>
+        </div>
+
         <div class="messages-area" id="msg-area"></div>
  <!-- Bouton flottant "Nouveau message" -->
 <div class="new-message-floating-btn" id="new-msg-floating-btn" onclick="scrollToBottom()">
@@ -2673,6 +2793,27 @@ input, textarea {
     ">
         <i class="fa-solid fa-paintbrush" style="color: #ff6b6b;"></i>
         <span>Dessin</span>
+    </button>
+      <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+
+      <button class="toolbar-btn" onclick="proposerPartageEcran()" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #0095f6;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    " title="Partager mon écran">
+        <i class="fa-solid fa-display"></i>
+        <span>Partage</span>
     </button>
       <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
@@ -3040,44 +3181,53 @@ input, textarea {
                 <div class="permission-icon"><i class="fa-solid fa-microphone"></i></div>
                 <div class="permission-text">
                     <div class="permission-title">Microphone</div>
-                    <div class="permission-status" id="permission-status-mic">Statut inconnu</div>
+                    <div class="permission-status" id="permission-status-mic">Non activé</div>
                 </div>
-                <button class="settings-btn-secondary" onclick="demanderAutorisation('mic')">Autoriser</button>
+                <div class="ios-toggle-switch" id="permission-toggle-mic" onclick="demanderAutorisation('mic')"></div>
             </div>
             <div class="permission-row" id="permission-row-cam">
                 <div class="permission-icon"><i class="fa-solid fa-video"></i></div>
                 <div class="permission-text">
                     <div class="permission-title">Caméra</div>
-                    <div class="permission-status" id="permission-status-cam">Statut inconnu</div>
+                    <div class="permission-status" id="permission-status-cam">Non activé</div>
                 </div>
-                <button class="settings-btn-secondary" onclick="demanderAutorisation('cam')">Autoriser</button>
+                <div class="ios-toggle-switch" id="permission-toggle-cam" onclick="demanderAutorisation('cam')"></div>
             </div>
             <div class="permission-row" id="permission-row-notif">
                 <div class="permission-icon"><i class="fa-solid fa-bell"></i></div>
                 <div class="permission-text">
                     <div class="permission-title">Notifications</div>
-                    <div class="permission-status" id="permission-status-notif">Statut inconnu</div>
+                    <div class="permission-status" id="permission-status-notif">Non activé</div>
                 </div>
-                <button class="settings-btn-secondary" onclick="demanderAutorisation('notif')">Autoriser</button>
+                <div class="ios-toggle-switch" id="permission-toggle-notif" onclick="demanderAutorisation('notif')"></div>
             </div>
-            <p class="settings-section-desc" style="margin-top:10px; font-size:0.7rem;">Si un bouton reste bloqué sur "❌ Refusé", il faut l'autoriser manuellement dans les réglages du navigateur (icône 🔒 ou ⓘ à côté de l'adresse du site), puis recharger la page.</p>
+            <p class="settings-section-desc" style="margin-top:10px; font-size:0.7rem;">Si un interrupteur reste rouge, il faut autoriser manuellement dans les réglages du navigateur (icône 🔒 ou ⓘ à côté de l'adresse du site), puis recharger la page.</p>
         </div>
 
         <!-- Section Fond d'appel (couleur ou image pour les appels vocaux) -->
         <div class="settings-section" style="animation-delay:0.22s;">
             <h4><i class="fa-solid fa-panorama"></i> Fond d'appel</h4>
             <p class="settings-section-desc">Choisis la couleur ou l'image affichée en plein écran pendant un appel vocal.</p>
-            <div class="bg-options" id="call-bg-options">
-                <div class="bg-option" style="background: linear-gradient(135deg, #1a0033, #000000);" data-callbg="color:linear-gradient(135deg, #1a0033, #000000)" title="Par défaut"></div>
-                <div class="bg-option" style="background:#a800ff;" data-callbg="color:#a800ff"></div>
-                <div class="bg-option" style="background:#0076ff;" data-callbg="color:#0076ff"></div>
-                <div class="bg-option" style="background:#ff2d55;" data-callbg="color:#ff2d55"></div>
-                <div class="bg-option" style="background:#34c759;" data-callbg="color:#34c759"></div>
-                <div class="bg-option" style="background:#1c1c1e;" data-callbg="color:#1c1c1e"></div>
-                <div class="bg-option" id="call-bg-custom-color" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);" title="Couleur personnalisée"></div>
-                <div class="bg-option bg-option-add" id="call-bg-option-add" title="Ajouter une image">
-                    <i class="fa-solid fa-plus"></i>
-                </div>
+            <div class="accent-color-grid" id="call-bg-options">
+                <div class="accent-color-dot" style="background:#a800ff;" data-callbg="color:#a800ff" title="Violet"></div>
+                <div class="accent-color-dot" style="background:#0076ff;" data-callbg="color:#0076ff" title="Bleu"></div>
+                <div class="accent-color-dot" style="background:#ff007f;" data-callbg="color:#ff007f" title="Magenta"></div>
+                <div class="accent-color-dot" style="background:#ff3b30;" data-callbg="color:#ff3b30" title="Rouge"></div>
+                <div class="accent-color-dot" style="background:#ff9500;" data-callbg="color:#ff9500" title="Orange"></div>
+                <div class="accent-color-dot" style="background:#ffcc00;" data-callbg="color:#ffcc00" title="Jaune"></div>
+                <div class="accent-color-dot" style="background:#34c759;" data-callbg="color:#34c759" title="Vert"></div>
+                <div class="accent-color-dot" style="background:#00c7be;" data-callbg="color:#00c7be" title="Turquoise"></div>
+                <div class="accent-color-dot" style="background:#30b0c7;" data-callbg="color:#30b0c7" title="Cyan"></div>
+                <div class="accent-color-dot" style="background:#5856d6;" data-callbg="color:#5856d6" title="Indigo"></div>
+                <div class="accent-color-dot" style="background:#af52de;" data-callbg="color:#af52de" title="Mauve"></div>
+                <div class="accent-color-dot" style="background:#ff2d55;" data-callbg="color:#ff2d55" title="Rose"></div>
+                <div class="accent-color-dot" style="background:#8e8e93;" data-callbg="color:#8e8e93" title="Gris"></div>
+                <div class="accent-color-dot" style="background:#1c1c1e;" data-callbg="color:#1c1c1e" title="Noir"></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px;">
+                <div class="accent-color-dot tile-icon" id="call-bg-custom-color" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red); width:34px; height:34px;" title="Couleur personnalisée"></div>
+                <div class="accent-color-dot tile-icon" id="call-bg-option-add" style="width:34px; height:34px;" title="Ajouter une image"><i class="fa-solid fa-plus"></i></div>
+                <span style="font-size:0.72rem; color:var(--text-muted);">Couleur personnalisée ou image</span>
             </div>
             <input type="color" id="call-bg-color-picker" style="display:none;">
             <input type="file" id="call-bg-upload-input" accept="image/*" style="display:none;">
@@ -12840,6 +12990,29 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
         } else if (data.type === 'whiteboard') {
     // Afficher le tableau blanc
     afficherWb(msgId, data);
+} else if (data.type === 'screenshare_invite') {
+            const estExpediteur = data.senderId === currentUser.id;
+            if (data.status === 'pending') {
+                if (estExpediteur) {
+                    bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> En attente de réponse...</span></div>`;
+                } else {
+                    bubbleHtml += `
+                        <div class="screenshare-invite-card">
+                            <span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ${escapeHTML(data.senderName)} vous invite à un partage d'écran</span>
+                            <div class="screenshare-invite-actions">
+                                <button onclick="repondreInvitationPartageEcran('${msgId}', false)">Non</button>
+                                <button onclick="repondreInvitationPartageEcran('${msgId}', true)" class="accept">Oui</button>
+                            </div>
+                        </div>`;
+                }
+            } else if (data.status === 'accepted') {
+                bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ✅ Invitation acceptée</span></div>`;
+                if (estExpediteur && !screenShareClient) {
+                    setTimeout(afficherBandeauDemarragePartageEcran, 0);
+                }
+            } else if (data.status === 'declined') {
+                bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ❌ Invitation refusée</span></div>`;
+            }
 } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
             // MORPION - code simplifié
             const game = data.gameData;
@@ -14308,6 +14481,8 @@ function getCallDocRef() {
 }
 
 // Démarre l'écoute Firestore de l'état d'appel (à appeler après login)
+let dernierAppelTermineTraite = null;
+
 function initCallListener() {
     if (!currentUser) return;
     if (callUnsubscribe) { callUnsubscribe(); callUnsubscribe = null; }
@@ -14328,15 +14503,70 @@ function initCallListener() {
             if (data.calleeId === currentUser.id && !agoraClient) {
                 joinAgoraChannel(data.type);
             }
-        } else if (data.status === 'rejected') {
-            if (data.callerId === currentUser.id) {
+        } else if (data.status === 'rejected' || data.status === 'ended') {
+            if (data.status === 'rejected' && data.callerId === currentUser.id) {
                 showTempNotification('📵 Appel refusé');
             }
-            cleanupCall();
-        } else if (data.status === 'ended') {
+            // Un seul des deux appareils écrit le message récapitulatif dans le chat
+            // (celui qui a initié l'appel), avec une protection anti-doublon.
+            const callKey = data.createdAt ? (data.createdAt.seconds + '-' + data.createdAt.nanoseconds) : null;
+            if (data.callerId === currentUser.id && callKey && dernierAppelTermineTraite !== callKey) {
+                dernierAppelTermineTraite = callKey;
+                envoyerMessageFinAppel(data);
+            }
             cleanupCall();
         }
     });
+}
+
+function formatDureeAppel(secondes) {
+    const h = Math.floor(secondes / 3600);
+    const m = Math.floor((secondes % 3600) / 60);
+    const s = secondes % 60;
+    const parts = [];
+    if (h > 0) parts.push(h + 'h');
+    if (h > 0 || m > 0) parts.push(m + 'mn');
+    parts.push(s + 's');
+    return parts.join(' ');
+}
+
+// Écrit dans le chat un message récapitulatif à la fin d'un appel
+// (durée si l'appel a été décroché, sinon manqué/refusé)
+async function envoyerMessageFinAppel(data) {
+    if (!currentUser) return;
+    try {
+        let texte;
+        if (data.status === 'rejected' && !data.acceptedAt) {
+            texte = '📵 Appel refusé';
+        } else if (data.acceptedAt) {
+            const acceptedMs = data.acceptedAt.toMillis ? data.acceptedAt.toMillis() : Date.now();
+            const dureeSec = Math.max(0, Math.round((Date.now() - acceptedMs) / 1000));
+            texte = `${data.type === 'video' ? '🎥' : '📞'} Appel terminé — durée ${formatDureeAppel(dureeSec)}`;
+        } else {
+            texte = '📵 Appel manqué';
+        }
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            text: texte,
+            senderId: data.callerId,
+            senderName: data.callerName || currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+    } catch (e) {
+        console.error('Erreur message fin appel:', e);
+    }
+}
+
+// Envoie une notification Telegram via la fonction Supabase dédiée
+// (nécessite les secrets TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID côté serveur)
+async function envoyerNotifTelegram(texte) {
+    try {
+        await fetch(`https://mxzupngxmnfnldbyooqf.supabase.co/functions/v1/telegram-notify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: texte })
+        });
+    } catch (e) { /* pas critique si Telegram est indisponible */ }
 }
 
 // L'utilisateur clique sur le combiné ou la caméra en haut de l'écran
@@ -14360,6 +14590,7 @@ async function startCall(type) {
             channel: CHAT_ID,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        envoyerNotifTelegram(`📞 ${currentUser.name} lance un appel ${type === 'video' ? 'vidéo' : 'vocal'} avec ${targetUser.name} — Appel en cours...`);
         // ⚠️ Pas de minuterie d'annulation automatique : l'appel sonne
         // jusqu'à ce que l'un des deux raccroche/accepte/refuse manuellement.
         await joinAgoraChannel(type);
@@ -14557,6 +14788,7 @@ function activerModeAudio() {
 function activerModeVideo() {
     document.getElementById('call-bg-layer').style.display = 'none';
     document.getElementById('call-video-fullscreen').style.display = 'block';
+    appliquerCouleurBarreEtat('#000000');
 }
 
 function mettreAJourVuesVideo() {
@@ -14643,6 +14875,7 @@ function baseCallUI(data, phase) {
     document.getElementById('call-overlay').classList.add('active');
     document.getElementById('call-mini-badge').classList.remove('active');
     setCallTopbarText(data);
+    updateChatCallBanner(data, phase);
 
     const isVideo = data.type === 'video';
     if (isVideo) activerModeVideo(); else activerModeAudio();
@@ -14666,6 +14899,26 @@ function baseCallUI(data, phase) {
     document.getElementById('call-switch-cam-btn').style.display = (isVideo && phase !== 'incoming') ? 'flex' : 'none';
 }
 
+// Petit bandeau visible dans le fil de discussion tant que l'appel dure
+function updateChatCallBanner(data, phase) {
+    const banner = document.getElementById('chat-call-banner');
+    if (!banner) return;
+    banner.style.display = 'flex';
+    const isVideo = data.type === 'video';
+    const titre = phase === 'incoming' ? (isVideo ? 'Appel vidéo entrant' : 'Appel entrant')
+        : phase === 'outgoing' ? (isVideo ? 'Appel vidéo en cours...' : 'Appel en cours...')
+        : (isVideo ? 'Appel vidéo en cours' : 'Appel en cours');
+    document.getElementById('chat-call-banner-title').innerText = titre;
+    document.getElementById('chat-call-banner-refuse-btn').style.display = phase === 'incoming' ? 'inline-block' : 'none';
+    document.getElementById('chat-call-banner-end-btn').style.display = phase !== 'incoming' ? 'inline-block' : 'none';
+    if (phase !== 'active') document.getElementById('chat-call-banner-timer').innerText = '';
+}
+
+function hideChatCallBanner() {
+    const banner = document.getElementById('chat-call-banner');
+    if (banner) banner.style.display = 'none';
+}
+
 function hideCallOverlay() {
     document.getElementById('call-overlay').classList.remove('active');
     document.getElementById('call-mini-badge').classList.remove('active');
@@ -14676,6 +14929,8 @@ function hideCallOverlay() {
     document.getElementById('call-pip').style.top = '';
     document.getElementById('call-pip').style.right = '16px';
     document.getElementById('call-pip').style.bottom = '120px';
+    hideChatCallBanner();
+    restaurerCouleurBarreEtat();
 }
 
 function resetCallUIIfIdle() {
@@ -14702,6 +14957,8 @@ function startCallTimer() {
         const txt = `${m}:${s}`;
         document.getElementById('call-timer-text').innerText = txt;
         document.getElementById('call-mini-timer').innerText = txt;
+        const bannerTimer = document.getElementById('chat-call-banner-timer');
+        if (bannerTimer) bannerTimer.innerText = formatDureeAppel(callTimerSeconds);
     }, 1000);
 }
 
@@ -14763,25 +15020,85 @@ function appliquerFondAppelActuel() {
         layer.style.backgroundImage = 'none';
         layer.style.background = c;
     }
+    extraireCouleurThemeDepuisFond(valeur, appliquerCouleurBarreEtat);
+}
+
+// ========== SYNCHRO DE LA BARRE D'ÉTAT (heure/wifi/batterie) AVEC LE FOND D'APPEL ==========
+// Le fond d'appel doit couvrir l'écran EN ENTIER, y compris la zone où
+// se trouvent l'heure/le wifi/la batterie du téléphone (barre d'état système).
+// On y arrive en changeant temporairement la couleur "theme-color" du site
+// (utilisée par le navigateur/l'app pour peindre cette zone), le temps de l'appel.
+let themeColorMetaOriginal = null;
+
+function extraireCouleurThemeDepuisFond(valeur, callback) {
+    if (!valeur) { callback('#1a0033'); return; }
+    if (valeur.startsWith('color:')) {
+        const c = valeur.slice(6);
+        const hexMatch = c.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/);
+        callback(hexMatch ? hexMatch[0] : '#1a0033');
+        return;
+    }
+    if (valeur.startsWith('image:')) {
+        const url = valeur.slice(6);
+        try {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 8; canvas.height = 8;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 8, 8);
+                    const data = ctx.getImageData(0, 0, 8, 8).data;
+                    let r = 0, g = 0, b = 0, n = 0;
+                    for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i + 1]; b += data[i + 2]; n++; }
+                    r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+                    const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+                    callback(hex);
+                } catch (e) { callback('#000000'); }
+            };
+            img.onerror = function() { callback('#000000'); };
+            img.src = url;
+        } catch (e) { callback('#000000'); }
+        return;
+    }
+    callback('#1a0033');
+}
+
+function appliquerCouleurBarreEtat(hex) {
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    if (!metas.length) return;
+    if (!themeColorMetaOriginal) {
+        themeColorMetaOriginal = Array.from(metas).map(m => ({ el: m, content: m.getAttribute('content') }));
+    }
+    metas.forEach(m => m.setAttribute('content', hex));
+}
+
+function restaurerCouleurBarreEtat() {
+    if (!themeColorMetaOriginal) return;
+    themeColorMetaOriginal.forEach(entry => entry.el.setAttribute('content', entry.content));
+    themeColorMetaOriginal = null;
 }
 
 function marquerFondAppelActif(valeur) {
-    document.querySelectorAll('#call-bg-options .bg-option[data-callbg]').forEach(o => {
+    document.querySelectorAll('#call-bg-options .accent-color-dot[data-callbg]').forEach(o => {
         o.classList.toggle('active', o.getAttribute('data-callbg') === valeur);
     });
 }
 
 function creerVignetteFondAppelPerso(dataUrl) {
     const opt = document.createElement('div');
-    opt.className = 'bg-option';
+    opt.className = 'accent-color-dot';
     opt.setAttribute('data-custom', 'true');
     opt.style.backgroundImage = `url('${dataUrl}')`;
+    opt.style.backgroundSize = 'cover';
+    opt.style.backgroundPosition = 'center';
     const valeur = 'image:' + dataUrl;
     opt.setAttribute('data-callbg', valeur);
     opt.title = 'Ton image';
 
     const removeBtn = document.createElement('div');
-    removeBtn.className = 'bg-option-remove';
+    removeBtn.className = 'dot-remove-btn';
     removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
     removeBtn.onclick = function(e) {
         e.stopPropagation();
@@ -14790,7 +15107,7 @@ function creerVignetteFondAppelPerso(dataUrl) {
     opt.appendChild(removeBtn);
 
     opt.addEventListener('click', function(e) {
-        if (e.target.closest('.bg-option-remove')) return;
+        if (e.target.closest('.dot-remove-btn')) return;
         localStorage.setItem('call_background', valeur);
         marquerFondAppelActif(valeur);
     });
@@ -14811,7 +15128,7 @@ function supprimerFondAppelPerso(valeur, opt) {
 }
 
 function initCallBgOptions() {
-    document.querySelectorAll('#call-bg-options .bg-option[data-callbg]').forEach(opt => {
+    document.querySelectorAll('#call-bg-options .accent-color-dot[data-callbg]').forEach(opt => {
         if (opt.dataset.bound === 'true') return;
         opt.dataset.bound = 'true';
         opt.addEventListener('click', () => {
@@ -14822,18 +15139,18 @@ function initCallBgOptions() {
     });
 
     const container = document.getElementById('call-bg-options');
-    const addTile = document.getElementById('call-bg-option-add');
-    if (!container || !addTile) return;
-    container.querySelectorAll('.bg-option[data-custom="true"]').forEach(el => el.remove());
+    if (!container) return;
+    container.querySelectorAll('.accent-color-dot[data-custom="true"]').forEach(el => el.remove());
 
     const fondsPersos = JSON.parse(localStorage.getItem('custom_call_backgrounds') || '[]');
     fondsPersos.forEach(v => {
         const dataUrl = v.startsWith('image:') ? v.slice(6) : v;
         const vignette = creerVignetteFondAppelPerso(dataUrl);
-        container.insertBefore(vignette, addTile);
+        container.appendChild(vignette);
     });
 
-    if (addTile.dataset.bound !== 'true') {
+    const addTile = document.getElementById('call-bg-option-add');
+    if (addTile && addTile.dataset.bound !== 'true') {
         addTile.dataset.bound = 'true';
         addTile.addEventListener('click', () => {
             document.getElementById('call-bg-upload-input').click();
@@ -14869,7 +15186,7 @@ function initCallBgOptions() {
                 fonds.push(valeur);
                 localStorage.setItem('custom_call_backgrounds', JSON.stringify(fonds));
                 const vignette = creerVignetteFondAppelPerso(dataUrl);
-                container.insertBefore(vignette, addTile);
+                container.appendChild(vignette);
                 localStorage.setItem('call_background', valeur);
                 marquerFondAppelActif(valeur);
                 showTempNotification("🖼️ Image d'appel enregistrée");
@@ -14886,11 +15203,17 @@ function initCallBgOptions() {
 
 function majStatutPermission(type, statut) {
     const el = document.getElementById(`permission-status-${type}`);
-    if (!el) return;
-    el.classList.remove('granted', 'denied');
-    if (statut === 'granted') { el.textContent = '✅ Autorisé'; el.classList.add('granted'); }
-    else if (statut === 'denied') { el.textContent = '❌ Refusé'; el.classList.add('denied'); }
-    else { el.textContent = 'Statut inconnu'; }
+    const toggle = document.getElementById(`permission-toggle-${type}`);
+    if (el) {
+        el.classList.remove('granted', 'denied');
+        if (statut === 'granted') { el.textContent = '✅ Autorisé'; el.classList.add('granted'); }
+        else if (statut === 'denied') { el.textContent = '❌ Refusé'; el.classList.add('denied'); }
+        else { el.textContent = 'Non activé'; }
+    }
+    if (toggle) {
+        toggle.classList.toggle('on', statut === 'granted');
+        toggle.classList.toggle('denied', statut === 'denied');
+    }
 }
 
 async function verifierStatutsPermissions() {
@@ -14934,6 +15257,244 @@ async function demanderAutorisation(type) {
     }
 }
 // ==================== FIN APPELS AGORA ====================
+
+// ========================================================================
+// ============================ PARTAGE D'ÉCRAN ==========================
+// ========================================================================
+// ⚠️ Contrainte technique du navigateur : démarrer le partage d'écran
+// (getDisplayMedia) exige un clic direct de LA PERSONNE QUI PARTAGE.
+// Impossible de le déclencher automatiquement à distance dès que l'autre
+// accepte — c'est une règle de sécurité imposée par tous les navigateurs.
+// C'est pourquoi, une fois l'invitation acceptée, celui qui partage doit
+// cliquer lui-même sur "Démarrer" dans le bandeau qui apparaît.
+
+let screenShareClient = null;
+let screenShareTrack = null;
+let screenShareUnsubscribe = null;
+let screenShareTimerInterval = null;
+let screenShareSeconds = 0;
+let screenShareRole = null; // 'sender' | 'viewer'
+
+function getScreenShareDocRef() {
+    return db.collection('screenshares').doc(CHAT_ID);
+}
+
+// Envoie l'invitation dans le chat (bouton "Partage" de la barre d'outils)
+async function proposerPartageEcran() {
+    if (!currentUser || !targetUser) return;
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'screenshare_invite',
+            text: `🖥️ ${currentUser.name} vous invite à un partage d'écran`,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            status: 'pending',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+        showTempNotification('🖥️ Invitation envoyée');
+        if (typeof fermerToolbarMedias === 'function') fermerToolbarMedias();
+    } catch (e) {
+        console.error('Erreur invitation partage écran:', e);
+        showTempNotification("❌ Impossible d'envoyer l'invitation");
+    }
+}
+
+// Clic sur "Oui" / "Non" dans la bulle d'invitation (voir rendu des messages)
+async function repondreInvitationPartageEcran(msgId, accepter) {
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({
+            status: accepter ? 'accepted' : 'declined'
+        });
+        if (accepter) {
+            demarrerReceptionPartageEcran();
+            showTempNotification('✅ En attente que la personne démarre le partage...');
+        }
+    } catch (e) {
+        console.error('Erreur réponse invitation:', e);
+    }
+}
+
+// Côté EXPÉDITEUR : une fois que le destinataire a accepté, un bandeau
+// "Démarrer" apparaît dans le chat — ce bouton appelle cette fonction.
+async function demarrerEnvoiPartageEcran() {
+    if (screenShareClient) return;
+    try {
+        screenShareRole = 'sender';
+        const channel = 'screenshare_' + CHAT_ID;
+        const uid = AGORA_UID_MAP[currentUser.id];
+        const tokenResp = await fetch(`${AGORA_FUNCTIONS_URL}?channel=${encodeURIComponent(channel)}&uid=${uid}`);
+        const tokenData = await tokenResp.json();
+        if (!tokenData.token) throw new Error('token manquant');
+
+        screenShareClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+        await screenShareClient.join(AGORA_APP_ID, channel, tokenData.token, uid);
+
+        const tracks = await AgoraRTC.createScreenVideoTrack({ encoderConfig: '1080p_2' }, 'disable');
+        screenShareTrack = Array.isArray(tracks) ? tracks[0] : tracks;
+        await screenShareClient.publish([screenShareTrack]);
+        screenShareTrack.on('track-ended', () => terminerPartageEcran());
+
+        await getScreenShareDocRef().set({
+            status: 'active',
+            fromId: currentUser.id,
+            fromName: currentUser.name,
+            toId: targetUser.id,
+            channel: channel,
+            startedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        afficherBandeauPartageEcran('sender', 'Partage en cours');
+        demarrerChronoPartageEcran();
+        showTempNotification('🖥️ Partage d\'écran démarré');
+    } catch (e) {
+        console.error('Erreur démarrage partage écran:', e);
+        showTempNotification("❌ Impossible de démarrer le partage (autorisation refusée ?)");
+        nettoyerPartageEcran();
+    }
+}
+
+// Côté DESTINATAIRE : attend que l'expéditeur ait effectivement démarré,
+// puis rejoint le canal et affiche son écran en plein écran.
+function demarrerReceptionPartageEcran() {
+    if (screenShareUnsubscribe) return;
+    screenShareRole = 'viewer';
+    afficherBandeauPartageEcran('viewer-waiting', "En attente du démarrage...");
+    screenShareUnsubscribe = getScreenShareDocRef().onSnapshot(async (docSnap) => {
+        if (!docSnap.exists) return;
+        const data = docSnap.data();
+        if (data.status === 'active' && data.toId === currentUser.id && !screenShareClient) {
+            try {
+                const uid = AGORA_UID_MAP[currentUser.id];
+                const tokenResp = await fetch(`${AGORA_FUNCTIONS_URL}?channel=${encodeURIComponent(data.channel)}&uid=${uid}`);
+                const tokenData = await tokenResp.json();
+                if (!tokenData.token) throw new Error('token manquant');
+
+                screenShareClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+                screenShareClient.on('user-published', async (user, mediaType) => {
+                    await screenShareClient.subscribe(user, mediaType);
+                    if (mediaType === 'video') user.videoTrack.play('screenshare-viewer-video');
+                });
+                await screenShareClient.join(AGORA_APP_ID, data.channel, tokenData.token, uid);
+
+                document.getElementById('screenshare-viewer-topbar').innerText = `Partage d'écran de ${data.fromName || targetUser.name}`;
+                document.getElementById('screenshare-viewer-overlay').classList.add('active');
+                afficherBandeauPartageEcran('viewer', 'Partage en cours');
+                demarrerChronoPartageEcran();
+                showTempNotification('🖥️ Partage d\'écran en cours');
+            } catch (e) {
+                console.error('Erreur réception partage écran:', e);
+                showTempNotification('❌ Impossible de rejoindre le partage');
+            }
+        } else if (data.status === 'ended') {
+            nettoyerPartageEcran();
+        }
+    });
+}
+
+// L'EXPÉDITEUR termine le partage
+async function terminerPartageEcran() {
+    try {
+        const docSnap = await getScreenShareDocRef().get();
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            await envoyerMessageFinPartageEcran(data, currentUser.name + ' a terminé le partage');
+        }
+        await getScreenShareDocRef().set({ status: 'ended' }, { merge: true });
+    } catch (e) { console.error(e); }
+    nettoyerPartageEcran();
+}
+
+// Le DESTINATAIRE quitte la visionneuse (le partage continue pour l'expéditeur… mais
+// par simplicité et cohérence avec la demande, quitter termine aussi le partage)
+async function quitterPartageEcran() {
+    try {
+        const docSnap = await getScreenShareDocRef().get();
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            await envoyerMessageFinPartageEcran(data, (targetUser ? targetUser.name : 'La personne') + ' a quitté le partage');
+        }
+        await getScreenShareDocRef().set({ status: 'ended' }, { merge: true });
+    } catch (e) { console.error(e); }
+    nettoyerPartageEcran();
+}
+
+async function envoyerMessageFinPartageEcran(data, prefixeTexte) {
+    if (!currentUser) return;
+    try {
+        const startMs = data && data.startedAt && data.startedAt.toMillis ? data.startedAt.toMillis() : Date.now();
+        const dureeSec = Math.max(0, Math.round((Date.now() - startMs) / 1000));
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            text: `🔴 ${prefixeTexte} — durée ${formatDureeAppel(dureeSec)}`,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+    } catch (e) { console.error(e); }
+}
+
+function afficherBandeauPartageEcran(etat, titre) {
+    const banner = document.getElementById('chat-screenshare-banner');
+    if (!banner) return;
+    banner.style.display = 'flex';
+    document.getElementById('chat-screenshare-banner-title').innerText = titre;
+    document.getElementById('chat-screenshare-banner-start-btn').style.display = 'none';
+    document.getElementById('chat-screenshare-banner-stop-btn').style.display = 'none';
+    document.getElementById('chat-screenshare-banner-leave-btn').style.display = 'none';
+    if (etat === 'viewer-waiting') {
+        // rien à afficher côté destinataire tant que ce n'est pas démarré
+    } else if (etat === 'sender') {
+        document.getElementById('chat-screenshare-banner-stop-btn').style.display = 'inline-block';
+    } else if (etat === 'viewer') {
+        document.getElementById('chat-screenshare-banner-leave-btn').style.display = 'inline-block';
+    }
+}
+
+// Appelé côté expéditeur juste après acceptation, pour proposer le bouton "Démarrer"
+function afficherBandeauDemarragePartageEcran() {
+    const banner = document.getElementById('chat-screenshare-banner');
+    if (!banner) return;
+    banner.style.display = 'flex';
+    document.getElementById('chat-screenshare-banner-title').innerText = 'Invitation acceptée';
+    document.getElementById('chat-screenshare-banner-start-btn').style.display = 'inline-block';
+    document.getElementById('chat-screenshare-banner-stop-btn').style.display = 'none';
+    document.getElementById('chat-screenshare-banner-leave-btn').style.display = 'none';
+}
+
+function demarrerChronoPartageEcran() {
+    if (screenShareTimerInterval) return;
+    screenShareSeconds = 0;
+    screenShareTimerInterval = setInterval(() => {
+        screenShareSeconds++;
+        const txt = formatDureeAppel(screenShareSeconds);
+        const bannerTimer = document.getElementById('chat-screenshare-banner-timer');
+        if (bannerTimer) bannerTimer.innerText = txt;
+        const viewerTimer = document.getElementById('screenshare-viewer-timer');
+        if (viewerTimer) viewerTimer.innerText = txt;
+    }, 1000);
+}
+
+function nettoyerPartageEcran() {
+    if (screenShareTimerInterval) { clearInterval(screenShareTimerInterval); screenShareTimerInterval = null; }
+    screenShareSeconds = 0;
+    if (screenShareUnsubscribe) { screenShareUnsubscribe(); screenShareUnsubscribe = null; }
+    if (screenShareTrack) { try { screenShareTrack.close(); } catch (e) {} screenShareTrack = null; }
+    if (screenShareClient) {
+        screenShareClient.removeAllListeners();
+        screenShareClient.leave().catch(() => {});
+        screenShareClient = null;
+    }
+    screenShareRole = null;
+    const banner = document.getElementById('chat-screenshare-banner');
+    if (banner) banner.style.display = 'none';
+    const viewerOverlay = document.getElementById('screenshare-viewer-overlay');
+    if (viewerOverlay) viewerOverlay.classList.remove('active');
+    const viewerVideo = document.getElementById('screenshare-viewer-video');
+    if (viewerVideo) viewerVideo.innerHTML = '';
+    getScreenShareDocRef().set({ status: 'idle' }, { merge: true }).catch(() => {});
+}
+// ==================== FIN PARTAGE D'ÉCRAN ====================
   </script>
   <!-- Script pour nettoyer et désactiver la console -->
 <script>
@@ -15020,6 +15581,13 @@ async function demanderAutorisation(type) {
         <button class="call-icon-btn active-toggle" id="call-speaker-btn" onclick="toggleCallSpeaker()" title="Haut-parleur"><i class="fa-solid fa-volume-high"></i></button>
         <button class="call-icon-btn hangup-btn" id="call-hangup-btn" onclick="tenterRaccrocher()" title="Raccrocher (appuyer 2 fois)"><i class="fa-solid fa-phone-slash"></i></button>
     </div>
+</div>
+
+<!-- ========== VISIONNEUSE PLEIN ÉCRAN — PARTAGE D'ÉCRAN REÇU ========== -->
+<div class="screenshare-viewer-overlay" id="screenshare-viewer-overlay">
+    <div id="screenshare-viewer-video"></div>
+    <div class="screenshare-viewer-topbar" id="screenshare-viewer-topbar">Partage d'écran — <span id="screenshare-viewer-timer">00:00</span></div>
+    <button class="screenshare-viewer-bottombar" onclick="quitterPartageEcran()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Quitter</button>
 </div>
 
 </body>   
