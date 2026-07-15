@@ -9,6 +9,7 @@
   <meta name="msapplication-tap-highlight" content="no">
     <title>CHAT-IDA</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
@@ -2334,6 +2335,54 @@ input, textarea {
     box-shadow: 0 6px 24px rgba(0,0,0,0.12) !important;
     border: 1px solid rgba(255,255,255,0.1) !important;
 }
+
+/* ========== APPELS AGORA ========== */
+.call-overlay {
+    position: fixed; inset: 0; z-index: 999999;
+    background: linear-gradient(160deg, #1a0033, #000000);
+    color: #fff; display: none; flex-direction: column;
+    align-items: center; justify-content: space-between;
+    padding: 60px 20px 40px; text-align: center;
+}
+.call-overlay.active { display: flex; }
+.call-remote-name { font-size: 1.6rem; font-weight: 600; margin-top: 10px; }
+.call-status-text { font-size: 0.95rem; color: #d0b3ff; margin-top: 8px; }
+.call-avatar-big {
+    width: 130px; height: 130px; border-radius: 50%;
+    background: linear-gradient(45deg, #a800ff, #0076ff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 700; margin-top: 40px;
+    box-shadow: 0 0 0 0 rgba(168,0,255,0.6);
+    animation: callPulse 1.6s infinite;
+}
+@keyframes callPulse {
+    0% { box-shadow: 0 0 0 0 rgba(168,0,255,0.55); }
+    70% { box-shadow: 0 0 0 28px rgba(168,0,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(168,0,255,0); }
+}
+.call-video-wrap { position: relative; width: 100%; height: 100%; flex: 1; border-radius: 18px; overflow: hidden; background:#000; }
+#call-remote-video { width: 100%; height: 100%; background: #000; }
+#call-local-video { position: absolute; bottom: 16px; right: 16px; width: 100px; height: 140px; border-radius: 12px; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); background:#111; z-index: 2; }
+.call-actions-row { display: flex; gap: 26px; align-items: center; justify-content: center; margin-top: 30px; }
+.call-btn {
+    width: 62px; height: 62px; border-radius: 50%; border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; cursor: pointer; color: #fff;
+    background: rgba(255,255,255,0.15); transition: transform 0.15s ease;
+}
+.call-btn:active { transform: scale(0.92); }
+.call-btn.hangup { background: #ff3b30; width: 68px; height: 68px; font-size: 1.5rem; }
+.call-btn.accept { background: #34c759; width: 68px; height: 68px; font-size: 1.5rem; }
+.call-btn.active-toggle { background: #fff; color: #1a0033; }
+.call-incoming-actions { display: flex; gap: 50px; margin-top: 20px; }
+.call-timer { font-size: 0.9rem; color: #d0b3ff; margin-top: 6px; letter-spacing: 1px; }
+.call-mini-badge {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    background: #34c759; color: #fff; padding: 6px 16px; border-radius: 20px;
+    font-size: 0.8rem; z-index: 1000000; display: none; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.call-mini-badge.active { display: block; }
     </style>
 </head>
 <body>
@@ -2400,6 +2449,8 @@ input, textarea {
                 <i class="fa-solid fa-eye-slash blur-toggle-btn" id="blur-toggle-btn" title="Mode Flou" onclick="toggleBlurMode()"></i>
                 <i class="fa-solid fa-eye live-toggle-btn" id="live-toggle-btn" title="Mode Live : voir ce que l'autre tape en temps réel" onclick="toggleLiveMode()"></i>
                 <i class="fa-solid fa-magnifying-glass" title="Rechercher dans la conversation" onclick="ouvrirRecherchePage()" style="cursor:pointer;"></i>
+                <i class="fa-solid fa-phone" id="call-audio-btn" title="Appel audio" onclick="startCall('audio')" style="cursor:pointer;"></i>
+                <i class="fa-solid fa-video" id="call-video-btn" title="Appel vidéo" onclick="startCall('video')" style="cursor:pointer;"></i>
                 <i class="fa-solid fa-gear" title="Paramètres" onclick="openSettingsPage()" style="cursor:pointer;"></i>
             </div>
         </div>
@@ -4335,6 +4386,7 @@ async function enregistrerTokenPush() {
             getBatteryLevel();
             listenToOtherUserBattery();
             listenForFlashSignals();
+            initCallListener(); // 📞 démarre l'écoute des appels Agora
              
             listenToUserMood(); // ✅ correction : cette écoute existait mais n'était jamais démarrée
             // ✅ Correction : "activerLesNotifications" n'était définie nulle part (bug qui
@@ -4361,6 +4413,8 @@ setTimeout(restaurerMonMood, 500);
         function logout() {
             if(unsubscribeMessages) unsubscribeMessages();
             if(unsubscribeTyping) unsubscribeTyping();
+            if(callUnsubscribe) { callUnsubscribe(); callUnsubscribe = null; }
+            cleanupCall();
             document.getElementById('login-screen').style.display = 'flex';
         }
 // ========== ÉCOUTE EN TEMPS RÉEL DES STATUTS DE LECTURE ========== 
@@ -14086,6 +14140,303 @@ async function removeCustomColorFromMessage() {
     hideContextMenus();
     closeStyleMenu();
 }
+
+// ========================================================================
+// ============================ APPELS AGORA =============================
+// ========================================================================
+// ⚠️ Vérifie sur console.agora.io que c'est bien le bon ordre :
+// App ID (visible en clair) puis App Certificate (Primary Certificate, secret).
+const AGORA_APP_ID = "ecab018bb0114d7fa6e65390df6aeebc";
+// Le certificat NE DOIT JAMAIS être ici : il vit uniquement côté serveur
+// (Supabase Edge Function), voir supabase/functions/agora-token/index.ts
+const AGORA_UID_MAP = { ida: 1, aidara: 2 };
+
+let agoraClient = null;
+let localAudioTrack = null;
+let localVideoTrack = null;
+let callUnsubscribe = null;
+let callTimerInterval = null;
+let callTimerSeconds = 0;
+let ringtoneTimer = null;
+let ringtoneAudioCtx = null;
+let outgoingTimeoutTimer = null;
+
+function getCallDocRef() {
+    return db.collection('calls').doc(CHAT_ID);
+}
+
+// Démarre l'écoute Firestore de l'état d'appel (à appeler après login)
+function initCallListener() {
+    if (!currentUser) return;
+    if (callUnsubscribe) { callUnsubscribe(); callUnsubscribe = null; }
+    callUnsubscribe = getCallDocRef().onSnapshot((docSnap) => {
+        if (!docSnap.exists) { resetCallUIIfIdle(); return; }
+        const data = docSnap.data();
+        if (!data || !data.status || data.status === 'idle') { resetCallUIIfIdle(); return; }
+
+        if (data.status === 'ringing') {
+            if (data.callerId === currentUser.id) {
+                showOutgoingUI(data);
+            } else if (data.calleeId === currentUser.id) {
+                showIncomingUI(data);
+            }
+        } else if (data.status === 'accepted') {
+            showActiveUI(data);
+            if (data.calleeId === currentUser.id && !agoraClient) {
+                joinAgoraChannel(data.type);
+            }
+        } else if (data.status === 'rejected') {
+            if (data.callerId === currentUser.id) {
+                showTempNotification('📵 Appel refusé');
+            }
+            cleanupCall();
+        } else if (data.status === 'ended') {
+            if (data.endedReason === 'missed' && data.callerId === currentUser.id) {
+                showTempNotification('📵 Pas de réponse');
+            }
+            cleanupCall();
+        }
+    });
+}
+
+// L'utilisateur clique sur le combiné ou la caméra en haut de l'écran
+async function startCall(type) {
+    if (!currentUser || !targetUser) return;
+    try {
+        const existing = await getCallDocRef().get();
+        if (existing.exists) {
+            const st = existing.data().status;
+            if (st && st !== 'idle' && st !== 'ended' && st !== 'rejected') {
+                showTempNotification('📞 Un appel est déjà en cours');
+                return;
+            }
+        }
+        await getCallDocRef().set({
+            status: 'ringing',
+            type: type,
+            callerId: currentUser.id,
+            callerName: currentUser.name,
+            calleeId: targetUser.id,
+            channel: CHAT_ID,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await joinAgoraChannel(type);
+        outgoingTimeoutTimer = setTimeout(async () => {
+            const snap = await getCallDocRef().get();
+            if (snap.exists && snap.data().status === 'ringing') {
+                await getCallDocRef().update({ status: 'ended', endedReason: 'missed' });
+            }
+        }, 45000);
+    } catch (e) {
+        console.error('Erreur startCall:', e);
+        showTempNotification("❌ Impossible de démarrer l'appel");
+    }
+}
+
+async function acceptCall() {
+    stopRingtone();
+    try {
+        await getCallDocRef().update({ status: 'accepted', acceptedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    } catch (e) {
+        console.error('Erreur acceptCall:', e);
+    }
+}
+
+async function rejectCall() {
+    stopRingtone();
+    try { await getCallDocRef().update({ status: 'rejected' }); } catch (e) {}
+    setTimeout(() => { getCallDocRef().set({ status: 'idle' }, { merge: true }).catch(() => {}); }, 1500);
+}
+
+async function endCall() {
+    try { await getCallDocRef().update({ status: 'ended' }); } catch (e) {}
+    cleanupCall();
+    setTimeout(() => { getCallDocRef().set({ status: 'idle' }, { merge: true }).catch(() => {}); }, 1500);
+}
+
+async function joinAgoraChannel(type) {
+    if (agoraClient) return;
+    const uid = AGORA_UID_MAP[currentUser.id];
+    try {
+        const tokenResp = await fetch(`${SUPABASE_URL}/functions/v1/agora-token?channel=${encodeURIComponent(CHAT_ID)}&uid=${uid}`);
+        if (!tokenResp.ok) throw new Error('token http ' + tokenResp.status);
+        const tokenData = await tokenResp.json();
+        if (!tokenData.token) throw new Error('token manquant dans la réponse');
+
+        agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+
+        agoraClient.on('user-published', async (user, mediaType) => {
+            await agoraClient.subscribe(user, mediaType);
+            if (mediaType === 'video') {
+                document.getElementById('call-video-wrap').style.display = 'block';
+                user.videoTrack.play('call-remote-video');
+            }
+            if (mediaType === 'audio') {
+                user.audioTrack.play();
+            }
+        });
+        agoraClient.on('user-unpublished', (user, mediaType) => {
+            if (mediaType === 'video') {
+                document.getElementById('call-video-wrap').style.display = 'none';
+            }
+        });
+
+        await agoraClient.join(AGORA_APP_ID, CHAT_ID, tokenData.token, uid);
+
+        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        const tracksToPublish = [localAudioTrack];
+
+        if (type === 'video') {
+            localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+            localVideoTrack.play('call-local-video');
+            document.getElementById('call-video-wrap').style.display = 'block';
+            tracksToPublish.push(localVideoTrack);
+        }
+        await agoraClient.publish(tracksToPublish);
+    } catch (e) {
+        console.error('Erreur Agora:', e);
+        showTempNotification("❌ Micro/caméra inaccessible ou token invalide");
+        try { await getCallDocRef().update({ status: 'ended', endedReason: 'error' }); } catch (e2) {}
+        cleanupCall();
+    }
+}
+
+function cleanupCall() {
+    clearTimeout(outgoingTimeoutTimer);
+    stopRingtone();
+    stopCallTimer();
+    if (localAudioTrack) { localAudioTrack.close(); localAudioTrack = null; }
+    if (localVideoTrack) { localVideoTrack.close(); localVideoTrack = null; }
+    if (agoraClient) {
+        agoraClient.removeAllListeners();
+        agoraClient.leave().catch(() => {});
+        agoraClient = null;
+    }
+    hideCallOverlay();
+}
+
+function showOutgoingUI(data) {
+    document.getElementById('call-overlay').classList.add('active');
+    document.getElementById('call-mini-badge').classList.remove('active');
+    document.getElementById('call-avatar-big').innerText = targetUser.name.substring(0, 3);
+    document.getElementById('call-remote-name').innerText = targetUser.name;
+    document.getElementById('call-status-text').innerText = data.type === 'video' ? 'Appel vidéo en cours...' : 'Appel en cours...';
+    document.getElementById('call-timer-text').style.display = 'none';
+    document.getElementById('call-video-wrap').style.display = 'none';
+    document.getElementById('call-outgoing-actions').style.display = 'flex';
+    document.getElementById('call-incoming-actions').style.display = 'none';
+    document.getElementById('call-active-actions').style.display = 'none';
+}
+
+function showIncomingUI(data) {
+    document.getElementById('call-overlay').classList.add('active');
+    document.getElementById('call-mini-badge').classList.remove('active');
+    document.getElementById('call-avatar-big').innerText = targetUser.name.substring(0, 3);
+    document.getElementById('call-remote-name').innerText = targetUser.name;
+    document.getElementById('call-status-text').innerText = data.type === 'video' ? 'Appel vidéo entrant...' : 'Appel entrant...';
+    document.getElementById('call-timer-text').style.display = 'none';
+    document.getElementById('call-video-wrap').style.display = 'none';
+    document.getElementById('call-outgoing-actions').style.display = 'none';
+    document.getElementById('call-incoming-actions').style.display = 'flex';
+    document.getElementById('call-active-actions').style.display = 'none';
+    playRingtone();
+}
+
+function showActiveUI(data) {
+    stopRingtone();
+    document.getElementById('call-overlay').classList.add('active');
+    document.getElementById('call-status-text').innerText = 'En appel';
+    document.getElementById('call-timer-text').style.display = 'block';
+    document.getElementById('call-outgoing-actions').style.display = 'none';
+    document.getElementById('call-incoming-actions').style.display = 'none';
+    document.getElementById('call-active-actions').style.display = 'flex';
+    document.getElementById('call-cam-btn').style.display = data.type === 'video' ? 'flex' : 'none';
+    startCallTimer();
+}
+
+function hideCallOverlay() {
+    document.getElementById('call-overlay').classList.remove('active');
+    document.getElementById('call-mini-badge').classList.remove('active');
+    document.getElementById('call-video-wrap').style.display = 'none';
+    document.getElementById('call-remote-video').innerHTML = '';
+    document.getElementById('call-local-video').innerHTML = '';
+}
+
+function resetCallUIIfIdle() {
+    if (!agoraClient) hideCallOverlay();
+}
+
+function minimiserAppel() {
+    document.getElementById('call-overlay').classList.remove('active');
+    document.getElementById('call-mini-badge').classList.add('active');
+}
+
+function ouvrirEcranAppelEnCours() {
+    document.getElementById('call-overlay').classList.add('active');
+    document.getElementById('call-mini-badge').classList.remove('active');
+}
+
+function startCallTimer() {
+    if (callTimerInterval) return;
+    callTimerSeconds = 0;
+    callTimerInterval = setInterval(() => {
+        callTimerSeconds++;
+        const m = String(Math.floor(callTimerSeconds / 60)).padStart(2, '0');
+        const s = String(callTimerSeconds % 60).padStart(2, '0');
+        const txt = `${m}:${s}`;
+        document.getElementById('call-timer-text').innerText = txt;
+        document.getElementById('call-mini-timer').innerText = txt;
+    }, 1000);
+}
+
+function stopCallTimer() {
+    if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
+    callTimerSeconds = 0;
+}
+
+function playRingtone() {
+    stopRingtone();
+    try {
+        ringtoneAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const beep = () => {
+            if (!ringtoneAudioCtx) return;
+            const osc = ringtoneAudioCtx.createOscillator();
+            const gain = ringtoneAudioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.0001, ringtoneAudioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.25, ringtoneAudioCtx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ringtoneAudioCtx.currentTime + 0.4);
+            osc.connect(gain).connect(ringtoneAudioCtx.destination);
+            osc.start();
+            osc.stop(ringtoneAudioCtx.currentTime + 0.45);
+        };
+        beep();
+        ringtoneTimer = setInterval(beep, 1200);
+    } catch (e) { console.error('Erreur ringtone:', e); }
+}
+
+function stopRingtone() {
+    if (ringtoneTimer) { clearInterval(ringtoneTimer); ringtoneTimer = null; }
+    if (ringtoneAudioCtx) { ringtoneAudioCtx.close().catch(() => {}); ringtoneAudioCtx = null; }
+}
+
+async function toggleCallMic() {
+    if (!localAudioTrack) return;
+    const wasEnabled = localAudioTrack.enabled;
+    await localAudioTrack.setEnabled(!wasEnabled);
+    const btn = document.getElementById('call-mute-btn');
+    btn.classList.toggle('active-toggle', wasEnabled);
+    btn.innerHTML = wasEnabled ? '<i class="fa-solid fa-microphone-slash"></i>' : '<i class="fa-solid fa-microphone"></i>';
+}
+
+async function toggleCallCam() {
+    if (!localVideoTrack) return;
+    const wasEnabled = localVideoTrack.enabled;
+    await localVideoTrack.setEnabled(!wasEnabled);
+    document.getElementById('call-cam-btn').classList.toggle('active-toggle', wasEnabled);
+}
+// ==================== FIN APPELS AGORA ====================
   </script>
   <!-- Script pour nettoyer et désactiver la console -->
 <script>
@@ -14129,6 +14480,45 @@ async function removeCustomColorFromMessage() {
         </div>
     </div>
 </div>
+
+<!-- ========== ÉCRAN D'APPEL AGORA ========== -->
+<div class="call-mini-badge" id="call-mini-badge" onclick="ouvrirEcranAppelEnCours()">📞 Appel en cours — <span id="call-mini-timer">00:00</span></div>
+
+<div class="call-overlay" id="call-overlay">
+    <div>
+        <div class="call-avatar-big" id="call-avatar-big">--</div>
+        <div class="call-remote-name" id="call-remote-name">Correspondant</div>
+        <div class="call-status-text" id="call-status-text">Appel en cours...</div>
+        <div class="call-timer" id="call-timer-text" style="display:none;">00:00</div>
+    </div>
+
+    <div class="call-video-wrap" id="call-video-wrap" style="display:none;">
+        <div id="call-remote-video"></div>
+        <div id="call-local-video"></div>
+    </div>
+
+    <div>
+        <!-- Boutons pendant appel sortant (ringing, callé) -->
+        <div class="call-actions-row" id="call-outgoing-actions" style="display:none;">
+            <button class="call-btn hangup" onclick="endCall()" title="Annuler"><i class="fa-solid fa-phone-slash"></i></button>
+        </div>
+
+        <!-- Boutons pour appel entrant -->
+        <div class="call-incoming-actions" id="call-incoming-actions" style="display:none;">
+            <button class="call-btn hangup" onclick="rejectCall()" title="Refuser"><i class="fa-solid fa-phone-slash"></i></button>
+            <button class="call-btn accept" onclick="acceptCall()" title="Accepter"><i class="fa-solid fa-phone"></i></button>
+        </div>
+
+        <!-- Boutons pendant appel actif -->
+        <div class="call-actions-row" id="call-active-actions" style="display:none;">
+            <button class="call-btn" id="call-mute-btn" onclick="toggleCallMic()" title="Micro"><i class="fa-solid fa-microphone"></i></button>
+            <button class="call-btn" id="call-cam-btn" onclick="toggleCallCam()" title="Caméra" style="display:none;"><i class="fa-solid fa-video"></i></button>
+            <button class="call-btn hangup" onclick="endCall()" title="Raccrocher"><i class="fa-solid fa-phone-slash"></i></button>
+            <button class="call-btn" onclick="minimiserAppel()" title="Réduire"><i class="fa-solid fa-chevron-down"></i></button>
+        </div>
+    </div>
+</div>
+
 </body>   
   
 </html>
