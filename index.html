@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
    <meta name="theme-color" content="#FAFAFA" media="(prefers-color-scheme: light)">
    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-tap-highlight" content="no">
@@ -72,11 +72,21 @@
             height: 100dvh;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* app collée en haut sur mobile : voir la raison dans le commentaire ci-dessous */
             overflow: hidden;
             position: fixed;
             inset: 0;
             overscroll-behavior: none;
+        }
+        /* ⚠️ IMPORTANT : sur mobile, l'app DOIT être collée en haut (flex-start), pas centrée.
+           Sinon, quand le script JS réduit dynamiquement la hauteur de .app-container pour
+           suivre le clavier ou la zone visible réelle (visualViewport), un centrage vertical
+           répartit l'espace économisé en haut ET en bas — ce qui décale tout le contenu vers
+           le bas (l'heure/wifi/batterie ne sont plus bien couvertes) ET laisse un vide entre
+           le clavier et la zone de saisie. Collé en haut, ce même rétrécissement ne touche
+           que le bas, exactement là où on veut que le vide disparaisse. */
+        @media (min-width: 800px) {
+            body { align-items: center; } /* sur grand écran, on garde l'app centrée comme une carte */
         }
         @media (prefers-color-scheme: dark) {
             body { background: #000000; }
@@ -2295,6 +2305,7 @@ input, textarea {
 .app-container {
     box-sizing: border-box !important;
     padding: 0 !important;
+    padding-top: env(safe-area-inset-top) !important;
     margin: 0 !important;
 }
 
@@ -2656,6 +2667,27 @@ input, textarea {
 }
 .location-card-titre { font-size: 0.9rem; font-weight: 700; color: inherit; }
 .location-card-statut { font-size: 0.76rem; color: var(--text-muted); margin-top: 1px; }
+
+/* Menu média façon sélecteur natif iOS : icônes rondes colorées + libellé */
+.media-picker-row {
+    display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 6px;
+    scrollbar-width: none;
+}
+.media-picker-row::-webkit-scrollbar { display: none; }
+.media-picker-item {
+    flex-shrink: 0; width: 68px; display: flex; flex-direction: column;
+    align-items: center; gap: 6px; cursor: pointer;
+}
+.media-picker-item:active { transform: scale(0.94); }
+.media-picker-icon {
+    width: 52px; height: 52px; border-radius: 50%; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.media-picker-item span {
+    font-size: 0.68rem; color: var(--text-main); text-align: center;
+    line-height: 1.15; white-space: nowrap;
+}
 
 /* Visionneuse plein écran du partage d'écran reçu */
 .screenshare-viewer-overlay {
@@ -3567,34 +3599,33 @@ input, textarea {
 
 <!-- Menu Media (Photo/Vidéo/Galerie/Document/Position/Fichier) -->
 <div class="floating-panel" id="media-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
-    <h4 style="margin-bottom: 10px;">📷 Média</h4>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
-       <div class="tool-item" onclick="ouvrirGalerieSupabase()">
-    <i class="fa-regular fa-images" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Galerie</span>
-</div>
-<div class="tool-item" onclick="prendrePhotoAvecSupabase()">
-    <i class="fa-solid fa-camera" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Appareil photo</span>
-</div>
-<div class="tool-item" onclick="prendreVideoAvecSupabase()">
-    <i class="fa-solid fa-video" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Vidéo</span>
-</div>
-<div class="tool-item" onclick="envoyerDocumentAvecSupabase()">
-    <i class="fa-solid fa-file-lines" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Document</span>
-</div>
-<div class="tool-item" onclick="ouvrirMenuPosition()">
-    <i class="fa-solid fa-location-dot" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Position</span>
-</div>
-<div class="tool-item" onclick="envoyerFichierGenerique()">
-    <i class="fa-regular fa-folder-open" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Fichier</span>
-</div>
+    <div class="media-picker-row">
+        <div class="media-picker-item" onclick="ouvrirGalerieSupabase()">
+            <div class="media-picker-icon" style="background:#0095f6;"><i class="fa-regular fa-images"></i></div>
+            <span>Galerie</span>
+        </div>
+        <div class="media-picker-item" onclick="prendrePhotoAvecSupabase()">
+            <div class="media-picker-icon" style="background:#8e8e93;"><i class="fa-solid fa-camera"></i></div>
+            <span>Appareil photo</span>
+        </div>
+        <div class="media-picker-item" onclick="prendreVideoAvecSupabase()">
+            <div class="media-picker-icon" style="background:#34c759;"><i class="fa-solid fa-video"></i></div>
+            <span>Vidéo</span>
+        </div>
+        <div class="media-picker-item" onclick="envoyerDocumentAvecSupabase()">
+            <div class="media-picker-icon" style="background:#ff9500;"><i class="fa-solid fa-file-lines"></i></div>
+            <span>Document</span>
+        </div>
+        <div class="media-picker-item" onclick="ouvrirMenuPosition()">
+            <div class="media-picker-icon" style="background:#ff3b30;"><i class="fa-solid fa-location-dot"></i></div>
+            <span>Position</span>
+        </div>
+        <div class="media-picker-item" onclick="envoyerFichierGenerique()">
+            <div class="media-picker-icon" style="background:#5856d6;"><i class="fa-regular fa-folder-open"></i></div>
+            <span>Fichier</span>
+        </div>
     </div>
-    <button onclick="fermerMenuMedia()" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px;">Fermer</button>
+    <button onclick="fermerMenuMedia()" style="margin-top: 12px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px; color: var(--text-main);">Fermer</button>
 </div>
 
 <!-- Menu Position (position actuelle ou position en direct) -->
@@ -3785,6 +3816,29 @@ function envoyerDocumentAvecSupabase() {
 function envoyerFichierGenerique() {
     fermerMenuMedia();
     envoyerFichierVersChat('*/*');
+}
+
+// Ouvre un document intelligemment : les fichiers HTML sont rendus comme une
+// vraie page (au lieu d'afficher le code source, ce qui arrivait si le
+// stockage servait le fichier avec un type de contenu générique).
+async function ouvrirDocumentIntelligent(url, ext) {
+    const extension = (ext || '').toLowerCase();
+    if (extension === 'html' || extension === 'htm') {
+        try {
+            const reponse = await fetch(url);
+            const html = await reponse.text();
+            const fenetre = window.open('', '_blank');
+            if (fenetre) {
+                fenetre.document.open();
+                fenetre.document.write(html);
+                fenetre.document.close();
+                return;
+            }
+        } catch (e) {
+            console.error('Erreur ouverture HTML:', e);
+        }
+    }
+    window.open(url, '_blank');
 }
 
 function envoyerFichierVersChat(accept) {
@@ -5222,13 +5276,11 @@ function listenToMessages() {
     // Variable pour suivre le premier chargement (pas de notif, position de scroll restaurée)
     let isFirstSnapshot = true;
     
-    // ⚠️ Tri fiable : on demande à Firestore les 50 DERNIERS messages, déjà triés
-    // du plus ancien au plus récent (asc + limitToLast). Comme ça, l'ordre chronologique
-    // ne peut plus jamais s'inverser au rafraîchissement — la liste est rendue dans
-    // l'ordre exact renvoyé par la requête, sans retri manuel côté client.
+    // ⚠️ Aucune limite : on charge l'historique COMPLET de la conversation, du
+    // tout premier message à aujourd'hui, sans jamais rien couper — même si la
+    // conversation compte des centaines de milliers de messages.
     unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
         .orderBy('timestamp', 'asc')
-        .limitToLast(50)
         .onSnapshot(snapshot => {
             let hasNewMessage = false;
             let hasNewMessageFromOther = false;
@@ -6125,14 +6177,29 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
         // ✅ Récupère le texte INTÉGRAL d'un message affiché, y compris pour les messages
         // longs tronqués visuellement par le bouton "VOIR TOUT" (.msg-text-complet),
         // pour ne jamais citer une réponse sur un extrait coupé à 100 caractères.
+        // Pour les messages non-textuels (photo/vidéo/GIF/sticker/audio/document/position),
+        // on donne un libellé précis au lieu du générique "[Média]" — un GIF ne doit
+        // jamais être annoncé comme "Média" dans l'aperçu de réponse.
         function obtenirTexteCompletMessage(parentRow) {
             if (!parentRow) return "[Média]";
             const bulle = parentRow.querySelector('.message-bubble');
             if (!bulle) return "[Média]";
+
             const texteComplet = bulle.querySelector('.msg-text-complet');
             if (texteComplet) return texteComplet.innerText;
-            const span = bulle.querySelector('span');
-            return span?.innerText || "[Média]";
+            const span = bulle.querySelector('span:not(.msg-text-tronque):not(.voir-tout-btn)');
+            if (span && span.innerText && span.innerText.trim()) return span.innerText;
+
+            const msgType = parentRow.getAttribute('data-msgtype');
+            if (parentRow.getAttribute('data-issticker') === 'true') return '🏷️ Sticker';
+            if (parentRow.getAttribute('data-isgif') === 'true') return '🎞️ GIF';
+            if (msgType === 'video') return '🎥 Vidéo';
+            if (msgType === 'image') return '📷 Photo';
+            if (msgType === 'audio') return '🎵 Message vocal';
+            if (msgType === 'document') return '📄 ' + (parentRow.getAttribute('data-filename') || 'Document');
+            if (msgType === 'location') return '📍 Position';
+            if (msgType === 'drawing') return '🎨 Dessin';
+            return "[Média]";
         }
 
       function initiateReply() {
@@ -7713,8 +7780,11 @@ async function ouvrirGalerieMediaPage() {
         const medias = [];
         snapshot.forEach(doc => {
             const data = doc.data();
-            const estUnSticker = data.isSticker === true || (data.mediaUrl && data.mediaUrl.includes('emoji-datasource-apple'));
-            if ((data.type === 'image' || data.type === 'video') && !data.viewOnce && data.mediaUrl && !estUnSticker) {
+            // Règle stricte : tout ce qui vient de l'onglet GIF/Sticker/Emoji (isGif ou
+            // isSticker) est INTERDIT dans la galerie Médias, quel que soit son type.
+            const estUnGifOuSticker = data.isSticker === true || data.isGif === true ||
+                (data.mediaUrl && (data.mediaUrl.includes('emoji-datasource-apple') || data.mediaUrl.includes('tenor.com')));
+            if ((data.type === 'image' || data.type === 'video') && !data.viewOnce && data.mediaUrl && !estUnGifOuSticker) {
                 medias.push({ msgId: doc.id, type: data.type, url: data.mediaUrl });
             }
         });
@@ -7784,7 +7854,7 @@ async function ouvrirGalerieDocumentsPage() {
             return `
                 <div class="doc-gallery-row">
                     <div class="doc-gallery-icon" style="background:${couleur};"><i class="fa-solid ${icone}"></i></div>
-                    <div class="doc-gallery-info" onclick="window.open('${d.mediaUrl}', '_blank')">
+                    <div class="doc-gallery-info" onclick="ouvrirDocumentIntelligent('${d.mediaUrl}', '${ext}')">
                         <div class="doc-gallery-name">${escapeHTML(d.fileName || 'Document')}</div>
                         <div class="doc-gallery-meta">${ext.toUpperCase()} · ${formaterTailleFichier(d.fileSize)} · ${dateHeure}</div>
                     </div>
@@ -8608,17 +8678,18 @@ function restaurerBrouillonMessage() {
 }
 
 // ========== CORRIGE L'ÉCART ENTRE LE CLAVIER ET LA ZONE DE SAISIE ==========
-// Sur iOS notamment, "100dvh" ne se réajuste pas toujours correctement quand le
-// clavier apparaît (bug connu de certaines versions de Safari/webview), ce qui
-// laisse un vide entre le clavier et la barre de saisie. On force la hauteur
-// réelle de l'app à suivre la zone VRAIMENT visible (window.visualViewport),
-// qui elle se met à jour correctement à l'ouverture/fermeture du clavier.
+// Le viewport meta "interactive-widget=resizes-content" (ajouté plus haut) gère
+// maintenant ça nativement sur les navigateurs récents. Ce script ne sert que de
+// filet de sécurité pour les anciennes versions, et seulement PENDANT que le
+// clavier est réellement ouvert (jamais en dehors, pour ne pas interférer avec
+// le padding de la barre d'état tout en haut).
 (function corrigerHauteurClavier() {
     if (!window.visualViewport) return;
     const appContainer = document.querySelector('.app-container');
     if (!appContainer) return;
     const ajuster = () => {
-        appContainer.style.height = window.visualViewport.height + 'px';
+        const clavierVisible = (window.innerHeight - window.visualViewport.height) > 100;
+        appContainer.style.height = clavierVisible ? window.visualViewport.height + 'px' : '';
     };
     window.visualViewport.addEventListener('resize', ajuster);
     window.visualViewport.addEventListener('scroll', ajuster);
@@ -13356,6 +13427,10 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         const isSent = data.senderId === currentUser.id;
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         row.setAttribute('data-id', msgId);
+        row.setAttribute('data-msgtype', data.type || 'text');
+        if (data.isGif) row.setAttribute('data-isgif', 'true');
+        if (data.isSticker) row.setAttribute('data-issticker', 'true');
+        if (data.fileName) row.setAttribute('data-filename', data.fileName);
         
         const isGiant = isOnlyEmojis(data.text);
         // ✅ Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs et stickers —
@@ -13488,7 +13563,7 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
             const icone = icoenPourExtensionDoc(ext);
             const couleur = couleurPourExtensionDoc(ext);
             bubbleHtml += `
-                <div class="document-card" onclick="window.open('${data.mediaUrl}', '_blank')">
+                <div class="document-card" onclick="ouvrirDocumentIntelligent('${data.mediaUrl}', '${ext}')">
                     <div class="document-card-icon" style="background:${couleur};"><i class="fa-solid ${icone}"></i></div>
                     <div class="document-card-info">
                         <div class="document-card-name">${escapeHTML(data.fileName || 'Document')}</div>
