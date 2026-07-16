@@ -2796,7 +2796,7 @@ input, textarea {
     </button>
       <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
-      <button class="toolbar-btn" onclick="proposerPartageEcran()" style="
+      <button class="toolbar-btn" id="screenshare-toolbar-btn" onclick="proposerPartageEcran()" style="
         display: flex;
         align-items: center;
         gap: 4px;
@@ -15216,21 +15216,50 @@ function majStatutPermission(type, statut) {
     }
 }
 
+// L'API navigator.permissions.query('microphone'/'camera') n'est pas fiable
+// partout (Safari iOS notamment la supporte mal ou pas du tout), ce qui
+// faisait "oublier" l'autorisation à chaque rafraîchissement. On mémorise
+// donc nous-mêmes, dans localStorage, le dernier résultat obtenu.
+function lireStatutPermissionSauvegarde(type) {
+    return localStorage.getItem(`perm_${type}_granted`); // 'granted' | 'denied' | null
+}
+function sauvegarderStatutPermission(type, statut) {
+    if (statut) localStorage.setItem(`perm_${type}_granted`, statut);
+    else localStorage.removeItem(`perm_${type}_granted`);
+}
+
 async function verifierStatutsPermissions() {
+    // 1) Affichage immédiat basé sur ce qu'on a mémorisé nous-mêmes (fiable partout)
+    ['mic', 'cam', 'notif'].forEach(type => {
+        const sauvegarde = lireStatutPermissionSauvegarde(type);
+        if (sauvegarde) majStatutPermission(type, sauvegarde);
+    });
+
+    // 2) Affinage avec l'API native quand elle est disponible (peut corriger
+    // le cas où l'autorisation a été révoquée depuis les réglages du téléphone)
     if (navigator.permissions && navigator.permissions.query) {
         try {
             const mic = await navigator.permissions.query({ name: 'microphone' });
-            majStatutPermission('mic', mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null));
-            mic.onchange = () => majStatutPermission('mic', mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null));
+            const majMic = () => {
+                const etat = mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null);
+                if (etat) { majStatutPermission('mic', etat); sauvegarderStatutPermission('mic', etat); }
+            };
+            majMic();
+            mic.onchange = majMic;
         } catch (e) {}
         try {
             const cam = await navigator.permissions.query({ name: 'camera' });
-            majStatutPermission('cam', cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null));
-            cam.onchange = () => majStatutPermission('cam', cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null));
+            const majCam = () => {
+                const etat = cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null);
+                if (etat) { majStatutPermission('cam', etat); sauvegarderStatutPermission('cam', etat); }
+            };
+            majCam();
+            cam.onchange = majCam;
         } catch (e) {}
     }
     if ('Notification' in window) {
-        majStatutPermission('notif', Notification.permission === 'granted' ? 'granted' : (Notification.permission === 'denied' ? 'denied' : null));
+        const etat = Notification.permission === 'granted' ? 'granted' : (Notification.permission === 'denied' ? 'denied' : null);
+        if (etat) { majStatutPermission('notif', etat); sauvegarderStatutPermission('notif', etat); }
     }
 }
 
@@ -15241,22 +15270,27 @@ async function demanderAutorisation(type) {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             stream.getTracks().forEach(t => t.stop());
             majStatutPermission(type, 'granted');
+            sauvegarderStatutPermission(type, 'granted');
             showTempNotification(type === 'mic' ? '🎤 Microphone autorisé' : '📷 Caméra autorisée');
         } catch (e) {
             console.error(e);
             majStatutPermission(type, 'denied');
+            sauvegarderStatutPermission(type, 'denied');
             showTempNotification("❌ Accès refusé. Autorise-le via l'icône 🔒 à côté de l'adresse du site.");
         }
     } else if (type === 'notif') {
         if (!('Notification' in window)) { showTempNotification('❌ Notifications non supportées'); return; }
         const res = await Notification.requestPermission();
-        majStatutPermission('notif', res === 'granted' ? 'granted' : 'denied');
+        const etat = res === 'granted' ? 'granted' : 'denied';
+        majStatutPermission('notif', etat);
+        sauvegarderStatutPermission('notif', etat);
         if (res === 'granted' && typeof demanderPermissionNotifications === 'function') {
             demanderPermissionNotifications();
         }
     }
 }
 // ==================== FIN APPELS AGORA ====================
+
 
 // ========================================================================
 // ============================ PARTAGE D'ÉCRAN ==========================
@@ -15282,8 +15316,38 @@ function getScreenShareDocRef() {
 // Envoie l'invitation dans le chat (bouton "Partage" de la barre d'outils)
 let screenShareInviteUnsubscribe = null;
 
+// Le partage d'écran (capture) n'est PAS pris en charge par les navigateurs
+// mobiles : ni Safari sur iPhone, ni Chrome sur Android ne proposent
+// l'API getDisplayMedia sur téléphone (limitation du système, pas de l'app).
+// Regarder un partage reçu, en revanche, fonctionne très bien sur mobile.
+function ecranPartageDisponible() {
+    return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function');
+}
+
+// Grise légèrement le bouton "Partage" si l'appareil ne peut pas être expéditeur
+// (il reste cliquable pour prévenir clairement, mais visuellement discret)
+(function initEtatBoutonPartageEcran() {
+    const appliquer = () => {
+        const btn = document.getElementById('screenshare-toolbar-btn');
+        if (!btn) return;
+        if (!ecranPartageDisponible()) {
+            btn.style.opacity = '0.45';
+            btn.title = "Partage d'écran indisponible sur ce téléphone (utilise un ordinateur)";
+        }
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', appliquer);
+    } else {
+        appliquer();
+    }
+})();
+
 async function proposerPartageEcran() {
     if (!currentUser || !targetUser) return;
+    if (!ecranPartageDisponible()) {
+        showTempNotification("❌ Le partage d'écran n'est pas possible depuis un téléphone (limitation iOS/Android) — utilise un ordinateur pour partager TON écran.");
+        return;
+    }
     try {
         const msgRef = await db.collection('chats').doc(CHAT_ID).collection('messages').add({
             type: 'screenshare_invite',
@@ -15343,6 +15407,10 @@ async function repondreInvitationPartageEcran(msgId, accepter) {
 // "Démarrer" apparaît dans le chat — ce bouton appelle cette fonction.
 async function demarrerEnvoiPartageEcran() {
     if (screenShareClient) return;
+    if (!ecranPartageDisponible()) {
+        showTempNotification("❌ Le partage d'écran n'est pas possible depuis ce téléphone (limitation iOS/Android) — réponds depuis un ordinateur pour pouvoir partager.");
+        return;
+    }
     if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
     try {
         screenShareRole = 'sender';
@@ -15617,4 +15685,4 @@ function nettoyerPartageEcran() {
 
 </body>   
   
-</html>   
+</html>
