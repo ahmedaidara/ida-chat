@@ -270,6 +270,80 @@
         #send-btn { color: #0095f6; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: none; margin-left: 8px; }
 
         .floating-panel { display: none; position: absolute; bottom: 70px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; z-index: 5; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+
+/* ========== PANNEAU MESSAGE VOCAL (redesign professionnel) ========== */
+.voice-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; font-size: 0.9rem; font-weight: 700; color: var(--text-main);
+}
+.voice-panel-close { cursor: pointer; color: var(--text-muted); font-size: 1rem; padding: 4px; }
+.voice-filters {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px;
+    scrollbar-width: none;
+}
+.voice-filters::-webkit-scrollbar { display: none; }
+.voice-filter-chip {
+    flex-shrink: 0; padding: 7px 14px; border-radius: 18px; border: 1px solid var(--border-color);
+    background: var(--input-bg); color: var(--text-main); font-size: 0.78rem; font-weight: 500;
+    cursor: pointer; transition: transform 0.12s ease, background 0.2s ease, color 0.2s ease;
+}
+.voice-filter-chip:active { transform: scale(0.94); }
+.voice-filter-chip.active { background: var(--bubble-sent); color: #fff; border-color: transparent; }
+
+.voice-record-zone {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 10px 10px 12px; border-radius: 14px; background: var(--input-bg);
+}
+.voice-waveform {
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+    height: 0; width: 100%; overflow: hidden;
+    transition: height 0.2s ease;
+}
+.voice-record-zone.recording .voice-waveform { height: 36px; }
+.voice-waveform .audio-wave-bar {
+    width: 3px; border-radius: 2px; background: var(--text-muted);
+    transition: height 0.08s ease, background 0.2s ease;
+}
+.voice-record-zone.recording .audio-wave-bar { background: #ff3b30; }
+.voice-record-status { font-size: 0.74rem; color: var(--text-muted); }
+.voice-record-zone.recording .voice-record-status { color: #ff3b30; font-weight: 600; }
+.voice-record-timer { font-size: 0.82rem; font-weight: 700; color: #ff3b30; letter-spacing: 0.5px; }
+.voice-record-controls { display: flex; gap: 18px; margin-top: 2px; }
+.voice-record-btn, .voice-stop-btn {
+    width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff;
+    transition: transform 0.12s ease, box-shadow 0.2s ease;
+}
+.voice-record-btn { background: #ff3b30; }
+.voice-record-btn:active, .voice-stop-btn:active { transform: scale(0.9); }
+.voice-record-btn:disabled { background: var(--border-color); color: var(--text-muted); cursor: default; }
+.voice-stop-btn { background: #1c1c1e; }
+.voice-record-zone.recording .voice-record-btn { box-shadow: 0 0 0 5px rgba(255,59,48,0.18); }
+
+.voice-preview {
+    display: flex; align-items: center; gap: 12px; margin-top: 12px;
+    padding: 10px 14px; border-radius: 14px; background: var(--input-bg);
+}
+.voice-preview-play {
+    width: 38px; height: 38px; border-radius: 50%; border: none; flex-shrink: 0;
+    background: var(--bubble-sent); color: #fff; font-size: 0.9rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+.voice-preview-play:active { transform: scale(0.9); }
+.voice-preview-info { flex: 1; display: flex; flex-direction: column; font-size: 0.8rem; color: var(--text-main); }
+.voice-preview-duration { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+.voice-preview-delete { background: none; border: none; color: #ff3b30; font-size: 1.05rem; cursor: pointer; padding: 6px; flex-shrink: 0; }
+.voice-preview-delete:active { transform: scale(0.9); }
+
+.voice-panel-actions { display: flex; gap: 10px; margin-top: 14px; }
+.voice-btn-cancel, .voice-btn-send {
+    flex: 1; padding: 12px; border-radius: 22px; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer; border: none; transition: transform 0.12s ease, opacity 0.2s ease;
+}
+.voice-btn-cancel { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+.voice-btn-send { background: var(--bubble-sent); color: #fff; }
+.voice-btn-send:disabled { opacity: 0.45; cursor: default; }
+.voice-btn-cancel:active, .voice-btn-send:active:not(:disabled) { transform: scale(0.96); }
       
         .format-toolbar { display: none; position: absolute; bottom: 75px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 12px; z-index: 6; box-shadow: 0 8px 24px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; justify-content: center; }
         .format-btn { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 0.85rem; color: var(--text-main); transition: all 0.2s; }
@@ -1497,6 +1571,29 @@ input, textarea {
     flex-shrink: 0;
 }
 
+/* Liste "Documents" des Paramètres : version compacte, dédiée, pour voir plus
+   de fichiers sans avoir à défiler énormément (n'affecte pas les documents
+   affichés dans les bulles du chat, qui gardent leur taille normale). */
+.doc-gallery-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; margin-bottom: 3px; border-radius: 10px;
+    background: var(--input-bg); border: 1px solid var(--border-color);
+    cursor: pointer; transition: background 0.12s ease;
+}
+.doc-gallery-row:active { background: var(--bubble-received); }
+.doc-gallery-icon {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 0.8rem;
+}
+.doc-gallery-info { flex: 1; min-width: 0; }
+.doc-gallery-name {
+    font-size: 0.76rem; font-weight: 600; color: var(--text-main);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.doc-gallery-meta { font-size: 0.62rem; color: var(--text-muted); margin-top: 1px; }
+.doc-gallery-action { color: var(--text-muted); font-size: 0.78rem; padding: 6px; flex-shrink: 0; }
+
 .settings-link-row {
     display: flex;
     align-items: center;
@@ -2547,13 +2644,27 @@ input, textarea {
 .call-log-title { font-size: 0.92rem; font-weight: 700; color: inherit; }
 .call-log-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 1px; }
 
+/* Carte de position partagée */
+.location-card {
+    display: flex; align-items: center; gap: 12px; padding: 3px 2px;
+    min-width: 200px; cursor: pointer;
+}
+.location-card-map {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, #ff6b6b, #ff3b30);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.location-card-titre { font-size: 0.9rem; font-weight: 700; color: inherit; }
+.location-card-statut { font-size: 0.76rem; color: var(--text-muted); margin-top: 1px; }
+
 /* Visionneuse plein écran du partage d'écran reçu */
 .screenshare-viewer-overlay {
     position: fixed; inset: 0; z-index: 999998; background: #000;
     display: none; align-items: center; justify-content: center;
+    overflow: hidden;
 }
 .screenshare-viewer-overlay.active { display: flex; }
-#screenshare-viewer-video { width: 100%; height: 100%; }
+#screenshare-viewer-video { width: 100%; height: 100%; touch-action: none; }
 #screenshare-viewer-video video { object-fit: contain !important; background: #000; }
 .screenshare-viewer-topbar {
     position: absolute; top: calc(env(safe-area-inset-top) + 14px); left: 50%; transform: translateX(-50%);
@@ -3220,6 +3331,14 @@ input, textarea {
                 </div>
                 <div class="ios-toggle-switch" id="permission-toggle-notif" onclick="demanderAutorisation('notif')"></div>
             </div>
+            <div class="permission-row" id="permission-row-loc">
+                <div class="permission-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="permission-text">
+                    <div class="permission-title">Localisation</div>
+                    <div class="permission-status" id="permission-status-loc">Non activé</div>
+                </div>
+                <div class="ios-toggle-switch" id="permission-toggle-loc" onclick="demanderAutorisation('loc')"></div>
+            </div>
             <p class="settings-section-desc" style="margin-top:10px; font-size:0.7rem;">Si un interrupteur reste rouge, il faut autoriser manuellement dans les réglages du navigateur (icône 🔒 ou ⓘ à côté de l'adresse du site), puis recharger la page.</p>
         </div>
 
@@ -3395,55 +3514,61 @@ input, textarea {
         </div>
 
       <!-- Menu Audio avec filtres -->
-<div class="floating-panel" id="audio-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
-    <h4 style="margin-bottom: 10px; font-size: 0.9rem;">🎤 Message vocal</h4>
-    
-    <!-- Filtres vocaux -->
-    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-        <button class="filter-btn" data-filter="normal" onclick="choisirFiltreAudio('normal')" style="padding: 8px 12px; border-radius: 20px; border: none; background: #0095f6; color: white;">🎵 Normal</button>
-        <button class="filter-btn" data-filter="grave" onclick="choisirFiltreAudio('grave')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">👨‍🦰 Voix Grave</button>
-        <button class="filter-btn" data-filter="aigu" onclick="choisirFiltreAudio('aigu')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">👶 Voix Enfant</button>
-        <button class="filter-btn" data-filter="robot" onclick="choisirFiltreAudio('robot')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🤖 Robot</button>
-        <button class="filter-btn" data-filter="echo" onclick="choisirFiltreAudio('echo')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🎚️ Écho</button>
-        <button class="filter-btn" data-filter="chipmunk" onclick="choisirFiltreAudio('chipmunk')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🐿️ Chipmunk</button>
+<div class="floating-panel" id="audio-panel">
+    <div class="voice-panel-header">
+        <span>🎤 Message vocal</span>
+        <i class="fa-solid fa-xmark voice-panel-close" onclick="fermerMenuAudio()"></i>
     </div>
-    
-    <!-- Zone d'enregistrement -->
-    <div style="text-align: center; padding: 15px;">
-        <div id="audio-visualizer" style="height: 40px; background: var(--border-color); border-radius: 20px; margin-bottom: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Cliquez sur le micro pour enregistrer</span>
-        </div>
-        
-        <div style="display: flex; justify-content: center; gap: 20px;">
-            <button id="record-audio-btn" onclick="demarrerEnregistrementAudio()" style="background: #ff4444; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;">
+
+    <div class="voice-filters" id="voice-filters-row">
+        <button class="voice-filter-chip active" data-filter="normal" onclick="choisirFiltreAudio('normal')">🎵 Normal</button>
+        <button class="voice-filter-chip" data-filter="grave" onclick="choisirFiltreAudio('grave')">👨 Grave</button>
+        <button class="voice-filter-chip" data-filter="profond" onclick="choisirFiltreAudio('profond')">🔊 Profond</button>
+        <button class="voice-filter-chip" data-filter="aigu" onclick="choisirFiltreAudio('aigu')">👶 Voix enfant</button>
+        <button class="voice-filter-chip" data-filter="chipmunk" onclick="choisirFiltreAudio('chipmunk')">🐿️ Chipmunk</button>
+        <button class="voice-filter-chip" data-filter="robot" onclick="choisirFiltreAudio('robot')">🤖 Robot</button>
+        <button class="voice-filter-chip" data-filter="alien" onclick="choisirFiltreAudio('alien')">👽 Alien</button>
+        <button class="voice-filter-chip" data-filter="echo" onclick="choisirFiltreAudio('echo')">🎚️ Écho</button>
+        <button class="voice-filter-chip" data-filter="caverne" onclick="choisirFiltreAudio('caverne')">🕳️ Caverne</button>
+        <button class="voice-filter-chip" data-filter="telephone" onclick="choisirFiltreAudio('telephone')">☎️ Téléphone</button>
+        <button class="voice-filter-chip" data-filter="nasillard" onclick="choisirFiltreAudio('nasillard')">🐽 Nasillard</button>
+        <button class="voice-filter-chip" data-filter="rapide" onclick="choisirFiltreAudio('rapide')">⚡ Rapide</button>
+        <button class="voice-filter-chip" data-filter="ralenti" onclick="choisirFiltreAudio('ralenti')">🐌 Ralenti</button>
+    </div>
+
+    <div class="voice-record-zone" id="voice-record-zone">
+        <div class="voice-waveform" id="audio-visualizer"></div>
+        <div class="voice-record-status" id="voice-record-status">Appuie sur le micro pour enregistrer</div>
+        <div class="voice-record-timer" id="voice-record-timer" style="display:none;">00:00</div>
+        <div class="voice-record-controls">
+            <button class="voice-record-btn" id="record-audio-btn" onclick="demarrerEnregistrementAudio()">
                 <i class="fa-solid fa-microphone"></i>
             </button>
-            <button id="stop-audio-btn" onclick="arreterEnregistrementAudio()" disabled style="background: #666; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;">
+            <button class="voice-stop-btn" id="stop-audio-btn" onclick="arreterEnregistrementAudio()" disabled style="display:none;">
                 <i class="fa-solid fa-stop"></i>
             </button>
         </div>
     </div>
-    
-    <!-- Prévisualisation -->
-    <div id="audio-preview" style="display: none; margin-top: 15px; padding: 10px; background: var(--input-bg); border-radius: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-circle-play" style="font-size: 1.5rem; color: #0095f6; cursor: pointer;" onclick="previsualiserAudio()"></i>
-            <span style="flex: 1; font-size: 0.8rem;">écouter <span id="audio-duration"></span></span>
-            <i class="fa-solid fa-trash" style="color: #ff4444; cursor: pointer; font-size: 1.2rem;" onclick="supprimerAudioPreview()"></i>
+
+    <div class="voice-preview" id="audio-preview" style="display:none;">
+        <button class="voice-preview-play" onclick="previsualiserAudio()"><i class="fa-solid fa-play"></i></button>
+        <div class="voice-preview-info">
+            <span>Aperçu de l'enregistrement</span>
+            <span class="voice-preview-duration" id="audio-duration"></span>
         </div>
+        <button class="voice-preview-delete" onclick="supprimerAudioPreview()"><i class="fa-solid fa-trash"></i></button>
     </div>
-    
-    <!-- Boutons action -->
-    <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button onclick="envoyerAudioAvecFiltre()" id="send-audio-btn" disabled style="flex: 1; padding: 12px; background: #0095f6; color: white; border: none; border-radius: 25px; font-weight: bold;">📤 Envoyer</button>
-        <button onclick="fermerMenuAudio()" style="padding: 12px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px; color: var(--text-main);">Annuler</button>
+
+    <div class="voice-panel-actions">
+        <button class="voice-btn-cancel" onclick="fermerMenuAudio()">Annuler</button>
+        <button class="voice-btn-send" id="send-audio-btn" onclick="envoyerAudioAvecFiltre()" disabled><i class="fa-solid fa-paper-plane"></i> Envoyer</button>
     </div>
 </div>
 
-<!-- Menu Media (Photo/Vidéo/Galerie) -->
+<!-- Menu Media (Photo/Vidéo/Galerie/Document/Position/Fichier) -->
 <div class="floating-panel" id="media-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
     <h4 style="margin-bottom: 10px;">📷 Média</h4>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
        <div class="tool-item" onclick="ouvrirGalerieSupabase()">
     <i class="fa-regular fa-images" style="font-size: 2rem;"></i>
     <span style="font-size: 0.7rem;">Galerie</span>
@@ -3460,8 +3585,36 @@ input, textarea {
     <i class="fa-solid fa-file-lines" style="font-size: 2rem;"></i>
     <span style="font-size: 0.7rem;">Document</span>
 </div>
+<div class="tool-item" onclick="ouvrirMenuPosition()">
+    <i class="fa-solid fa-location-dot" style="font-size: 2rem;"></i>
+    <span style="font-size: 0.7rem;">Position</span>
+</div>
+<div class="tool-item" onclick="envoyerFichierGenerique()">
+    <i class="fa-regular fa-folder-open" style="font-size: 2rem;"></i>
+    <span style="font-size: 0.7rem;">Fichier</span>
+</div>
     </div>
     <button onclick="fermerMenuMedia()" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px;">Fermer</button>
+</div>
+
+<!-- Menu Position (position actuelle ou position en direct) -->
+<div class="floating-panel" id="position-panel" style="display:none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 101;">
+    <h4 style="margin-bottom: 10px;">📍 Partager une position</h4>
+    <div class="tool-item" onclick="partagerPositionActuelle()" style="flex-direction:row; justify-content:flex-start; gap:14px; padding:12px 6px; text-align:left;">
+        <i class="fa-solid fa-location-dot" style="font-size: 1.4rem; color:#ff3b30; width:28px; text-align:center;"></i>
+        <div>
+            <div style="font-weight:600; font-size:0.88rem;">Position actuelle</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Envoie ta position au moment présent</div>
+        </div>
+    </div>
+    <div class="tool-item" onclick="partagerPositionEnDirect()" style="flex-direction:row; justify-content:flex-start; gap:14px; padding:12px 6px; text-align:left; border-top:1px solid var(--border-color);">
+        <i class="fa-solid fa-satellite-dish" style="font-size: 1.4rem; color:#0095f6; width:28px; text-align:center;"></i>
+        <div>
+            <div style="font-weight:600; font-size:0.88rem;">Position en direct (15 min)</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Se met à jour automatiquement pendant 15 minutes</div>
+        </div>
+    </div>
+    <button onclick="fermerMenuPosition()" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px;">Annuler</button>
 </div>
     </div>
 
@@ -3624,17 +3777,28 @@ function ouvrirGalerieSupabase() {
 // ========== ENVOI DE DOCUMENT (PDF, TXT, Word, Excel...) ==========
 function envoyerDocumentAvecSupabase() {
     fermerMenuMedia();
+    envoyerFichierVersChat('.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv');
+}
+
+// "Fichier" : comme Document, mais sans restriction de type — ouvre l'app
+// Fichiers (iOS) / le gestionnaire de fichiers (Android) sans filtrer les formats.
+function envoyerFichierGenerique() {
+    fermerMenuMedia();
+    envoyerFichierVersChat('*/*');
+}
+
+function envoyerFichierVersChat(accept) {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv';
+    input.accept = accept;
     input.onchange = async (e) => {
         if (!e.target.files || !e.target.files[0]) return;
         const file = e.target.files[0];
         if (file.size > 25 * 1024 * 1024) {
-            showTempNotification("❌ Document trop grand (max 25 MB)");
+            showTempNotification("❌ Fichier trop grand (max 25 MB)");
             return;
         }
-        showTempNotification("📤 Envoi du document...");
+        showTempNotification("📤 Envoi du fichier...");
         const url = await uploadVersSupabase(file, 'document');
         if (!url) return;
         try {
@@ -3652,13 +3816,177 @@ function envoyerDocumentAvecSupabase() {
                 fileExt: (file.name.split('.').pop() || '').toLowerCase(),
                 storage: 'supabase'
             });
-            showTempNotification("📄 Document envoyé !");
+            showTempNotification("📄 Fichier envoyé !");
         } catch (err) {
-            console.error("Erreur envoi document:", err);
-            showTempNotification("❌ Échec de l'envoi du document");
+            console.error("Erreur envoi fichier:", err);
+            showTempNotification("❌ Échec de l'envoi du fichier");
         }
     };
     input.click();
+}
+
+// ========== PARTAGE DE POSITION (actuelle ou en direct) ==========
+function ouvrirMenuPosition() {
+    fermerMenuMedia();
+    const panel = document.getElementById('position-panel');
+    if (panel) panel.style.display = 'block';
+}
+function fermerMenuPosition() {
+    const panel = document.getElementById('position-panel');
+    if (panel) panel.style.display = 'none';
+}
+
+function obtenirPositionActuelle() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) { reject(new Error('Géolocalisation non supportée')); return; }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            (err) => reject(err),
+            { enableHighAccuracy: true, timeout: 12000 }
+        );
+    });
+}
+
+async function partagerPositionActuelle() {
+    fermerMenuPosition();
+    try {
+        const { lat, lng } = await obtenirPositionActuelle();
+        sauvegarderStatutPermission('loc', 'granted');
+        majStatutPermission('loc', 'granted');
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'location',
+            mode: 'once',
+            lat, lng,
+            text: '📍 Position',
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+        showTempNotification('📍 Position envoyée');
+    } catch (e) {
+        console.error('Erreur position:', e);
+        sauvegarderStatutPermission('loc', 'denied');
+        majStatutPermission('loc', 'denied');
+        showTempNotification("❌ Impossible d'accéder à ta position (autorisation refusée ?)");
+    }
+}
+
+let liveLocationWatchId = null;
+let liveLocationMsgId = null;
+let liveLocationExpireTimeout = null;
+
+async function partagerPositionEnDirect() {
+    fermerMenuPosition();
+    if (liveLocationWatchId) {
+        showTempNotification('📍 Un partage en direct est déjà actif');
+        return;
+    }
+    try {
+        const { lat, lng } = await obtenirPositionActuelle();
+        sauvegarderStatutPermission('loc', 'granted');
+        majStatutPermission('loc', 'granted');
+
+        const DUREE_MS = 15 * 60 * 1000;
+        const docRef = await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'location',
+            mode: 'live',
+            lat, lng,
+            liveEnded: false,
+            expiresAt: Date.now() + DUREE_MS,
+            text: '📍 Position en direct',
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+        liveLocationMsgId = docRef.id;
+
+        liveLocationWatchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                db.collection('chats').doc(CHAT_ID).collection('messages').doc(liveLocationMsgId).update({
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                }).catch(() => {});
+            },
+            (err) => console.error('Erreur suivi position:', err),
+            { enableHighAccuracy: true, maximumAge: 5000 }
+        );
+
+        liveLocationExpireTimeout = setTimeout(arreterPositionEnDirect, DUREE_MS);
+        afficherBandeauPositionDirect();
+        showTempNotification('📍 Position en direct activée (15 min)');
+    } catch (e) {
+        console.error('Erreur position en direct:', e);
+        sauvegarderStatutPermission('loc', 'denied');
+        majStatutPermission('loc', 'denied');
+        showTempNotification("❌ Impossible d'accéder à ta position (autorisation refusée ?)");
+    }
+}
+
+async function arreterPositionEnDirect() {
+    if (liveLocationWatchId) { navigator.geolocation.clearWatch(liveLocationWatchId); liveLocationWatchId = null; }
+    if (liveLocationExpireTimeout) { clearTimeout(liveLocationExpireTimeout); liveLocationExpireTimeout = null; }
+    if (liveLocationMsgId) {
+        try {
+            await db.collection('chats').doc(CHAT_ID).collection('messages').doc(liveLocationMsgId).update({ liveEnded: true });
+        } catch (e) {}
+    }
+    liveLocationMsgId = null;
+    masquerBandeauPositionDirect();
+}
+
+function afficherBandeauPositionDirect() {
+    let banner = document.getElementById('live-location-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'live-location-banner';
+        banner.className = 'chat-call-banner';
+        banner.style.display = 'flex';
+        banner.innerHTML = `
+            <div class="chat-call-banner-info">
+                <i class="fa-solid fa-location-dot chat-call-banner-icon"></i>
+                <div><div class="chat-call-banner-title">Position en direct active</div></div>
+            </div>
+            <div class="chat-call-banner-actions">
+                <button class="chat-call-banner-btn end" onclick="arreterPositionEnDirect()">Arrêter</button>
+            </div>`;
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea && msgArea.parentNode) msgArea.parentNode.insertBefore(banner, msgArea);
+    }
+    banner.style.display = 'flex';
+}
+function masquerBandeauPositionDirect() {
+    const banner = document.getElementById('live-location-banner');
+    if (banner) banner.style.display = 'none';
+}
+
+// Ouvre Google Maps à l'emplacement partagé
+function ouvrirPositionSurMaps(lat, lng) {
+    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+}
+
+// Écoute en direct une position "live" affichée à l'écran, pour que le
+// destinataire voie la mise à jour sans avoir à rafraîchir la page.
+const positionLiveListeners = {};
+function ecouterPositionEnDirect(msgId) {
+    if (positionLiveListeners[msgId]) return;
+    positionLiveListeners[msgId] = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot((docSnap) => {
+            if (!docSnap.exists) return;
+            const data = docSnap.data();
+            const card = document.querySelector(`.location-card[data-msgid="${msgId}"]`);
+            if (!card) return;
+            card.setAttribute('data-lat', data.lat);
+            card.setAttribute('data-lng', data.lng);
+            const statutEl = card.querySelector('.location-card-statut');
+            if (data.liveEnded || (data.expiresAt && Date.now() > data.expiresAt)) {
+                if (statutEl) statutEl.textContent = 'Partage terminé';
+                if (positionLiveListeners[msgId]) { positionLiveListeners[msgId](); delete positionLiveListeners[msgId]; }
+            } else if (statutEl) {
+                statutEl.textContent = 'Mise à jour à l\'instant';
+            }
+        });
 }
 
 function formaterTailleFichier(octets) {
@@ -4687,6 +5015,7 @@ async function enregistrerTokenPush() {
             listenToOtherUserBattery();
             listenForFlashSignals();
             initCallListener(); // 📞 démarre l'écoute des appels Agora
+            restaurerBrouillonMessage(); // 📝 remet le message non envoyé s'il y en avait un
              
             listenToUserMood(); // ✅ correction : cette écoute existait mais n'était jamais démarrée
             // ✅ Correction : "activerLesNotifications" n'était définie nulle part (bug qui
@@ -7384,7 +7713,8 @@ async function ouvrirGalerieMediaPage() {
         const medias = [];
         snapshot.forEach(doc => {
             const data = doc.data();
-            if ((data.type === 'image' || data.type === 'video') && !data.viewOnce && data.mediaUrl) {
+            const estUnSticker = data.isSticker === true || (data.mediaUrl && data.mediaUrl.includes('emoji-datasource-apple'));
+            if ((data.type === 'image' || data.type === 'video') && !data.viewOnce && data.mediaUrl && !estUnSticker) {
                 medias.push({ msgId: doc.id, type: data.type, url: data.mediaUrl });
             }
         });
@@ -7452,14 +7782,13 @@ async function ouvrirGalerieDocumentsPage() {
             const couleur = couleurPourExtensionDoc(ext);
             const dateHeure = formatHeureRecherche(d.timestamp);
             return `
-                <div class="search-result-item" style="display:flex; align-items:center; gap:12px;">
-                    <div class="document-card-icon" style="background:${couleur}; flex-shrink:0;"><i class="fa-solid ${icone}"></i></div>
-                    <div style="flex:1; min-width:0;" onclick="window.open('${d.mediaUrl}', '_blank')">
-                        <div class="document-card-name">${escapeHTML(d.fileName || 'Document')}</div>
-                        <div class="document-card-meta">${ext.toUpperCase()} · ${formaterTailleFichier(d.fileSize)} · ${dateHeure}</div>
+                <div class="doc-gallery-row">
+                    <div class="doc-gallery-icon" style="background:${couleur};"><i class="fa-solid ${icone}"></i></div>
+                    <div class="doc-gallery-info" onclick="window.open('${d.mediaUrl}', '_blank')">
+                        <div class="doc-gallery-name">${escapeHTML(d.fileName || 'Document')}</div>
+                        <div class="doc-gallery-meta">${ext.toUpperCase()} · ${formaterTailleFichier(d.fileSize)} · ${dateHeure}</div>
                     </div>
-                    <i class="fa-solid fa-reply" style="color:var(--text-muted); padding:8px;" onclick="repondreDepuisGalerieDocuments('${d.msgId}')" title="Répondre"></i>
-                    <i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--text-muted); padding:8px;" onclick="window.open('${d.mediaUrl}', '_blank')" title="Ouvrir"></i>
+                    <i class="fa-solid fa-reply doc-gallery-action" onclick="repondreDepuisGalerieDocuments('${d.msgId}')" title="Répondre"></i>
                 </div>
             `;
         }).join('');
@@ -8250,6 +8579,32 @@ function autoResizeTextarea() {
     textarea.style.height = newHeight + 'px';
     // Gérer le défilement si ça dépasse la limite
     textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    sauvegarderBrouillonMessage(textarea.value);
+}
+
+// ========== BROUILLON DE MESSAGE (survit à un rafraîchissement/fermeture) ==========
+// Tant que le message n'est pas envoyé (ou effacé manuellement), il reste dans
+// la zone de saisie même si on quitte le site ou qu'on rafraîchit la page.
+function cleDuBrouillon() {
+    return `chat_draft_${CHAT_ID}_${currentUser ? currentUser.id : 'anon'}`;
+}
+function sauvegarderBrouillonMessage(texte) {
+    if (!currentUser) return;
+    if (texte && texte.length > 0) {
+        localStorage.setItem(cleDuBrouillon(), texte);
+    } else {
+        localStorage.removeItem(cleDuBrouillon());
+    }
+}
+function restaurerBrouillonMessage() {
+    if (!currentUser || messageEnCoursEdition) return;
+    const brouillon = localStorage.getItem(cleDuBrouillon());
+    const textarea = document.getElementById('chat-in');
+    if (brouillon && textarea && !textarea.value) {
+        textarea.value = brouillon;
+        autoResizeTextarea();
+        if (typeof toggleSendBtn === 'function') toggleSendBtn(true);
+    }
 }
 
 // ========== CORRIGE L'ÉCART ENTRE LE CLAVIER ET LA ZONE DE SAISIE ==========
@@ -8491,6 +8846,7 @@ document.addEventListener('click', function(e) {
     const mediaPanel = document.getElementById('media-panel');
     const audioPanel = document.getElementById('audio-panel');
     const toolsPanel = document.getElementById('tools-panel');
+    const positionPanel = document.getElementById('position-panel');
     const toolsBtn = document.getElementById('tools-menu-btn');
     const mediaBtn = document.getElementById('media-btn');
     const audioBtn = document.getElementById('audio-btn');
@@ -8503,6 +8859,9 @@ document.addEventListener('click', function(e) {
     }
     if (toolsPanel && !toolsPanel.contains(e.target) && e.target !== toolsBtn) {
         toolsPanel.style.display = 'none';
+    }
+    if (positionPanel && !positionPanel.contains(e.target) && e.target.getAttribute('onclick') !== 'ouvrirMenuPosition()') {
+        positionPanel.style.display = 'none';
     }
 });
 
@@ -8579,6 +8938,8 @@ function reinitialiserAudioUI() {
     if (previewAudioURL) {
         URL.revokeObjectURL(previewAudioURL);
     }
+    if (previewAudioPlayer) { previewAudioPlayer.pause(); previewAudioPlayer = null; }
+    previewAudioPlayerBlob = null;
     audioBlobOriginal = null;
     audioBlobFiltre = null;
     previewAudioURL = null;
@@ -8592,38 +8953,56 @@ function reinitialiserAudioUI() {
     const recordBtn = document.getElementById('record-audio-btn');
     if (recordBtn) {
         recordBtn.disabled = false;
-        recordBtn.style.background = '#ff4444';
+        recordBtn.style.display = 'flex';
     }
     
     const stopBtn = document.getElementById('stop-audio-btn');
     if (stopBtn) {
         stopBtn.disabled = true;
-        stopBtn.style.background = '#666';
+        stopBtn.style.display = 'none';
     }
+
+    const zone = document.getElementById('voice-record-zone');
+    if (zone) zone.classList.remove('recording');
+    const statut = document.getElementById('voice-record-status');
+    if (statut) statut.innerText = 'Appuie sur le micro pour enregistrer';
+    const timer = document.getElementById('voice-record-timer');
+    if (timer) { timer.style.display = 'none'; timer.innerText = '00:00'; }
+    arreterChronoVocal();
     
     const visualizer = document.getElementById('audio-visualizer');
-    if (visualizer) {
-        visualizer.innerHTML = '<span style="font-size: 0.8rem;">Cliquez sur le micro pour enregistrer</span>';
-    }
+    if (visualizer) visualizer.innerHTML = '';
 }
 
 function choisirFiltreAudio(filtre) {
     filtreAudioActif = filtre;
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.style.background = 'var(--input-bg)';
-        btn.style.color = 'var(--text-main)';
-        btn.style.border = '1px solid var(--border-color)';
+    document.querySelectorAll('.voice-filter-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-filter') === filtre);
     });
-    const btnActif = document.querySelector(`.filter-btn[data-filter="${filtre}"]`);
-    if (btnActif) {
-        btnActif.style.background = '#0095f6';
-        btnActif.style.color = 'white';
-        btnActif.style.border = 'none';
-    }
     
     if (audioBlobOriginal) {
         appliquerFiltreAudio();
     }
+}
+
+// Chrono d'enregistrement (affichage mm:ss pendant qu'on parle)
+let voiceChronoInterval = null;
+let voiceChronoSecondes = 0;
+function demarrerChronoVocal() {
+    arreterChronoVocal();
+    voiceChronoSecondes = 0;
+    const timer = document.getElementById('voice-record-timer');
+    if (timer) { timer.style.display = 'block'; timer.innerText = '00:00'; }
+    voiceChronoInterval = setInterval(() => {
+        voiceChronoSecondes++;
+        const m = String(Math.floor(voiceChronoSecondes / 60)).padStart(2, '0');
+        const s = String(voiceChronoSecondes % 60).padStart(2, '0');
+        if (timer) timer.innerText = `${m}:${s}`;
+    }, 1000);
+}
+function arreterChronoVocal() {
+    if (voiceChronoInterval) { clearInterval(voiceChronoInterval); voiceChronoInterval = null; }
+    voiceChronoSecondes = 0;
 }
 
 async function demarrerEnregistrementAudio() {
@@ -8632,10 +9011,18 @@ async function demarrerEnregistrementAudio() {
         
         // Créer l'analyseur pour la visualisation
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // ⚠️ CORRECTIF IMPORTANT : sur mobile, un AudioContext démarre parfois
+        // "suspendu" (état 'suspended') tant qu'il n'a pas été explicitement repris.
+        // C'est exactement ce qui faisait que la barre ne bougeait pas pendant qu'on
+        // parlait (l'analyseur ne recevait aucune donnée avant la reprise implicite).
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
         analyseurAudio = audioContext.createAnalyser();
         sourceAudio = audioContext.createMediaStreamSource(streamAudio);
         sourceAudio.connect(analyseurAudio);
         analyseurAudio.fftSize = 256;
+        analyseurAudio.smoothingTimeConstant = 0.6;
         
         mediaRecorderAudio = new MediaRecorder(streamAudio);
         audioChunksEnregistres = [];
@@ -8656,10 +9043,18 @@ async function demarrerEnregistrementAudio() {
             if (durationSpan) durationSpan.innerText = `${duration} sec`;
             
             const previewDiv = document.getElementById('audio-preview');
-            if (previewDiv) previewDiv.style.display = 'block';
+            if (previewDiv) previewDiv.style.display = 'flex';
             
             const sendBtn = document.getElementById('send-audio-btn');
             if (sendBtn) sendBtn.disabled = false;
+
+            const zone = document.getElementById('voice-record-zone');
+            if (zone) zone.classList.remove('recording');
+            const statut = document.getElementById('voice-record-status');
+            if (statut) statut.innerText = 'Enregistrement terminé';
+            arreterChronoVocal();
+            const visualizer = document.getElementById('audio-visualizer');
+            if (visualizer) visualizer.innerHTML = '';
             
             // Arrêter l'analyseur
             if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -8673,14 +9068,20 @@ async function demarrerEnregistrementAudio() {
         const recordBtn = document.getElementById('record-audio-btn');
         if (recordBtn) {
             recordBtn.disabled = true;
-            recordBtn.style.background = '#666';
+            recordBtn.style.display = 'none';
         }
         
         const stopBtn = document.getElementById('stop-audio-btn');
         if (stopBtn) {
             stopBtn.disabled = false;
-            stopBtn.style.background = '#ff4444';
+            stopBtn.style.display = 'flex';
         }
+
+        const zone = document.getElementById('voice-record-zone');
+        if (zone) zone.classList.add('recording');
+        const statut = document.getElementById('voice-record-status');
+        if (statut) statut.innerText = 'Enregistrement en cours...';
+        demarrerChronoVocal();
         
         // Démarrer la visualisation en temps réel
         demarrerVisualisationReelle();
@@ -8697,33 +9098,29 @@ function demarrerVisualisationReelle() {
     
     const bufferLength = analyseurAudio.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
+    const NB_BARRES = 24;
+
+    // Créer les barres une seule fois (on ne fait ensuite que changer leur hauteur,
+    // beaucoup plus fluide que tout reconstruire à chaque frame).
+    visualizer.innerHTML = '';
+    const barres = [];
+    for (let i = 0; i < NB_BARRES; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'audio-wave-bar';
+        bar.style.height = '5px';
+        visualizer.appendChild(bar);
+        barres.push(bar);
+    }
     
     function animer() {
         if (!analyseurAudio || !visualizer) return;
         
         analyseurAudio.getByteFrequencyData(dataArray);
         
-        // Calculer le volume moyen
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-            sum += dataArray[i];
-        }
-        const moyenne = sum / bufferLength;
-        const hauteurMax = Math.min(50, 20 + (moyenne / 5));
-        
-        // Créer les barres animées
-        visualizer.innerHTML = '';
-        for (let i = 0; i < 20; i++) {
-            const bar = document.createElement('div');
-            bar.className = 'audio-wave-bar';
-            const hauteur = Math.max(5, Math.min(hauteurMax, (dataArray[i % bufferLength] || 0) / 8));
-            bar.style.height = hauteur + 'px';
-            bar.style.width = '4px';
-            bar.style.margin = '0 2px';
-            bar.style.background = '#0095f6';
-            bar.style.borderRadius = '2px';
-            bar.style.transition = 'height 0.05s ease';
-            visualizer.appendChild(bar);
+        for (let i = 0; i < NB_BARRES; i++) {
+            const valeur = dataArray[i % bufferLength] || 0;
+            const hauteur = Math.max(4, Math.min(40, (valeur / 255) * 40));
+            barres[i].style.height = hauteur + 'px';
         }
         
         animationFrame = requestAnimationFrame(animer);
@@ -8794,6 +9191,57 @@ async function appliquerFiltreAudio() {
                         outputData[i] = inputData[Math.min(index, length - 1)] || 0;
                     }
                     break;
+                case 'profond':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 0.5);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
+                case 'alien':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 1.15);
+                        let val = inputData[Math.min(index, length - 1)] || 0;
+                        val *= (1 + 0.5 * Math.sin(i / 200));
+                        outputData[i] = Math.min(0.99, Math.max(-0.99, val));
+                    }
+                    break;
+                case 'caverne':
+                    for (let i = 0; i < length; i++) {
+                        let val = inputData[i];
+                        if (i > 3000) val += inputData[i - 3000] * 0.45;
+                        if (i > 6500) val += inputData[i - 6500] * 0.3;
+                        if (i > 10000) val += inputData[i - 10000] * 0.18;
+                        outputData[i] = Math.min(0.99, Math.max(-0.99, val));
+                    }
+                    break;
+                case 'telephone':
+                    for (let i = 0; i < length; i++) {
+                        const a = inputData[i] || 0;
+                        const b = inputData[Math.max(0, i - 1)] || 0;
+                        const c = inputData[Math.max(0, i - 2)] || 0;
+                        let val = (a + b + c) / 3;
+                        outputData[i] = Math.max(-0.7, Math.min(0.7, val * 1.4));
+                    }
+                    break;
+                case 'nasillard':
+                    for (let i = 0; i < length; i++) {
+                        const prev = inputData[Math.max(0, i - 1)] || 0;
+                        const val = inputData[i] - prev * 0.55;
+                        outputData[i] = Math.min(0.99, Math.max(-0.99, val * 1.6));
+                    }
+                    break;
+                case 'rapide':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 1.6);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
+                case 'ralenti':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 0.6);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
                 default:
                     outputData.set(inputData);
             }
@@ -8847,23 +9295,44 @@ async function bufferToWav(buffer, audioContext) {
     return new Blob([wavData], { type: 'audio/wav' });
 }
 
+let previewAudioPlayer = null;
+let previewAudioPlayerBlob = null;
+
 function previsualiserAudio() {
-    if (previewAudioURL) {
-        URL.revokeObjectURL(previewAudioURL);
-    }
-    
     const blob = audioBlobFiltre || audioBlobOriginal;
-    if (blob) {
+    if (!blob) return;
+    const btn = document.querySelector('.voice-preview-play');
+
+    // Le filtre a changé depuis la dernière écoute : on recrée le lecteur
+    if (previewAudioPlayer && previewAudioPlayerBlob !== blob) {
+        previewAudioPlayer.pause();
+        previewAudioPlayer = null;
+    }
+
+    if (!previewAudioPlayer) {
+        if (previewAudioURL) URL.revokeObjectURL(previewAudioURL);
         previewAudioURL = URL.createObjectURL(blob);
-        const audio = new Audio(previewAudioURL);
-        audio.play();
-        showTempNotification("🎧 Lecture de l'aperçu...");
+        previewAudioPlayerBlob = blob;
+        previewAudioPlayer = new Audio(previewAudioURL);
+        previewAudioPlayer.addEventListener('ended', () => {
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        });
+    }
+
+    if (previewAudioPlayer.paused) {
+        previewAudioPlayer.play();
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    } else {
+        previewAudioPlayer.pause();
+        previewAudioPlayer.currentTime = 0;
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-play"></i>';
     }
 }
 
 function supprimerAudioPreview() {
+    if (previewAudioPlayer) { previewAudioPlayer.pause(); previewAudioPlayer = null; }
+    previewAudioPlayerBlob = null;
     reinitialiserAudioUI();
-    showTempNotification("🗑️ Audio supprimé");
 }
 
 function getAudioDuration(blob) {
@@ -13071,6 +13540,21 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
             } else if (data.status === 'declined') {
                 bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ❌ Invitation refusée</span></div>`;
             }
+} else if (data.type === 'location') {
+            const estLive = data.mode === 'live';
+            const dejaTerminee = data.liveEnded || (data.expiresAt && Date.now() > data.expiresAt);
+            const statutTexte = estLive ? (dejaTerminee ? 'Partage terminé' : 'Position en direct') : 'Position partagée';
+            bubbleHtml += `
+                <div class="location-card" data-msgid="${msgId}" data-lat="${data.lat}" data-lng="${data.lng}" onclick="ouvrirPositionSurMaps(this.getAttribute('data-lat'), this.getAttribute('data-lng'))">
+                    <div class="location-card-map"><i class="fa-solid fa-location-dot"></i></div>
+                    <div class="location-card-info">
+                        <div class="location-card-titre">${estLive ? 'Position en direct' : 'Position'}</div>
+                        <div class="location-card-statut">${statutTexte}</div>
+                    </div>
+                </div>`;
+            if (estLive && !dejaTerminee) {
+                setTimeout(() => ecouterPositionEnDirect(msgId), 0);
+            }
 } else if (data.type === 'call_log') {
             const isMissed = data.callStatus === 'missed';
             const isDeclined = data.callStatus === 'declined';
@@ -15335,7 +15819,7 @@ function sauvegarderStatutPermission(type, statut) {
 
 async function verifierStatutsPermissions() {
     // 1) Affichage immédiat basé sur ce qu'on a mémorisé nous-mêmes (fiable partout)
-    ['mic', 'cam', 'notif'].forEach(type => {
+    ['mic', 'cam', 'notif', 'loc'].forEach(type => {
         const sauvegarde = lireStatutPermissionSauvegarde(type);
         if (sauvegarde) majStatutPermission(type, sauvegarde);
     });
@@ -15361,6 +15845,15 @@ async function verifierStatutsPermissions() {
             majCam();
             cam.onchange = majCam;
         } catch (e) {}
+        try {
+            const loc = await navigator.permissions.query({ name: 'geolocation' });
+            const majLoc = () => {
+                const etat = loc.state === 'granted' ? 'granted' : (loc.state === 'denied' ? 'denied' : null);
+                if (etat) { majStatutPermission('loc', etat); sauvegarderStatutPermission('loc', etat); }
+            };
+            majLoc();
+            loc.onchange = majLoc;
+        } catch (e) {}
     }
     if ('Notification' in window) {
         const etat = Notification.permission === 'granted' ? 'granted' : (Notification.permission === 'denied' ? 'denied' : null);
@@ -15381,6 +15874,18 @@ async function demanderAutorisation(type) {
             console.error(e);
             majStatutPermission(type, 'denied');
             sauvegarderStatutPermission(type, 'denied');
+            showTempNotification("❌ Accès refusé. Autorise-le via l'icône 🔒 à côté de l'adresse du site.");
+        }
+    } else if (type === 'loc') {
+        try {
+            await obtenirPositionActuelle();
+            majStatutPermission('loc', 'granted');
+            sauvegarderStatutPermission('loc', 'granted');
+            showTempNotification('📍 Localisation autorisée');
+        } catch (e) {
+            console.error(e);
+            majStatutPermission('loc', 'denied');
+            sauvegarderStatutPermission('loc', 'denied');
             showTempNotification("❌ Accès refusé. Autorise-le via l'icône 🔒 à côté de l'adresse du site.");
         }
     } else if (type === 'notif') {
@@ -15425,6 +15930,76 @@ let screenShareInviteUnsubscribe = null;
 // mobiles : ni Safari sur iPhone, ni Chrome sur Android ne proposent
 // l'API getDisplayMedia sur téléphone (limitation du système, pas de l'app).
 // Regarder un partage reçu, en revanche, fonctionne très bien sur mobile.
+// Zoom libre au pincement (pinch-to-zoom) + déplacement au doigt, sans aucun
+// bouton ni texte — le pincement à 2 doigts zoome, un doigt déplace une fois
+// zoomé, et un double-tap réinitialise. Utilisé pour la visionneuse de
+// partage d'écran (le zoom natif du navigateur est désactivé site-entier).
+function activerZoomLibre(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.style.transform = '';
+    if (!el._zoomState) el._zoomState = { scale: 1, originX: 0, originY: 0 };
+    else { el._zoomState.scale = 1; el._zoomState.originX = 0; el._zoomState.originY = 0; }
+    if (el.dataset.zoomBound === 'true') return;
+    el.dataset.zoomBound = 'true';
+
+    const state = el._zoomState;
+    let startDist = 0;
+    let panning = false, pinching = false;
+    let startPanX = 0, startPanY = 0;
+    let dernierTap = 0;
+
+    function appliquer() {
+        el.style.transformOrigin = '0 0';
+        el.style.transform = `translate(${state.originX}px, ${state.originY}px) scale(${state.scale})`;
+    }
+    function distance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.hypot(dx, dy);
+    }
+
+    el.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            pinching = true; panning = false;
+            startDist = distance(e.touches);
+        } else if (e.touches.length === 1 && state.scale > 1) {
+            panning = true; pinching = false;
+            startPanX = e.touches[0].clientX - state.originX;
+            startPanY = e.touches[0].clientY - state.originY;
+        }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+        if (pinching && e.touches.length === 2) {
+            const nouvelleDist = distance(e.touches);
+            const lastScale = state.scale;
+            state.scale = Math.min(4, Math.max(1, lastScale * (nouvelleDist / startDist)));
+            startDist = nouvelleDist;
+            appliquer();
+            e.preventDefault();
+        } else if (panning && e.touches.length === 1) {
+            state.originX = e.touches[0].clientX - startPanX;
+            state.originY = e.touches[0].clientY - startPanY;
+            appliquer();
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    el.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) pinching = false;
+        if (e.touches.length < 1) {
+            panning = false;
+            if (state.scale <= 1.02) { state.scale = 1; state.originX = 0; state.originY = 0; appliquer(); }
+        }
+        const maintenant = Date.now();
+        if (maintenant - dernierTap < 300) {
+            state.scale = 1; state.originX = 0; state.originY = 0; appliquer();
+        }
+        dernierTap = maintenant;
+    });
+}
+
 function ecranPartageDisponible() {
     return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function');
 }
@@ -15581,6 +16156,7 @@ function demarrerReceptionPartageEcran() {
 
                 document.getElementById('screenshare-viewer-topbar').innerText = `Partage d'écran de ${data.fromName || targetUser.name}`;
                 document.getElementById('screenshare-viewer-overlay').classList.add('active');
+                activerZoomLibre('screenshare-viewer-video');
                 afficherBandeauPartageEcran('viewer', 'Partage en cours');
                 demarrerChronoPartageEcran();
                 showTempNotification('🖥️ Partage d\'écran en cours');
@@ -15817,4 +16393,4 @@ function nettoyerPartageEcran() {
 
 </body>   
   
-</html>  
+</html>
