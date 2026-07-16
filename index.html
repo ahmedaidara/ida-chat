@@ -202,32 +202,40 @@
     border-bottom-left-radius: 12px !important;
 }
 
-/* Envoi groupé de plusieurs photos/vidéos à la fois : grille élégante */
-.media-group-grid {
-    display: grid;
-    gap: 3px;
-    border-radius: 14px;
+/* Envoi groupé de plusieurs photos/vidéos à la fois : effet éventail/cascade
+   ("polaroids jetés sur la table") — cartes décalées, légèrement pivotées,
+   coins arrondis et fine bordure, comme dans les messageries modernes. */
+.media-fan {
+    position: relative;
+    width: 210px;
+    height: 216px;
+    margin: 10px 8px 16px;
+}
+.media-fan-card {
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    border-radius: 16px;
     overflow: hidden;
-    width: 260px;
+    border: 3px solid #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.22);
+    cursor: pointer;
+    background: #000;
+    transition: transform 0.15s ease;
 }
-.media-group-grid.count-1 { grid-template-columns: 1fr; }
-.media-group-grid.count-2 { grid-template-columns: 1fr 1fr; }
-.media-group-grid.count-3 { grid-template-columns: 1fr 1fr; }
-.media-group-grid.count-3 .media-group-item:first-child { grid-row: span 2; }
-.media-group-grid.count-4up { grid-template-columns: 1fr 1fr; }
-.media-group-item {
-    position: relative; aspect-ratio: 1; overflow: hidden; cursor: pointer; background: #000;
-}
-.media-group-item img, .media-group-item video {
+.media-fan-card:active { filter: brightness(0.92); }
+.media-fan-card img, .media-fan-card video {
     width: 100%; height: 100%; object-fit: cover; display: block;
 }
-.media-group-item .media-group-video-icon {
+.media-fan-card .media-fan-video-icon {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     color: #fff; font-size: 1.6rem; text-shadow: 0 1px 4px rgba(0,0,0,0.5); pointer-events: none;
 }
-.media-group-more-overlay {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.55); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700;
+.media-fan-more-badge {
+    position: absolute; bottom: -6px; right: -6px; background: var(--bubble-sent);
+    color: #fff; width: 30px; height: 30px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid var(--bg-main); z-index: 10;
 }
       
 .message-bubble.bicolor { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; }
@@ -3796,7 +3804,7 @@ function prendrePhotoAvecSupabase() {
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
-    input.style.display = 'none';
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
     document.body.appendChild(input);
     input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
@@ -3819,7 +3827,7 @@ function prendreVideoAvecSupabase() {
     input.type = 'file';
     input.accept = 'video/*';
     input.capture = 'environment';
-    input.style.display = 'none';
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
     document.body.appendChild(input);
     input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
@@ -3842,7 +3850,7 @@ function ouvrirGalerieSupabase() {
     input.type = 'file';
     input.accept = 'image/*,video/*';
     input.multiple = true;
-    input.style.display = 'none';
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
     document.body.appendChild(input);
     input.onchange = (e) => {
         const fichiers = e.target.files ? Array.from(e.target.files) : [];
@@ -3988,9 +3996,12 @@ function envoyerFichierVersChat(accept) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
+    document.body.appendChild(input);
     input.onchange = async (e) => {
-        if (!e.target.files || !e.target.files[0]) return;
+        if (!e.target.files || !e.target.files[0]) { input.remove(); return; }
         const file = e.target.files[0];
+        input.remove();
         if (file.size > 25 * 1024 * 1024) {
             showTempNotification("❌ Fichier trop grand (max 25 MB)");
             return;
@@ -13784,22 +13795,29 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
         } else if (data.type === 'media_group' && Array.isArray(data.items)) {
             const items = data.items;
             const total = items.length;
-            const visibles = items.slice(0, 4);
+            const visibles = items.slice(0, 3);
             const restants = total - visibles.length;
-            const classeCount = total === 1 ? 'count-1' : total === 2 ? 'count-2' : total === 3 ? 'count-3' : 'count-4up';
-            let tilesHtml = '';
+            // Positions de l'éventail : chaque carte est décalée et légèrement pivotée,
+            // effet "polaroid jeté sur la table" — la dernière (au-dessus) est la plus droite.
+            const FAN_POSITIONS = [
+                { top: 0, left: 0, rotate: -8 },
+                { top: 26, left: 34, rotate: 6 },
+                { top: 46, left: 10, rotate: -4 }
+            ];
+            let cardsHtml = '';
             visibles.forEach((item, i) => {
-                const estDernierAvecPlus = (i === visibles.length - 1) && restants > 0;
+                const pos = FAN_POSITIONS[i] || FAN_POSITIONS[FAN_POSITIONS.length - 1];
+                const estFrontMost = i === visibles.length - 1;
                 const contenu = item.type === 'video'
-                    ? `<video src="${item.url}" muted playsinline></video><div class="media-group-video-icon"><i class="fa-solid fa-play"></i></div>`
+                    ? `<video src="${item.url}" muted playsinline></video><div class="media-fan-video-icon"><i class="fa-solid fa-play"></i></div>`
                     : `<img src="${item.url}" loading="lazy">`;
-                tilesHtml += `
-                    <div class="media-group-item" onclick="ouvrirMediaGroupItem('${item.url}', '${item.type}')">
+                cardsHtml += `
+                    <div class="media-fan-card" style="top:${pos.top}px; left:${pos.left}px; transform:rotate(${pos.rotate}deg); z-index:${i + 1};" onclick="ouvrirMediaGroupItem('${item.url}', '${item.type}')">
                         ${contenu}
-                        ${estDernierAvecPlus ? `<div class="media-group-more-overlay">+${restants}</div>` : ''}
+                        ${estFrontMost && restants > 0 ? `<div class="media-fan-more-badge">+${restants}</div>` : ''}
                     </div>`;
             });
-            bubbleHtml += `<div class="media-group-grid ${classeCount}">${tilesHtml}</div>`;
+            bubbleHtml += `<div class="media-fan">${cardsHtml}</div>`;
         } else if (data.type === 'document') {
             const ext = data.fileExt || (data.fileName || '').split('.').pop().toLowerCase();
             const icone = icoenPourExtensionDoc(ext);
