@@ -16304,14 +16304,19 @@ async function verifierStatutsPermissions() {
         if (sauvegarde) majStatutPermission(type, sauvegarde);
     });
 
-    // 2) Affinage avec l'API native quand elle est disponible (peut corriger
-    // le cas où l'autorisation a été révoquée depuis les réglages du téléphone)
+    // 2) Affinage avec l'API native quand elle est disponible.
+    // ⚠️ IMPORTANT : cette API (navigator.permissions.query) est connue pour être
+    // peu fiable sur Safari/certains navigateurs mobiles — elle peut signaler à tort
+    // "refusé" juste après un usage normal, même quand l'autorisation réelle est
+    // toujours bonne (c'est ce qui donnait l'impression d'un refus après 5 secondes).
+    // On ne l'utilise donc QUE pour confirmer un "autorisé" (jamais pour repasser
+    // en "refusé" tout seul) — un vrai refus est de toute façon détecté de manière
+    // fiable au moment réel où le micro/la caméra est utilisé (voir demanderAutorisation).
     if (navigator.permissions && navigator.permissions.query) {
         try {
             const mic = await navigator.permissions.query({ name: 'microphone' });
             const majMic = () => {
-                const etat = mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null);
-                if (etat) { majStatutPermission('mic', etat); sauvegarderStatutPermission('mic', etat); }
+                if (mic.state === 'granted') { majStatutPermission('mic', 'granted'); sauvegarderStatutPermission('mic', 'granted'); }
             };
             majMic();
             mic.onchange = majMic;
@@ -16319,8 +16324,7 @@ async function verifierStatutsPermissions() {
         try {
             const cam = await navigator.permissions.query({ name: 'camera' });
             const majCam = () => {
-                const etat = cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null);
-                if (etat) { majStatutPermission('cam', etat); sauvegarderStatutPermission('cam', etat); }
+                if (cam.state === 'granted') { majStatutPermission('cam', 'granted'); sauvegarderStatutPermission('cam', 'granted'); }
             };
             majCam();
             cam.onchange = majCam;
@@ -16328,8 +16332,7 @@ async function verifierStatutsPermissions() {
         try {
             const loc = await navigator.permissions.query({ name: 'geolocation' });
             const majLoc = () => {
-                const etat = loc.state === 'granted' ? 'granted' : (loc.state === 'denied' ? 'denied' : null);
-                if (etat) { majStatutPermission('loc', etat); sauvegarderStatutPermission('loc', etat); }
+                if (loc.state === 'granted') { majStatutPermission('loc', 'granted'); sauvegarderStatutPermission('loc', 'granted'); }
             };
             majLoc();
             loc.onchange = majLoc;
