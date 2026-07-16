@@ -3521,8 +3521,8 @@ input, textarea {
     <div class="viewonce-viewer-notice">Cette photo/vidéo disparaîtra du chat à la fermeture</div>
 </div>
         <!-- Modal Photo -->
-        <div class="photo-modal" id="photo-modal" onclick="closePhotoModal()">
-            <button class="photo-modal-close" onclick="closePhotoModal()"><i class="fa-solid fa-times"></i></button>
+        <div class="photo-modal" id="photo-modal" onclick="gererClicModalPhoto(event)">
+            <button class="photo-modal-close" onclick="event.stopPropagation(); closePhotoModal()"><i class="fa-solid fa-times"></i></button>
             <img id="modal-image" src="" alt="Photo">
             <div class="photo-modal-actions">
                 <button class="download-btn" id="download-photo-btn" onclick="event.stopPropagation(); downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer</button>
@@ -3917,6 +3917,9 @@ async function envoyerPlusieursMedias(fichiers) {
 
 // Ouvre un élément d'un groupe de médias en plein écran (avec zoom libre)
 function ouvrirMediaGroupItem(url, type) {
+    currentPhotoUrl = url;
+    mediaGalerieListe = [{ msgId: null, type: type, url: url }];
+    mediaGalerieIndex = 0;
     const modal = document.getElementById('photo-modal');
     const modalImg = document.getElementById('modal-image');
     let modalVideo = document.getElementById('modal-video');
@@ -7795,8 +7798,20 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
         // fiable consiste à utiliser le menu de partage natif (Web Share API avec fichiers),
         // qui propose directement "Enregistrer l'image" / "Enregistrer la vidéo" -> Galerie/Photos.
         async function enregistrerMediaSurAppareil(url, filename, mimeType) {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            let blob;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                blob = await response.blob();
+            } catch (err) {
+                console.error('Erreur récupération du fichier (enregistrement):', err);
+                // Repli ultime : au moins ouvrir le fichier dans un nouvel onglet, pour
+                // que la personne puisse l'enregistrer manuellement (clic droit / appui long).
+                showTempNotification("❌ Téléchargement direct impossible — ouverture dans un nouvel onglet");
+                window.open(url, '_blank');
+                return false;
+            }
+
             const file = new File([blob], filename, { type: mimeType || blob.type || 'application/octet-stream' });
 
             // 1) Mobile (iPhone/Android) : menu de partage natif -> "Enregistrer" sauvegarde
@@ -7807,26 +7822,37 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
                     return true;
                 } catch (err) {
                     if (err && err.name === 'AbortError') return false; // l'utilisateur a annulé
-                    // Si le partage échoue pour une autre raison, on retombe sur le téléchargement classique
+                    console.warn('Partage natif indisponible, repli sur téléchargement direct:', err);
+                    // on continue vers le repli ci-dessous, on n'arrête pas là
                 }
             }
 
             // 2) Repli (PC, ou navigateurs sans partage de fichiers) : téléchargement classique
-            const blobUrl = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
-            return true;
+            try {
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+                return true;
+            } catch (err) {
+                console.error('Erreur téléchargement direct:', err);
+                showTempNotification("❌ Échec de l'enregistrement");
+                return false;
+            }
         }
 
         async function downloadCurrentPhoto() {
-            if (!currentPhotoUrl) return;
+            if (!currentPhotoUrl) {
+                console.warn('downloadCurrentPhoto: currentPhotoUrl est vide');
+                showTempNotification('❌ Aucun média à enregistrer');
+                return;
+            }
             const downloadBtn = document.getElementById('download-photo-btn');
-            downloadBtn.classList.add('downloading');
+            if (downloadBtn) downloadBtn.classList.add('downloading');
             try {
                 const estVideo = mediaGalerieListe[mediaGalerieIndex]?.type === 'video';
                 if (estVideo) {
@@ -7838,7 +7864,7 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
                 console.error('Erreur enregistrement média:', e);
                 showTempNotification('❌ Erreur téléchargement');
             }
-            setTimeout(() => downloadBtn.classList.remove('downloading'), 500);
+            setTimeout(() => { if (downloadBtn) downloadBtn.classList.remove('downloading'); }, 500);
         }
 
         // Répond au message actuellement affiché dans le visualiseur plein écran
@@ -9849,6 +9875,34 @@ function mediaGaleriePrecedent() {
     if (mediaGalerieIndex > 0) afficherMediaGalerie(mediaGalerieIndex - 1);
 }
 
+// Vrai si l'image/vidéo affichée est actuellement zoomée (pour ne jamais
+// naviguer par erreur pendant qu'on est en train de zoomer/déplacer)
+function mediaActuelEstZoome() {
+    const img = document.getElementById('modal-image');
+    const video = document.getElementById('modal-video');
+    const scaleImg = img && img._zoomState ? img._zoomState.scale : 1;
+    const scaleVideo = video && video._zoomState ? video._zoomState.scale : 1;
+    return scaleImg > 1.02 || scaleVideo > 1.02;
+}
+
+// Clic à gauche = média précédent, clic à droite = média suivant, clic au
+// centre = fermer. Ignoré si on est zoomé (le zoom reste prioritaire).
+function gererClicModalPhoto(event) {
+    if (photoModalSwiped) return; // évite un "faux clic fantôme" juste après un glissement
+    if (mediaActuelEstZoome()) return; // ne jamais naviguer pendant qu'on est zoomé
+    const modal = document.getElementById('photo-modal');
+    const rect = modal.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const tiers = rect.width / 3;
+    if (clickX < tiers) {
+        mediaGaleriePrecedent();
+    } else if (clickX > tiers * 2) {
+        mediaGalerieSuivant();
+    } else {
+        closePhotoModal();
+    }
+}
+
 // Navigation par glissement gauche/droite — volontairement SANS bouton visible, comme demandé
 (function initGalerieSwipe() {
     let startX = 0, startY = 0;
@@ -9856,10 +9910,12 @@ function mediaGaleriePrecedent() {
         const modal = document.getElementById('photo-modal');
         if (!modal) return;
         modal.addEventListener('touchstart', (e) => {
+            if (mediaActuelEstZoome()) return; // le zoom (pincement/déplacement) reste prioritaire
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
         }, { passive: true });
         modal.addEventListener('touchend', (e) => {
+            if (mediaActuelEstZoome()) return;
             const dx = e.changedTouches[0].clientX - startX;
             const dy = e.changedTouches[0].clientY - startY;
             if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
@@ -13674,9 +13730,12 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         let customStyle = '';
         let inlineStyle = '';
 // 🚨 PRIORITÉ : Si une couleur personnalisée existe, on désactive les styles de classe
-const hasCustomColor = data.customColor || data.customGradient;
+const hasCustomColor = !isMediaNoBubble && (data.customColor || data.customGradient);
 
-if (hasCustomColor) {
+if (isMediaNoBubble) {
+    // Une photo/vidéo/document/envoi groupé n'a JAMAIS de fond de bulle coloré,
+    // même si une couleur d'accent ou un style de bulle par défaut est choisi.
+} else if (hasCustomColor) {
     // ✅ Couleur/dégradé choisi pour CE message précis (prioritaire sur tout le reste)
     if (data.customColor) {
         inlineStyle = `background: ${data.customColor} !important; color: ${getContrastColor(data.customColor)} !important;`;
