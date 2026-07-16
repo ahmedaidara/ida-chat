@@ -201,6 +201,34 @@
     border-bottom-right-radius: 12px !important;
     border-bottom-left-radius: 12px !important;
 }
+
+/* Envoi groupé de plusieurs photos/vidéos à la fois : grille élégante */
+.media-group-grid {
+    display: grid;
+    gap: 3px;
+    border-radius: 14px;
+    overflow: hidden;
+    width: 260px;
+}
+.media-group-grid.count-1 { grid-template-columns: 1fr; }
+.media-group-grid.count-2 { grid-template-columns: 1fr 1fr; }
+.media-group-grid.count-3 { grid-template-columns: 1fr 1fr; }
+.media-group-grid.count-3 .media-group-item:first-child { grid-row: span 2; }
+.media-group-grid.count-4up { grid-template-columns: 1fr 1fr; }
+.media-group-item {
+    position: relative; aspect-ratio: 1; overflow: hidden; cursor: pointer; background: #000;
+}
+.media-group-item img, .media-group-item video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.media-group-item .media-group-video-icon {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.6rem; text-shadow: 0 1px 4px rgba(0,0,0,0.5); pointer-events: none;
+}
+.media-group-more-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.55); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700;
+}
       
 .message-bubble.bicolor { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; }
 .message-bubble.dark-passion { background: linear-gradient(45deg, #1a0000, #8b0000, #1a0000); background-size: 200% 200%; color: #ff4444; border: 1px solid #ff0000; animation: shimmer 3s ease infinite; }
@@ -529,7 +557,7 @@
         .photo-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); animation: fadeInModal 0.2s ease-out; }
         @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
         .photo-modal img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0; box-shadow: none; cursor: zoom-out; }
-        .photo-modal-close { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10001; }
+        .photo-modal-close { position: absolute; top: calc(env(safe-area-inset-top) + 16px); right: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10001; }
         .photo-modal-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
         .photo-modal-actions { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 10001; }
         .download-btn { position: relative; bottom: auto; left: auto; transform: none; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 30px; padding: 12px 20px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
@@ -704,6 +732,7 @@
     flex-direction: column;
     animation: slideUp 0.3s ease-out;
     -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top);
 }
 .search-page-header {
     position: sticky;
@@ -927,6 +956,7 @@
     flex-direction: column;
     animation: slideUp 0.3s ease-out;
     -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top);
 }
 
 @keyframes slideUp {
@@ -3766,15 +3796,18 @@ function prendrePhotoAvecSupabase() {
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
+    input.style.display = 'none';
+    document.body.appendChild(input);
     input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (file.size > 15 * 1024 * 1024) {
                 showTempNotification("❌ Photo trop grande (max 15 MB)");
-                return;
+            } else {
+                ouvrirEditeurMedia(file);
             }
-            ouvrirEditeurMedia(file);
         }
+        input.remove();
     };
     input.click();
 }
@@ -3786,38 +3819,133 @@ function prendreVideoAvecSupabase() {
     input.type = 'file';
     input.accept = 'video/*';
     input.capture = 'environment';
+    input.style.display = 'none';
+    document.body.appendChild(input);
     input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (file.size > 50 * 1024 * 1024) {
                 showTempNotification("❌ Vidéo trop grande (max 50 MB)");
-                return;
+            } else {
+                ouvrirEditeurMedia(file);
             }
-            ouvrirEditeurMedia(file);
         }
+        input.remove();
     };
     input.click();
 }
 
-// ========== SÉLECTION DEPUIS LA GALERIE → OUVRE L'ÉDITEUR ==========
+// ========== SÉLECTION DEPUIS LA GALERIE → OUVRE L'ÉDITEUR (multi-sélection possible) ==========
 function ouvrirGalerieSupabase() {
     fermerMenuMedia();
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
+    input.multiple = true;
+    input.style.display = 'none';
+    document.body.appendChild(input);
     input.onchange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
+        const fichiers = e.target.files ? Array.from(e.target.files) : [];
+        input.remove();
+        if (fichiers.length === 0) return;
+
+        const valides = [];
+        for (const file of fichiers) {
             const isVideo = file.type.startsWith('video/');
             const maxMB = isVideo ? 50 : 15;
             if (file.size > maxMB * 1024 * 1024) {
-                showTempNotification(`❌ Fichier trop grand (max ${maxMB} MB)`);
-                return;
+                showTempNotification(`❌ "${file.name}" trop grand (max ${maxMB} MB) — ignoré`);
+                continue;
             }
-            ouvrirEditeurMedia(file);
+            valides.push(file);
+        }
+        if (valides.length === 0) return;
+
+        if (valides.length === 1) {
+            ouvrirEditeurMedia(valides[0]);
+        } else {
+            envoyerPlusieursMedias(valides);
         }
     };
     input.click();
+}
+
+// ========== ENVOI DE PLUSIEURS PHOTOS/VIDÉOS À LA FOIS ==========
+async function envoyerPlusieursMedias(fichiers) {
+    if (!currentUser || !targetUser) return;
+    showTempNotification(`📤 Envoi de ${fichiers.length} fichiers...`);
+    const items = [];
+    for (const file of fichiers) {
+        const isVideo = file.type.startsWith('video/');
+        try {
+            const url = await uploadVersSupabase(file, isVideo ? 'video' : 'image');
+            if (url) items.push({ type: isVideo ? 'video' : 'image', url });
+        } catch (e) {
+            console.error('Erreur upload (envoi multiple):', e);
+        }
+    }
+    if (items.length === 0) {
+        showTempNotification("❌ Aucun fichier n'a pu être envoyé");
+        return;
+    }
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'media_group',
+            items: items,
+            text: null,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'sent',
+            readBy: [currentUser.id],
+            storage: 'supabase'
+        });
+        showTempNotification(`✅ ${items.length} fichiers envoyés !`);
+    } catch (e) {
+        console.error('Erreur envoi groupe média:', e);
+        showTempNotification("❌ Échec de l'envoi du groupe");
+    }
+}
+
+// Ouvre un élément d'un groupe de médias en plein écran (avec zoom libre)
+function ouvrirMediaGroupItem(url, type) {
+    const modal = document.getElementById('photo-modal');
+    const modalImg = document.getElementById('modal-image');
+    let modalVideo = document.getElementById('modal-video');
+    if (!modalVideo) {
+        modalVideo = document.createElement('video');
+        modalVideo.id = 'modal-video';
+        modalVideo.controls = true;
+        modalVideo.playsInline = true;
+        modalVideo.style.cssText = 'max-width:100%; max-height:100%; object-fit:contain; display:none;';
+        modalImg.insertAdjacentElement('afterend', modalVideo);
+    }
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (type === 'video') {
+        modalImg.style.display = 'none';
+        modalVideo.src = url;
+        modalVideo.style.display = 'block';
+        modalVideo.currentTime = 0;
+        modalVideo.play().catch(() => {});
+        activerZoomLibre('modal-video');
+    } else {
+        modalVideo.pause();
+        modalVideo.removeAttribute('src');
+        modalVideo.style.display = 'none';
+        modalImg.src = url;
+        modalImg.style.display = 'block';
+        modalImg.style.maxWidth = '100%';
+        modalImg.style.maxHeight = '100%';
+        modalImg.style.width = 'auto';
+        modalImg.style.height = 'auto';
+        modalImg.style.objectFit = 'contain';
+        modalImg.style.margin = '0';
+        modalImg.style.borderRadius = '0';
+        modalImg.style.boxShadow = 'none';
+        modalImg.style.touchAction = 'none';
+        activerZoomLibre('modal-image');
+    }
 }
 
 // ========== ENVOI DE DOCUMENT (PDF, TXT, Word, Excel...) ==========
@@ -5343,6 +5471,7 @@ function listenToMessages() {
     let isFirstSnapshot = true;
 
     // Affichage instantané depuis le cache local, avant même que Firestore réponde
+    const primeDepuisCache = !!localStorage.getItem(cleCacheMessages());
     afficherDepuisCacheMessages();
     
     // ⚠️ Aucune limite : on charge l'historique COMPLET de la conversation, du
@@ -5474,8 +5603,20 @@ function listenToMessages() {
             // ============================================================
             const msgAreaEl = document.getElementById('msg-area');
             const wasAtBottomBeforeRender = msgAreaEl ? (msgAreaEl.scrollHeight - msgAreaEl.scrollTop - msgAreaEl.clientHeight) < 150 : true;
+
+            // Si le cache local avait déjà affiché EXACTEMENT ces mêmes messages,
+            // on évite de tout reconstruire une 2e fois pour ce premier "vrai"
+            // snapshot — ça évite le flash/re-défilement visible en double.
+            let dejaToutAffichePartCache = false;
+            if (isFirstSnapshot && primeDepuisCache && msgAreaEl) {
+                const idsDejaAffiches = new Set(
+                    Array.from(msgAreaEl.querySelectorAll('[data-id]')).map(el => el.getAttribute('data-id'))
+                );
+                dejaToutAffichePartCache = snapshot.docs.every(d => idsDejaAffiches.has(d.id))
+                    && idsDejaAffiches.size === snapshot.docs.length;
+            }
             
-            if (isFirstSnapshot || hasNewMessage) {
+            if ((isFirstSnapshot || hasNewMessage) && !dejaToutAffichePartCache) {
                 afficherTousLesMessages(snapshot, isFirstSnapshot);
                 sauvegarderCacheMessages(snapshot); // met à jour le cache local pour le prochain chargement instantané
 // Après afficherTousLesMessages
@@ -5484,6 +5625,8 @@ if (!isFirstSnapshot) {
 } else {
     setTimeout(traiterMessagesSecrets, 1000);
 }
+            } else if (dejaToutAffichePartCache) {
+                sauvegarderCacheMessages(snapshot); // on rafraîchit quand même le cache, sans re-rendre l'écran
             }
             
             // Si un message de l'autre personne arrive pendant qu'on lit l'historique
@@ -7860,6 +8003,10 @@ async function ouvrirGalerieMediaPage() {
                 (data.mediaUrl && (data.mediaUrl.includes('emoji-datasource-apple') || data.mediaUrl.includes('tenor.com')));
             if ((data.type === 'image' || data.type === 'video') && !data.viewOnce && data.mediaUrl && !estUnGifOuSticker) {
                 medias.push({ msgId: doc.id, type: data.type, url: data.mediaUrl });
+            } else if (data.type === 'media_group' && Array.isArray(data.items)) {
+                data.items.forEach((item, i) => {
+                    medias.push({ msgId: doc.id + '_' + i, type: item.type, url: item.url });
+                });
             }
         });
 
@@ -13512,7 +13659,7 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         // ✅ Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs et stickers —
         // ces derniers sont stockés avec type "image" (voir isGif/isSticker), donc ce test
         // couvre bien tous les cas demandés.
-        const isMediaNoBubble = data.type === 'image' || data.type === 'video';
+        const isMediaNoBubble = data.type === 'image' || data.type === 'video' || data.type === 'document' || data.type === 'media_group';
         let customStyle = '';
         let inlineStyle = '';
 // 🚨 PRIORITÉ : Si une couleur personnalisée existe, on désactive les styles de classe
@@ -13634,6 +13781,25 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                     bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
                 }
             }
+        } else if (data.type === 'media_group' && Array.isArray(data.items)) {
+            const items = data.items;
+            const total = items.length;
+            const visibles = items.slice(0, 4);
+            const restants = total - visibles.length;
+            const classeCount = total === 1 ? 'count-1' : total === 2 ? 'count-2' : total === 3 ? 'count-3' : 'count-4up';
+            let tilesHtml = '';
+            visibles.forEach((item, i) => {
+                const estDernierAvecPlus = (i === visibles.length - 1) && restants > 0;
+                const contenu = item.type === 'video'
+                    ? `<video src="${item.url}" muted playsinline></video><div class="media-group-video-icon"><i class="fa-solid fa-play"></i></div>`
+                    : `<img src="${item.url}" loading="lazy">`;
+                tilesHtml += `
+                    <div class="media-group-item" onclick="ouvrirMediaGroupItem('${item.url}', '${item.type}')">
+                        ${contenu}
+                        ${estDernierAvecPlus ? `<div class="media-group-more-overlay">+${restants}</div>` : ''}
+                    </div>`;
+            });
+            bubbleHtml += `<div class="media-group-grid ${classeCount}">${tilesHtml}</div>`;
         } else if (data.type === 'document') {
             const ext = data.fileExt || (data.fileName || '').split('.').pop().toLowerCase();
             const icone = icoenPourExtensionDoc(ext);
@@ -16089,66 +16255,98 @@ function activerZoomLibre(elementId) {
     const el = document.getElementById(elementId);
     if (!el) return;
     el.style.transform = '';
-    if (!el._zoomState) el._zoomState = { scale: 1, originX: 0, originY: 0 };
-    else { el._zoomState.scale = 1; el._zoomState.originX = 0; el._zoomState.originY = 0; }
-    if (el.dataset.zoomBound === 'true') return;
+    if (!el._zoomState) el._zoomState = { scale: 1, tx: 0, ty: 0 };
+    else { el._zoomState.scale = 1; el._zoomState.tx = 0; el._zoomState.ty = 0; }
+    if (el.dataset.zoomBound === 'true') { appliquerTransform(el, el._zoomState); return; }
     el.dataset.zoomBound = 'true';
 
     const state = el._zoomState;
-    let startDist = 0;
-    let panning = false, pinching = false;
-    let startPanX = 0, startPanY = 0;
+    let mode = null; // 'pinch' | 'pan'
+    let pinchStartDist = 0;
+    let pinchStartScale = 1;
+    let ancreX = 0, ancreY = 0; // point du CONTENU (repère non transformé) sous le centre du pincement
+    let panStartTx = 0, panStartTy = 0;
+    let panStartTouchX = 0, panStartTouchY = 0;
     let dernierTap = 0;
 
-    function appliquer() {
-        el.style.transformOrigin = '0 0';
-        el.style.transform = `translate(${state.originX}px, ${state.originY}px) scale(${state.scale})`;
-    }
     function distance(touches) {
         const dx = touches[0].clientX - touches[1].clientX;
         const dy = touches[0].clientY - touches[1].clientY;
         return Math.hypot(dx, dy);
     }
+    function milieu(touches) {
+        return {
+            x: (touches[0].clientX + touches[1].clientX) / 2,
+            y: (touches[0].clientY + touches[1].clientY) / 2
+        };
+    }
+    function limiterDeplacement() {
+        // Empêche de faire glisser l'image totalement hors de l'écran
+        const maxOffsetX = (el.offsetWidth * (state.scale - 1)) / 2 + el.offsetWidth * 0.4;
+        const maxOffsetY = (el.offsetHeight * (state.scale - 1)) / 2 + el.offsetHeight * 0.4;
+        state.tx = Math.max(-maxOffsetX, Math.min(maxOffsetX, state.tx));
+        state.ty = Math.max(-maxOffsetY, Math.min(maxOffsetY, state.ty));
+    }
 
     el.addEventListener('touchstart', (e) => {
+        const parentRect = el.parentElement.getBoundingClientRect();
         if (e.touches.length === 2) {
-            pinching = true; panning = false;
-            startDist = distance(e.touches);
+            mode = 'pinch';
+            pinchStartDist = distance(e.touches);
+            pinchStartScale = state.scale;
+            const mid = milieu(e.touches);
+            // Point du contenu (avant transform) actuellement sous le centre du pincement :
+            // on le fige comme "ancre" pour que ce point précis reste sous les doigts.
+            ancreX = (mid.x - parentRect.left - state.tx) / state.scale;
+            ancreY = (mid.y - parentRect.top - state.ty) / state.scale;
         } else if (e.touches.length === 1 && state.scale > 1) {
-            panning = true; pinching = false;
-            startPanX = e.touches[0].clientX - state.originX;
-            startPanY = e.touches[0].clientY - state.originY;
+            mode = 'pan';
+            panStartTx = state.tx;
+            panStartTy = state.ty;
+            panStartTouchX = e.touches[0].clientX;
+            panStartTouchY = e.touches[0].clientY;
         }
     }, { passive: true });
 
     el.addEventListener('touchmove', (e) => {
-        if (pinching && e.touches.length === 2) {
+        const parentRect = el.parentElement.getBoundingClientRect();
+        if (mode === 'pinch' && e.touches.length === 2) {
             const nouvelleDist = distance(e.touches);
-            const lastScale = state.scale;
-            state.scale = Math.min(4, Math.max(1, lastScale * (nouvelleDist / startDist)));
-            startDist = nouvelleDist;
-            appliquer();
+            const nouvelleScale = Math.min(4, Math.max(1, pinchStartScale * (nouvelleDist / pinchStartDist)));
+            const mid = milieu(e.touches);
+            // Recalcule tx/ty pour que le point "ancre" reste exactement sous le centre du pincement
+            state.tx = (mid.x - parentRect.left) - ancreX * nouvelleScale;
+            state.ty = (mid.y - parentRect.top) - ancreY * nouvelleScale;
+            state.scale = nouvelleScale;
+            limiterDeplacement();
+            appliquerTransform(el, state);
             e.preventDefault();
-        } else if (panning && e.touches.length === 1) {
-            state.originX = e.touches[0].clientX - startPanX;
-            state.originY = e.touches[0].clientY - startPanY;
-            appliquer();
+        } else if (mode === 'pan' && e.touches.length === 1) {
+            state.tx = panStartTx + (e.touches[0].clientX - panStartTouchX);
+            state.ty = panStartTy + (e.touches[0].clientY - panStartTouchY);
+            limiterDeplacement();
+            appliquerTransform(el, state);
             e.preventDefault();
         }
     }, { passive: false });
 
     el.addEventListener('touchend', (e) => {
-        if (e.touches.length < 2) pinching = false;
+        if (e.touches.length < 2 && mode === 'pinch') mode = null;
         if (e.touches.length < 1) {
-            panning = false;
-            if (state.scale <= 1.02) { state.scale = 1; state.originX = 0; state.originY = 0; appliquer(); }
+            mode = null;
+            if (state.scale <= 1.02) { state.scale = 1; state.tx = 0; state.ty = 0; appliquerTransform(el, state); }
         }
         const maintenant = Date.now();
         if (maintenant - dernierTap < 300) {
-            state.scale = 1; state.originX = 0; state.originY = 0; appliquer();
+            state.scale = 1; state.tx = 0; state.ty = 0; appliquerTransform(el, state);
         }
         dernierTap = maintenant;
     });
+}
+
+function appliquerTransform(el, state) {
+    el.style.transformOrigin = '0 0';
+    el.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
 }
 
 function ecranPartageDisponible() {
