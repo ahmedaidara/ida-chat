@@ -2528,6 +2528,22 @@ input, textarea {
 }
 .screenshare-invite-actions button.accept { background: #34c759; color: #fff; }
 
+/* Carte "journal d'appel" façon WhatsApp — appel/partage terminé, manqué ou refusé */
+.call-log-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 3px 2px; min-width: 210px; cursor: default;
+}
+.call-log-card[onclick] { cursor: pointer; }
+.call-log-icon {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(0,0,0,0.06); color: inherit;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.call-log-icon.missed { background: rgba(255,59,48,0.14); color: #ff3b30; }
+.call-log-text { min-width: 0; }
+.call-log-title { font-size: 0.92rem; font-weight: 700; color: inherit; }
+.call-log-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 1px; }
+
 /* Visionneuse plein écran du partage d'écran reçu */
 .screenshare-viewer-overlay {
     position: fixed; inset: 0; z-index: 999998; background: #000;
@@ -13013,6 +13029,43 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
             } else if (data.status === 'declined') {
                 bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ❌ Invitation refusée</span></div>`;
             }
+} else if (data.type === 'call_log') {
+            const isMissed = data.callStatus === 'missed';
+            const isDeclined = data.callStatus === 'declined';
+            const isVideo = data.callType === 'video';
+            const iconClass = isVideo ? 'fa-video' : 'fa-phone';
+            let titre, sousTitre, classeIcone = '';
+            if (isMissed) {
+                titre = isVideo ? 'Appel vidéo manqué' : 'Appel vocal manqué';
+                sousTitre = 'Appuyez pour rappeler';
+                classeIcone = 'missed';
+            } else if (isDeclined) {
+                titre = isVideo ? 'Appel vidéo refusé' : 'Appel vocal refusé';
+                sousTitre = 'Appuyez pour rappeler';
+                classeIcone = 'missed';
+            } else {
+                titre = isVideo ? 'Appel vidéo' : 'Appel vocal';
+                sousTitre = formatDureeAppel(data.durationSec || 0);
+            }
+            const peutRappeler = isMissed || isDeclined;
+            bubbleHtml += `
+                <div class="call-log-card" ${peutRappeler ? `onclick="startCall('${data.callType}')"` : ''}>
+                    <div class="call-log-icon ${classeIcone}"><i class="fa-solid ${iconClass}"></i></div>
+                    <div class="call-log-text">
+                        <div class="call-log-title">${titre}</div>
+                        <div class="call-log-subtitle">${sousTitre}</div>
+                    </div>
+                </div>`;
+} else if (data.type === 'screenshare_log') {
+            const failed = data.screenshareStatus === 'failed';
+            bubbleHtml += `
+                <div class="call-log-card">
+                    <div class="call-log-icon ${failed ? 'missed' : ''}"><i class="fa-solid fa-display"></i></div>
+                    <div class="call-log-text">
+                        <div class="call-log-title">${escapeHTML(data.titre || "Partage d'écran")}</div>
+                        <div class="call-log-subtitle">${data.durationSec != null ? formatDureeAppel(data.durationSec) : ''}</div>
+                    </div>
+                </div>`;
 } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
             // MORPION - code simplifié
             const game = data.gameData;
@@ -14535,17 +14588,27 @@ function formatDureeAppel(secondes) {
 async function envoyerMessageFinAppel(data) {
     if (!currentUser) return;
     try {
-        let texte;
+        let callStatus, durationSec = null;
         if (data.status === 'rejected' && !data.acceptedAt) {
-            texte = '📵 Appel refusé';
+            callStatus = 'declined';
         } else if (data.acceptedAt) {
+            callStatus = 'completed';
             const acceptedMs = data.acceptedAt.toMillis ? data.acceptedAt.toMillis() : Date.now();
-            const dureeSec = Math.max(0, Math.round((Date.now() - acceptedMs) / 1000));
-            texte = `${data.type === 'video' ? '🎥' : '📞'} Appel terminé — durée ${formatDureeAppel(dureeSec)}`;
+            durationSec = Math.max(0, Math.round((Date.now() - acceptedMs) / 1000));
         } else {
-            texte = '📵 Appel manqué';
+            callStatus = 'missed';
         }
+        const isVideo = data.type === 'video';
+        const texte = callStatus === 'completed'
+            ? `${isVideo ? 'Appel vidéo' : 'Appel vocal'} — ${formatDureeAppel(durationSec)}`
+            : callStatus === 'missed'
+                ? (isVideo ? 'Appel vidéo manqué' : 'Appel vocal manqué')
+                : (isVideo ? 'Appel vidéo refusé' : 'Appel vocal refusé');
         await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'call_log',
+            callType: isVideo ? 'video' : 'audio',
+            callStatus: callStatus,
+            durationSec: durationSec,
             text: texte,
             senderId: data.callerId,
             senderName: data.callerName || currentUser.name,
@@ -15409,6 +15472,8 @@ async function demarrerEnvoiPartageEcran() {
     if (screenShareClient) return;
     if (!ecranPartageDisponible()) {
         showTempNotification("❌ Le partage d'écran n'est pas possible depuis ce téléphone (limitation iOS/Android) — réponds depuis un ordinateur pour pouvoir partager.");
+        envoyerMessageEchecPartageEcran('appareil incompatible — un ordinateur est nécessaire pour partager');
+        await getScreenShareDocRef().set({ status: 'ended' }, { merge: true }).catch(() => {});
         return;
     }
     if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
@@ -15443,6 +15508,8 @@ async function demarrerEnvoiPartageEcran() {
     } catch (e) {
         console.error('Erreur démarrage partage écran:', e);
         showTempNotification("❌ Impossible de démarrer le partage (autorisation refusée ?)");
+        envoyerMessageEchecPartageEcran('autorisation refusée ou annulée');
+        await getScreenShareDocRef().set({ status: 'ended' }, { merge: true }).catch(() => {});
         nettoyerPartageEcran();
     }
 }
@@ -15491,7 +15558,7 @@ async function terminerPartageEcran() {
         const docSnap = await getScreenShareDocRef().get();
         if (docSnap.exists) {
             const data = docSnap.data();
-            await envoyerMessageFinPartageEcran(data, currentUser.name + ' a terminé le partage');
+            await envoyerMessageFinPartageEcran(data, 'Partage d\'écran terminé');
         }
         await getScreenShareDocRef().set({ status: 'ended' }, { merge: true });
     } catch (e) { console.error(e); }
@@ -15512,13 +15579,36 @@ async function quitterPartageEcran() {
     nettoyerPartageEcran();
 }
 
-async function envoyerMessageFinPartageEcran(data, prefixeTexte) {
+async function envoyerMessageFinPartageEcran(data, titre) {
     if (!currentUser) return;
     try {
         const startMs = data && data.startedAt && data.startedAt.toMillis ? data.startedAt.toMillis() : Date.now();
         const dureeSec = Math.max(0, Math.round((Date.now() - startMs) / 1000));
         await db.collection('chats').doc(CHAT_ID).collection('messages').add({
-            text: `🔴 ${prefixeTexte} — durée ${formatDureeAppel(dureeSec)}`,
+            type: 'screenshare_log',
+            screenshareStatus: 'ended',
+            titre: titre,
+            durationSec: dureeSec,
+            text: `${titre} — ${formatDureeAppel(dureeSec)}`,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+    } catch (e) { console.error(e); }
+}
+
+// Laisse une trace dans le chat même quand le partage n'a jamais pu démarrer
+// (autorisation refusée, appareil incompatible, erreur réseau...)
+async function envoyerMessageEchecPartageEcran(raison) {
+    if (!currentUser) return;
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'screenshare_log',
+            screenshareStatus: 'failed',
+            titre: "Partage d'écran impossible",
+            durationSec: null,
+            text: `Partage d'écran impossible (${raison})`,
             senderId: currentUser.id,
             senderName: currentUser.name,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
