@@ -5234,9 +5234,11 @@ async function enregistrerTokenPush() {
             // interrompait ici toute la suite de selectUser). demanderPermissionNotifications()
             // juste en dessous fait déjà ce travail.
           demanderPermissionNotifications();
-              // ✅ Correction : "ecouterChangementsStyle" n'était définie nulle part (même bug
-              // que plus haut). La fonction équivalente réellement définie est ecouterChangementsCouleurs.
-              ecouterChangementsCouleurs();
+              // ⚠️ DÉSACTIVÉ : ecouterChangementsCouleurs() (sans !important) écrasait
+              // silencieusement la couleur correctement appliquée (avec !important) par
+              // applyColorToMessage()/le rendu principal, ce qui faisait revenir la bulle
+              // à sa couleur par défaut quelques instants après — c'était le vrai bug.
+              // ecouterChangementsCouleurs();
            localStorage.setItem('lastUser', userKey);
           activerMarquageMessagesLus();
 ecouterMessagesSupprimes();
@@ -15610,7 +15612,17 @@ async function startCall(type) {
             channel: CHAT_ID,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        envoyerNotifTelegram(`📞 Appel ${type === 'video' ? 'vidéo' : 'vocal'} entrant : ${currentUser.name} appelle ${targetUser.name} maintenant !`);
+        // Notif Telegram fiable (réutilise le système déjà fonctionnel des messages,
+        // avec vos vrais bots personnels, plutôt que la fonction Supabase séparée)
+        (async () => {
+            try {
+                const isFromIda = currentUser.id === 'ida';
+                const botToken = isFromIda ? TELEGRAM_BOT_TOKEN_AIDARA : TELEGRAM_BOT_TOKEN_IDA;
+                const chatId = isFromIda ? TELEGRAM_CHAT_ID_AIDARA : TELEGRAM_CHAT_ID_IDA;
+                const msg = `📞 APPEL ${type === 'video' ? 'VIDÉO' : 'VOCAL'} ENTRANT\n\n${currentUser.name} vous appelle maintenant !\n\n👉 Ouvrez l'application pour répondre.`;
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&disable_notification=false`);
+            } catch (e) { console.error('Erreur Telegram appel:', e); }
+        })();
         // ⚠️ Pas de minuterie d'annulation automatique : l'appel sonne
         // jusqu'à ce que l'un des deux raccroche/accepte/refuse manuellement.
         await joinAgoraChannel(type);
@@ -16908,4 +16920,4 @@ function nettoyerPartageEcran() {
 
 </body>   
   
-</html>   
+</html>
