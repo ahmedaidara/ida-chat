@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
    <meta name="theme-color" content="#FAFAFA" media="(prefers-color-scheme: light)">
    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-tap-highlight" content="no">
@@ -30,6 +30,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         :root {
             --bg-main: #ffffff;
@@ -71,11 +72,21 @@
             height: 100dvh;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* app collée en haut sur mobile : voir la raison dans le commentaire ci-dessous */
             overflow: hidden;
             position: fixed;
             inset: 0;
             overscroll-behavior: none;
+        }
+        /* ⚠️ IMPORTANT : sur mobile, l'app DOIT être collée en haut (flex-start), pas centrée.
+           Sinon, quand le script JS réduit dynamiquement la hauteur de .app-container pour
+           suivre le clavier ou la zone visible réelle (visualViewport), un centrage vertical
+           répartit l'espace économisé en haut ET en bas — ce qui décale tout le contenu vers
+           le bas (l'heure/wifi/batterie ne sont plus bien couvertes) ET laisse un vide entre
+           le clavier et la zone de saisie. Collé en haut, ce même rétrécissement ne touche
+           que le bas, exactement là où on veut que le vide disparaisse. */
+        @media (min-width: 800px) {
+            body { align-items: center; } /* sur grand écran, on garde l'app centrée comme une carte */
         }
         @media (prefers-color-scheme: dark) {
             body { background: #000000; }
@@ -96,6 +107,8 @@
     border-left: 1px solid var(--border-color); 
     border-right: 1px solid var(--border-color); 
     overflow: hidden;  /* ← AJOUTE CETTE LIGNE */
+    padding-top: env(safe-area-inset-top); /* le fond de l'app remonte sous la barre d'état, maintenant translucide */
+    box-sizing: border-box;
 }        @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
 
         /* ÉCRAN DE SÉLECTION */
@@ -188,6 +201,42 @@
     border-bottom-right-radius: 12px !important;
     border-bottom-left-radius: 12px !important;
 }
+
+/* Envoi groupé de plusieurs photos/vidéos à la fois : effet éventail/cascade
+   ("polaroids jetés sur la table") — cartes décalées, légèrement pivotées,
+   coins arrondis et fine bordure, comme dans les messageries modernes. */
+.media-fan {
+    position: relative;
+    width: 210px;
+    height: 216px;
+    margin: 10px 8px 16px;
+}
+.media-fan-card {
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 3px solid #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.22);
+    cursor: pointer;
+    background: #000;
+    transition: transform 0.15s ease;
+}
+.media-fan-card:active { filter: brightness(0.92); }
+.media-fan-card img, .media-fan-card video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.media-fan-card .media-fan-video-icon {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.6rem; text-shadow: 0 1px 4px rgba(0,0,0,0.5); pointer-events: none;
+}
+.media-fan-more-badge {
+    position: absolute; bottom: -6px; right: -6px; background: var(--bubble-sent);
+    color: #fff; width: 30px; height: 30px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid var(--bg-main); z-index: 10;
+}
       
 .message-bubble.bicolor { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; }
 .message-bubble.dark-passion { background: linear-gradient(45deg, #1a0000, #8b0000, #1a0000); background-size: 200% 200%; color: #ff4444; border: 1px solid #ff0000; animation: shimmer 3s ease infinite; }
@@ -267,6 +316,80 @@
         #send-btn { color: #0095f6; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: none; margin-left: 8px; }
 
         .floating-panel { display: none; position: absolute; bottom: 70px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; z-index: 5; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+
+/* ========== PANNEAU MESSAGE VOCAL (redesign professionnel) ========== */
+.voice-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; font-size: 0.9rem; font-weight: 700; color: var(--text-main);
+}
+.voice-panel-close { cursor: pointer; color: var(--text-muted); font-size: 1rem; padding: 4px; }
+.voice-filters {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px;
+    scrollbar-width: none;
+}
+.voice-filters::-webkit-scrollbar { display: none; }
+.voice-filter-chip {
+    flex-shrink: 0; padding: 7px 14px; border-radius: 18px; border: 1px solid var(--border-color);
+    background: var(--input-bg); color: var(--text-main); font-size: 0.78rem; font-weight: 500;
+    cursor: pointer; transition: transform 0.12s ease, background 0.2s ease, color 0.2s ease;
+}
+.voice-filter-chip:active { transform: scale(0.94); }
+.voice-filter-chip.active { background: var(--bubble-sent); color: #fff; border-color: transparent; }
+
+.voice-record-zone {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 10px 10px 12px; border-radius: 14px; background: var(--input-bg);
+}
+.voice-waveform {
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+    height: 0; width: 100%; overflow: hidden;
+    transition: height 0.2s ease;
+}
+.voice-record-zone.recording .voice-waveform { height: 36px; }
+.voice-waveform .audio-wave-bar {
+    width: 3px; border-radius: 2px; background: var(--text-muted);
+    transition: height 0.08s ease, background 0.2s ease;
+}
+.voice-record-zone.recording .audio-wave-bar { background: #ff3b30; }
+.voice-record-status { font-size: 0.74rem; color: var(--text-muted); }
+.voice-record-zone.recording .voice-record-status { color: #ff3b30; font-weight: 600; }
+.voice-record-timer { font-size: 0.82rem; font-weight: 700; color: #ff3b30; letter-spacing: 0.5px; }
+.voice-record-controls { display: flex; gap: 18px; margin-top: 2px; }
+.voice-record-btn, .voice-stop-btn {
+    width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff;
+    transition: transform 0.12s ease, box-shadow 0.2s ease;
+}
+.voice-record-btn { background: #ff3b30; }
+.voice-record-btn:active, .voice-stop-btn:active { transform: scale(0.9); }
+.voice-record-btn:disabled { background: var(--border-color); color: var(--text-muted); cursor: default; }
+.voice-stop-btn { background: #1c1c1e; }
+.voice-record-zone.recording .voice-record-btn { box-shadow: 0 0 0 5px rgba(255,59,48,0.18); }
+
+.voice-preview {
+    display: flex; align-items: center; gap: 12px; margin-top: 12px;
+    padding: 10px 14px; border-radius: 14px; background: var(--input-bg);
+}
+.voice-preview-play {
+    width: 38px; height: 38px; border-radius: 50%; border: none; flex-shrink: 0;
+    background: var(--bubble-sent); color: #fff; font-size: 0.9rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+.voice-preview-play:active { transform: scale(0.9); }
+.voice-preview-info { flex: 1; display: flex; flex-direction: column; font-size: 0.8rem; color: var(--text-main); }
+.voice-preview-duration { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+.voice-preview-delete { background: none; border: none; color: #ff3b30; font-size: 1.05rem; cursor: pointer; padding: 6px; flex-shrink: 0; }
+.voice-preview-delete:active { transform: scale(0.9); }
+
+.voice-panel-actions { display: flex; gap: 10px; margin-top: 14px; }
+.voice-btn-cancel, .voice-btn-send {
+    flex: 1; padding: 12px; border-radius: 22px; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer; border: none; transition: transform 0.12s ease, opacity 0.2s ease;
+}
+.voice-btn-cancel { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+.voice-btn-send { background: var(--bubble-sent); color: #fff; }
+.voice-btn-send:disabled { opacity: 0.45; cursor: default; }
+.voice-btn-cancel:active, .voice-btn-send:active:not(:disabled) { transform: scale(0.96); }
       
         .format-toolbar { display: none; position: absolute; bottom: 75px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 12px; z-index: 6; box-shadow: 0 8px 24px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; justify-content: center; }
         .format-btn { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 0.85rem; color: var(--text-main); transition: all 0.2s; }
@@ -442,9 +565,10 @@
         .photo-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); animation: fadeInModal 0.2s ease-out; }
         @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
         .photo-modal img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0; box-shadow: none; cursor: zoom-out; }
-        .photo-modal-close { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10001; }
+        .photo-modal-close { position: absolute; top: calc(env(safe-area-inset-top) + 16px); right: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10001; }
         .photo-modal-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
         .photo-modal-actions { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 10001; }
+        #modal-image { -webkit-user-drag: none; user-select: none; -webkit-user-select: none; }
         .download-btn { position: relative; bottom: auto; left: auto; transform: none; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 30px; padding: 12px 20px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
         .download-btn:hover { background: #0095f6; transform: scale(1.05); }
         .download-btn i { font-size: 1.1rem; }
@@ -617,6 +741,7 @@
     flex-direction: column;
     animation: slideUp 0.3s ease-out;
     -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top);
 }
 .search-page-header {
     position: sticky;
@@ -840,6 +965,7 @@
     flex-direction: column;
     animation: slideUp 0.3s ease-out;
     -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top);
 }
 
 @keyframes slideUp {
@@ -1493,6 +1619,29 @@ input, textarea {
     font-size: 0.85rem;
     flex-shrink: 0;
 }
+
+/* Liste "Documents" des Paramètres : version compacte, dédiée, pour voir plus
+   de fichiers sans avoir à défiler énormément (n'affecte pas les documents
+   affichés dans les bulles du chat, qui gardent leur taille normale). */
+.doc-gallery-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; margin-bottom: 3px; border-radius: 10px;
+    background: var(--input-bg); border: 1px solid var(--border-color);
+    cursor: pointer; transition: background 0.12s ease;
+}
+.doc-gallery-row:active { background: var(--bubble-received); }
+.doc-gallery-icon {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 0.8rem;
+}
+.doc-gallery-info { flex: 1; min-width: 0; }
+.doc-gallery-name {
+    font-size: 0.76rem; font-weight: 600; color: var(--text-main);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.doc-gallery-meta { font-size: 0.62rem; color: var(--text-muted); margin-top: 1px; }
+.doc-gallery-action { color: var(--text-muted); font-size: 0.78rem; padding: 6px; flex-shrink: 0; }
 
 .settings-link-row {
     display: flex;
@@ -2195,6 +2344,7 @@ input, textarea {
 .app-container {
     box-sizing: border-box !important;
     padding: 0 !important;
+    padding-top: env(safe-area-inset-top) !important;
     margin: 0 !important;
 }
 
@@ -2369,7 +2519,7 @@ input, textarea {
 
 /* Barre du haut : rectangle arrondi, glassmorphism, flotte sans toucher les bords */
 .call-topbar {
-    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    position: absolute; top: calc(env(safe-area-inset-top) + 14px); left: 50%; transform: translateX(-50%);
     z-index: 10; padding: 11px 24px; border-radius: 20px;
     background: rgba(255,255,255,0.14);
     backdrop-filter: blur(20px) saturate(180%);
@@ -2444,7 +2594,7 @@ input, textarea {
 }
 
 .call-mini-badge {
-    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    position: fixed; top: calc(env(safe-area-inset-top) + 8px); left: 50%; transform: translateX(-50%);
     background: #34c759; color: #fff; padding: 6px 16px; border-radius: 20px;
     font-size: 0.8rem; z-index: 1000000; display: none; cursor: pointer;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -2463,6 +2613,147 @@ input, textarea {
 .permission-status { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
 .permission-status.granted { color: #34c759; }
 .permission-status.denied { color: #ff3b30; }
+
+/* Interrupteur façon iOS, coloré avec l'accent/dégradé des bulles */
+.ios-toggle-switch {
+    position: relative; width: 46px; height: 27px; flex-shrink: 0;
+    border-radius: 999px; background: var(--border-color);
+    cursor: pointer; transition: background 0.25s ease;
+}
+.ios-toggle-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 23px; height: 23px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: transform 0.25s ease;
+}
+.ios-toggle-switch.on { background: var(--bubble-sent); }
+.ios-toggle-switch.on::after { transform: translateX(19px); }
+.ios-toggle-switch.denied { background: #ff3b30; }
+
+/* Petites vignettes rondes (tuile "+" / couleur perso) dans la grille d'accent */
+.accent-color-dot.tile-icon {
+    display: flex; align-items: center; justify-content: center;
+    border: 2px dashed var(--border-color); color: var(--text-muted); font-size: 0.85rem;
+    background: var(--input-bg);
+}
+.accent-color-dot { position: relative; }
+.dot-remove-btn {
+    position: absolute; top: -4px; right: -4px; width: 15px; height: 15px;
+    background: #ff3b30; color: #fff; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 0.5rem; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4); z-index: 2;
+}
+
+/* Bandeau d'appel / partage d'écran affiché dans le fil du chat */
+.chat-call-banner, .chat-screenshare-banner {
+    display: none; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 10px 14px; margin: 8px 12px 0;
+    background: var(--bubble-sent); color: #fff; border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15); flex-shrink: 0;
+}
+.chat-call-banner-info, .chat-screenshare-banner-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.chat-call-banner-icon, .chat-screenshare-banner-icon { font-size: 1rem; flex-shrink: 0; }
+.chat-call-banner-title, .chat-screenshare-banner-title { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-call-banner-timer, .chat-screenshare-banner-timer { font-size: 0.72rem; opacity: 0.85; margin-top: 1px; }
+.chat-call-banner-actions, .chat-screenshare-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.chat-call-banner-btn, .chat-screenshare-banner-btn {
+    border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; background: rgba(255,255,255,0.25); color: #fff; white-space: nowrap;
+}
+.chat-call-banner-btn.refuse, .chat-call-banner-btn.end,
+.chat-screenshare-banner-btn.leave, .chat-screenshare-banner-btn.stop { background: #ff3b30; }
+.chat-screenshare-banner-btn.start { background: #34c759; }
+
+/* Carte d'invitation au partage d'écran (dans une bulle de message) */
+.screenshare-invite-card {
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+    padding: 4px 2px; min-width: 200px;
+}
+.screenshare-invite-card > span:first-of-type,
+.screenshare-invite-card .screenshare-invite-text { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+.screenshare-invite-actions { display: flex; gap: 10px; width: 100%; margin-top: 4px; }
+.screenshare-invite-actions button {
+    flex: 1; border: none; border-radius: 14px; padding: 7px 0; font-size: 0.78rem;
+    font-weight: 600; cursor: pointer; background: rgba(0,0,0,0.08); color: inherit;
+}
+.screenshare-invite-actions button.accept { background: #34c759; color: #fff; }
+
+/* Carte "journal d'appel" façon WhatsApp — appel/partage terminé, manqué ou refusé */
+.call-log-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 3px 2px; min-width: 210px; cursor: default;
+}
+.call-log-card[onclick] { cursor: pointer; }
+.call-log-icon {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(0,0,0,0.06); color: inherit;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.call-log-icon.missed { background: rgba(255,59,48,0.14); color: #ff3b30; }
+.call-log-text { min-width: 0; }
+.call-log-title { font-size: 0.92rem; font-weight: 700; color: inherit; }
+.call-log-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 1px; }
+
+/* Carte de position partagée */
+.location-card {
+    display: flex; align-items: center; gap: 12px; padding: 3px 2px;
+    min-width: 200px; cursor: pointer;
+}
+.location-card-map {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, #ff6b6b, #ff3b30);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.location-card-titre { font-size: 0.9rem; font-weight: 700; color: inherit; }
+.location-card-statut { font-size: 0.76rem; color: var(--text-muted); margin-top: 1px; }
+
+/* Menu média façon sélecteur natif iOS : icônes rondes colorées + libellé */
+.media-picker-row {
+    display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 6px;
+    scrollbar-width: none;
+}
+.media-picker-row::-webkit-scrollbar { display: none; }
+.media-picker-item {
+    flex-shrink: 0; width: 68px; display: flex; flex-direction: column;
+    align-items: center; gap: 6px; cursor: pointer;
+}
+.media-picker-item:active { transform: scale(0.94); }
+.media-picker-icon {
+    width: 52px; height: 52px; border-radius: 50%; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.media-picker-item span {
+    font-size: 0.68rem; color: var(--text-main); text-align: center;
+    line-height: 1.15; white-space: nowrap;
+}
+
+/* Visionneuse plein écran du partage d'écran reçu */
+.screenshare-viewer-overlay {
+    position: fixed; inset: 0; z-index: 999998; background: #000;
+    display: none; align-items: center; justify-content: center;
+    overflow: hidden;
+}
+.screenshare-viewer-overlay.active { display: flex; }
+#screenshare-viewer-video { width: 100%; height: 100%; touch-action: none; }
+#screenshare-viewer-video video { object-fit: contain !important; background: #000; }
+.screenshare-viewer-topbar {
+    position: absolute; top: calc(env(safe-area-inset-top) + 14px); left: 50%; transform: translateX(-50%);
+    z-index: 10; padding: 10px 22px; border-radius: 20px;
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff; font-size: 0.78rem; font-weight: 700; text-align: center;
+}
+.screenshare-viewer-bottombar {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    z-index: 10; padding: 10px 22px; border-radius: 24px;
+    background: rgba(255,59,48,0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #fff; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none;
+}
     </style>
 </head>
 <body>
@@ -2487,6 +2778,21 @@ input, textarea {
                 </button>
             </div>
         </div>
+
+        <script>
+            // Exécuté immédiatement (pas d'attente de DOMContentLoaded ni des SDK externes) :
+            // si on est déjà connecté, on masque l'écran de connexion tout de suite pour
+            // éliminer le flash visible avant que selectUser() ne s'exécute vraiment.
+            (function() {
+                try {
+                    var dernierUtilisateur = localStorage.getItem('lastUser');
+                    if (dernierUtilisateur === 'ida' || dernierUtilisateur === 'aidara') {
+                        var ecranConnexion = document.getElementById('login-screen');
+                        if (ecranConnexion) ecranConnexion.style.display = 'none';
+                    }
+                } catch (e) {}
+            })();
+        </script>
 
         <div class="chat-header">
             <div class="header-left" onclick="ouvrirProfil()">
@@ -2544,6 +2850,36 @@ input, textarea {
             </div>
         </div>
         <div class="live-bar" id="live-bar"></div>
+
+        <div class="chat-call-banner" id="chat-call-banner">
+            <div class="chat-call-banner-info">
+                <i class="fa-solid fa-phone chat-call-banner-icon"></i>
+                <div>
+                    <div class="chat-call-banner-title" id="chat-call-banner-title">Appel en cours</div>
+                    <div class="chat-call-banner-timer" id="chat-call-banner-timer"></div>
+                </div>
+            </div>
+            <div class="chat-call-banner-actions">
+                <button class="chat-call-banner-btn refuse" id="chat-call-banner-refuse-btn" onclick="rejectCall()" style="display:none;">Refuser</button>
+                <button class="chat-call-banner-btn end" id="chat-call-banner-end-btn" onclick="endCall()" style="display:none;">Terminer</button>
+            </div>
+        </div>
+
+        <div class="chat-screenshare-banner" id="chat-screenshare-banner">
+            <div class="chat-screenshare-banner-info">
+                <i class="fa-solid fa-display chat-screenshare-banner-icon"></i>
+                <div>
+                    <div class="chat-screenshare-banner-title" id="chat-screenshare-banner-title">Partage d'écran</div>
+                    <div class="chat-screenshare-banner-timer" id="chat-screenshare-banner-timer"></div>
+                </div>
+            </div>
+            <div class="chat-screenshare-banner-actions">
+                <button class="chat-screenshare-banner-btn start" id="chat-screenshare-banner-start-btn" onclick="demarrerEnvoiPartageEcran()" style="display:none;">Démarrer</button>
+                <button class="chat-screenshare-banner-btn stop" id="chat-screenshare-banner-stop-btn" onclick="terminerPartageEcran()" style="display:none;">Terminer</button>
+                <button class="chat-screenshare-banner-btn leave" id="chat-screenshare-banner-leave-btn" onclick="quitterPartageEcran()" style="display:none;">Quitter</button>
+            </div>
+        </div>
+
         <div class="messages-area" id="msg-area"></div>
  <!-- Bouton flottant "Nouveau message" -->
 <div class="new-message-floating-btn" id="new-msg-floating-btn" onclick="scrollToBottom()">
@@ -2676,6 +3012,27 @@ input, textarea {
     </button>
       <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
+      <button class="toolbar-btn" id="screenshare-toolbar-btn" onclick="proposerPartageEcran()" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #0095f6;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    " title="Partager mon écran">
+        <i class="fa-solid fa-display"></i>
+        <span>Partage</span>
+    </button>
+      <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+
       <button id="gif-trigger-btn" class="toolbar-btn" style="
         display: flex;
         align-items: center;
@@ -2723,7 +3080,7 @@ input, textarea {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
@@ -3040,44 +3397,61 @@ input, textarea {
                 <div class="permission-icon"><i class="fa-solid fa-microphone"></i></div>
                 <div class="permission-text">
                     <div class="permission-title">Microphone</div>
-                    <div class="permission-status" id="permission-status-mic">Statut inconnu</div>
+                    <div class="permission-status" id="permission-status-mic">Non activé</div>
                 </div>
-                <button class="settings-btn-secondary" onclick="demanderAutorisation('mic')">Autoriser</button>
+                <div class="ios-toggle-switch" id="permission-toggle-mic" onclick="demanderAutorisation('mic')"></div>
             </div>
             <div class="permission-row" id="permission-row-cam">
                 <div class="permission-icon"><i class="fa-solid fa-video"></i></div>
                 <div class="permission-text">
                     <div class="permission-title">Caméra</div>
-                    <div class="permission-status" id="permission-status-cam">Statut inconnu</div>
+                    <div class="permission-status" id="permission-status-cam">Non activé</div>
                 </div>
-                <button class="settings-btn-secondary" onclick="demanderAutorisation('cam')">Autoriser</button>
+                <div class="ios-toggle-switch" id="permission-toggle-cam" onclick="demanderAutorisation('cam')"></div>
             </div>
             <div class="permission-row" id="permission-row-notif">
                 <div class="permission-icon"><i class="fa-solid fa-bell"></i></div>
                 <div class="permission-text">
                     <div class="permission-title">Notifications</div>
-                    <div class="permission-status" id="permission-status-notif">Statut inconnu</div>
+                    <div class="permission-status" id="permission-status-notif">Non activé</div>
                 </div>
-                <button class="settings-btn-secondary" onclick="demanderAutorisation('notif')">Autoriser</button>
+                <div class="ios-toggle-switch" id="permission-toggle-notif" onclick="demanderAutorisation('notif')"></div>
             </div>
-            <p class="settings-section-desc" style="margin-top:10px; font-size:0.7rem;">Si un bouton reste bloqué sur "❌ Refusé", il faut l'autoriser manuellement dans les réglages du navigateur (icône 🔒 ou ⓘ à côté de l'adresse du site), puis recharger la page.</p>
+            <div class="permission-row" id="permission-row-loc">
+                <div class="permission-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="permission-text">
+                    <div class="permission-title">Localisation</div>
+                    <div class="permission-status" id="permission-status-loc">Non activé</div>
+                </div>
+                <div class="ios-toggle-switch" id="permission-toggle-loc" onclick="demanderAutorisation('loc')"></div>
+            </div>
+            <p class="settings-section-desc" style="margin-top:10px; font-size:0.7rem;">Si un interrupteur reste rouge, il faut autoriser manuellement dans les réglages du navigateur (icône 🔒 ou ⓘ à côté de l'adresse du site), puis recharger la page.</p>
         </div>
 
         <!-- Section Fond d'appel (couleur ou image pour les appels vocaux) -->
         <div class="settings-section" style="animation-delay:0.22s;">
             <h4><i class="fa-solid fa-panorama"></i> Fond d'appel</h4>
             <p class="settings-section-desc">Choisis la couleur ou l'image affichée en plein écran pendant un appel vocal.</p>
-            <div class="bg-options" id="call-bg-options">
-                <div class="bg-option" style="background: linear-gradient(135deg, #1a0033, #000000);" data-callbg="color:linear-gradient(135deg, #1a0033, #000000)" title="Par défaut"></div>
-                <div class="bg-option" style="background:#a800ff;" data-callbg="color:#a800ff"></div>
-                <div class="bg-option" style="background:#0076ff;" data-callbg="color:#0076ff"></div>
-                <div class="bg-option" style="background:#ff2d55;" data-callbg="color:#ff2d55"></div>
-                <div class="bg-option" style="background:#34c759;" data-callbg="color:#34c759"></div>
-                <div class="bg-option" style="background:#1c1c1e;" data-callbg="color:#1c1c1e"></div>
-                <div class="bg-option" id="call-bg-custom-color" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);" title="Couleur personnalisée"></div>
-                <div class="bg-option bg-option-add" id="call-bg-option-add" title="Ajouter une image">
-                    <i class="fa-solid fa-plus"></i>
-                </div>
+            <div class="accent-color-grid" id="call-bg-options">
+                <div class="accent-color-dot" style="background:#a800ff;" data-callbg="color:#a800ff" title="Violet"></div>
+                <div class="accent-color-dot" style="background:#0076ff;" data-callbg="color:#0076ff" title="Bleu"></div>
+                <div class="accent-color-dot" style="background:#ff007f;" data-callbg="color:#ff007f" title="Magenta"></div>
+                <div class="accent-color-dot" style="background:#ff3b30;" data-callbg="color:#ff3b30" title="Rouge"></div>
+                <div class="accent-color-dot" style="background:#ff9500;" data-callbg="color:#ff9500" title="Orange"></div>
+                <div class="accent-color-dot" style="background:#ffcc00;" data-callbg="color:#ffcc00" title="Jaune"></div>
+                <div class="accent-color-dot" style="background:#34c759;" data-callbg="color:#34c759" title="Vert"></div>
+                <div class="accent-color-dot" style="background:#00c7be;" data-callbg="color:#00c7be" title="Turquoise"></div>
+                <div class="accent-color-dot" style="background:#30b0c7;" data-callbg="color:#30b0c7" title="Cyan"></div>
+                <div class="accent-color-dot" style="background:#5856d6;" data-callbg="color:#5856d6" title="Indigo"></div>
+                <div class="accent-color-dot" style="background:#af52de;" data-callbg="color:#af52de" title="Mauve"></div>
+                <div class="accent-color-dot" style="background:#ff2d55;" data-callbg="color:#ff2d55" title="Rose"></div>
+                <div class="accent-color-dot" style="background:#8e8e93;" data-callbg="color:#8e8e93" title="Gris"></div>
+                <div class="accent-color-dot" style="background:#1c1c1e;" data-callbg="color:#1c1c1e" title="Noir"></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px;">
+                <div class="accent-color-dot tile-icon" id="call-bg-custom-color" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red); width:34px; height:34px;" title="Couleur personnalisée"></div>
+                <div class="accent-color-dot tile-icon" id="call-bg-option-add" style="width:34px; height:34px;" title="Ajouter une image"><i class="fa-solid fa-plus"></i></div>
+                <span style="font-size:0.72rem; color:var(--text-muted);">Couleur personnalisée ou image</span>
             </div>
             <input type="color" id="call-bg-color-picker" style="display:none;">
             <input type="file" id="call-bg-upload-input" accept="image/*" style="display:none;">
@@ -3148,9 +3522,9 @@ input, textarea {
     <div class="viewonce-viewer-notice">Cette photo/vidéo disparaîtra du chat à la fermeture</div>
 </div>
         <!-- Modal Photo -->
-        <div class="photo-modal" id="photo-modal" onclick="closePhotoModal()">
-            <button class="photo-modal-close" onclick="closePhotoModal()"><i class="fa-solid fa-times"></i></button>
-            <img id="modal-image" src="" alt="Photo">
+        <div class="photo-modal" id="photo-modal">
+            <button class="photo-modal-close" onclick="event.stopPropagation(); closePhotoModal()"><i class="fa-solid fa-times"></i></button>
+            <img id="modal-image" src="" alt="Photo" draggable="false">
             <div class="photo-modal-actions">
                 <button class="download-btn" id="download-photo-btn" onclick="event.stopPropagation(); downloadCurrentPhoto()"><i class="fa-solid fa-download"></i> Enregistrer</button>
                 <button class="download-btn" onclick="event.stopPropagation(); repondreDepuisVisualiseur()"><i class="fa-solid fa-reply"></i> Répondre</button>
@@ -3226,73 +3600,106 @@ input, textarea {
         </div>
 
       <!-- Menu Audio avec filtres -->
-<div class="floating-panel" id="audio-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
-    <h4 style="margin-bottom: 10px; font-size: 0.9rem;">🎤 Message vocal</h4>
-    
-    <!-- Filtres vocaux -->
-    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-        <button class="filter-btn" data-filter="normal" onclick="choisirFiltreAudio('normal')" style="padding: 8px 12px; border-radius: 20px; border: none; background: #0095f6; color: white;">🎵 Normal</button>
-        <button class="filter-btn" data-filter="grave" onclick="choisirFiltreAudio('grave')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">👨‍🦰 Voix Grave</button>
-        <button class="filter-btn" data-filter="aigu" onclick="choisirFiltreAudio('aigu')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">👶 Voix Enfant</button>
-        <button class="filter-btn" data-filter="robot" onclick="choisirFiltreAudio('robot')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🤖 Robot</button>
-        <button class="filter-btn" data-filter="echo" onclick="choisirFiltreAudio('echo')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🎚️ Écho</button>
-        <button class="filter-btn" data-filter="chipmunk" onclick="choisirFiltreAudio('chipmunk')" style="padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">🐿️ Chipmunk</button>
+<div class="floating-panel" id="audio-panel">
+    <div class="voice-panel-header">
+        <span>🎤 Message vocal</span>
+        <i class="fa-solid fa-xmark voice-panel-close" onclick="fermerMenuAudio()"></i>
     </div>
-    
-    <!-- Zone d'enregistrement -->
-    <div style="text-align: center; padding: 15px;">
-        <div id="audio-visualizer" style="height: 40px; background: var(--border-color); border-radius: 20px; margin-bottom: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Cliquez sur le micro pour enregistrer</span>
-        </div>
-        
-        <div style="display: flex; justify-content: center; gap: 20px;">
-            <button id="record-audio-btn" onclick="demarrerEnregistrementAudio()" style="background: #ff4444; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;">
+
+    <div class="voice-filters" id="voice-filters-row">
+        <button class="voice-filter-chip active" data-filter="normal" onclick="choisirFiltreAudio('normal')">🎵 Normal</button>
+        <button class="voice-filter-chip" data-filter="grave" onclick="choisirFiltreAudio('grave')">👨 Grave</button>
+        <button class="voice-filter-chip" data-filter="profond" onclick="choisirFiltreAudio('profond')">🔊 Profond</button>
+        <button class="voice-filter-chip" data-filter="aigu" onclick="choisirFiltreAudio('aigu')">👶 Voix enfant</button>
+        <button class="voice-filter-chip" data-filter="chipmunk" onclick="choisirFiltreAudio('chipmunk')">🐿️ Chipmunk</button>
+        <button class="voice-filter-chip" data-filter="robot" onclick="choisirFiltreAudio('robot')">🤖 Robot</button>
+        <button class="voice-filter-chip" data-filter="alien" onclick="choisirFiltreAudio('alien')">👽 Alien</button>
+        <button class="voice-filter-chip" data-filter="echo" onclick="choisirFiltreAudio('echo')">🎚️ Écho</button>
+        <button class="voice-filter-chip" data-filter="caverne" onclick="choisirFiltreAudio('caverne')">🕳️ Caverne</button>
+        <button class="voice-filter-chip" data-filter="telephone" onclick="choisirFiltreAudio('telephone')">☎️ Téléphone</button>
+        <button class="voice-filter-chip" data-filter="nasillard" onclick="choisirFiltreAudio('nasillard')">🐽 Nasillard</button>
+        <button class="voice-filter-chip" data-filter="rapide" onclick="choisirFiltreAudio('rapide')">⚡ Rapide</button>
+        <button class="voice-filter-chip" data-filter="ralenti" onclick="choisirFiltreAudio('ralenti')">🐌 Ralenti</button>
+    </div>
+
+    <div class="voice-record-zone" id="voice-record-zone">
+        <div class="voice-waveform" id="audio-visualizer"></div>
+        <div class="voice-record-status" id="voice-record-status">Appuie sur le micro pour enregistrer</div>
+        <div class="voice-record-timer" id="voice-record-timer" style="display:none;">00:00</div>
+        <div class="voice-record-controls">
+            <button class="voice-record-btn" id="record-audio-btn" onclick="demarrerEnregistrementAudio()">
                 <i class="fa-solid fa-microphone"></i>
             </button>
-            <button id="stop-audio-btn" onclick="arreterEnregistrementAudio()" disabled style="background: #666; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;">
+            <button class="voice-stop-btn" id="stop-audio-btn" onclick="arreterEnregistrementAudio()" disabled style="display:none;">
                 <i class="fa-solid fa-stop"></i>
             </button>
         </div>
     </div>
-    
-    <!-- Prévisualisation -->
-    <div id="audio-preview" style="display: none; margin-top: 15px; padding: 10px; background: var(--input-bg); border-radius: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-circle-play" style="font-size: 1.5rem; color: #0095f6; cursor: pointer;" onclick="previsualiserAudio()"></i>
-            <span style="flex: 1; font-size: 0.8rem;">écouter <span id="audio-duration"></span></span>
-            <i class="fa-solid fa-trash" style="color: #ff4444; cursor: pointer; font-size: 1.2rem;" onclick="supprimerAudioPreview()"></i>
+
+    <div class="voice-preview" id="audio-preview" style="display:none;">
+        <button class="voice-preview-play" onclick="previsualiserAudio()"><i class="fa-solid fa-play"></i></button>
+        <div class="voice-preview-info">
+            <span>Aperçu de l'enregistrement</span>
+            <span class="voice-preview-duration" id="audio-duration"></span>
         </div>
+        <button class="voice-preview-delete" onclick="supprimerAudioPreview()"><i class="fa-solid fa-trash"></i></button>
     </div>
-    
-    <!-- Boutons action -->
-    <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button onclick="envoyerAudioAvecFiltre()" id="send-audio-btn" disabled style="flex: 1; padding: 12px; background: #0095f6; color: white; border: none; border-radius: 25px; font-weight: bold;">📤 Envoyer</button>
-        <button onclick="fermerMenuAudio()" style="padding: 12px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px; color: var(--text-main);">Annuler</button>
+
+    <div class="voice-panel-actions">
+        <button class="voice-btn-cancel" onclick="fermerMenuAudio()">Annuler</button>
+        <button class="voice-btn-send" id="send-audio-btn" onclick="envoyerAudioAvecFiltre()" disabled><i class="fa-solid fa-paper-plane"></i> Envoyer</button>
     </div>
 </div>
 
-<!-- Menu Media (Photo/Vidéo/Galerie) -->
+<!-- Menu Media (Photo/Vidéo/Galerie/Document/Position/Fichier) -->
 <div class="floating-panel" id="media-panel" style="display: none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 100;">
-    <h4 style="margin-bottom: 10px;">📷 Média</h4>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
-       <div class="tool-item" onclick="ouvrirGalerieSupabase()">
-    <i class="fa-regular fa-images" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Galerie</span>
-</div>
-<div class="tool-item" onclick="prendrePhotoAvecSupabase()">
-    <i class="fa-solid fa-camera" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Appareil photo</span>
-</div>
-<div class="tool-item" onclick="prendreVideoAvecSupabase()">
-    <i class="fa-solid fa-video" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Vidéo</span>
-</div>
-<div class="tool-item" onclick="envoyerDocumentAvecSupabase()">
-    <i class="fa-solid fa-file-lines" style="font-size: 2rem;"></i>
-    <span style="font-size: 0.7rem;">Document</span>
-</div>
+    <div class="media-picker-row">
+        <div class="media-picker-item" onclick="ouvrirGalerieSupabase()">
+            <div class="media-picker-icon" style="background:#0095f6;"><i class="fa-regular fa-images"></i></div>
+            <span>Galerie</span>
+        </div>
+        <div class="media-picker-item" onclick="prendrePhotoAvecSupabase()">
+            <div class="media-picker-icon" style="background:#8e8e93;"><i class="fa-solid fa-camera"></i></div>
+            <span>Appareil photo</span>
+        </div>
+        <div class="media-picker-item" onclick="prendreVideoAvecSupabase()">
+            <div class="media-picker-icon" style="background:#34c759;"><i class="fa-solid fa-video"></i></div>
+            <span>Vidéo</span>
+        </div>
+        <div class="media-picker-item" onclick="envoyerDocumentAvecSupabase()">
+            <div class="media-picker-icon" style="background:#ff9500;"><i class="fa-solid fa-file-lines"></i></div>
+            <span>Document</span>
+        </div>
+        <div class="media-picker-item" onclick="ouvrirMenuPosition()">
+            <div class="media-picker-icon" style="background:#ff3b30;"><i class="fa-solid fa-location-dot"></i></div>
+            <span>Position</span>
+        </div>
+        <div class="media-picker-item" onclick="envoyerFichierGenerique()">
+            <div class="media-picker-icon" style="background:#5856d6;"><i class="fa-regular fa-folder-open"></i></div>
+            <span>Fichier</span>
+        </div>
     </div>
-    <button onclick="fermerMenuMedia()" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px;">Fermer</button>
+    <button onclick="fermerMenuMedia()" style="margin-top: 12px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px; color: var(--text-main);">Fermer</button>
+</div>
+
+<!-- Menu Position (position actuelle ou position en direct) -->
+<div class="floating-panel" id="position-panel" style="display:none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 101;">
+    <h4 style="margin-bottom: 10px;">📍 Partager une position</h4>
+    <div class="tool-item" onclick="partagerPositionActuelle()" style="flex-direction:row; justify-content:flex-start; gap:14px; padding:12px 6px; text-align:left;">
+        <i class="fa-solid fa-location-dot" style="font-size: 1.4rem; color:#ff3b30; width:28px; text-align:center;"></i>
+        <div>
+            <div style="font-weight:600; font-size:0.88rem;">Position actuelle</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Envoie ta position au moment présent</div>
+        </div>
+    </div>
+    <div class="tool-item" onclick="partagerPositionEnDirect()" style="flex-direction:row; justify-content:flex-start; gap:14px; padding:12px 6px; text-align:left; border-top:1px solid var(--border-color);">
+        <i class="fa-solid fa-satellite-dish" style="font-size: 1.4rem; color:#0095f6; width:28px; text-align:center;"></i>
+        <div>
+            <div style="font-weight:600; font-size:0.88rem;">Position en direct (15 min)</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Se met à jour automatiquement pendant 15 minutes</div>
+        </div>
+    </div>
+    <button onclick="fermerMenuPosition()" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-color); border-radius: 25px;">Annuler</button>
 </div>
     </div>
 
@@ -3398,15 +3805,18 @@ function prendrePhotoAvecSupabase() {
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
+    document.body.appendChild(input);
     input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (file.size > 15 * 1024 * 1024) {
                 showTempNotification("❌ Photo trop grande (max 15 MB)");
-                return;
+            } else {
+                ouvrirEditeurMedia(file);
             }
-            ouvrirEditeurMedia(file);
         }
+        input.remove();
     };
     input.click();
 }
@@ -3418,54 +3828,189 @@ function prendreVideoAvecSupabase() {
     input.type = 'file';
     input.accept = 'video/*';
     input.capture = 'environment';
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
+    document.body.appendChild(input);
     input.onchange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (file.size > 50 * 1024 * 1024) {
                 showTempNotification("❌ Vidéo trop grande (max 50 MB)");
-                return;
+            } else {
+                ouvrirEditeurMedia(file);
             }
-            ouvrirEditeurMedia(file);
         }
+        input.remove();
     };
     input.click();
 }
 
-// ========== SÉLECTION DEPUIS LA GALERIE → OUVRE L'ÉDITEUR ==========
+// ========== SÉLECTION DEPUIS LA GALERIE → OUVRE L'ÉDITEUR (multi-sélection possible) ==========
 function ouvrirGalerieSupabase() {
     fermerMenuMedia();
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
+    input.multiple = true;
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
+    document.body.appendChild(input);
     input.onchange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
+        const fichiers = e.target.files ? Array.from(e.target.files) : [];
+        input.remove();
+        if (fichiers.length === 0) return;
+
+        const valides = [];
+        for (const file of fichiers) {
             const isVideo = file.type.startsWith('video/');
             const maxMB = isVideo ? 50 : 15;
             if (file.size > maxMB * 1024 * 1024) {
-                showTempNotification(`❌ Fichier trop grand (max ${maxMB} MB)`);
-                return;
+                showTempNotification(`❌ "${file.name}" trop grand (max ${maxMB} MB) — ignoré`);
+                continue;
             }
-            ouvrirEditeurMedia(file);
+            valides.push(file);
+        }
+        if (valides.length === 0) return;
+
+        if (valides.length === 1) {
+            ouvrirEditeurMedia(valides[0]);
+        } else {
+            envoyerPlusieursMedias(valides);
         }
     };
     input.click();
 }
 
+// ========== ENVOI DE PLUSIEURS PHOTOS/VIDÉOS À LA FOIS ==========
+async function envoyerPlusieursMedias(fichiers) {
+    if (!currentUser || !targetUser) return;
+    showTempNotification(`📤 Envoi de ${fichiers.length} fichiers...`);
+    const items = [];
+    for (const file of fichiers) {
+        const isVideo = file.type.startsWith('video/');
+        try {
+            const url = await uploadVersSupabase(file, isVideo ? 'video' : 'image');
+            if (url) items.push({ type: isVideo ? 'video' : 'image', url });
+        } catch (e) {
+            console.error('Erreur upload (envoi multiple):', e);
+        }
+    }
+    if (items.length === 0) {
+        showTempNotification("❌ Aucun fichier n'a pu être envoyé");
+        return;
+    }
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'media_group',
+            items: items,
+            text: null,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'sent',
+            readBy: [currentUser.id],
+            storage: 'supabase'
+        });
+        showTempNotification(`✅ ${items.length} fichiers envoyés !`);
+    } catch (e) {
+        console.error('Erreur envoi groupe média:', e);
+        showTempNotification("❌ Échec de l'envoi du groupe");
+    }
+}
+
+// Ouvre un élément d'un groupe de médias en plein écran (avec zoom libre)
+function ouvrirMediaGroupItem(url, type) {
+    currentPhotoUrl = url;
+    mediaGalerieListe = [{ msgId: null, type: type, url: url }];
+    mediaGalerieIndex = 0;
+    const modal = document.getElementById('photo-modal');
+    const modalImg = document.getElementById('modal-image');
+    let modalVideo = document.getElementById('modal-video');
+    if (!modalVideo) {
+        modalVideo = document.createElement('video');
+        modalVideo.id = 'modal-video';
+        modalVideo.controls = true;
+        modalVideo.playsInline = true;
+        modalVideo.style.cssText = 'max-width:100%; max-height:100%; object-fit:contain; display:none;';
+        modalImg.insertAdjacentElement('afterend', modalVideo);
+    }
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (type === 'video') {
+        modalImg.style.display = 'none';
+        modalVideo.src = url;
+        modalVideo.style.display = 'block';
+        modalVideo.currentTime = 0;
+        modalVideo.play().catch(() => {});
+        activerZoomLibre('modal-video');
+    } else {
+        modalVideo.pause();
+        modalVideo.removeAttribute('src');
+        modalVideo.style.display = 'none';
+        modalImg.src = url;
+        modalImg.style.display = 'block';
+        modalImg.style.maxWidth = '100%';
+        modalImg.style.maxHeight = '100%';
+        modalImg.style.width = 'auto';
+        modalImg.style.height = 'auto';
+        modalImg.style.objectFit = 'contain';
+        modalImg.style.margin = '0';
+        modalImg.style.borderRadius = '0';
+        modalImg.style.boxShadow = 'none';
+        modalImg.style.touchAction = 'none';
+        activerZoomLibre('modal-image');
+    }
+}
+
 // ========== ENVOI DE DOCUMENT (PDF, TXT, Word, Excel...) ==========
 function envoyerDocumentAvecSupabase() {
     fermerMenuMedia();
+    envoyerFichierVersChat('.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv');
+}
+
+// "Fichier" : comme Document, mais sans restriction de type — ouvre l'app
+// Fichiers (iOS) / le gestionnaire de fichiers (Android) sans filtrer les formats.
+function envoyerFichierGenerique() {
+    fermerMenuMedia();
+    envoyerFichierVersChat('*/*');
+}
+
+// Ouvre un document intelligemment : les fichiers HTML sont rendus comme une
+// vraie page (au lieu d'afficher le code source, ce qui arrivait si le
+// stockage servait le fichier avec un type de contenu générique).
+async function ouvrirDocumentIntelligent(url, ext) {
+    const extension = (ext || '').toLowerCase();
+    if (extension === 'html' || extension === 'htm') {
+        try {
+            const reponse = await fetch(url);
+            const html = await reponse.text();
+            const fenetre = window.open('', '_blank');
+            if (fenetre) {
+                fenetre.document.open();
+                fenetre.document.write(html);
+                fenetre.document.close();
+                return;
+            }
+        } catch (e) {
+            console.error('Erreur ouverture HTML:', e);
+        }
+    }
+    window.open(url, '_blank');
+}
+
+function envoyerFichierVersChat(accept) {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv';
+    input.accept = accept;
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
+    document.body.appendChild(input);
     input.onchange = async (e) => {
-        if (!e.target.files || !e.target.files[0]) return;
+        if (!e.target.files || !e.target.files[0]) { input.remove(); return; }
         const file = e.target.files[0];
+        input.remove();
         if (file.size > 25 * 1024 * 1024) {
-            showTempNotification("❌ Document trop grand (max 25 MB)");
+            showTempNotification("❌ Fichier trop grand (max 25 MB)");
             return;
         }
-        showTempNotification("📤 Envoi du document...");
+        showTempNotification("📤 Envoi du fichier...");
         const url = await uploadVersSupabase(file, 'document');
         if (!url) return;
         try {
@@ -3483,13 +4028,177 @@ function envoyerDocumentAvecSupabase() {
                 fileExt: (file.name.split('.').pop() || '').toLowerCase(),
                 storage: 'supabase'
             });
-            showTempNotification("📄 Document envoyé !");
+            showTempNotification("📄 Fichier envoyé !");
         } catch (err) {
-            console.error("Erreur envoi document:", err);
-            showTempNotification("❌ Échec de l'envoi du document");
+            console.error("Erreur envoi fichier:", err);
+            showTempNotification("❌ Échec de l'envoi du fichier");
         }
     };
     input.click();
+}
+
+// ========== PARTAGE DE POSITION (actuelle ou en direct) ==========
+function ouvrirMenuPosition() {
+    fermerMenuMedia();
+    const panel = document.getElementById('position-panel');
+    if (panel) panel.style.display = 'block';
+}
+function fermerMenuPosition() {
+    const panel = document.getElementById('position-panel');
+    if (panel) panel.style.display = 'none';
+}
+
+function obtenirPositionActuelle() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) { reject(new Error('Géolocalisation non supportée')); return; }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            (err) => reject(err),
+            { enableHighAccuracy: true, timeout: 12000 }
+        );
+    });
+}
+
+async function partagerPositionActuelle() {
+    fermerMenuPosition();
+    try {
+        const { lat, lng } = await obtenirPositionActuelle();
+        sauvegarderStatutPermission('loc', 'granted');
+        majStatutPermission('loc', 'granted');
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'location',
+            mode: 'once',
+            lat, lng,
+            text: '📍 Position',
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+        showTempNotification('📍 Position envoyée');
+    } catch (e) {
+        console.error('Erreur position:', e);
+        sauvegarderStatutPermission('loc', 'denied');
+        majStatutPermission('loc', 'denied');
+        showTempNotification("❌ Impossible d'accéder à ta position (autorisation refusée ?)");
+    }
+}
+
+let liveLocationWatchId = null;
+let liveLocationMsgId = null;
+let liveLocationExpireTimeout = null;
+
+async function partagerPositionEnDirect() {
+    fermerMenuPosition();
+    if (liveLocationWatchId) {
+        showTempNotification('📍 Un partage en direct est déjà actif');
+        return;
+    }
+    try {
+        const { lat, lng } = await obtenirPositionActuelle();
+        sauvegarderStatutPermission('loc', 'granted');
+        majStatutPermission('loc', 'granted');
+
+        const DUREE_MS = 15 * 60 * 1000;
+        const docRef = await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'location',
+            mode: 'live',
+            lat, lng,
+            liveEnded: false,
+            expiresAt: Date.now() + DUREE_MS,
+            text: '📍 Position en direct',
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+        liveLocationMsgId = docRef.id;
+
+        liveLocationWatchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                db.collection('chats').doc(CHAT_ID).collection('messages').doc(liveLocationMsgId).update({
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                }).catch(() => {});
+            },
+            (err) => console.error('Erreur suivi position:', err),
+            { enableHighAccuracy: true, maximumAge: 5000 }
+        );
+
+        liveLocationExpireTimeout = setTimeout(arreterPositionEnDirect, DUREE_MS);
+        afficherBandeauPositionDirect();
+        showTempNotification('📍 Position en direct activée (15 min)');
+    } catch (e) {
+        console.error('Erreur position en direct:', e);
+        sauvegarderStatutPermission('loc', 'denied');
+        majStatutPermission('loc', 'denied');
+        showTempNotification("❌ Impossible d'accéder à ta position (autorisation refusée ?)");
+    }
+}
+
+async function arreterPositionEnDirect() {
+    if (liveLocationWatchId) { navigator.geolocation.clearWatch(liveLocationWatchId); liveLocationWatchId = null; }
+    if (liveLocationExpireTimeout) { clearTimeout(liveLocationExpireTimeout); liveLocationExpireTimeout = null; }
+    if (liveLocationMsgId) {
+        try {
+            await db.collection('chats').doc(CHAT_ID).collection('messages').doc(liveLocationMsgId).update({ liveEnded: true });
+        } catch (e) {}
+    }
+    liveLocationMsgId = null;
+    masquerBandeauPositionDirect();
+}
+
+function afficherBandeauPositionDirect() {
+    let banner = document.getElementById('live-location-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'live-location-banner';
+        banner.className = 'chat-call-banner';
+        banner.style.display = 'flex';
+        banner.innerHTML = `
+            <div class="chat-call-banner-info">
+                <i class="fa-solid fa-location-dot chat-call-banner-icon"></i>
+                <div><div class="chat-call-banner-title">Position en direct active</div></div>
+            </div>
+            <div class="chat-call-banner-actions">
+                <button class="chat-call-banner-btn end" onclick="arreterPositionEnDirect()">Arrêter</button>
+            </div>`;
+        const msgArea = document.getElementById('msg-area');
+        if (msgArea && msgArea.parentNode) msgArea.parentNode.insertBefore(banner, msgArea);
+    }
+    banner.style.display = 'flex';
+}
+function masquerBandeauPositionDirect() {
+    const banner = document.getElementById('live-location-banner');
+    if (banner) banner.style.display = 'none';
+}
+
+// Ouvre Google Maps à l'emplacement partagé
+function ouvrirPositionSurMaps(lat, lng) {
+    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+}
+
+// Écoute en direct une position "live" affichée à l'écran, pour que le
+// destinataire voie la mise à jour sans avoir à rafraîchir la page.
+const positionLiveListeners = {};
+function ecouterPositionEnDirect(msgId) {
+    if (positionLiveListeners[msgId]) return;
+    positionLiveListeners[msgId] = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot((docSnap) => {
+            if (!docSnap.exists) return;
+            const data = docSnap.data();
+            const card = document.querySelector(`.location-card[data-msgid="${msgId}"]`);
+            if (!card) return;
+            card.setAttribute('data-lat', data.lat);
+            card.setAttribute('data-lng', data.lng);
+            const statutEl = card.querySelector('.location-card-statut');
+            if (data.liveEnded || (data.expiresAt && Date.now() > data.expiresAt)) {
+                if (statutEl) statutEl.textContent = 'Partage terminé';
+                if (positionLiveListeners[msgId]) { positionLiveListeners[msgId](); delete positionLiveListeners[msgId]; }
+            } else if (statutEl) {
+                statutEl.textContent = 'Mise à jour à l\'instant';
+            }
+        });
 }
 
 function formaterTailleFichier(octets) {
@@ -4518,6 +5227,7 @@ async function enregistrerTokenPush() {
             listenToOtherUserBattery();
             listenForFlashSignals();
             initCallListener(); // 📞 démarre l'écoute des appels Agora
+            restaurerBrouillonMessage(); // 📝 remet le message non envoyé s'il y en avait un
              
             listenToUserMood(); // ✅ correction : cette écoute existait mais n'était jamais démarrée
             // ✅ Correction : "activerLesNotifications" n'était définie nulle part (bug qui
@@ -4718,19 +5428,72 @@ function activerSuiviStatuts() {
     window.LISTE_STYLES_BULLE = LISTE_STYLES_BULLE;
 
     // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION CORRIGÉE ==========
+// ========== CACHE LOCAL DES MESSAGES (affichage instantané au chargement) ==========
+// On garde une copie des ~200 derniers messages dans localStorage. Au chargement,
+// on les affiche IMMÉDIATEMENT (avant même que Firestore ait répondu), puis
+// Firestore vient mettre à jour/compléter avec les données réelles à son arrivée.
+function cleCacheMessages() {
+    return `msg_cache_${CHAT_ID}`;
+}
+
+function reconstituerTimestampCache(ts) {
+    if (!ts) return null;
+    if (typeof ts.toMillis === 'function') return ts;
+    if (typeof ts.seconds === 'number') {
+        return {
+            seconds: ts.seconds,
+            nanoseconds: ts.nanoseconds || 0,
+            toMillis: function() { return this.seconds * 1000 + Math.floor(this.nanoseconds / 1e6); },
+            toDate: function() { return new Date(this.toMillis()); }
+        };
+    }
+    return null;
+}
+
+function sauvegarderCacheMessages(snapshot) {
+    try {
+        const docs = snapshot.docs.slice(-200); // suffisant pour un affichage instantané de la fin de la conversation
+        const cache = docs.map(d => ({ id: d.id, data: d.data() }));
+        localStorage.setItem(cleCacheMessages(), JSON.stringify(cache));
+    } catch (e) { /* cache best-effort, jamais bloquant */ }
+}
+
+function afficherDepuisCacheMessages() {
+    try {
+        const brut = localStorage.getItem(cleCacheMessages());
+        if (!brut) return;
+        const cache = JSON.parse(brut);
+        if (!Array.isArray(cache) || cache.length === 0) return;
+        const fauxSnapshot = {
+            empty: false,
+            docs: cache.map(item => ({
+                id: item.id,
+                data: () => {
+                    const d = Object.assign({}, item.data);
+                    if (d.timestamp) d.timestamp = reconstituerTimestampCache(d.timestamp);
+                    return d;
+                }
+            }))
+        };
+        afficherTousLesMessages(fauxSnapshot, true);
+    } catch (e) { /* cache best-effort, jamais bloquant */ }
+}
+
 function listenToMessages() {
     if (unsubscribeMessages) unsubscribeMessages();
     
     // Variable pour suivre le premier chargement (pas de notif, position de scroll restaurée)
     let isFirstSnapshot = true;
+
+    // Affichage instantané depuis le cache local, avant même que Firestore réponde
+    const primeDepuisCache = !!localStorage.getItem(cleCacheMessages());
+    afficherDepuisCacheMessages();
     
-    // ⚠️ Tri fiable : on demande à Firestore les 50 DERNIERS messages, déjà triés
-    // du plus ancien au plus récent (asc + limitToLast). Comme ça, l'ordre chronologique
-    // ne peut plus jamais s'inverser au rafraîchissement — la liste est rendue dans
-    // l'ordre exact renvoyé par la requête, sans retri manuel côté client.
+    // ⚠️ Aucune limite : on charge l'historique COMPLET de la conversation, du
+    // tout premier message à aujourd'hui, sans jamais rien couper — même si la
+    // conversation compte des centaines de milliers de messages.
     unsubscribeMessages = db.collection('chats').doc(CHAT_ID).collection('messages')
         .orderBy('timestamp', 'asc')
-        .limitToLast(50)
         .onSnapshot(snapshot => {
             let hasNewMessage = false;
             let hasNewMessageFromOther = false;
@@ -4855,15 +5618,30 @@ function listenToMessages() {
             // ============================================================
             const msgAreaEl = document.getElementById('msg-area');
             const wasAtBottomBeforeRender = msgAreaEl ? (msgAreaEl.scrollHeight - msgAreaEl.scrollTop - msgAreaEl.clientHeight) < 150 : true;
+
+            // Si le cache local avait déjà affiché EXACTEMENT ces mêmes messages,
+            // on évite de tout reconstruire une 2e fois pour ce premier "vrai"
+            // snapshot — ça évite le flash/re-défilement visible en double.
+            let dejaToutAffichePartCache = false;
+            if (isFirstSnapshot && primeDepuisCache && msgAreaEl) {
+                const idsDejaAffiches = new Set(
+                    Array.from(msgAreaEl.querySelectorAll('[data-id]')).map(el => el.getAttribute('data-id'))
+                );
+                dejaToutAffichePartCache = snapshot.docs.every(d => idsDejaAffiches.has(d.id))
+                    && idsDejaAffiches.size === snapshot.docs.length;
+            }
             
-            if (isFirstSnapshot || hasNewMessage) {
+            if ((isFirstSnapshot || hasNewMessage) && !dejaToutAffichePartCache) {
                 afficherTousLesMessages(snapshot, isFirstSnapshot);
+                sauvegarderCacheMessages(snapshot); // met à jour le cache local pour le prochain chargement instantané
 // Après afficherTousLesMessages
 if (!isFirstSnapshot) {
     setTimeout(traiterMessagesSecrets, 500);
 } else {
     setTimeout(traiterMessagesSecrets, 1000);
 }
+            } else if (dejaToutAffichePartCache) {
+                sauvegarderCacheMessages(snapshot); // on rafraîchit quand même le cache, sans re-rendre l'écran
             }
             
             // Si un message de l'autre personne arrive pendant qu'on lit l'historique
@@ -5627,14 +6405,29 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
         // ✅ Récupère le texte INTÉGRAL d'un message affiché, y compris pour les messages
         // longs tronqués visuellement par le bouton "VOIR TOUT" (.msg-text-complet),
         // pour ne jamais citer une réponse sur un extrait coupé à 100 caractères.
+        // Pour les messages non-textuels (photo/vidéo/GIF/sticker/audio/document/position),
+        // on donne un libellé précis au lieu du générique "[Média]" — un GIF ne doit
+        // jamais être annoncé comme "Média" dans l'aperçu de réponse.
         function obtenirTexteCompletMessage(parentRow) {
             if (!parentRow) return "[Média]";
             const bulle = parentRow.querySelector('.message-bubble');
             if (!bulle) return "[Média]";
+
             const texteComplet = bulle.querySelector('.msg-text-complet');
             if (texteComplet) return texteComplet.innerText;
-            const span = bulle.querySelector('span');
-            return span?.innerText || "[Média]";
+            const span = bulle.querySelector('span:not(.msg-text-tronque):not(.voir-tout-btn)');
+            if (span && span.innerText && span.innerText.trim()) return span.innerText;
+
+            const msgType = parentRow.getAttribute('data-msgtype');
+            if (parentRow.getAttribute('data-issticker') === 'true') return '🏷️ Sticker';
+            if (parentRow.getAttribute('data-isgif') === 'true') return '🎞️ GIF';
+            if (msgType === 'video') return '🎥 Vidéo';
+            if (msgType === 'image') return '📷 Photo';
+            if (msgType === 'audio') return '🎵 Message vocal';
+            if (msgType === 'document') return '📄 ' + (parentRow.getAttribute('data-filename') || 'Document');
+            if (msgType === 'location') return '📍 Position';
+            if (msgType === 'drawing') return '🎨 Dessin';
+            return "[Média]";
         }
 
       function initiateReply() {
@@ -5795,15 +6588,15 @@ async function editSelectedMessage() {
         return;
     }
     
-    // Récupérer le texte du message
-    const messageSpan = messageRow.querySelector('.message-bubble span:not(.coded-mask)');
-    if (!messageSpan) {
+    // Récupérer le texte du message (toujours la version COMPLÈTE)
+    const messageSpanTest = messageRow.querySelector('.message-bubble span:not(.coded-mask)');
+    if (!messageSpanTest) {
         showTempNotification("❌ Impossible de modifier ce type de message (image, audio, etc.)");
         hideContextMenus();
         return;
     }
     
-    const ancienTexte = messageSpan.innerText;
+    const ancienTexte = extraireTexteCompletMessage(messageRow);
     
     // Stocker l'ID du message à modifier
     messageEnCoursEdition = selectedMessageId;
@@ -5811,6 +6604,7 @@ async function editSelectedMessage() {
     // Mettre le texte dans l'input
     const inputMessage = document.getElementById('chat-in');
     inputMessage.value = ancienTexte;
+    autoResizeTextarea(); // affiche tout de suite plusieurs lignes (pas juste 1)
     inputMessage.focus();
     
     // Changer le bouton "Envoyer" en bouton "Modifier"
@@ -6761,7 +7555,11 @@ async function traduireEtRemplacerInput(code, nom) {
     // Nettoyer les anciens appareils (garder seulement les 5 derniers)
     nettoyerAnciensAppareils();
     
-    updateBatteryDisplay(level, battery.charging);
+    // ⚠️ CORRECTIF : la batterie affichée dans l'en-tête doit TOUJOURS être celle
+    // de l'autre personne (gérée par ecouterStatutAutreAvecHorodatage), jamais la
+    // nôtre. L'ancien appel ci-dessous écrasait parfois l'affichage avec NOTRE
+    // propre batterie (notamment quand l'autre est hors ligne) — supprimé.
+    // updateBatteryDisplay(level, battery.charging);
 }
 
 // Fonction pour nettoyer les anciens appareils
@@ -7001,8 +7799,20 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
         // fiable consiste à utiliser le menu de partage natif (Web Share API avec fichiers),
         // qui propose directement "Enregistrer l'image" / "Enregistrer la vidéo" -> Galerie/Photos.
         async function enregistrerMediaSurAppareil(url, filename, mimeType) {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            let blob;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                blob = await response.blob();
+            } catch (err) {
+                console.error('Erreur récupération du fichier (enregistrement):', err);
+                // Repli ultime : au moins ouvrir le fichier dans un nouvel onglet, pour
+                // que la personne puisse l'enregistrer manuellement (clic droit / appui long).
+                showTempNotification("❌ Téléchargement direct impossible — ouverture dans un nouvel onglet");
+                window.open(url, '_blank');
+                return false;
+            }
+
             const file = new File([blob], filename, { type: mimeType || blob.type || 'application/octet-stream' });
 
             // 1) Mobile (iPhone/Android) : menu de partage natif -> "Enregistrer" sauvegarde
@@ -7013,26 +7823,37 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
                     return true;
                 } catch (err) {
                     if (err && err.name === 'AbortError') return false; // l'utilisateur a annulé
-                    // Si le partage échoue pour une autre raison, on retombe sur le téléchargement classique
+                    console.warn('Partage natif indisponible, repli sur téléchargement direct:', err);
+                    // on continue vers le repli ci-dessous, on n'arrête pas là
                 }
             }
 
             // 2) Repli (PC, ou navigateurs sans partage de fichiers) : téléchargement classique
-            const blobUrl = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
-            return true;
+            try {
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+                return true;
+            } catch (err) {
+                console.error('Erreur téléchargement direct:', err);
+                showTempNotification("❌ Échec de l'enregistrement");
+                return false;
+            }
         }
 
         async function downloadCurrentPhoto() {
-            if (!currentPhotoUrl) return;
+            if (!currentPhotoUrl) {
+                console.warn('downloadCurrentPhoto: currentPhotoUrl est vide');
+                showTempNotification('❌ Aucun média à enregistrer');
+                return;
+            }
             const downloadBtn = document.getElementById('download-photo-btn');
-            downloadBtn.classList.add('downloading');
+            if (downloadBtn) downloadBtn.classList.add('downloading');
             try {
                 const estVideo = mediaGalerieListe[mediaGalerieIndex]?.type === 'video';
                 if (estVideo) {
@@ -7044,7 +7865,7 @@ console.log("💡 Tape 'forcerMiseAJourBatterieAutre()' pour forcer la mise à j
                 console.error('Erreur enregistrement média:', e);
                 showTempNotification('❌ Erreur téléchargement');
             }
-            setTimeout(() => downloadBtn.classList.remove('downloading'), 500);
+            setTimeout(() => { if (downloadBtn) downloadBtn.classList.remove('downloading'); }, 500);
         }
 
         // Répond au message actuellement affiché dans le visualiseur plein écran
@@ -7214,8 +8035,16 @@ async function ouvrirGalerieMediaPage() {
         const medias = [];
         snapshot.forEach(doc => {
             const data = doc.data();
-            if ((data.type === 'image' || data.type === 'video') && !data.viewOnce && data.mediaUrl) {
+            // Règle stricte : tout ce qui vient de l'onglet GIF/Sticker/Emoji (isGif ou
+            // isSticker) est INTERDIT dans la galerie Médias, quel que soit son type.
+            const estUnGifOuSticker = data.isSticker === true || data.isGif === true ||
+                (data.mediaUrl && (data.mediaUrl.includes('emoji-datasource-apple') || data.mediaUrl.includes('tenor.com')));
+            if ((data.type === 'image' || data.type === 'video') && !data.viewOnce && data.mediaUrl && !estUnGifOuSticker) {
                 medias.push({ msgId: doc.id, type: data.type, url: data.mediaUrl });
+            } else if (data.type === 'media_group' && Array.isArray(data.items)) {
+                data.items.forEach((item, i) => {
+                    medias.push({ msgId: doc.id + '_' + i, type: item.type, url: item.url });
+                });
             }
         });
 
@@ -7282,14 +8111,13 @@ async function ouvrirGalerieDocumentsPage() {
             const couleur = couleurPourExtensionDoc(ext);
             const dateHeure = formatHeureRecherche(d.timestamp);
             return `
-                <div class="search-result-item" style="display:flex; align-items:center; gap:12px;">
-                    <div class="document-card-icon" style="background:${couleur}; flex-shrink:0;"><i class="fa-solid ${icone}"></i></div>
-                    <div style="flex:1; min-width:0;" onclick="window.open('${d.mediaUrl}', '_blank')">
-                        <div class="document-card-name">${escapeHTML(d.fileName || 'Document')}</div>
-                        <div class="document-card-meta">${ext.toUpperCase()} · ${formaterTailleFichier(d.fileSize)} · ${dateHeure}</div>
+                <div class="doc-gallery-row">
+                    <div class="doc-gallery-icon" style="background:${couleur};"><i class="fa-solid ${icone}"></i></div>
+                    <div class="doc-gallery-info" onclick="ouvrirDocumentIntelligent('${d.mediaUrl}', '${ext}')">
+                        <div class="doc-gallery-name">${escapeHTML(d.fileName || 'Document')}</div>
+                        <div class="doc-gallery-meta">${ext.toUpperCase()} · ${formaterTailleFichier(d.fileSize)} · ${dateHeure}</div>
                     </div>
-                    <i class="fa-solid fa-reply" style="color:var(--text-muted); padding:8px;" onclick="repondreDepuisGalerieDocuments('${d.msgId}')" title="Répondre"></i>
-                    <i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--text-muted); padding:8px;" onclick="window.open('${d.mediaUrl}', '_blank')" title="Ouvrir"></i>
+                    <i class="fa-solid fa-reply doc-gallery-action" onclick="repondreDepuisGalerieDocuments('${d.msgId}')" title="Répondre"></i>
                 </div>
             `;
         }).join('');
@@ -8072,13 +8900,60 @@ function autoResizeTextarea() {
     const textarea = document.getElementById('chat-in');
     // Réinitialiser la hauteur pour calculer correctement
     textarea.style.height = 'auto';
-    // Définir la nouvelle hauteur (max 5 lignes)
-    const maxHeight = 120; // 5 lignes x 24px
+    // En mode édition d'un message existant, on autorise jusqu'à environ 10 lignes
+    // avant de faire défiler, pour bien voir/relire tout le texte. En saisie normale,
+    // on garde la limite habituelle de 5 lignes pour ne pas envahir l'écran.
+    const maxHeight = messageEnCoursEdition ? 240 : 120;
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = newHeight + 'px';
-    // Gérer le défilement si dépasse 5 lignes
+    // Gérer le défilement si ça dépasse la limite
     textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    sauvegarderBrouillonMessage(textarea.value);
 }
+
+// ========== BROUILLON DE MESSAGE (survit à un rafraîchissement/fermeture) ==========
+// Tant que le message n'est pas envoyé (ou effacé manuellement), il reste dans
+// la zone de saisie même si on quitte le site ou qu'on rafraîchit la page.
+function cleDuBrouillon() {
+    return `chat_draft_${CHAT_ID}_${currentUser ? currentUser.id : 'anon'}`;
+}
+function sauvegarderBrouillonMessage(texte) {
+    if (!currentUser) return;
+    if (texte && texte.length > 0) {
+        localStorage.setItem(cleDuBrouillon(), texte);
+    } else {
+        localStorage.removeItem(cleDuBrouillon());
+    }
+}
+function restaurerBrouillonMessage() {
+    if (!currentUser || messageEnCoursEdition) return;
+    const brouillon = localStorage.getItem(cleDuBrouillon());
+    const textarea = document.getElementById('chat-in');
+    if (brouillon && textarea && !textarea.value) {
+        textarea.value = brouillon;
+        autoResizeTextarea();
+        if (typeof toggleSendBtn === 'function') toggleSendBtn(true);
+    }
+}
+
+// ========== CORRIGE L'ÉCART ENTRE LE CLAVIER ET LA ZONE DE SAISIE ==========
+// Le viewport meta "interactive-widget=resizes-content" (ajouté plus haut) gère
+// maintenant ça nativement sur les navigateurs récents. Ce script ne sert que de
+// filet de sécurité pour les anciennes versions, et seulement PENDANT que le
+// clavier est réellement ouvert (jamais en dehors, pour ne pas interférer avec
+// le padding de la barre d'état tout en haut).
+(function corrigerHauteurClavier() {
+    if (!window.visualViewport) return;
+    const appContainer = document.querySelector('.app-container');
+    if (!appContainer) return;
+    const ajuster = () => {
+        const clavierVisible = (window.innerHeight - window.visualViewport.height) > 100;
+        appContainer.style.height = clavierVisible ? window.visualViewport.height + 'px' : '';
+    };
+    window.visualViewport.addEventListener('resize', ajuster);
+    window.visualViewport.addEventListener('scroll', ajuster);
+    ajuster();
+})();
       
       // ========== BLOQUER DÉFILEMENT HORIZONTAL ==========
 document.body.addEventListener('touchmove', function(e) {
@@ -8189,6 +9064,35 @@ function gererSwipeFin() {
 }
       
       // ========== COPIER LE MESSAGE ==========
+// Extrait le texte COMPLET d'une bulle de message, même pour les messages longs
+// tronqués visuellement ("VOIR TOUT") — jamais juste la version affichée/résumée.
+function extraireTexteCompletMessage(messageBubbleOrRow) {
+    if (!messageBubbleOrRow) return '';
+    const conteneur = messageBubbleOrRow.classList && messageBubbleOrRow.classList.contains('message-bubble')
+        ? messageBubbleOrRow
+        : messageBubbleOrRow.querySelector('.message-bubble');
+    if (!conteneur) return '';
+
+    // textContent + remplacement des <br> par de vrais sauts de ligne : ça marche
+    // même si l'élément est en display:none (innerText renverrait "" dans ce cas).
+    const texteAvecSauts = (el) => {
+        const clone = el.cloneNode(true);
+        clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        return clone.textContent;
+    };
+
+    const complet = conteneur.querySelector('.msg-text-complet');
+    if (complet) return texteAvecSauts(complet);
+
+    const codedMask = conteneur.querySelector('.coded-mask');
+    if (codedMask && codedMask.textContent) return texteAvecSauts(codedMask);
+
+    const span = conteneur.querySelector('span:not(.coded-mask):not(.msg-text-tronque):not(.voir-tout-btn)');
+    if (span) return texteAvecSauts(span);
+
+    return '';
+}
+
 async function copierMessage() {
     if (!selectedMessageId) return;
     
@@ -8199,19 +9103,8 @@ async function copierMessage() {
     const messageBubble = messageRow.querySelector('.message-bubble');
     if (!messageBubble) return;
     
-    let texteACopier = "";
-    
-    // Vérifier si c'est un message texte
-    const messageSpan = messageBubble.querySelector('span:not(.coded-mask)');
-    if (messageSpan) {
-        texteACopier = messageSpan.innerText;
-    }
-    
-    // Vérifier si c'est un message codé déverrouillé
-    const codedMask = messageBubble.querySelector('.coded-mask');
-    if (codedMask && codedMask.innerText) {
-        texteACopier = codedMask.innerText;
-    }
+    // Toujours le texte COMPLET (jamais juste la partie visible avant "VOIR TOUT")
+    let texteACopier = extraireTexteCompletMessage(messageBubble);
     
     // Si pas de texte, vérifier si c'est une image ou audio
     if (!texteACopier) {
@@ -8283,6 +9176,7 @@ document.addEventListener('click', function(e) {
     const mediaPanel = document.getElementById('media-panel');
     const audioPanel = document.getElementById('audio-panel');
     const toolsPanel = document.getElementById('tools-panel');
+    const positionPanel = document.getElementById('position-panel');
     const toolsBtn = document.getElementById('tools-menu-btn');
     const mediaBtn = document.getElementById('media-btn');
     const audioBtn = document.getElementById('audio-btn');
@@ -8295,6 +9189,9 @@ document.addEventListener('click', function(e) {
     }
     if (toolsPanel && !toolsPanel.contains(e.target) && e.target !== toolsBtn) {
         toolsPanel.style.display = 'none';
+    }
+    if (positionPanel && !positionPanel.contains(e.target) && e.target.getAttribute('onclick') !== 'ouvrirMenuPosition()') {
+        positionPanel.style.display = 'none';
     }
 });
 
@@ -8371,6 +9268,8 @@ function reinitialiserAudioUI() {
     if (previewAudioURL) {
         URL.revokeObjectURL(previewAudioURL);
     }
+    if (previewAudioPlayer) { previewAudioPlayer.pause(); previewAudioPlayer = null; }
+    previewAudioPlayerBlob = null;
     audioBlobOriginal = null;
     audioBlobFiltre = null;
     previewAudioURL = null;
@@ -8384,38 +9283,56 @@ function reinitialiserAudioUI() {
     const recordBtn = document.getElementById('record-audio-btn');
     if (recordBtn) {
         recordBtn.disabled = false;
-        recordBtn.style.background = '#ff4444';
+        recordBtn.style.display = 'flex';
     }
     
     const stopBtn = document.getElementById('stop-audio-btn');
     if (stopBtn) {
         stopBtn.disabled = true;
-        stopBtn.style.background = '#666';
+        stopBtn.style.display = 'none';
     }
+
+    const zone = document.getElementById('voice-record-zone');
+    if (zone) zone.classList.remove('recording');
+    const statut = document.getElementById('voice-record-status');
+    if (statut) statut.innerText = 'Appuie sur le micro pour enregistrer';
+    const timer = document.getElementById('voice-record-timer');
+    if (timer) { timer.style.display = 'none'; timer.innerText = '00:00'; }
+    arreterChronoVocal();
     
     const visualizer = document.getElementById('audio-visualizer');
-    if (visualizer) {
-        visualizer.innerHTML = '<span style="font-size: 0.8rem;">Cliquez sur le micro pour enregistrer</span>';
-    }
+    if (visualizer) visualizer.innerHTML = '';
 }
 
 function choisirFiltreAudio(filtre) {
     filtreAudioActif = filtre;
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.style.background = 'var(--input-bg)';
-        btn.style.color = 'var(--text-main)';
-        btn.style.border = '1px solid var(--border-color)';
+    document.querySelectorAll('.voice-filter-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-filter') === filtre);
     });
-    const btnActif = document.querySelector(`.filter-btn[data-filter="${filtre}"]`);
-    if (btnActif) {
-        btnActif.style.background = '#0095f6';
-        btnActif.style.color = 'white';
-        btnActif.style.border = 'none';
-    }
     
     if (audioBlobOriginal) {
         appliquerFiltreAudio();
     }
+}
+
+// Chrono d'enregistrement (affichage mm:ss pendant qu'on parle)
+let voiceChronoInterval = null;
+let voiceChronoSecondes = 0;
+function demarrerChronoVocal() {
+    arreterChronoVocal();
+    voiceChronoSecondes = 0;
+    const timer = document.getElementById('voice-record-timer');
+    if (timer) { timer.style.display = 'block'; timer.innerText = '00:00'; }
+    voiceChronoInterval = setInterval(() => {
+        voiceChronoSecondes++;
+        const m = String(Math.floor(voiceChronoSecondes / 60)).padStart(2, '0');
+        const s = String(voiceChronoSecondes % 60).padStart(2, '0');
+        if (timer) timer.innerText = `${m}:${s}`;
+    }, 1000);
+}
+function arreterChronoVocal() {
+    if (voiceChronoInterval) { clearInterval(voiceChronoInterval); voiceChronoInterval = null; }
+    voiceChronoSecondes = 0;
 }
 
 async function demarrerEnregistrementAudio() {
@@ -8424,10 +9341,18 @@ async function demarrerEnregistrementAudio() {
         
         // Créer l'analyseur pour la visualisation
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // ⚠️ CORRECTIF IMPORTANT : sur mobile, un AudioContext démarre parfois
+        // "suspendu" (état 'suspended') tant qu'il n'a pas été explicitement repris.
+        // C'est exactement ce qui faisait que la barre ne bougeait pas pendant qu'on
+        // parlait (l'analyseur ne recevait aucune donnée avant la reprise implicite).
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
         analyseurAudio = audioContext.createAnalyser();
         sourceAudio = audioContext.createMediaStreamSource(streamAudio);
         sourceAudio.connect(analyseurAudio);
         analyseurAudio.fftSize = 256;
+        analyseurAudio.smoothingTimeConstant = 0.6;
         
         mediaRecorderAudio = new MediaRecorder(streamAudio);
         audioChunksEnregistres = [];
@@ -8448,10 +9373,18 @@ async function demarrerEnregistrementAudio() {
             if (durationSpan) durationSpan.innerText = `${duration} sec`;
             
             const previewDiv = document.getElementById('audio-preview');
-            if (previewDiv) previewDiv.style.display = 'block';
+            if (previewDiv) previewDiv.style.display = 'flex';
             
             const sendBtn = document.getElementById('send-audio-btn');
             if (sendBtn) sendBtn.disabled = false;
+
+            const zone = document.getElementById('voice-record-zone');
+            if (zone) zone.classList.remove('recording');
+            const statut = document.getElementById('voice-record-status');
+            if (statut) statut.innerText = 'Enregistrement terminé';
+            arreterChronoVocal();
+            const visualizer = document.getElementById('audio-visualizer');
+            if (visualizer) visualizer.innerHTML = '';
             
             // Arrêter l'analyseur
             if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -8465,14 +9398,20 @@ async function demarrerEnregistrementAudio() {
         const recordBtn = document.getElementById('record-audio-btn');
         if (recordBtn) {
             recordBtn.disabled = true;
-            recordBtn.style.background = '#666';
+            recordBtn.style.display = 'none';
         }
         
         const stopBtn = document.getElementById('stop-audio-btn');
         if (stopBtn) {
             stopBtn.disabled = false;
-            stopBtn.style.background = '#ff4444';
+            stopBtn.style.display = 'flex';
         }
+
+        const zone = document.getElementById('voice-record-zone');
+        if (zone) zone.classList.add('recording');
+        const statut = document.getElementById('voice-record-status');
+        if (statut) statut.innerText = 'Enregistrement en cours...';
+        demarrerChronoVocal();
         
         // Démarrer la visualisation en temps réel
         demarrerVisualisationReelle();
@@ -8489,33 +9428,29 @@ function demarrerVisualisationReelle() {
     
     const bufferLength = analyseurAudio.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
+    const NB_BARRES = 24;
+
+    // Créer les barres une seule fois (on ne fait ensuite que changer leur hauteur,
+    // beaucoup plus fluide que tout reconstruire à chaque frame).
+    visualizer.innerHTML = '';
+    const barres = [];
+    for (let i = 0; i < NB_BARRES; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'audio-wave-bar';
+        bar.style.height = '5px';
+        visualizer.appendChild(bar);
+        barres.push(bar);
+    }
     
     function animer() {
         if (!analyseurAudio || !visualizer) return;
         
         analyseurAudio.getByteFrequencyData(dataArray);
         
-        // Calculer le volume moyen
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-            sum += dataArray[i];
-        }
-        const moyenne = sum / bufferLength;
-        const hauteurMax = Math.min(50, 20 + (moyenne / 5));
-        
-        // Créer les barres animées
-        visualizer.innerHTML = '';
-        for (let i = 0; i < 20; i++) {
-            const bar = document.createElement('div');
-            bar.className = 'audio-wave-bar';
-            const hauteur = Math.max(5, Math.min(hauteurMax, (dataArray[i % bufferLength] || 0) / 8));
-            bar.style.height = hauteur + 'px';
-            bar.style.width = '4px';
-            bar.style.margin = '0 2px';
-            bar.style.background = '#0095f6';
-            bar.style.borderRadius = '2px';
-            bar.style.transition = 'height 0.05s ease';
-            visualizer.appendChild(bar);
+        for (let i = 0; i < NB_BARRES; i++) {
+            const valeur = dataArray[i % bufferLength] || 0;
+            const hauteur = Math.max(4, Math.min(40, (valeur / 255) * 40));
+            barres[i].style.height = hauteur + 'px';
         }
         
         animationFrame = requestAnimationFrame(animer);
@@ -8586,6 +9521,57 @@ async function appliquerFiltreAudio() {
                         outputData[i] = inputData[Math.min(index, length - 1)] || 0;
                     }
                     break;
+                case 'profond':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 0.5);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
+                case 'alien':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 1.15);
+                        let val = inputData[Math.min(index, length - 1)] || 0;
+                        val *= (1 + 0.5 * Math.sin(i / 200));
+                        outputData[i] = Math.min(0.99, Math.max(-0.99, val));
+                    }
+                    break;
+                case 'caverne':
+                    for (let i = 0; i < length; i++) {
+                        let val = inputData[i];
+                        if (i > 3000) val += inputData[i - 3000] * 0.45;
+                        if (i > 6500) val += inputData[i - 6500] * 0.3;
+                        if (i > 10000) val += inputData[i - 10000] * 0.18;
+                        outputData[i] = Math.min(0.99, Math.max(-0.99, val));
+                    }
+                    break;
+                case 'telephone':
+                    for (let i = 0; i < length; i++) {
+                        const a = inputData[i] || 0;
+                        const b = inputData[Math.max(0, i - 1)] || 0;
+                        const c = inputData[Math.max(0, i - 2)] || 0;
+                        let val = (a + b + c) / 3;
+                        outputData[i] = Math.max(-0.7, Math.min(0.7, val * 1.4));
+                    }
+                    break;
+                case 'nasillard':
+                    for (let i = 0; i < length; i++) {
+                        const prev = inputData[Math.max(0, i - 1)] || 0;
+                        const val = inputData[i] - prev * 0.55;
+                        outputData[i] = Math.min(0.99, Math.max(-0.99, val * 1.6));
+                    }
+                    break;
+                case 'rapide':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 1.6);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
+                case 'ralenti':
+                    for (let i = 0; i < length; i++) {
+                        const index = Math.floor(i * 0.6);
+                        outputData[i] = inputData[Math.min(index, length - 1)] || 0;
+                    }
+                    break;
                 default:
                     outputData.set(inputData);
             }
@@ -8639,23 +9625,44 @@ async function bufferToWav(buffer, audioContext) {
     return new Blob([wavData], { type: 'audio/wav' });
 }
 
+let previewAudioPlayer = null;
+let previewAudioPlayerBlob = null;
+
 function previsualiserAudio() {
-    if (previewAudioURL) {
-        URL.revokeObjectURL(previewAudioURL);
-    }
-    
     const blob = audioBlobFiltre || audioBlobOriginal;
-    if (blob) {
+    if (!blob) return;
+    const btn = document.querySelector('.voice-preview-play');
+
+    // Le filtre a changé depuis la dernière écoute : on recrée le lecteur
+    if (previewAudioPlayer && previewAudioPlayerBlob !== blob) {
+        previewAudioPlayer.pause();
+        previewAudioPlayer = null;
+    }
+
+    if (!previewAudioPlayer) {
+        if (previewAudioURL) URL.revokeObjectURL(previewAudioURL);
         previewAudioURL = URL.createObjectURL(blob);
-        const audio = new Audio(previewAudioURL);
-        audio.play();
-        showTempNotification("🎧 Lecture de l'aperçu...");
+        previewAudioPlayerBlob = blob;
+        previewAudioPlayer = new Audio(previewAudioURL);
+        previewAudioPlayer.addEventListener('ended', () => {
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        });
+    }
+
+    if (previewAudioPlayer.paused) {
+        previewAudioPlayer.play();
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    } else {
+        previewAudioPlayer.pause();
+        previewAudioPlayer.currentTime = 0;
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-play"></i>';
     }
 }
 
 function supprimerAudioPreview() {
+    if (previewAudioPlayer) { previewAudioPlayer.pause(); previewAudioPlayer = null; }
+    previewAudioPlayerBlob = null;
     reinitialiserAudioUI();
-    showTempNotification("🗑️ Audio supprimé");
 }
 
 function getAudioDuration(blob) {
@@ -8841,6 +9848,7 @@ function afficherMediaGalerie(index) {
         modalVideo.style.display = 'block';
         modalVideo.currentTime = 0;
         modalVideo.play().catch(() => {});
+        activerZoomLibre('modal-video');
     } else {
         modalVideo.pause();
         modalVideo.removeAttribute('src');
@@ -8856,7 +9864,8 @@ function afficherMediaGalerie(index) {
         modalImg.style.borderRadius = '0';
         modalImg.style.boxShadow = 'none';
         modalImg.style.cursor = 'zoom-out';
-        modalImg.style.touchAction = 'pan-x pan-y';
+        modalImg.style.touchAction = 'none';
+        activerZoomLibre('modal-image');
     }
 }
 
@@ -8867,17 +9876,57 @@ function mediaGaleriePrecedent() {
     if (mediaGalerieIndex > 0) afficherMediaGalerie(mediaGalerieIndex - 1);
 }
 
-// Navigation par glissement gauche/droite — volontairement SANS bouton visible, comme demandé
-(function initGalerieSwipe() {
+// Vrai si l'image/vidéo affichée est actuellement zoomée (pour ne jamais
+// naviguer par erreur pendant qu'on est en train de zoomer/déplacer)
+function mediaActuelEstZoome() {
+    const img = document.getElementById('modal-image');
+    const video = document.getElementById('modal-video');
+    const scaleImg = img && img._zoomState ? img._zoomState.scale : 1;
+    const scaleVideo = video && video._zoomState ? video._zoomState.scale : 1;
+    return scaleImg > 1.02 || scaleVideo > 1.02;
+}
+
+// Clic à gauche = média précédent, clic à droite = média suivant, clic au
+// centre = fermer. Ignoré si on est zoomé (le zoom reste prioritaire).
+function gererClicModalPhoto(event) {
+    if (photoModalSwiped) return; // évite un "faux clic fantôme" juste après un glissement
+    if (mediaActuelEstZoome()) return; // ne jamais naviguer pendant qu'on est zoomé
+    const modal = document.getElementById('photo-modal');
+    const rect = modal.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const tiers = rect.width / 3;
+    if (clickX < tiers) {
+        mediaGaleriePrecedent();
+    } else if (clickX > tiers * 2) {
+        mediaGalerieSuivant();
+    } else {
+        closePhotoModal();
+    }
+}
+
+// Navigation par glissement gauche/droite, et par clic/tap gauche-centre-droite —
+// volontairement SANS bouton visible, comme demandé. Attaché via addEventListener
+// (plus fiable qu'un attribut onclick pour ce genre d'interaction).
+(function initGalerieClicEtSwipe() {
     let startX = 0, startY = 0;
-    document.addEventListener('DOMContentLoaded', () => {
+    function demarrer() {
         const modal = document.getElementById('photo-modal');
-        if (!modal) return;
+        if (!modal || modal.dataset.navBound === 'true') return;
+        modal.dataset.navBound = 'true';
+
+        modal.addEventListener('click', (e) => {
+            // Les boutons (fermer/enregistrer/répondre) gèrent déjà leur propre clic
+            // avec stopPropagation ; s'ils sont cliqués, cet événement ne remonte pas ici.
+            gererClicModalPhoto(e);
+        });
+
         modal.addEventListener('touchstart', (e) => {
+            if (mediaActuelEstZoome()) return; // le zoom (pincement/déplacement) reste prioritaire
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
         }, { passive: true });
         modal.addEventListener('touchend', (e) => {
+            if (mediaActuelEstZoome()) return;
             const dx = e.changedTouches[0].clientX - startX;
             const dy = e.changedTouches[0].clientY - startY;
             if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
@@ -8886,7 +9935,12 @@ function mediaGaleriePrecedent() {
                 setTimeout(() => { photoModalSwiped = false; }, 300);
             }
         }, { passive: true });
-    });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', demarrer);
+    } else {
+        demarrer();
+    }
 })();
 
 function closePhotoModal() {
@@ -12679,18 +13733,25 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         const isSent = data.senderId === currentUser.id;
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         row.setAttribute('data-id', msgId);
+        row.setAttribute('data-msgtype', data.type || 'text');
+        if (data.isGif) row.setAttribute('data-isgif', 'true');
+        if (data.isSticker) row.setAttribute('data-issticker', 'true');
+        if (data.fileName) row.setAttribute('data-filename', data.fileName);
         
         const isGiant = isOnlyEmojis(data.text);
         // ✅ Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs et stickers —
         // ces derniers sont stockés avec type "image" (voir isGif/isSticker), donc ce test
         // couvre bien tous les cas demandés.
-        const isMediaNoBubble = data.type === 'image' || data.type === 'video';
+        const isMediaNoBubble = data.type === 'image' || data.type === 'video' || data.type === 'document' || data.type === 'media_group';
         let customStyle = '';
         let inlineStyle = '';
 // 🚨 PRIORITÉ : Si une couleur personnalisée existe, on désactive les styles de classe
-const hasCustomColor = data.customColor || data.customGradient;
+const hasCustomColor = !isMediaNoBubble && (data.customColor || data.customGradient);
 
-if (hasCustomColor) {
+if (isMediaNoBubble) {
+    // Une photo/vidéo/document/envoi groupé n'a JAMAIS de fond de bulle coloré,
+    // même si une couleur d'accent ou un style de bulle par défaut est choisi.
+} else if (hasCustomColor) {
     // ✅ Couleur/dégradé choisi pour CE message précis (prioritaire sur tout le reste)
     if (data.customColor) {
         inlineStyle = `background: ${data.customColor} !important; color: ${getContrastColor(data.customColor)} !important;`;
@@ -12806,12 +13867,38 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                     bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
                 }
             }
+        } else if (data.type === 'media_group' && Array.isArray(data.items)) {
+            const items = data.items;
+            const total = items.length;
+            const visibles = items.slice(0, 3);
+            const restants = total - visibles.length;
+            // Positions de l'éventail : chaque carte est décalée et légèrement pivotée,
+            // effet "polaroid jeté sur la table" — la dernière (au-dessus) est la plus droite.
+            const FAN_POSITIONS = [
+                { top: 0, left: 0, rotate: -8 },
+                { top: 26, left: 34, rotate: 6 },
+                { top: 46, left: 10, rotate: -4 }
+            ];
+            let cardsHtml = '';
+            visibles.forEach((item, i) => {
+                const pos = FAN_POSITIONS[i] || FAN_POSITIONS[FAN_POSITIONS.length - 1];
+                const estFrontMost = i === visibles.length - 1;
+                const contenu = item.type === 'video'
+                    ? `<video src="${item.url}" muted playsinline></video><div class="media-fan-video-icon"><i class="fa-solid fa-play"></i></div>`
+                    : `<img src="${item.url}" loading="lazy">`;
+                cardsHtml += `
+                    <div class="media-fan-card" style="top:${pos.top}px; left:${pos.left}px; transform:rotate(${pos.rotate}deg); z-index:${i + 1};" onclick="ouvrirMediaGroupItem('${item.url}', '${item.type}')">
+                        ${contenu}
+                        ${estFrontMost && restants > 0 ? `<div class="media-fan-more-badge">+${restants}</div>` : ''}
+                    </div>`;
+            });
+            bubbleHtml += `<div class="media-fan">${cardsHtml}</div>`;
         } else if (data.type === 'document') {
             const ext = data.fileExt || (data.fileName || '').split('.').pop().toLowerCase();
             const icone = icoenPourExtensionDoc(ext);
             const couleur = couleurPourExtensionDoc(ext);
             bubbleHtml += `
-                <div class="document-card" onclick="window.open('${data.mediaUrl}', '_blank')">
+                <div class="document-card" onclick="ouvrirDocumentIntelligent('${data.mediaUrl}', '${ext}')">
                     <div class="document-card-icon" style="background:${couleur};"><i class="fa-solid ${icone}"></i></div>
                     <div class="document-card-info">
                         <div class="document-card-name">${escapeHTML(data.fileName || 'Document')}</div>
@@ -12840,6 +13927,81 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
         } else if (data.type === 'whiteboard') {
     // Afficher le tableau blanc
     afficherWb(msgId, data);
+} else if (data.type === 'screenshare_invite') {
+            const estExpediteur = data.senderId === currentUser.id;
+            if (data.status === 'pending') {
+                if (estExpediteur) {
+                    bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> En attente de réponse...</span></div>`;
+                } else {
+                    bubbleHtml += `
+                        <div class="screenshare-invite-card">
+                            <span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ${escapeHTML(data.senderName)} vous invite à un partage d'écran</span>
+                            <div class="screenshare-invite-actions">
+                                <button onclick="repondreInvitationPartageEcran('${msgId}', false)">Non</button>
+                                <button onclick="repondreInvitationPartageEcran('${msgId}', true)" class="accept">Oui</button>
+                            </div>
+                        </div>`;
+                }
+            } else if (data.status === 'accepted') {
+                bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ✅ Invitation acceptée</span></div>`;
+                if (estExpediteur && !screenShareClient) {
+                    setTimeout(afficherBandeauDemarragePartageEcran, 0);
+                }
+            } else if (data.status === 'declined') {
+                bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ❌ Invitation refusée</span></div>`;
+            }
+} else if (data.type === 'location') {
+            const estLive = data.mode === 'live';
+            const dejaTerminee = data.liveEnded || (data.expiresAt && Date.now() > data.expiresAt);
+            const statutTexte = estLive ? (dejaTerminee ? 'Partage terminé' : 'Position en direct') : 'Position partagée';
+            bubbleHtml += `
+                <div class="location-card" data-msgid="${msgId}" data-lat="${data.lat}" data-lng="${data.lng}" onclick="ouvrirPositionSurMaps(this.getAttribute('data-lat'), this.getAttribute('data-lng'))">
+                    <div class="location-card-map"><i class="fa-solid fa-location-dot"></i></div>
+                    <div class="location-card-info">
+                        <div class="location-card-titre">${estLive ? 'Position en direct' : 'Position'}</div>
+                        <div class="location-card-statut">${statutTexte}</div>
+                    </div>
+                </div>`;
+            if (estLive && !dejaTerminee) {
+                setTimeout(() => ecouterPositionEnDirect(msgId), 0);
+            }
+} else if (data.type === 'call_log') {
+            const isMissed = data.callStatus === 'missed';
+            const isDeclined = data.callStatus === 'declined';
+            const isVideo = data.callType === 'video';
+            const iconClass = isVideo ? 'fa-video' : 'fa-phone';
+            let titre, sousTitre, classeIcone = '';
+            if (isMissed) {
+                titre = isVideo ? 'Appel vidéo manqué' : 'Appel vocal manqué';
+                sousTitre = 'Appuyez pour rappeler';
+                classeIcone = 'missed';
+            } else if (isDeclined) {
+                titre = isVideo ? 'Appel vidéo refusé' : 'Appel vocal refusé';
+                sousTitre = 'Appuyez pour rappeler';
+                classeIcone = 'missed';
+            } else {
+                titre = isVideo ? 'Appel vidéo' : 'Appel vocal';
+                sousTitre = formatDureeAppel(data.durationSec || 0);
+            }
+            const peutRappeler = isMissed || isDeclined;
+            bubbleHtml += `
+                <div class="call-log-card" ${peutRappeler ? `onclick="startCall('${data.callType}')"` : ''}>
+                    <div class="call-log-icon ${classeIcone}"><i class="fa-solid ${iconClass}"></i></div>
+                    <div class="call-log-text">
+                        <div class="call-log-title">${titre}</div>
+                        <div class="call-log-subtitle">${sousTitre}</div>
+                    </div>
+                </div>`;
+} else if (data.type === 'screenshare_log') {
+            const failed = data.screenshareStatus === 'failed';
+            bubbleHtml += `
+                <div class="call-log-card">
+                    <div class="call-log-icon ${failed ? 'missed' : ''}"><i class="fa-solid fa-display"></i></div>
+                    <div class="call-log-text">
+                        <div class="call-log-title">${escapeHTML(data.titre || "Partage d'écran")}</div>
+                        <div class="call-log-subtitle">${data.durationSec != null ? formatDureeAppel(data.durationSec) : ''}</div>
+                    </div>
+                </div>`;
 } else if (data.type === 'game' && data.gameData && data.gameData.gameType === 'morpion') {
             // MORPION - code simplifié
             const game = data.gameData;
@@ -14308,6 +15470,8 @@ function getCallDocRef() {
 }
 
 // Démarre l'écoute Firestore de l'état d'appel (à appeler après login)
+let dernierAppelTermineTraite = null;
+
 function initCallListener() {
     if (!currentUser) return;
     if (callUnsubscribe) { callUnsubscribe(); callUnsubscribe = null; }
@@ -14328,26 +15492,112 @@ function initCallListener() {
             if (data.calleeId === currentUser.id && !agoraClient) {
                 joinAgoraChannel(data.type);
             }
-        } else if (data.status === 'rejected') {
-            if (data.callerId === currentUser.id) {
+        } else if (data.status === 'rejected' || data.status === 'ended') {
+            if (data.status === 'rejected' && data.callerId === currentUser.id) {
                 showTempNotification('📵 Appel refusé');
             }
-            cleanupCall();
-        } else if (data.status === 'ended') {
+            // Un seul des deux appareils écrit le message récapitulatif dans le chat
+            // (celui qui a initié l'appel), avec une protection anti-doublon.
+            const callKey = data.createdAt ? (data.createdAt.seconds + '-' + data.createdAt.nanoseconds) : null;
+            if (data.callerId === currentUser.id && callKey && dernierAppelTermineTraite !== callKey) {
+                dernierAppelTermineTraite = callKey;
+                envoyerMessageFinAppel(data);
+            }
             cleanupCall();
         }
     });
 }
 
+function formatDureeAppel(secondes) {
+    const h = Math.floor(secondes / 3600);
+    const m = Math.floor((secondes % 3600) / 60);
+    const s = secondes % 60;
+    const parts = [];
+    if (h > 0) parts.push(h + 'h');
+    if (h > 0 || m > 0) parts.push(m + 'mn');
+    parts.push(s + 's');
+    return parts.join(' ');
+}
+
+// Écrit dans le chat un message récapitulatif à la fin d'un appel
+// (durée si l'appel a été décroché, sinon manqué/refusé)
+async function envoyerMessageFinAppel(data) {
+    if (!currentUser) return;
+    try {
+        let callStatus, durationSec = null;
+        if (data.status === 'rejected' && !data.acceptedAt) {
+            callStatus = 'declined';
+        } else if (data.acceptedAt) {
+            callStatus = 'completed';
+            const acceptedMs = data.acceptedAt.toMillis ? data.acceptedAt.toMillis() : Date.now();
+            durationSec = Math.max(0, Math.round((Date.now() - acceptedMs) / 1000));
+        } else {
+            callStatus = 'missed';
+        }
+        const isVideo = data.type === 'video';
+        const texte = callStatus === 'completed'
+            ? `${isVideo ? 'Appel vidéo' : 'Appel vocal'} — ${formatDureeAppel(durationSec)}`
+            : callStatus === 'missed'
+                ? (isVideo ? 'Appel vidéo manqué' : 'Appel vocal manqué')
+                : (isVideo ? 'Appel vidéo refusé' : 'Appel vocal refusé');
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'call_log',
+            callType: isVideo ? 'video' : 'audio',
+            callStatus: callStatus,
+            durationSec: durationSec,
+            text: texte,
+            senderId: data.callerId,
+            senderName: data.callerName || currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+    } catch (e) {
+        console.error('Erreur message fin appel:', e);
+    }
+}
+
+// Envoie une notification Telegram via la fonction Supabase dédiée
+// (nécessite les secrets TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID côté serveur)
+async function envoyerNotifTelegram(texte) {
+    try {
+        await fetch(`https://mxzupngxmnfnldbyooqf.supabase.co/functions/v1/telegram-notify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: texte })
+        });
+    } catch (e) { /* pas critique si Telegram est indisponible */ }
+}
+
 // L'utilisateur clique sur le combiné ou la caméra en haut de l'écran
+// Contient le flux média (micro/caméra) obtenu directement dans le clic du
+// bouton Accepter, AVANT tout aller-retour réseau Firestore. Certains
+// navigateurs (Safari en tête, mais pas seulement) exigent que l'accès au
+// micro/à la caméra parte d'un VRAI clic utilisateur — pas d'un callback
+// asynchrone déclenché plus tard par Firestore. C'est très probablement la
+// cause du refus "après quelques secondes" au moment d'accepter.
+let preAcquiredStream = null;
+let dernierCallDataConnu = null;
+
 async function startCall(type) {
     if (!currentUser || !targetUser) return;
+    // ⚠️ On acquiert le micro/la caméra ICI, tout de suite dans le clic sur
+    // l'icône d'appel — pas après l'écriture Firestore — pour maximiser la
+    // compatibilité avec les navigateurs stricts sur ce point.
+    try {
+        preAcquiredStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
+    } catch (e) {
+        console.error('Erreur accès micro/caméra (appelant):', e);
+        showTempNotification("❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations");
+        preAcquiredStream = null;
+        return;
+    }
     try {
         const existing = await getCallDocRef().get();
         if (existing.exists) {
             const st = existing.data().status;
             if (st && st !== 'idle' && st !== 'ended' && st !== 'rejected') {
                 showTempNotification('📞 Un appel est déjà en cours');
+                if (preAcquiredStream) { preAcquiredStream.getTracks().forEach(t => t.stop()); preAcquiredStream = null; }
                 return;
             }
         }
@@ -14360,6 +15610,7 @@ async function startCall(type) {
             channel: CHAT_ID,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        envoyerNotifTelegram(`📞 Appel ${type === 'video' ? 'vidéo' : 'vocal'} entrant : ${currentUser.name} appelle ${targetUser.name} maintenant !`);
         // ⚠️ Pas de minuterie d'annulation automatique : l'appel sonne
         // jusqu'à ce que l'un des deux raccroche/accepte/refuse manuellement.
         await joinAgoraChannel(type);
@@ -14371,6 +15622,17 @@ async function startCall(type) {
 
 async function acceptCall() {
     stopRingtone();
+    const type = (dernierCallDataConnu && dernierCallDataConnu.type) || 'audio';
+    // ⚠️ Même logique que pour l'appelant : on acquiert le micro/la caméra
+    // ICI, dans le clic direct sur "Accepter", avant tout appel réseau.
+    try {
+        preAcquiredStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
+    } catch (e) {
+        console.error('Erreur accès micro/caméra (destinataire):', e);
+        showTempNotification("❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations");
+        preAcquiredStream = null;
+        return; // on n'accepte même pas l'appel si on n'a pas accès au micro/caméra
+    }
     try {
         await getCallDocRef().update({ status: 'accepted', acceptedAt: firebase.firestore.FieldValue.serverTimestamp() });
     } catch (e) {
@@ -14440,24 +15702,61 @@ async function joinAgoraChannel(type) {
 
         await agoraClient.join(AGORA_APP_ID, CHAT_ID, tokenData.token, uid);
 
-        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-        const tracksToPublish = [localAudioTrack];
-
-        if (type === 'video') {
-            localVideoTrack = await AgoraRTC.createCameraVideoTrack();
-            tracksToPublish.push(localVideoTrack);
-            mettreAJourVuesVideo();
+        // On réutilise le flux micro/caméra déjà obtenu pendant le clic (voir
+        // startCall/acceptCall) plutôt que d'en redemander un nouveau ici —
+        // cette 2e demande, faite depuis un callback Firestore (donc hors du
+        // clic utilisateur), est ce qui provoquait le refus par le navigateur.
+        if (preAcquiredStream) {
+            const audioTrackBrut = preAcquiredStream.getAudioTracks()[0];
+            const videoTrackBrut = preAcquiredStream.getVideoTracks()[0];
+            localAudioTrack = audioTrackBrut
+                ? AgoraRTC.createCustomAudioTrack({ mediaStreamTrack: audioTrackBrut })
+                : await AgoraRTC.createMicrophoneAudioTrack();
+            const tracksToPublish = [localAudioTrack];
+            if (type === 'video') {
+                localVideoTrack = videoTrackBrut
+                    ? AgoraRTC.createCustomVideoTrack({ mediaStreamTrack: videoTrackBrut })
+                    : await AgoraRTC.createCameraVideoTrack();
+                tracksToPublish.push(localVideoTrack);
+                mettreAJourVuesVideo();
+            }
+            preAcquiredStream = null; // consommé
+            await agoraClient.publish(tracksToPublish);
+        } else {
+            // Filet de sécurité si jamais rien n'a été pré-acquis (ne devrait pas arriver)
+            localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+            const tracksToPublish = [localAudioTrack];
+            if (type === 'video') {
+                localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+                tracksToPublish.push(localVideoTrack);
+                mettreAJourVuesVideo();
+            }
+            await agoraClient.publish(tracksToPublish);
         }
-        await agoraClient.publish(tracksToPublish);
     } catch (e) {
         console.error('Erreur Agora:', e);
+        if (preAcquiredStream) { preAcquiredStream.getTracks().forEach(t => t.stop()); preAcquiredStream = null; }
         let msg = "❌ Micro/caméra inaccessible ou token invalide";
-        if (e && e.message && /Permission denied|NotAllowedError/i.test(e.message)) {
-            msg = "❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations";
+        const estPermissionRefusee = e && e.message && /Permission denied|NotAllowedError/i.test(e.message);
+        if (estPermissionRefusee) {
+            msg = "❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations, puis réessaie";
         }
         showTempNotification(msg);
-        try { await getCallDocRef().update({ status: 'ended', endedReason: 'error' }); } catch (e2) {}
         cleanupCall();
+        try {
+            const docSnap = await getCallDocRef().get();
+            const data = docSnap.exists ? docSnap.data() : null;
+            // ⚠️ CORRECTIF IMPORTANT : si c'est LE DESTINATAIRE qui vient d'accepter et
+            // que SON accès micro/caméra a échoué à ce moment précis, on ne coupe plus
+            // l'appel pour les DEUX personnes — on remet juste l'appel en sonnerie.
+            // L'appelant continue d'attendre pendant que le destinataire corrige son
+            // autorisation et peut réessayer d'accepter, sans que l'appel ne se termine.
+            if (data && data.calleeId === currentUser.id && data.status === 'accepted') {
+                await getCallDocRef().update({ status: 'ringing' });
+            } else {
+                await getCallDocRef().update({ status: 'ended', endedReason: 'error' });
+            }
+        } catch (e2) {}
     }
 }
 
@@ -14557,6 +15856,7 @@ function activerModeAudio() {
 function activerModeVideo() {
     document.getElementById('call-bg-layer').style.display = 'none';
     document.getElementById('call-video-fullscreen').style.display = 'block';
+    appliquerCouleurBarreEtat('#000000');
 }
 
 function mettreAJourVuesVideo() {
@@ -14640,9 +15940,11 @@ function showActiveUI(data) {
 }
 
 function baseCallUI(data, phase) {
+    dernierCallDataConnu = data;
     document.getElementById('call-overlay').classList.add('active');
     document.getElementById('call-mini-badge').classList.remove('active');
     setCallTopbarText(data);
+    updateChatCallBanner(data, phase);
 
     const isVideo = data.type === 'video';
     if (isVideo) activerModeVideo(); else activerModeAudio();
@@ -14666,6 +15968,26 @@ function baseCallUI(data, phase) {
     document.getElementById('call-switch-cam-btn').style.display = (isVideo && phase !== 'incoming') ? 'flex' : 'none';
 }
 
+// Petit bandeau visible dans le fil de discussion tant que l'appel dure
+function updateChatCallBanner(data, phase) {
+    const banner = document.getElementById('chat-call-banner');
+    if (!banner) return;
+    banner.style.display = 'flex';
+    const isVideo = data.type === 'video';
+    const titre = phase === 'incoming' ? (isVideo ? 'Appel vidéo entrant' : 'Appel entrant')
+        : phase === 'outgoing' ? (isVideo ? 'Appel vidéo en cours...' : 'Appel en cours...')
+        : (isVideo ? 'Appel vidéo en cours' : 'Appel en cours');
+    document.getElementById('chat-call-banner-title').innerText = titre;
+    document.getElementById('chat-call-banner-refuse-btn').style.display = phase === 'incoming' ? 'inline-block' : 'none';
+    document.getElementById('chat-call-banner-end-btn').style.display = phase !== 'incoming' ? 'inline-block' : 'none';
+    if (phase !== 'active') document.getElementById('chat-call-banner-timer').innerText = '';
+}
+
+function hideChatCallBanner() {
+    const banner = document.getElementById('chat-call-banner');
+    if (banner) banner.style.display = 'none';
+}
+
 function hideCallOverlay() {
     document.getElementById('call-overlay').classList.remove('active');
     document.getElementById('call-mini-badge').classList.remove('active');
@@ -14676,6 +15998,8 @@ function hideCallOverlay() {
     document.getElementById('call-pip').style.top = '';
     document.getElementById('call-pip').style.right = '16px';
     document.getElementById('call-pip').style.bottom = '120px';
+    hideChatCallBanner();
+    restaurerCouleurBarreEtat();
 }
 
 function resetCallUIIfIdle() {
@@ -14702,6 +16026,8 @@ function startCallTimer() {
         const txt = `${m}:${s}`;
         document.getElementById('call-timer-text').innerText = txt;
         document.getElementById('call-mini-timer').innerText = txt;
+        const bannerTimer = document.getElementById('chat-call-banner-timer');
+        if (bannerTimer) bannerTimer.innerText = formatDureeAppel(callTimerSeconds);
     }, 1000);
 }
 
@@ -14763,25 +16089,85 @@ function appliquerFondAppelActuel() {
         layer.style.backgroundImage = 'none';
         layer.style.background = c;
     }
+    extraireCouleurThemeDepuisFond(valeur, appliquerCouleurBarreEtat);
+}
+
+// ========== SYNCHRO DE LA BARRE D'ÉTAT (heure/wifi/batterie) AVEC LE FOND D'APPEL ==========
+// Le fond d'appel doit couvrir l'écran EN ENTIER, y compris la zone où
+// se trouvent l'heure/le wifi/la batterie du téléphone (barre d'état système).
+// On y arrive en changeant temporairement la couleur "theme-color" du site
+// (utilisée par le navigateur/l'app pour peindre cette zone), le temps de l'appel.
+let themeColorMetaOriginal = null;
+
+function extraireCouleurThemeDepuisFond(valeur, callback) {
+    if (!valeur) { callback('#1a0033'); return; }
+    if (valeur.startsWith('color:')) {
+        const c = valeur.slice(6);
+        const hexMatch = c.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/);
+        callback(hexMatch ? hexMatch[0] : '#1a0033');
+        return;
+    }
+    if (valeur.startsWith('image:')) {
+        const url = valeur.slice(6);
+        try {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 8; canvas.height = 8;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 8, 8);
+                    const data = ctx.getImageData(0, 0, 8, 8).data;
+                    let r = 0, g = 0, b = 0, n = 0;
+                    for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i + 1]; b += data[i + 2]; n++; }
+                    r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+                    const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+                    callback(hex);
+                } catch (e) { callback('#000000'); }
+            };
+            img.onerror = function() { callback('#000000'); };
+            img.src = url;
+        } catch (e) { callback('#000000'); }
+        return;
+    }
+    callback('#1a0033');
+}
+
+function appliquerCouleurBarreEtat(hex) {
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    if (!metas.length) return;
+    if (!themeColorMetaOriginal) {
+        themeColorMetaOriginal = Array.from(metas).map(m => ({ el: m, content: m.getAttribute('content') }));
+    }
+    metas.forEach(m => m.setAttribute('content', hex));
+}
+
+function restaurerCouleurBarreEtat() {
+    if (!themeColorMetaOriginal) return;
+    themeColorMetaOriginal.forEach(entry => entry.el.setAttribute('content', entry.content));
+    themeColorMetaOriginal = null;
 }
 
 function marquerFondAppelActif(valeur) {
-    document.querySelectorAll('#call-bg-options .bg-option[data-callbg]').forEach(o => {
+    document.querySelectorAll('#call-bg-options .accent-color-dot[data-callbg]').forEach(o => {
         o.classList.toggle('active', o.getAttribute('data-callbg') === valeur);
     });
 }
 
 function creerVignetteFondAppelPerso(dataUrl) {
     const opt = document.createElement('div');
-    opt.className = 'bg-option';
+    opt.className = 'accent-color-dot';
     opt.setAttribute('data-custom', 'true');
     opt.style.backgroundImage = `url('${dataUrl}')`;
+    opt.style.backgroundSize = 'cover';
+    opt.style.backgroundPosition = 'center';
     const valeur = 'image:' + dataUrl;
     opt.setAttribute('data-callbg', valeur);
     opt.title = 'Ton image';
 
     const removeBtn = document.createElement('div');
-    removeBtn.className = 'bg-option-remove';
+    removeBtn.className = 'dot-remove-btn';
     removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
     removeBtn.onclick = function(e) {
         e.stopPropagation();
@@ -14790,7 +16176,7 @@ function creerVignetteFondAppelPerso(dataUrl) {
     opt.appendChild(removeBtn);
 
     opt.addEventListener('click', function(e) {
-        if (e.target.closest('.bg-option-remove')) return;
+        if (e.target.closest('.dot-remove-btn')) return;
         localStorage.setItem('call_background', valeur);
         marquerFondAppelActif(valeur);
     });
@@ -14811,7 +16197,7 @@ function supprimerFondAppelPerso(valeur, opt) {
 }
 
 function initCallBgOptions() {
-    document.querySelectorAll('#call-bg-options .bg-option[data-callbg]').forEach(opt => {
+    document.querySelectorAll('#call-bg-options .accent-color-dot[data-callbg]').forEach(opt => {
         if (opt.dataset.bound === 'true') return;
         opt.dataset.bound = 'true';
         opt.addEventListener('click', () => {
@@ -14822,18 +16208,18 @@ function initCallBgOptions() {
     });
 
     const container = document.getElementById('call-bg-options');
-    const addTile = document.getElementById('call-bg-option-add');
-    if (!container || !addTile) return;
-    container.querySelectorAll('.bg-option[data-custom="true"]').forEach(el => el.remove());
+    if (!container) return;
+    container.querySelectorAll('.accent-color-dot[data-custom="true"]').forEach(el => el.remove());
 
     const fondsPersos = JSON.parse(localStorage.getItem('custom_call_backgrounds') || '[]');
     fondsPersos.forEach(v => {
         const dataUrl = v.startsWith('image:') ? v.slice(6) : v;
         const vignette = creerVignetteFondAppelPerso(dataUrl);
-        container.insertBefore(vignette, addTile);
+        container.appendChild(vignette);
     });
 
-    if (addTile.dataset.bound !== 'true') {
+    const addTile = document.getElementById('call-bg-option-add');
+    if (addTile && addTile.dataset.bound !== 'true') {
         addTile.dataset.bound = 'true';
         addTile.addEventListener('click', () => {
             document.getElementById('call-bg-upload-input').click();
@@ -14869,7 +16255,7 @@ function initCallBgOptions() {
                 fonds.push(valeur);
                 localStorage.setItem('custom_call_backgrounds', JSON.stringify(fonds));
                 const vignette = creerVignetteFondAppelPerso(dataUrl);
-                container.insertBefore(vignette, addTile);
+                container.appendChild(vignette);
                 localStorage.setItem('call_background', valeur);
                 marquerFondAppelActif(valeur);
                 showTempNotification("🖼️ Image d'appel enregistrée");
@@ -14886,28 +16272,72 @@ function initCallBgOptions() {
 
 function majStatutPermission(type, statut) {
     const el = document.getElementById(`permission-status-${type}`);
-    if (!el) return;
-    el.classList.remove('granted', 'denied');
-    if (statut === 'granted') { el.textContent = '✅ Autorisé'; el.classList.add('granted'); }
-    else if (statut === 'denied') { el.textContent = '❌ Refusé'; el.classList.add('denied'); }
-    else { el.textContent = 'Statut inconnu'; }
+    const toggle = document.getElementById(`permission-toggle-${type}`);
+    if (el) {
+        el.classList.remove('granted', 'denied');
+        if (statut === 'granted') { el.textContent = '✅ Autorisé'; el.classList.add('granted'); }
+        else if (statut === 'denied') { el.textContent = '❌ Refusé'; el.classList.add('denied'); }
+        else { el.textContent = 'Non activé'; }
+    }
+    if (toggle) {
+        toggle.classList.toggle('on', statut === 'granted');
+        toggle.classList.toggle('denied', statut === 'denied');
+    }
+}
+
+// L'API navigator.permissions.query('microphone'/'camera') n'est pas fiable
+// partout (Safari iOS notamment la supporte mal ou pas du tout), ce qui
+// faisait "oublier" l'autorisation à chaque rafraîchissement. On mémorise
+// donc nous-mêmes, dans localStorage, le dernier résultat obtenu.
+function lireStatutPermissionSauvegarde(type) {
+    return localStorage.getItem(`perm_${type}_granted`); // 'granted' | 'denied' | null
+}
+function sauvegarderStatutPermission(type, statut) {
+    if (statut) localStorage.setItem(`perm_${type}_granted`, statut);
+    else localStorage.removeItem(`perm_${type}_granted`);
 }
 
 async function verifierStatutsPermissions() {
+    // 1) Affichage immédiat basé sur ce qu'on a mémorisé nous-mêmes (fiable partout)
+    ['mic', 'cam', 'notif', 'loc'].forEach(type => {
+        const sauvegarde = lireStatutPermissionSauvegarde(type);
+        if (sauvegarde) majStatutPermission(type, sauvegarde);
+    });
+
+    // 2) Affinage avec l'API native quand elle est disponible (peut corriger
+    // le cas où l'autorisation a été révoquée depuis les réglages du téléphone)
     if (navigator.permissions && navigator.permissions.query) {
         try {
             const mic = await navigator.permissions.query({ name: 'microphone' });
-            majStatutPermission('mic', mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null));
-            mic.onchange = () => majStatutPermission('mic', mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null));
+            const majMic = () => {
+                const etat = mic.state === 'granted' ? 'granted' : (mic.state === 'denied' ? 'denied' : null);
+                if (etat) { majStatutPermission('mic', etat); sauvegarderStatutPermission('mic', etat); }
+            };
+            majMic();
+            mic.onchange = majMic;
         } catch (e) {}
         try {
             const cam = await navigator.permissions.query({ name: 'camera' });
-            majStatutPermission('cam', cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null));
-            cam.onchange = () => majStatutPermission('cam', cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null));
+            const majCam = () => {
+                const etat = cam.state === 'granted' ? 'granted' : (cam.state === 'denied' ? 'denied' : null);
+                if (etat) { majStatutPermission('cam', etat); sauvegarderStatutPermission('cam', etat); }
+            };
+            majCam();
+            cam.onchange = majCam;
+        } catch (e) {}
+        try {
+            const loc = await navigator.permissions.query({ name: 'geolocation' });
+            const majLoc = () => {
+                const etat = loc.state === 'granted' ? 'granted' : (loc.state === 'denied' ? 'denied' : null);
+                if (etat) { majStatutPermission('loc', etat); sauvegarderStatutPermission('loc', etat); }
+            };
+            majLoc();
+            loc.onchange = majLoc;
         } catch (e) {}
     }
     if ('Notification' in window) {
-        majStatutPermission('notif', Notification.permission === 'granted' ? 'granted' : (Notification.permission === 'denied' ? 'denied' : null));
+        const etat = Notification.permission === 'granted' ? 'granted' : (Notification.permission === 'denied' ? 'denied' : null);
+        if (etat) { majStatutPermission('notif', etat); sauvegarderStatutPermission('notif', etat); }
     }
 }
 
@@ -14918,22 +16348,466 @@ async function demanderAutorisation(type) {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             stream.getTracks().forEach(t => t.stop());
             majStatutPermission(type, 'granted');
+            sauvegarderStatutPermission(type, 'granted');
             showTempNotification(type === 'mic' ? '🎤 Microphone autorisé' : '📷 Caméra autorisée');
         } catch (e) {
             console.error(e);
             majStatutPermission(type, 'denied');
+            sauvegarderStatutPermission(type, 'denied');
+            showTempNotification("❌ Accès refusé. Autorise-le via l'icône 🔒 à côté de l'adresse du site.");
+        }
+    } else if (type === 'loc') {
+        try {
+            await obtenirPositionActuelle();
+            majStatutPermission('loc', 'granted');
+            sauvegarderStatutPermission('loc', 'granted');
+            showTempNotification('📍 Localisation autorisée');
+        } catch (e) {
+            console.error(e);
+            majStatutPermission('loc', 'denied');
+            sauvegarderStatutPermission('loc', 'denied');
             showTempNotification("❌ Accès refusé. Autorise-le via l'icône 🔒 à côté de l'adresse du site.");
         }
     } else if (type === 'notif') {
         if (!('Notification' in window)) { showTempNotification('❌ Notifications non supportées'); return; }
         const res = await Notification.requestPermission();
-        majStatutPermission('notif', res === 'granted' ? 'granted' : 'denied');
+        const etat = res === 'granted' ? 'granted' : 'denied';
+        majStatutPermission('notif', etat);
+        sauvegarderStatutPermission('notif', etat);
         if (res === 'granted' && typeof demanderPermissionNotifications === 'function') {
             demanderPermissionNotifications();
         }
     }
 }
 // ==================== FIN APPELS AGORA ====================
+
+
+// ========================================================================
+// ============================ PARTAGE D'ÉCRAN ==========================
+// ========================================================================
+// ⚠️ Contrainte technique du navigateur : démarrer le partage d'écran
+// (getDisplayMedia) exige un clic direct de LA PERSONNE QUI PARTAGE.
+// Impossible de le déclencher automatiquement à distance dès que l'autre
+// accepte — c'est une règle de sécurité imposée par tous les navigateurs.
+// C'est pourquoi, une fois l'invitation acceptée, celui qui partage doit
+// cliquer lui-même sur "Démarrer" dans le bandeau qui apparaît.
+
+let screenShareClient = null;
+let screenShareTrack = null;
+let screenShareUnsubscribe = null;
+let screenShareTimerInterval = null;
+let screenShareSeconds = 0;
+let screenShareRole = null; // 'sender' | 'viewer'
+
+function getScreenShareDocRef() {
+    return db.collection('screenshares').doc(CHAT_ID);
+}
+
+// Envoie l'invitation dans le chat (bouton "Partage" de la barre d'outils)
+let screenShareInviteUnsubscribe = null;
+
+// Le partage d'écran (capture) n'est PAS pris en charge par les navigateurs
+// mobiles : ni Safari sur iPhone, ni Chrome sur Android ne proposent
+// l'API getDisplayMedia sur téléphone (limitation du système, pas de l'app).
+// Regarder un partage reçu, en revanche, fonctionne très bien sur mobile.
+// Zoom libre au pincement (pinch-to-zoom) + déplacement au doigt, sans aucun
+// bouton ni texte — le pincement à 2 doigts zoome, un doigt déplace une fois
+// zoomé, et un double-tap réinitialise. Utilisé pour la visionneuse de
+// partage d'écran (le zoom natif du navigateur est désactivé site-entier).
+function activerZoomLibre(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.style.transform = '';
+    if (!el._zoomState) el._zoomState = { scale: 1, tx: 0, ty: 0 };
+    else { el._zoomState.scale = 1; el._zoomState.tx = 0; el._zoomState.ty = 0; }
+    if (el.dataset.zoomBound === 'true') { appliquerTransform(el, el._zoomState); return; }
+    el.dataset.zoomBound = 'true';
+
+    const state = el._zoomState;
+    let mode = null; // 'pinch' | 'pan'
+    let pinchStartDist = 0;
+    let pinchStartScale = 1;
+    let ancreX = 0, ancreY = 0; // point du CONTENU (repère non transformé) sous le centre du pincement
+    let panStartTx = 0, panStartTy = 0;
+    let panStartTouchX = 0, panStartTouchY = 0;
+    let dernierTap = 0;
+
+    function distance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.hypot(dx, dy);
+    }
+    function milieu(touches) {
+        return {
+            x: (touches[0].clientX + touches[1].clientX) / 2,
+            y: (touches[0].clientY + touches[1].clientY) / 2
+        };
+    }
+    function limiterDeplacement() {
+        // Empêche de faire glisser l'image totalement hors de l'écran
+        const maxOffsetX = (el.offsetWidth * (state.scale - 1)) / 2 + el.offsetWidth * 0.4;
+        const maxOffsetY = (el.offsetHeight * (state.scale - 1)) / 2 + el.offsetHeight * 0.4;
+        state.tx = Math.max(-maxOffsetX, Math.min(maxOffsetX, state.tx));
+        state.ty = Math.max(-maxOffsetY, Math.min(maxOffsetY, state.ty));
+    }
+
+    el.addEventListener('touchstart', (e) => {
+        const parentRect = el.parentElement.getBoundingClientRect();
+        if (e.touches.length === 2) {
+            mode = 'pinch';
+            pinchStartDist = distance(e.touches);
+            pinchStartScale = state.scale;
+            const mid = milieu(e.touches);
+            // Point du contenu (avant transform) actuellement sous le centre du pincement :
+            // on le fige comme "ancre" pour que ce point précis reste sous les doigts.
+            ancreX = (mid.x - parentRect.left - state.tx) / state.scale;
+            ancreY = (mid.y - parentRect.top - state.ty) / state.scale;
+        } else if (e.touches.length === 1 && state.scale > 1) {
+            mode = 'pan';
+            panStartTx = state.tx;
+            panStartTy = state.ty;
+            panStartTouchX = e.touches[0].clientX;
+            panStartTouchY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+        const parentRect = el.parentElement.getBoundingClientRect();
+        if (mode === 'pinch' && e.touches.length === 2) {
+            const nouvelleDist = distance(e.touches);
+            const nouvelleScale = Math.min(4, Math.max(1, pinchStartScale * (nouvelleDist / pinchStartDist)));
+            const mid = milieu(e.touches);
+            // Recalcule tx/ty pour que le point "ancre" reste exactement sous le centre du pincement
+            state.tx = (mid.x - parentRect.left) - ancreX * nouvelleScale;
+            state.ty = (mid.y - parentRect.top) - ancreY * nouvelleScale;
+            state.scale = nouvelleScale;
+            limiterDeplacement();
+            appliquerTransform(el, state);
+            e.preventDefault();
+        } else if (mode === 'pan' && e.touches.length === 1) {
+            state.tx = panStartTx + (e.touches[0].clientX - panStartTouchX);
+            state.ty = panStartTy + (e.touches[0].clientY - panStartTouchY);
+            limiterDeplacement();
+            appliquerTransform(el, state);
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    el.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2 && mode === 'pinch') mode = null;
+        if (e.touches.length < 1) {
+            mode = null;
+            if (state.scale <= 1.02) { state.scale = 1; state.tx = 0; state.ty = 0; appliquerTransform(el, state); }
+        }
+        const maintenant = Date.now();
+        if (maintenant - dernierTap < 300) {
+            state.scale = 1; state.tx = 0; state.ty = 0; appliquerTransform(el, state);
+        }
+        dernierTap = maintenant;
+    });
+}
+
+function appliquerTransform(el, state) {
+    el.style.transformOrigin = '0 0';
+    el.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+}
+
+function ecranPartageDisponible() {
+    return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function');
+}
+
+// Grise légèrement le bouton "Partage" si l'appareil ne peut pas être expéditeur
+// (il reste cliquable pour prévenir clairement, mais visuellement discret)
+(function initEtatBoutonPartageEcran() {
+    const appliquer = () => {
+        const btn = document.getElementById('screenshare-toolbar-btn');
+        if (!btn) return;
+        if (!ecranPartageDisponible()) {
+            btn.style.opacity = '0.45';
+            btn.title = "Partage d'écran indisponible sur ce téléphone (utilise un ordinateur)";
+        }
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', appliquer);
+    } else {
+        appliquer();
+    }
+})();
+
+async function proposerPartageEcran() {
+    if (!currentUser || !targetUser) return;
+    if (!ecranPartageDisponible()) {
+        showTempNotification("❌ Le partage d'écran n'est pas possible depuis un téléphone (limitation iOS/Android) — utilise un ordinateur pour partager TON écran.");
+        return;
+    }
+    try {
+        const msgRef = await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'screenshare_invite',
+            text: `🖥️ ${currentUser.name} vous invite à un partage d'écran`,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            status: 'pending',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+        showTempNotification('🖥️ Invitation envoyée');
+        if (typeof fermerToolbarMedias === 'function') fermerToolbarMedias();
+        // Écoute directe et fiable sur CE message précis : ne dépend pas du
+        // rafraîchissement de la liste des messages (qui ne se redéclenche
+        // pas toujours sur une simple modification d'un message existant).
+        ecouterReponseInvitationPartageEcran(msgRef.id);
+    } catch (e) {
+        console.error('Erreur invitation partage écran:', e);
+        showTempNotification("❌ Impossible d'envoyer l'invitation");
+    }
+}
+
+// Détecte en direct quand l'autre a répondu "Oui"/"Non" à l'invitation qu'on a envoyée
+function ecouterReponseInvitationPartageEcran(msgId) {
+    if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
+    screenShareInviteUnsubscribe = db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId)
+        .onSnapshot((docSnap) => {
+            if (!docSnap.exists) return;
+            const data = docSnap.data();
+            if (data.status === 'accepted' && !screenShareClient) {
+                afficherBandeauDemarragePartageEcran();
+                showTempNotification('✅ Invitation acceptée — clique sur "Démarrer"');
+                if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
+            } else if (data.status === 'declined') {
+                showTempNotification('❌ Invitation refusée');
+                if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
+            }
+        });
+}
+
+// Clic sur "Oui" / "Non" dans la bulle d'invitation (voir rendu des messages)
+async function repondreInvitationPartageEcran(msgId, accepter) {
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({
+            status: accepter ? 'accepted' : 'declined'
+        });
+        if (accepter) {
+            demarrerReceptionPartageEcran();
+            showTempNotification('✅ En attente que la personne démarre le partage...');
+        }
+    } catch (e) {
+        console.error('Erreur réponse invitation:', e);
+    }
+}
+
+// Côté EXPÉDITEUR : une fois que le destinataire a accepté, un bandeau
+// "Démarrer" apparaît dans le chat — ce bouton appelle cette fonction.
+async function demarrerEnvoiPartageEcran() {
+    if (screenShareClient) return;
+    if (!ecranPartageDisponible()) {
+        showTempNotification("❌ Le partage d'écran n'est pas possible depuis ce téléphone (limitation iOS/Android) — réponds depuis un ordinateur pour pouvoir partager.");
+        envoyerMessageEchecPartageEcran('appareil incompatible — un ordinateur est nécessaire pour partager');
+        await getScreenShareDocRef().set({ status: 'ended' }, { merge: true }).catch(() => {});
+        return;
+    }
+    if (screenShareInviteUnsubscribe) { screenShareInviteUnsubscribe(); screenShareInviteUnsubscribe = null; }
+    try {
+        screenShareRole = 'sender';
+        const channel = 'screenshare_' + CHAT_ID;
+        const uid = AGORA_UID_MAP[currentUser.id];
+        const tokenResp = await fetch(`${AGORA_FUNCTIONS_URL}?channel=${encodeURIComponent(channel)}&uid=${uid}`);
+        const tokenData = await tokenResp.json();
+        if (!tokenData.token) throw new Error('token manquant');
+
+        screenShareClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+        await screenShareClient.join(AGORA_APP_ID, channel, tokenData.token, uid);
+
+        const tracks = await AgoraRTC.createScreenVideoTrack({ encoderConfig: '1080p_2' }, 'disable');
+        screenShareTrack = Array.isArray(tracks) ? tracks[0] : tracks;
+        await screenShareClient.publish([screenShareTrack]);
+        screenShareTrack.on('track-ended', () => terminerPartageEcran());
+
+        await getScreenShareDocRef().set({
+            status: 'active',
+            fromId: currentUser.id,
+            fromName: currentUser.name,
+            toId: targetUser.id,
+            channel: channel,
+            startedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        afficherBandeauPartageEcran('sender', 'Partage en cours');
+        demarrerChronoPartageEcran();
+        showTempNotification('🖥️ Partage d\'écran démarré');
+    } catch (e) {
+        console.error('Erreur démarrage partage écran:', e);
+        showTempNotification("❌ Impossible de démarrer le partage (autorisation refusée ?)");
+        envoyerMessageEchecPartageEcran('autorisation refusée ou annulée');
+        await getScreenShareDocRef().set({ status: 'ended' }, { merge: true }).catch(() => {});
+        nettoyerPartageEcran();
+    }
+}
+
+// Côté DESTINATAIRE : attend que l'expéditeur ait effectivement démarré,
+// puis rejoint le canal et affiche son écran en plein écran.
+function demarrerReceptionPartageEcran() {
+    if (screenShareUnsubscribe) return;
+    screenShareRole = 'viewer';
+    afficherBandeauPartageEcran('viewer-waiting', "En attente du démarrage...");
+    screenShareUnsubscribe = getScreenShareDocRef().onSnapshot(async (docSnap) => {
+        if (!docSnap.exists) return;
+        const data = docSnap.data();
+        if (data.status === 'active' && data.toId === currentUser.id && !screenShareClient) {
+            try {
+                const uid = AGORA_UID_MAP[currentUser.id];
+                const tokenResp = await fetch(`${AGORA_FUNCTIONS_URL}?channel=${encodeURIComponent(data.channel)}&uid=${uid}`);
+                const tokenData = await tokenResp.json();
+                if (!tokenData.token) throw new Error('token manquant');
+
+                screenShareClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+                screenShareClient.on('user-published', async (user, mediaType) => {
+                    await screenShareClient.subscribe(user, mediaType);
+                    if (mediaType === 'video') user.videoTrack.play('screenshare-viewer-video');
+                });
+                await screenShareClient.join(AGORA_APP_ID, data.channel, tokenData.token, uid);
+
+                document.getElementById('screenshare-viewer-topbar').innerText = `Partage d'écran de ${data.fromName || targetUser.name}`;
+                document.getElementById('screenshare-viewer-overlay').classList.add('active');
+                activerZoomLibre('screenshare-viewer-video');
+                afficherBandeauPartageEcran('viewer', 'Partage en cours');
+                demarrerChronoPartageEcran();
+                showTempNotification('🖥️ Partage d\'écran en cours');
+            } catch (e) {
+                console.error('Erreur réception partage écran:', e);
+                showTempNotification('❌ Impossible de rejoindre le partage');
+            }
+        } else if (data.status === 'ended') {
+            nettoyerPartageEcran();
+        }
+    });
+}
+
+// L'EXPÉDITEUR termine le partage
+async function terminerPartageEcran() {
+    try {
+        const docSnap = await getScreenShareDocRef().get();
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            await envoyerMessageFinPartageEcran(data, 'Partage d\'écran terminé');
+        }
+        await getScreenShareDocRef().set({ status: 'ended' }, { merge: true });
+    } catch (e) { console.error(e); }
+    nettoyerPartageEcran();
+}
+
+// Le DESTINATAIRE quitte la visionneuse (le partage continue pour l'expéditeur… mais
+// par simplicité et cohérence avec la demande, quitter termine aussi le partage)
+async function quitterPartageEcran() {
+    try {
+        const docSnap = await getScreenShareDocRef().get();
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            await envoyerMessageFinPartageEcran(data, (targetUser ? targetUser.name : 'La personne') + ' a quitté le partage');
+        }
+        await getScreenShareDocRef().set({ status: 'ended' }, { merge: true });
+    } catch (e) { console.error(e); }
+    nettoyerPartageEcran();
+}
+
+async function envoyerMessageFinPartageEcran(data, titre) {
+    if (!currentUser) return;
+    try {
+        const startMs = data && data.startedAt && data.startedAt.toMillis ? data.startedAt.toMillis() : Date.now();
+        const dureeSec = Math.max(0, Math.round((Date.now() - startMs) / 1000));
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'screenshare_log',
+            screenshareStatus: 'ended',
+            titre: titre,
+            durationSec: dureeSec,
+            text: `${titre} — ${formatDureeAppel(dureeSec)}`,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+    } catch (e) { console.error(e); }
+}
+
+// Laisse une trace dans le chat même quand le partage n'a jamais pu démarrer
+// (autorisation refusée, appareil incompatible, erreur réseau...)
+async function envoyerMessageEchecPartageEcran(raison) {
+    if (!currentUser) return;
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+            type: 'screenshare_log',
+            screenshareStatus: 'failed',
+            titre: "Partage d'écran impossible",
+            durationSec: null,
+            text: `Partage d'écran impossible (${raison})`,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [currentUser.id]
+        });
+    } catch (e) { console.error(e); }
+}
+
+function afficherBandeauPartageEcran(etat, titre) {
+    const banner = document.getElementById('chat-screenshare-banner');
+    if (!banner) return;
+    banner.style.display = 'flex';
+    document.getElementById('chat-screenshare-banner-title').innerText = titre;
+    document.getElementById('chat-screenshare-banner-start-btn').style.display = 'none';
+    document.getElementById('chat-screenshare-banner-stop-btn').style.display = 'none';
+    document.getElementById('chat-screenshare-banner-leave-btn').style.display = 'none';
+    if (etat === 'viewer-waiting') {
+        // rien à afficher côté destinataire tant que ce n'est pas démarré
+    } else if (etat === 'sender') {
+        document.getElementById('chat-screenshare-banner-stop-btn').style.display = 'inline-block';
+    } else if (etat === 'viewer') {
+        document.getElementById('chat-screenshare-banner-leave-btn').style.display = 'inline-block';
+    }
+}
+
+// Appelé côté expéditeur juste après acceptation, pour proposer le bouton "Démarrer"
+function afficherBandeauDemarragePartageEcran() {
+    const banner = document.getElementById('chat-screenshare-banner');
+    if (!banner) return;
+    banner.style.display = 'flex';
+    document.getElementById('chat-screenshare-banner-title').innerText = 'Invitation acceptée';
+    document.getElementById('chat-screenshare-banner-start-btn').style.display = 'inline-block';
+    document.getElementById('chat-screenshare-banner-stop-btn').style.display = 'none';
+    document.getElementById('chat-screenshare-banner-leave-btn').style.display = 'none';
+}
+
+function demarrerChronoPartageEcran() {
+    if (screenShareTimerInterval) return;
+    screenShareSeconds = 0;
+    screenShareTimerInterval = setInterval(() => {
+        screenShareSeconds++;
+        const txt = formatDureeAppel(screenShareSeconds);
+        const bannerTimer = document.getElementById('chat-screenshare-banner-timer');
+        if (bannerTimer) bannerTimer.innerText = txt;
+        const viewerTimer = document.getElementById('screenshare-viewer-timer');
+        if (viewerTimer) viewerTimer.innerText = txt;
+    }, 1000);
+}
+
+function nettoyerPartageEcran() {
+    if (screenShareTimerInterval) { clearInterval(screenShareTimerInterval); screenShareTimerInterval = null; }
+    screenShareSeconds = 0;
+    if (screenShareUnsubscribe) { screenShareUnsubscribe(); screenShareUnsubscribe = null; }
+    if (screenShareTrack) { try { screenShareTrack.close(); } catch (e) {} screenShareTrack = null; }
+    if (screenShareClient) {
+        screenShareClient.removeAllListeners();
+        screenShareClient.leave().catch(() => {});
+        screenShareClient = null;
+    }
+    screenShareRole = null;
+    const banner = document.getElementById('chat-screenshare-banner');
+    if (banner) banner.style.display = 'none';
+    const viewerOverlay = document.getElementById('screenshare-viewer-overlay');
+    if (viewerOverlay) viewerOverlay.classList.remove('active');
+    const viewerVideo = document.getElementById('screenshare-viewer-video');
+    if (viewerVideo) viewerVideo.innerHTML = '';
+    getScreenShareDocRef().set({ status: 'idle' }, { merge: true }).catch(() => {});
+}
+// ==================== FIN PARTAGE D'ÉCRAN ====================
   </script>
   <!-- Script pour nettoyer et désactiver la console -->
 <script>
@@ -15020,6 +16894,13 @@ async function demanderAutorisation(type) {
         <button class="call-icon-btn active-toggle" id="call-speaker-btn" onclick="toggleCallSpeaker()" title="Haut-parleur"><i class="fa-solid fa-volume-high"></i></button>
         <button class="call-icon-btn hangup-btn" id="call-hangup-btn" onclick="tenterRaccrocher()" title="Raccrocher (appuyer 2 fois)"><i class="fa-solid fa-phone-slash"></i></button>
     </div>
+</div>
+
+<!-- ========== VISIONNEUSE PLEIN ÉCRAN — PARTAGE D'ÉCRAN REÇU ========== -->
+<div class="screenshare-viewer-overlay" id="screenshare-viewer-overlay">
+    <div id="screenshare-viewer-video"></div>
+    <div class="screenshare-viewer-topbar" id="screenshare-viewer-topbar">Partage d'écran — <span id="screenshare-viewer-timer">00:00</span></div>
+    <button class="screenshare-viewer-bottombar" onclick="quitterPartageEcran()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Quitter</button>
 </div>
 
 </body>   
