@@ -30,6 +30,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         :root {
             --bg-main: #ffffff;
@@ -96,6 +97,8 @@
     border-left: 1px solid var(--border-color); 
     border-right: 1px solid var(--border-color); 
     overflow: hidden;  /* ← AJOUTE CETTE LIGNE */
+    padding-top: env(safe-area-inset-top); /* le fond de l'app remonte sous la barre d'état, maintenant translucide */
+    box-sizing: border-box;
 }        @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
 
         /* ÉCRAN DE SÉLECTION */
@@ -2369,7 +2372,7 @@ input, textarea {
 
 /* Barre du haut : rectangle arrondi, glassmorphism, flotte sans toucher les bords */
 .call-topbar {
-    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    position: absolute; top: calc(env(safe-area-inset-top) + 14px); left: 50%; transform: translateX(-50%);
     z-index: 10; padding: 11px 24px; border-radius: 20px;
     background: rgba(255,255,255,0.14);
     backdrop-filter: blur(20px) saturate(180%);
@@ -2444,7 +2447,7 @@ input, textarea {
 }
 
 .call-mini-badge {
-    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    position: fixed; top: calc(env(safe-area-inset-top) + 8px); left: 50%; transform: translateX(-50%);
     background: #34c759; color: #fff; padding: 6px 16px; border-radius: 20px;
     font-size: 0.8rem; z-index: 1000000; display: none; cursor: pointer;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -2553,7 +2556,7 @@ input, textarea {
 #screenshare-viewer-video { width: 100%; height: 100%; }
 #screenshare-viewer-video video { object-fit: contain !important; background: #000; }
 .screenshare-viewer-topbar {
-    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    position: absolute; top: calc(env(safe-area-inset-top) + 14px); left: 50%; transform: translateX(-50%);
     z-index: 10; padding: 10px 22px; border-radius: 20px;
     background: rgba(255,255,255,0.14);
     backdrop-filter: blur(20px) saturate(180%);
@@ -2880,7 +2883,7 @@ input, textarea {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
@@ -5961,15 +5964,15 @@ async function editSelectedMessage() {
         return;
     }
     
-    // Récupérer le texte du message
-    const messageSpan = messageRow.querySelector('.message-bubble span:not(.coded-mask)');
-    if (!messageSpan) {
+    // Récupérer le texte du message (toujours la version COMPLÈTE)
+    const messageSpanTest = messageRow.querySelector('.message-bubble span:not(.coded-mask)');
+    if (!messageSpanTest) {
         showTempNotification("❌ Impossible de modifier ce type de message (image, audio, etc.)");
         hideContextMenus();
         return;
     }
     
-    const ancienTexte = messageSpan.innerText;
+    const ancienTexte = extraireTexteCompletMessage(messageRow);
     
     // Stocker l'ID du message à modifier
     messageEnCoursEdition = selectedMessageId;
@@ -5977,6 +5980,7 @@ async function editSelectedMessage() {
     // Mettre le texte dans l'input
     const inputMessage = document.getElementById('chat-in');
     inputMessage.value = ancienTexte;
+    autoResizeTextarea(); // affiche tout de suite plusieurs lignes (pas juste 1)
     inputMessage.focus();
     
     // Changer le bouton "Envoyer" en bouton "Modifier"
@@ -8238,13 +8242,33 @@ function autoResizeTextarea() {
     const textarea = document.getElementById('chat-in');
     // Réinitialiser la hauteur pour calculer correctement
     textarea.style.height = 'auto';
-    // Définir la nouvelle hauteur (max 5 lignes)
-    const maxHeight = 120; // 5 lignes x 24px
+    // En mode édition d'un message existant, on autorise jusqu'à environ 10 lignes
+    // avant de faire défiler, pour bien voir/relire tout le texte. En saisie normale,
+    // on garde la limite habituelle de 5 lignes pour ne pas envahir l'écran.
+    const maxHeight = messageEnCoursEdition ? 240 : 120;
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = newHeight + 'px';
-    // Gérer le défilement si dépasse 5 lignes
+    // Gérer le défilement si ça dépasse la limite
     textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
 }
+
+// ========== CORRIGE L'ÉCART ENTRE LE CLAVIER ET LA ZONE DE SAISIE ==========
+// Sur iOS notamment, "100dvh" ne se réajuste pas toujours correctement quand le
+// clavier apparaît (bug connu de certaines versions de Safari/webview), ce qui
+// laisse un vide entre le clavier et la barre de saisie. On force la hauteur
+// réelle de l'app à suivre la zone VRAIMENT visible (window.visualViewport),
+// qui elle se met à jour correctement à l'ouverture/fermeture du clavier.
+(function corrigerHauteurClavier() {
+    if (!window.visualViewport) return;
+    const appContainer = document.querySelector('.app-container');
+    if (!appContainer) return;
+    const ajuster = () => {
+        appContainer.style.height = window.visualViewport.height + 'px';
+    };
+    window.visualViewport.addEventListener('resize', ajuster);
+    window.visualViewport.addEventListener('scroll', ajuster);
+    ajuster();
+})();
       
       // ========== BLOQUER DÉFILEMENT HORIZONTAL ==========
 document.body.addEventListener('touchmove', function(e) {
@@ -8355,6 +8379,35 @@ function gererSwipeFin() {
 }
       
       // ========== COPIER LE MESSAGE ==========
+// Extrait le texte COMPLET d'une bulle de message, même pour les messages longs
+// tronqués visuellement ("VOIR TOUT") — jamais juste la version affichée/résumée.
+function extraireTexteCompletMessage(messageBubbleOrRow) {
+    if (!messageBubbleOrRow) return '';
+    const conteneur = messageBubbleOrRow.classList && messageBubbleOrRow.classList.contains('message-bubble')
+        ? messageBubbleOrRow
+        : messageBubbleOrRow.querySelector('.message-bubble');
+    if (!conteneur) return '';
+
+    // textContent + remplacement des <br> par de vrais sauts de ligne : ça marche
+    // même si l'élément est en display:none (innerText renverrait "" dans ce cas).
+    const texteAvecSauts = (el) => {
+        const clone = el.cloneNode(true);
+        clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        return clone.textContent;
+    };
+
+    const complet = conteneur.querySelector('.msg-text-complet');
+    if (complet) return texteAvecSauts(complet);
+
+    const codedMask = conteneur.querySelector('.coded-mask');
+    if (codedMask && codedMask.textContent) return texteAvecSauts(codedMask);
+
+    const span = conteneur.querySelector('span:not(.coded-mask):not(.msg-text-tronque):not(.voir-tout-btn)');
+    if (span) return texteAvecSauts(span);
+
+    return '';
+}
+
 async function copierMessage() {
     if (!selectedMessageId) return;
     
@@ -8365,19 +8418,8 @@ async function copierMessage() {
     const messageBubble = messageRow.querySelector('.message-bubble');
     if (!messageBubble) return;
     
-    let texteACopier = "";
-    
-    // Vérifier si c'est un message texte
-    const messageSpan = messageBubble.querySelector('span:not(.coded-mask)');
-    if (messageSpan) {
-        texteACopier = messageSpan.innerText;
-    }
-    
-    // Vérifier si c'est un message codé déverrouillé
-    const codedMask = messageBubble.querySelector('.coded-mask');
-    if (codedMask && codedMask.innerText) {
-        texteACopier = codedMask.innerText;
-    }
+    // Toujours le texte COMPLET (jamais juste la partie visible avant "VOIR TOUT")
+    let texteACopier = extraireTexteCompletMessage(messageBubble);
     
     // Si pas de texte, vérifier si c'est une image ou audio
     if (!texteACopier) {
@@ -15775,4 +15817,4 @@ function nettoyerPartageEcran() {
 
 </body>   
   
-</html>
+</html>  
