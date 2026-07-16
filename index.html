@@ -2740,6 +2740,21 @@ input, textarea {
             </div>
         </div>
 
+        <script>
+            // Exécuté immédiatement (pas d'attente de DOMContentLoaded ni des SDK externes) :
+            // si on est déjà connecté, on masque l'écran de connexion tout de suite pour
+            // éliminer le flash visible avant que selectUser() ne s'exécute vraiment.
+            (function() {
+                try {
+                    var dernierUtilisateur = localStorage.getItem('lastUser');
+                    if (dernierUtilisateur === 'ida' || dernierUtilisateur === 'aidara') {
+                        var ecranConnexion = document.getElementById('login-screen');
+                        if (ecranConnexion) ecranConnexion.style.display = 'none';
+                    }
+                } catch (e) {}
+            })();
+        </script>
+
         <div class="chat-header">
             <div class="header-left" onclick="ouvrirProfil()">
                
@@ -5270,11 +5285,65 @@ function activerSuiviStatuts() {
     window.LISTE_STYLES_BULLE = LISTE_STYLES_BULLE;
 
     // ========== ÉCOUTE DES MESSAGES (FIRESTORE) - VERSION CORRIGÉE ==========
+// ========== CACHE LOCAL DES MESSAGES (affichage instantané au chargement) ==========
+// On garde une copie des ~200 derniers messages dans localStorage. Au chargement,
+// on les affiche IMMÉDIATEMENT (avant même que Firestore ait répondu), puis
+// Firestore vient mettre à jour/compléter avec les données réelles à son arrivée.
+function cleCacheMessages() {
+    return `msg_cache_${CHAT_ID}`;
+}
+
+function reconstituerTimestampCache(ts) {
+    if (!ts) return null;
+    if (typeof ts.toMillis === 'function') return ts;
+    if (typeof ts.seconds === 'number') {
+        return {
+            seconds: ts.seconds,
+            nanoseconds: ts.nanoseconds || 0,
+            toMillis: function() { return this.seconds * 1000 + Math.floor(this.nanoseconds / 1e6); },
+            toDate: function() { return new Date(this.toMillis()); }
+        };
+    }
+    return null;
+}
+
+function sauvegarderCacheMessages(snapshot) {
+    try {
+        const docs = snapshot.docs.slice(-200); // suffisant pour un affichage instantané de la fin de la conversation
+        const cache = docs.map(d => ({ id: d.id, data: d.data() }));
+        localStorage.setItem(cleCacheMessages(), JSON.stringify(cache));
+    } catch (e) { /* cache best-effort, jamais bloquant */ }
+}
+
+function afficherDepuisCacheMessages() {
+    try {
+        const brut = localStorage.getItem(cleCacheMessages());
+        if (!brut) return;
+        const cache = JSON.parse(brut);
+        if (!Array.isArray(cache) || cache.length === 0) return;
+        const fauxSnapshot = {
+            empty: false,
+            docs: cache.map(item => ({
+                id: item.id,
+                data: () => {
+                    const d = Object.assign({}, item.data);
+                    if (d.timestamp) d.timestamp = reconstituerTimestampCache(d.timestamp);
+                    return d;
+                }
+            }))
+        };
+        afficherTousLesMessages(fauxSnapshot, true);
+    } catch (e) { /* cache best-effort, jamais bloquant */ }
+}
+
 function listenToMessages() {
     if (unsubscribeMessages) unsubscribeMessages();
     
     // Variable pour suivre le premier chargement (pas de notif, position de scroll restaurée)
     let isFirstSnapshot = true;
+
+    // Affichage instantané depuis le cache local, avant même que Firestore réponde
+    afficherDepuisCacheMessages();
     
     // ⚠️ Aucune limite : on charge l'historique COMPLET de la conversation, du
     // tout premier message à aujourd'hui, sans jamais rien couper — même si la
@@ -5408,6 +5477,7 @@ function listenToMessages() {
             
             if (isFirstSnapshot || hasNewMessage) {
                 afficherTousLesMessages(snapshot, isFirstSnapshot);
+                sauvegarderCacheMessages(snapshot); // met à jour le cache local pour le prochain chargement instantané
 // Après afficherTousLesMessages
 if (!isFirstSnapshot) {
     setTimeout(traiterMessagesSecrets, 500);
@@ -7327,7 +7397,11 @@ async function traduireEtRemplacerInput(code, nom) {
     // Nettoyer les anciens appareils (garder seulement les 5 derniers)
     nettoyerAnciensAppareils();
     
-    updateBatteryDisplay(level, battery.charging);
+    // ⚠️ CORRECTIF : la batterie affichée dans l'en-tête doit TOUJOURS être celle
+    // de l'autre personne (gérée par ecouterStatutAutreAvecHorodatage), jamais la
+    // nôtre. L'ancien appel ci-dessous écrasait parfois l'affichage avec NOTRE
+    // propre batterie (notamment quand l'autre est hors ligne) — supprimé.
+    // updateBatteryDisplay(level, battery.charging);
 }
 
 // Fonction pour nettoyer les anciens appareils
@@ -9589,6 +9663,7 @@ function afficherMediaGalerie(index) {
         modalVideo.style.display = 'block';
         modalVideo.currentTime = 0;
         modalVideo.play().catch(() => {});
+        activerZoomLibre('modal-video');
     } else {
         modalVideo.pause();
         modalVideo.removeAttribute('src');
@@ -9604,7 +9679,8 @@ function afficherMediaGalerie(index) {
         modalImg.style.borderRadius = '0';
         modalImg.style.boxShadow = 'none';
         modalImg.style.cursor = 'zoom-out';
-        modalImg.style.touchAction = 'pan-x pan-y';
+        modalImg.style.touchAction = 'none';
+        activerZoomLibre('modal-image');
     }
 }
 
