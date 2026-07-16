@@ -477,6 +477,13 @@
       margin-bottom: 4px;
       color: #1e1f22;
     }
+    .doc-card .doc-count {
+      display: block;
+      font-size: 10px;
+      color: #5f6368;
+      font-weight: 400;
+      margin-top: 2px;
+    }
 
     /* Autres collections */
     .other-grid {
@@ -538,6 +545,26 @@
       font-size: 11px;
     }
 
+    .photo-grid-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .day-header {
+      font-weight: 600;
+      font-size: 14px;
+      color: #202124;
+      margin-bottom: 2px;
+      text-transform: capitalize;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .day-header .day-sub {
+      font-weight: 400;
+      font-size: 12px;
+      color: #5f6368;
+    }
     .photo-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -686,17 +713,19 @@
     /* ===== VUE PLEIN ÉCRAN ===== */
     #fullscreenView {
       display: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 1000;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 99999;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border-radius: 44px;
+      border-radius: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
       overflow: hidden;
     }
     #fullscreenView.active {
@@ -704,13 +733,13 @@
     }
 
     #fullscreenView .fs-close {
-      position: absolute;
-      top: 20px;
-      left: 20px;
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      left: 16px;
       color: white;
-      font-size: 28px;
+      font-size: 24px;
       cursor: pointer;
-      z-index: 1001;
+      z-index: 100001;
       background: rgba(0, 0, 0, 0.5);
       width: 44px;
       height: 44px;
@@ -719,6 +748,7 @@
       align-items: center;
       justify-content: center;
       transition: 0.2s;
+      pointer-events: auto;
     }
     #fullscreenView .fs-close:active {
       transform: scale(0.9);
@@ -727,32 +757,65 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      padding: 40px;
+      padding: 0;
+      background: #000;
+      border: none;
+      outline: none;
+      display: block;
     }
     #fullscreenView .fs-media-video {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      padding: 40px;
+      padding: 0;
       background: #000;
+      border: none;
+      outline: none;
+      display: block;
     }
     #fullscreenView .fs-info {
-      position: absolute;
-      bottom: 40px;
+      position: fixed;
+      bottom: max(24px, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
       color: white;
       font-size: 14px;
       background: rgba(0, 0, 0, 0.6);
       padding: 8px 20px;
       border-radius: 30px;
       backdrop-filter: blur(10px);
+      z-index: 100000;
+      pointer-events: none;
+      max-width: 80vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     #fullscreenView .fs-toolbar {
-      position: absolute;
-      top: 20px;
-      right: 20px;
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      right: 16px;
       display: flex;
       gap: 12px;
-      z-index: 1001;
+      z-index: 100001;
+      pointer-events: auto;
+      transition: opacity 0.25s ease;
+    }
+    #fullscreenView.fs-immersive .fs-toolbar,
+    #fullscreenView.fs-immersive .fs-close,
+    #fullscreenView.fs-immersive .fs-info {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #fullscreenView .fs-close,
+    #fullscreenView .fs-info {
+      transition: opacity 0.25s ease;
+    }
+    #fullscreenView .fs-media,
+    #fullscreenView .fs-media-video {
+      touch-action: none;
+      user-select: none;
+      -webkit-user-drag: none;
     }
     #fullscreenView .fs-toolbar button {
       background: rgba(255,255,255,0.15);
@@ -875,7 +938,7 @@
         font-size: 16px;
       }
       #fullscreenView {
-        border-radius: 24px;
+        border-radius: 0;
       }
       .auth-screen {
         border-radius: 24px;
@@ -884,14 +947,14 @@
     
     /* ===== MODALE POUR AJOUTER À L'ALBUM ===== */
 .modal-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    z-index: 2000;
+    z-index: 100500;
     display: none;
     align-items: center;
     justify-content: center;
-    border-radius: 44px;
+    border-radius: 0;
     backdrop-filter: blur(4px);
 }
 .modal-overlay.active {
@@ -1013,14 +1076,14 @@
     
     /* ===== MODALE AJOUTER À L'ALBUM ===== */
 .modal-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    z-index: 2000;
+    z-index: 100500;
     display: none;
     align-items: center;
     justify-content: center;
-    border-radius: 44px;
+    border-radius: 0;
     backdrop-filter: blur(4px);
 }
 .modal-overlay.active {
@@ -1158,14 +1221,14 @@
     
     /* ===== BOTTOM SHEET POUR SÉLECTIONNER DES PHOTOS ===== */
 .photo-selector-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    z-index: 3000;
+    z-index: 100600;
     display: none;
     align-items: flex-end;
     justify-content: center;
-    border-radius: 44px;
+    border-radius: 0;
     backdrop-filter: blur(4px);
     animation: fadeIn 0.3s ease;
 }
@@ -1331,7 +1394,7 @@
 <div id="collectionsView" class="hidden">      <!-- Header -->
       <div class="header-actions">
         <div class="header-left" id="userInfo">
-          <i class="fas fa-cloud-slash"></i> <span id="userName">AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO</span>
+          <i class="fas fa-cloud-slash"></i> <span id="userName">Mon compte</span>
         </div>
         <div class="header-right">
           <i class="fas fa-plus-circle" id="uploadBtn" title="Ajouter des photos"></i>
@@ -1349,7 +1412,7 @@
         <div class="upload-progress" id="progressContainer" style="display:none;">
           <div class="bar" id="progressBar"></div>
         </div>
-        <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display:none;" />
+        <input type="file" id="fileInput" multiple accept="image/*,video/*,.pdf,.doc,.docx,.txt" style="display:none;" />
       </div>
 
       <!-- Quick Grid -->
@@ -1381,16 +1444,8 @@
   <h3>Personnes</h3>
   <span class="chevron" onclick="openPersonnesPage()"><i class="fas fa-chevron-right"></i></span>
 </div>
-     <div class="people-scroll">
-  <div class="people-item" onclick="openAlbum('Ida')">
-    <div class="circle" style="background:#aecbfa;display:flex;align-items:center;justify-content:center;font-size:28px;color:#1a3a6b;">👤</div>
-    <span class="pname">Ida</span>
-  </div>
-  <div class="people-item" onclick="openAlbum('Jean')">
-    <div class="circle" style="background:#aecbfa;display:flex;align-items:center;justify-content:center;font-size:28px;color:#1a3a6b;">👤</div>
-    <span class="pname">Aidara</span>
-  </div>
- 
+     <div class="people-scroll" id="personnesScroll">
+  <!-- Les personnes sont chargées dynamiquement depuis les médias de ce compte -->
 </div>
 
       <!-- Lieux -->
@@ -1399,10 +1454,8 @@
   <h3>Lieux</h3>
   <span class="chevron" onclick="openLieuxPage()"><i class="fas fa-chevron-right"></i></span>
 </div>
-      <div class="lieux-container">
-        <div class="lieux-map" onclick="openAlbum('Votre carte')">Votre carte</div>
-        <div class="lieux-mini dakar" onclick="openAlbum('Dakar')"><span>Dakar</span></div>
-        <div class="lieux-mini paris" onclick="openAlbum('Paris')"><span>Paris</span></div>
+      <div class="lieux-container" id="lieuxContainer">
+        <!-- Les lieux sont générés automatiquement à partir de la localisation des photos -->
       </div>
 
       <!-- Documents -->
@@ -1411,11 +1464,11 @@
   <h3>Documents</h3>
   <span class="chevron" onclick="openDocumentsPage()"><i class="fas fa-chevron-right"></i></span>
 </div>
-      <div class="doc-grid">
-        <div class="doc-card" onclick="openAlbum('Identité')"><i class="fas fa-id-card"></i> Identité</div>
-        <div class="doc-card" onclick="openAlbum('Infos sur des événements')"><i class="fas fa-ticket"></i> Infos sur des événements</div>
-        <div class="doc-card" onclick="openAlbum('Livres et magazines')"><i class="fas fa-book"></i> Livres et magazines</div>
-        <div class="doc-card" onclick="openAlbum('Notes')"><i class="fas fa-pen"></i> Notes</div>
+      <div class="doc-grid" id="docGrid">
+        <div class="doc-card" onclick="openDocCategory('Identité')"><i class="fas fa-id-card"></i> Identité <span class="doc-count" id="docCount-Identité"></span></div>
+        <div class="doc-card" onclick="openDocCategory('Événements')"><i class="fas fa-ticket"></i> Infos sur des événements <span class="doc-count" id="docCount-Événements"></span></div>
+        <div class="doc-card" onclick="openDocCategory('Livres')"><i class="fas fa-book"></i> Livres et magazines <span class="doc-count" id="docCount-Livres"></span></div>
+        <div class="doc-card" onclick="openDocCategory('Notes')"><i class="fas fa-pen"></i> Notes <span class="doc-count" id="docCount-Notes"></span></div>
       </div>
 
       <!-- Autres collections -->
@@ -1423,16 +1476,13 @@
         <h3>Autres collections</h3>
       </div>
       <div class="other-grid">
-        <div class="other-item" onclick="openAlbum('Favoris')"><i class="fas fa-star"></i> Favoris</div>
-        <div class="other-item" onclick="openAlbum('Captures d\'écran')"><i class="fas fa-mobile-screen"></i> Captures d'écran</div>
-        <div class="other-item" onclick="openAlbum('Moments')"><i class="fas fa-clock"></i> Moments</div>
-        <div class="other-item" onclick="openAlbum('Vidéos')"><i class="fas fa-video"></i> Vidéos</div>
-        <div class="other-item" onclick="openAlbum('Récemment ajoutés')"><i class="fas fa-clock-rotate-left"></i> Récemment ajoutés</div>
-        <div class="other-item" onclick="openAlbum('Autocollants')"><i class="fas fa-stamp"></i> Autocollants</div>
-        <div class="other-item" onclick="openAlbum('Créations')"><i class="fas fa-palette"></i> Créations</div>
-        <div class="other-item" onclick="openAlbum('Archive')"><i class="fas fa-box-archive"></i> Archive</div>
-        <div class="other-item" onclick="openAlbum('Verrouillé')"><i class="fas fa-lock"></i> Verrouillé</div>
-        <div class="other-item" onclick="openAlbum('Corbeille')"><i class="fas fa-trash-can"></i> Corbeille</div>
+        <div class="other-item" onclick="openFavoris()"><i class="fas fa-star"></i> Favoris</div>
+        <div class="other-item" onclick="openScreenshots()"><i class="fas fa-mobile-screen"></i> Captures d'écran</div>
+        <div class="other-item" onclick="openMoments()"><i class="fas fa-clock"></i> Moments</div>
+        <div class="other-item" onclick="openVideosCollection()"><i class="fas fa-video"></i> Vidéos</div>
+        <div class="other-item" onclick="openRecent()"><i class="fas fa-clock-rotate-left"></i> Récemment ajoutés</div>
+        <div class="other-item" onclick="openArchive()"><i class="fas fa-box-archive"></i> Archive</div>
+        <div class="other-item" onclick="openTrash()"><i class="fas fa-trash-can"></i> Corbeille</div>
       </div>
       <div style="height: 8px;"></div>
     </div>
@@ -1443,8 +1493,8 @@
       <div class="sticky-date">
         <i class="far fa-calendar-alt"></i><span id="dateLabel">Vos souvenirs</span>
       </div>
-      <div class="photo-grid" id="photoGrid">
-        <!-- Photos générées par JS -->
+      <div class="photo-grid-wrapper" id="photoGrid">
+        <!-- Photos générées par JS, groupées par date réelle de prise de vue -->
       </div>
     </div>
 
@@ -1453,10 +1503,29 @@
       <div class="album-header">
         <span class="back-btn" onclick="closeAlbum()"><i class="fas fa-arrow-left"></i></span>
         <h2 id="albumTitle">Album</h2>
-        <span class="add-photo" onclick="addPhotoToAlbum()"><i class="fas fa-plus-circle"></i></span>
+        <span class="add-photo" id="albumOptionsBtn" onclick="openAlbumOptionsMenu()" style="display:none;"><i class="fas fa-ellipsis-vertical"></i></span>
+        <span class="add-photo" id="albumAddBtn" onclick="addPhotoToAlbum()"><i class="fas fa-plus-circle"></i></span>
       </div>
       <div class="album-grid" id="albumGrid">
         <!-- Contenu généré par JS -->
+      </div>
+    </div>
+
+    <!-- ====== MENU OPTIONS ALBUM (renommer / supprimer) ====== -->
+    <div class="modal-overlay" id="albumOptionsModal">
+      <div class="modal-content">
+        <h3><i class="fas fa-folder" style="color:#1a73e8;"></i> <span id="albumOptionsTitle">Album</span></h3>
+        <div style="display:flex;flex-direction:column;gap:10px;margin:12px 0;">
+          <div class="album-item" onclick="renameCurrentAlbum()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f2f4f7;border-radius:12px;cursor:pointer;">
+            <i class="fas fa-pen" style="font-size:18px;color:#1a73e8;width:24px;text-align:center;"></i>
+            <span style="font-size:14px;font-weight:500;color:#202124;">Renommer l'album</span>
+          </div>
+          <div class="album-item" onclick="deleteCurrentAlbum()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fce8e6;border-radius:12px;cursor:pointer;">
+            <i class="fas fa-trash" style="font-size:18px;color:#d93025;width:24px;text-align:center;"></i>
+            <span style="font-size:14px;font-weight:500;color:#d93025;">Supprimer l'album</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeAlbumOptionsMenu()">Annuler</button>
       </div>
     </div>
 
@@ -1465,6 +1534,7 @@
       <span class="fs-close" onclick="closeFullscreen()"><i class="fas fa-times"></i></span>
      <div class="fs-toolbar">
     <button id="fsFavorite"><i class="far fa-star"></i></button>
+    <button id="fsTagPerson"><i class="fas fa-user-tag"></i></button>
     <button id="fsArchive"><i class="fas fa-archive"></i></button>
     <button id="fsAddToAlbum"><i class="fas fa-folder-plus"></i></button>
     <button id="fsDelete"><i class="fas fa-trash"></i></button>
@@ -1575,6 +1645,7 @@
   let currentUser = null;
   let allMedia = [];
   let currentAlbum = null;
+  let isDynamicCollection = false;
   let currentAlbumImages = [];
   let currentIndex = 0;
   let isUploading = false;
@@ -1752,6 +1823,159 @@
   }
 
   // ============================================================
+  // 6bis. LECTURE EXIF (date de prise de vue + GPS) & GÉOCODAGE
+  // ============================================================
+
+  // Lit les octets d'un fichier image JPEG et retourne { dateTaken, gps }
+  // sans dépendance externe (parsing manuel du segment APP1/EXIF).
+  function readExifData(file) {
+    return new Promise((resolve) => {
+      const result = { dateTaken: null, gps: null };
+      if (!file.type || file.type !== 'image/jpeg') {
+        resolve(result);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const view = new DataView(e.target.result);
+          if (view.getUint16(0, false) !== 0xFFD8) { resolve(result); return; }
+          let offset = 2;
+          const length = view.byteLength;
+          let exifOffset = null;
+          while (offset < length) {
+            const marker = view.getUint16(offset, false);
+            offset += 2;
+            if (marker === 0xFFE1) {
+              exifOffset = offset + 2;
+              break;
+            } else if ((marker & 0xFF00) !== 0xFF00) {
+              break;
+            } else {
+              offset += view.getUint16(offset, false);
+            }
+          }
+          if (exifOffset === null) { resolve(result); return; }
+          if (view.getUint32(exifOffset, false) !== 0x45786966) { resolve(result); return; }
+          const tiffOffset = exifOffset + 6;
+          const little = view.getUint16(tiffOffset, false) === 0x4949;
+          const firstIFDOffset = view.getUint32(tiffOffset + 4, little);
+
+          function readString(off, num) {
+            let s = '';
+            for (let i = 0; i < num; i++) {
+              const c = view.getUint8(off + i);
+              if (c === 0) break;
+              s += String.fromCharCode(c);
+            }
+            return s;
+          }
+          function readRational(off) {
+            const num = view.getUint32(off, little);
+            const den = view.getUint32(off + 4, little);
+            return den === 0 ? 0 : num / den;
+          }
+          function parseIFD(ifdOffset) {
+            const entries = view.getUint16(ifdOffset, little);
+            const tags = {};
+            for (let i = 0; i < entries; i++) {
+              const entryOffset = ifdOffset + 2 + i * 12;
+              const tag = view.getUint16(entryOffset, little);
+              const type = view.getUint16(entryOffset + 2, little);
+              const count = view.getUint32(entryOffset + 4, little);
+              const valueOffset = entryOffset + 8;
+              tags[tag] = { type, count, valueOffset, entryOffset };
+            }
+            return tags;
+          }
+
+          const ifd0 = parseIFD(tiffOffset + firstIFDOffset);
+
+          // Tag 0x8769 = pointeur vers Exif SubIFD (contient DateTimeOriginal 0x9003)
+          if (ifd0[0x8769]) {
+            const subIFDOffset = tiffOffset + view.getUint32(ifd0[0x8769].valueOffset, little);
+            const sub = parseIFD(subIFDOffset);
+            if (sub[0x9003]) {
+              const off = tiffOffset + view.getUint32(sub[0x9003].valueOffset, little);
+              const str = readString(off, 20); // "YYYY:MM:DD HH:MM:SS"
+              const m = str.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+              if (m) {
+                result.dateTaken = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+              }
+            }
+          }
+
+          // Tag 0x8825 = pointeur vers GPS IFD
+          if (ifd0[0x8825]) {
+            const gpsIFDOffset = tiffOffset + view.getUint32(ifd0[0x8825].valueOffset, little);
+            const gps = parseIFD(gpsIFDOffset);
+            function readGpsCoord(tagRef, tagVal) {
+              if (!gps[tagRef] || !gps[tagVal]) return null;
+              const compOffset = tiffOffset + view.getUint32(gps[tagRef].valueOffset, little);
+              const refChar = String.fromCharCode(view.getUint8(compOffset));
+              const valOffset = tiffOffset + view.getUint32(gps[tagVal].valueOffset, little);
+              const deg = readRational(valOffset);
+              const min = readRational(valOffset + 8);
+              const sec = readRational(valOffset + 16);
+              let dec = deg + min / 60 + sec / 3600;
+              if (refChar === 'S' || refChar === 'W') dec = -dec;
+              return dec;
+            }
+            const lat = readGpsCoord(0x0001, 0x0002);
+            const lng = readGpsCoord(0x0003, 0x0004);
+            if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
+              result.gps = { lat, lng };
+            }
+          }
+        } catch (err) {
+          console.warn('Lecture EXIF impossible:', err);
+        }
+        resolve(result);
+      };
+      reader.onerror = () => resolve(result);
+      // Les métadonnées EXIF sont dans les premiers octets du fichier.
+      reader.readAsArrayBuffer(file.slice(0, 256 * 1024));
+    });
+  }
+
+  // Convertit des coordonnées GPS en ville/pays via une API gratuite, sans clé.
+  async function reverseGeocode(lat, lng) {
+    try {
+      const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=fr`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const city = data.city || data.locality || data.principalSubdivision || '';
+      const country = data.countryName || '';
+      if (!city && !country) return null;
+      return { city, country };
+    } catch (err) {
+      console.warn('Géocodage impossible:', err);
+      return null;
+    }
+  }
+
+  // Détecte les captures d'écran par leur nom de fichier
+  function detectScreenshot(fileName) {
+    return /^(screenshot|capture[\s_-]?d.?[ée]cran|capture)/i.test(fileName || '');
+  }
+
+  // Détermine si un fichier est un document (ni image ni vidéo)
+  function isDocumentFile(file) {
+    return !file.type.startsWith('image/') && !file.type.startsWith('video/');
+  }
+
+  // Classe un document automatiquement, sans rien demander à l'utilisateur,
+  // à partir de mots-clés dans le nom du fichier.
+  function guessDocCategory(fileName) {
+    const name = (fileName || '').toLowerCase();
+    if (/identit|carte|passeport|cni|permis|passport|id[-_ ]?card/.test(name)) return 'Identité';
+    if (/ticket|invitation|évén|event|fete|fête|billet|reservation|réservation/.test(name)) return 'Événements';
+    if (/livre|book|magazine|ebook|roman/.test(name)) return 'Livres';
+    if (/note|memo|mémo/.test(name)) return 'Notes';
+    return 'Autres';
+  }
+
+  // ============================================================
   // 7. UPLOAD FICHIERS
   // ============================================================
   
@@ -1761,11 +1985,13 @@
     
     const MAX_VIDEO_SIZE = 500 * 1024 * 1024;
     const MAX_PHOTO_SIZE = 50 * 1024 * 1024;
+    const MAX_DOC_SIZE = 50 * 1024 * 1024;
     
     const validFiles = [];
     for (const file of files) {
       const isVideo = file.type.startsWith('video/');
-      const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_PHOTO_SIZE;
+      const isImage = file.type.startsWith('image/');
+      const maxSize = isVideo ? MAX_VIDEO_SIZE : (isImage ? MAX_PHOTO_SIZE : MAX_DOC_SIZE);
       if (file.size > maxSize) {
         alert(`❌ ${file.name} est trop volumineux (max ${maxSize/1024/1024} Mo)`);
         continue;
@@ -1788,7 +2014,8 @@
     for (const file of validFiles) {
       try {
         const isVideo = file.type.startsWith('video/');
-        const folder = isVideo ? 'videos' : 'photos';
+        const isDocument = isDocumentFile(file);
+        const folder = isVideo ? 'videos' : (isDocument ? 'documents' : 'photos');
         const timestamp = Date.now();
         const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
         const r2Key = `users/${currentUser.uid}/${folder}/${timestamp}_${safeName}`;
@@ -1819,15 +2046,37 @@
             console.warn('Miniature non générée:', thumbErr);
           }
         }
-        
+
+        // Date et lieu réels de la prise de vue (photo) : EXIF en priorité,
+        // sinon date de dernière modification du fichier (souvent la date d'origine
+        // conservée par le téléphone/l'appareil, y compris pour les vidéos/documents).
+        let originalDate = new Date(file.lastModified || Date.now());
+        let location = null;
+        if (!isVideo && !isDocument) {
+          const exif = await readExifData(file);
+          if (exif.dateTaken) originalDate = exif.dateTaken;
+          if (exif.gps) {
+            const geo = await reverseGeocode(exif.gps.lat, exif.gps.lng);
+            location = { lat: exif.gps.lat, lng: exif.gps.lng, city: geo?.city || '', country: geo?.country || '' };
+          }
+        }
+
+        const mediaType = isVideo ? 'video' : (isDocument ? 'document' : 'photo');
+        const docCategory = isDocument ? guessDocCategory(file.name) : null;
+
        const mediaData = {
     userId: currentUser.uid,
     fileName: file.name,
     r2Key: r2Key,
     fileSize: file.size,
     fileType: file.type,
-    mediaType: isVideo ? 'video' : 'photo',
+    mediaType: mediaType,
     uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    originalDate: firebase.firestore.Timestamp.fromDate(originalDate),
+    location: location,
+    docCategory: docCategory,
+    isScreenshot: !isDocument ? detectScreenshot(file.name) : false,
+    people: [],
     tags: [],
     album: '',
     thumbnailKey: thumbnailKey,
@@ -1855,6 +2104,9 @@
     progressContainer.style.display = 'none';
     progressBar.style.width = '0%';
     loadMedia();
+    loadPersonnes();
+    loadLieux();
+    loadDocuments();
   }
 
   // ============================================================
@@ -1894,17 +2146,18 @@
       }
       
       allMedia = mediaList.sort((a, b) => {
-        const dateA = a.uploadedAt?.toDate?.() || new Date(0);
-        const dateB = b.uploadedAt?.toDate?.() || new Date(0);
+        const dateA = a.originalDate?.toDate?.() || a.uploadedAt?.toDate?.() || new Date(0);
+        const dateB = b.originalDate?.toDate?.() || b.uploadedAt?.toDate?.() || new Date(0);
         return dateB - dateA;
       });
       
-      renderPhotoGrid(allMedia);
+      const galleryMedia = allMedia.filter(m => m.mediaType === 'photo' || m.mediaType === 'video');
+      renderPhotoGrid(galleryMedia);
       
-      // Mettre à jour la date
-      if (allMedia.length > 0) {
-        const latest = allMedia[0];
-        const date = latest.uploadedAt?.toDate?.() || new Date();
+      // Mettre à jour le libellé du haut de page
+      if (galleryMedia.length > 0) {
+        const latest = galleryMedia[0];
+        const date = latest.originalDate?.toDate?.() || latest.uploadedAt?.toDate?.() || new Date();
         dateLabel.textContent = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
       } else {
         dateLabel.textContent = 'Vos souvenirs';
@@ -1913,6 +2166,11 @@
       const totalSize = allMedia.reduce((sum, m) => sum + (m.fileSize || 0), 0);
       const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
       userAvatar.title = `${sizeMB} Mo utilisés`;
+
+      // Garder les collections auto-générées synchronisées avec les médias actuels
+      if (typeof loadPersonnes === 'function') loadPersonnes();
+      if (typeof loadLieux === 'function') loadLieux();
+      if (typeof loadDocuments === 'function') loadDocuments();
       
     } catch (err) {
       console.error('Erreur chargement:', err);
@@ -1923,6 +2181,63 @@
   // 9. RENDU DE LA GRILLE PHOTOS
   // ============================================================
   
+  function createMediaCell(media, list) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+
+    const isVideo = media.mediaType === 'video' ||
+                    (media.fileType && media.fileType.startsWith('video/'));
+
+    if (isVideo) {
+      const video = document.createElement('video');
+      video.src = media.url || '';
+      video.muted = true;
+      video.preload = 'metadata';
+      video.playsInline = true;
+      video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      cell.appendChild(video);
+
+      const playOverlay = document.createElement('div');
+      playOverlay.className = 'play-overlay';
+      playOverlay.innerHTML = '<i class="fas fa-play"></i>';
+      cell.appendChild(playOverlay);
+
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.innerHTML = `<i class="fas fa-play"></i> ${media.duration ? formatDuration(media.duration) : ''}`;
+      cell.appendChild(badge);
+
+      cell.onclick = () => openFullscreenFromList(list || [media], (list || [media]).indexOf(media));
+    } else {
+      const img = document.createElement('img');
+      img.src = media.url || '';
+      img.alt = media.fileName || 'photo';
+      img.loading = 'lazy';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      cell.appendChild(img);
+
+      cell.onclick = () => openFullscreenFromList(list || [media], (list || [media]).indexOf(media));
+    }
+    return cell;
+  }
+
+  function getMediaDate(media) {
+    return media.originalDate?.toDate?.() || media.uploadedAt?.toDate?.() || new Date(0);
+  }
+
+  function formatDayHeader(date) {
+    const now = new Date();
+    const isSameDay = (a, b) => a.toDateString() === b.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+
+    const mainLabel = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+    let subLabel = date.toLocaleDateString('fr-FR', { weekday: 'long' });
+    if (isSameDay(date, now)) subLabel = "Aujourd'hui";
+    else if (isSameDay(date, yesterday)) subLabel = 'Hier';
+    return { mainLabel, subLabel };
+  }
+
   function renderPhotoGrid(mediaList) {
     photoGrid.innerHTML = '';
     if (!mediaList || mediaList.length === 0) {
@@ -1935,46 +2250,36 @@
       `;
       return;
     }
-    
+
+    // Les médias arrivent déjà triés par date réelle décroissante (loadMedia).
+    // On les regroupe ici par jour de prise de vue, comme dans une vraie galerie.
+    let currentDayKey = null;
+    let currentGrid = null;
+
     mediaList.forEach((media) => {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      
-      const isVideo = media.mediaType === 'video' || 
-                      (media.fileType && media.fileType.startsWith('video/'));
-      
-      if (isVideo) {
-        const video = document.createElement('video');
-        video.src = media.url || '';
-        video.muted = true;
-        video.preload = 'metadata';
-        video.playsInline = true;
-        video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-        cell.appendChild(video);
-        
-        const playOverlay = document.createElement('div');
-        playOverlay.className = 'play-overlay';
-        playOverlay.innerHTML = '<i class="fas fa-play"></i>';
-        cell.appendChild(playOverlay);
-        
-        const badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.innerHTML = `<i class="fas fa-play"></i> ${media.duration ? formatDuration(media.duration) : ''}`;
-        cell.appendChild(badge);
-        
-        cell.onclick = () => openFullscreen(media, 'video');
-      } else {
-        const img = document.createElement('img');
-        img.src = media.url || '';
-        img.alt = media.fileName || 'photo';
-        img.loading = 'lazy';
-        img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-        cell.appendChild(img);
-        
-        cell.onclick = () => openFullscreen(media, 'image');
+      const date = getMediaDate(media);
+      const dayKey = date.toDateString();
+
+      if (dayKey !== currentDayKey) {
+        currentDayKey = dayKey;
+        const { mainLabel, subLabel } = formatDayHeader(date);
+
+        const group = document.createElement('div');
+        group.className = 'day-group';
+
+        const header = document.createElement('div');
+        header.className = 'day-header';
+        header.innerHTML = `<span>${mainLabel}</span><span class="day-sub">${subLabel}</span>`;
+        group.appendChild(header);
+
+        currentGrid = document.createElement('div');
+        currentGrid.className = 'photo-grid';
+        group.appendChild(currentGrid);
+
+        photoGrid.appendChild(group);
       }
-      
-      photoGrid.appendChild(cell);
+
+      currentGrid.appendChild(createMediaCell(media, mediaList));
     });
   }
   
@@ -1998,11 +2303,16 @@ const defaultAlbumData = {
   
 function openAlbum(title) {
     currentAlbum = title;
+    isDynamicCollection = false;
     collectionsView.classList.add('hidden');
     photosView.classList.remove('active');
     albumView.classList.add('active');
     
     albumTitle.textContent = title;
+    const addBtn = document.getElementById('albumAddBtn');
+    if (addBtn) addBtn.style.display = '';
+    const optBtn = document.getElementById('albumOptionsBtn');
+    if (optBtn) optBtn.style.display = '';
     
     if (!albumData[title]) {
         albumData[title] = { images: [] };
@@ -2014,15 +2324,19 @@ function openAlbum(title) {
   
   function renderAlbumGrid() {
     albumGrid.innerHTML = '';
+
+    const fakeList = currentAlbumImages.map((img, index) => ({
+      url: img,
+      fileName: `${currentAlbum} - Photo ${index + 1}`,
+      mediaType: 'photo'
+    }));
     
-    currentAlbumImages.forEach((img, index) => {
+    fakeList.forEach((fakeMedia, index) => {
       const cell = document.createElement('div');
       cell.className = 'cell';
-      cell.innerHTML = `<img src="${img}" alt="Photo" />`;
+      cell.innerHTML = `<img src="${fakeMedia.url}" alt="Photo" />`;
       cell.onclick = () => {
-        // Ouvrir en plein écran avec l'image de l'album
-        const fakeMedia = { url: img, fileName: `${currentAlbum} - Photo ${index + 1}`, mediaType: 'photo' };
-        openFullscreen(fakeMedia, 'image');
+        openFullscreenFromList(fakeList, index);
       };
       albumGrid.appendChild(cell);
     });
@@ -2230,6 +2544,7 @@ async function addSelectedPhotosToAlbum() {
     albumView.classList.remove('active');
     collectionsView.classList.remove('hidden');
     currentAlbum = null;
+    isDynamicCollection = false;
   }
 
   // ============================================================
@@ -2237,30 +2552,236 @@ async function addSelectedPhotosToAlbum() {
   // ============================================================
   
   let currentFullscreenMedia = null;
-  
+  let fsMediaList = [];
+  let fsMediaIndex = -1;
+  let fsImmersive = false;
+
+  function buildFullscreenInfoText(media) {
+    const parts = [media.fileName || (media.mediaType === 'video' ? 'Vidéo' : 'Photo')];
+    const date = media.originalDate?.toDate?.() || media.uploadedAt?.toDate?.();
+    if (date) parts.push(date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
+    if (media.location && (media.location.city || media.location.country)) {
+      parts.push([media.location.city, media.location.country].filter(Boolean).join(', '));
+    }
+    return parts.join(' · ');
+  }
+
+  // Ouvre le plein écran en gardant la liste de navigation (photos/vidéos voisines)
+  function openFullscreenFromList(list, index) {
+    if (!list || !list.length) return;
+    if (index < 0) index = 0;
+    if (index >= list.length) index = list.length - 1;
+    fsMediaList = list;
+    fsMediaIndex = index;
+    const media = list[index];
+    const type = media.mediaType === 'video' ? 'video' : 'image';
+    openFullscreen(media, type);
+  }
+
+  function fsGoTo(newIndex) {
+    if (!fsMediaList || newIndex < 0 || newIndex >= fsMediaList.length) return;
+    fsMediaIndex = newIndex;
+    const media = fsMediaList[fsMediaIndex];
+    const type = media.mediaType === 'video' ? 'video' : 'image';
+    openFullscreen(media, type);
+  }
+  function fsNext() { fsGoTo(fsMediaIndex + 1); }
+  function fsPrev() { fsGoTo(fsMediaIndex - 1); }
+
+  function setFsImmersive(value) {
+    fsImmersive = value;
+    fullscreenView.classList.toggle('fs-immersive', fsImmersive);
+  }
+
+  // Molette, pincement, glisser pour zoomer/déplacer librement + zones de
+  // navigation (gauche/droite) + swipe (toutes directions) + double-clic/tap
+  // au centre pour le mode plein écran immersif (sans icônes ni bordure).
+  function setupFsMediaGestures(el) {
+    let scale = 1, posX = 0, posY = 0;
+    let isPanning = false, dragMoved = false, dragStartX = 0, dragStartY = 0, startPosX = 0, startPosY = 0;
+    let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
+    let touchStartX = 0, touchStartY = 0, touchStartTime = 0, touchMoved = false;
+    let pinchStartDist = null, pinchStartScale = 1;
+
+    function apply() {
+      el.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+      el.style.cursor = scale > 1 ? 'grab' : 'default';
+    }
+
+    function clampScale(s) { return Math.min(Math.max(s, 1), 6); }
+
+    function zoomBy(factor) {
+      scale = clampScale(scale * factor);
+      if (scale <= 1.02) { scale = 1; posX = 0; posY = 0; }
+      apply();
+    }
+
+    function dist(t1, t2) {
+      const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function handleZoneTap(clientX, rect) {
+      const x = clientX - rect.left;
+      const third = rect.width / 3;
+      if (scale > 1) return; // en zoom, un tap ne navigue pas (on est en train de déplacer l'image)
+      if (x < third) fsPrev();
+      else if (x > third * 2) fsNext();
+      // zone centrale : rien en simple tap/clic
+    }
+
+    // Molette (PC) : zoom libre, sans recentrage forcé
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const factor = 1 - e.deltaY * 0.0015;
+      zoomBy(factor);
+    }, { passive: false });
+
+    // Glisser (souris ou doigt unique) pour déplacer l'image zoomée
+    el.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') return; // le tactile est géré par touchstart/move/end ci-dessous
+      if (scale <= 1) return;
+      isPanning = true;
+      dragStartX = e.clientX - posX;
+      dragStartY = e.clientY - posY;
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') return;
+      if (!isPanning) return;
+      posX = e.clientX - dragStartX;
+      posY = e.clientY - dragStartY;
+      apply();
+    });
+    el.addEventListener('pointerup', () => { isPanning = false; });
+    el.addEventListener('pointercancel', () => { isPanning = false; });
+
+    // Double-clic (PC) au centre = mode immersif (sans icônes/bordure)
+    el.addEventListener('click', (e) => {
+      const rect = el.getBoundingClientRect();
+      const now = Date.now();
+      const isDouble = (now - lastTapTime < 320) && Math.abs(e.clientX - lastTapX) < 40 && Math.abs(e.clientY - lastTapY) < 40;
+      lastTapTime = isDouble ? 0 : now;
+      lastTapX = e.clientX;
+      lastTapY = e.clientY;
+
+      if (isDouble) {
+        const x = e.clientX - rect.left;
+        const third = rect.width / 3;
+        if (x >= third && x <= third * 2) setFsImmersive(!fsImmersive);
+        return;
+      }
+      handleZoneTap(e.clientX, rect);
+    });
+
+    // Tactile : pincement libre à deux doigts, glisser pour déplacer si zoomé,
+    // swipe (haut/bas/gauche/droite) pour naviguer, tap gauche/droite pour naviguer,
+    // double-tap au centre pour le mode immersif.
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        pinchStartDist = dist(e.touches[0], e.touches[1]);
+        pinchStartScale = scale;
+      } else if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+        touchMoved = false;
+        if (scale > 1) {
+          isPanning = true;
+          startPosX = posX;
+          startPosY = posY;
+        }
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && pinchStartDist) {
+        e.preventDefault();
+        const d = dist(e.touches[0], e.touches[1]);
+        scale = clampScale(pinchStartScale * (d / pinchStartDist));
+        apply();
+      } else if (e.touches.length === 1) {
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) touchMoved = true;
+        if (scale > 1 && isPanning) {
+          e.preventDefault();
+          posX = startPosX + dx;
+          posY = startPosY + dy;
+          apply();
+        }
+      }
+    }, { passive: false });
+
+    el.addEventListener('touchend', (e) => {
+      isPanning = false;
+      if (e.touches.length > 0) { pinchStartDist = null; return; }
+      pinchStartDist = null;
+      if (scale > 1) { pinchStartDist = null; return; } // priorité au zoom/déplacement en cours
+
+      const dx = touchStartX - (e.changedTouches[0]?.clientX ?? touchStartX);
+      const dy = touchStartY - (e.changedTouches[0]?.clientY ?? touchStartY);
+      const elapsed = Date.now() - touchStartTime;
+      const rect = el.getBoundingClientRect();
+
+      if (touchMoved && elapsed < 600) {
+        // Swipe : gauche/droite/haut/bas -> navigation, sans icône ni texte
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 40) fsNext();
+          else if (dx < -40) fsPrev();
+        } else {
+          if (dy > 40) fsNext();
+          else if (dy < -40) fsPrev();
+        }
+        return;
+      }
+
+      if (!touchMoved) {
+        // Tap simple ou double-tap
+        const now = Date.now();
+        const tapX = e.changedTouches[0]?.clientX ?? 0;
+        const tapY = e.changedTouches[0]?.clientY ?? 0;
+        const isDouble = (now - lastTapTime < 320) && Math.abs(tapX - lastTapX) < 40 && Math.abs(tapY - lastTapY) < 40;
+        lastTapTime = isDouble ? 0 : now;
+        lastTapX = tapX;
+        lastTapY = tapY;
+
+        if (isDouble) {
+          const x = tapX - rect.left;
+          const third = rect.width / 3;
+          if (x >= third && x <= third * 2) setFsImmersive(!fsImmersive);
+          return;
+        }
+        handleZoneTap(tapX, rect);
+      }
+    });
+
+    apply();
+  }
+
   function openFullscreen(media, type) {
     currentFullscreenMedia = media;
+    setFsImmersive(false);
     fsContainer.innerHTML = '';
     
+    let mediaEl;
     if (type === 'video' || media.mediaType === 'video') {
-      const video = document.createElement('video');
-      video.src = media.url || '';
-      video.controls = true;
-      video.autoplay = false;
-      video.playsInline = true;
-      video.className = 'fs-media-video';
-      video.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
-      fsContainer.appendChild(video);
-      fullscreenInfo.textContent = media.fileName || 'Vidéo';
+      mediaEl = document.createElement('video');
+      mediaEl.src = media.url || '';
+      mediaEl.controls = true;
+      mediaEl.autoplay = false;
+      mediaEl.playsInline = true;
+      mediaEl.className = 'fs-media-video';
+      fsContainer.appendChild(mediaEl);
     } else {
-      const img = document.createElement('img');
-      img.src = media.url || '';
-      img.alt = media.fileName || 'Photo';
-      img.className = 'fs-media';
-      img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
-      fsContainer.appendChild(img);
-      fullscreenInfo.textContent = media.fileName || 'Photo';
+      mediaEl = document.createElement('img');
+      mediaEl.src = media.url || '';
+      mediaEl.alt = media.fileName || 'Photo';
+      mediaEl.className = 'fs-media';
+      fsContainer.appendChild(mediaEl);
     }
+    setupFsMediaGestures(mediaEl);
+    fullscreenInfo.textContent = buildFullscreenInfoText(media);
     
     // Mettre à jour le favori
     const favIcon = fsFavorite.querySelector('i');
@@ -2271,13 +2792,31 @@ async function addSelectedPhotosToAlbum() {
       favIcon.className = 'far fa-star';
       favIcon.style.color = 'white';
     }
+
+    // Mettre à jour l'icône archive/désarchive selon l'état réel du média
+    const archIcon = fsArchiveIcon();
+    if (archIcon) {
+      if (media.isArchived) {
+        archIcon.className = 'fas fa-box-open';
+        archIcon.parentElement.title = 'Désarchiver';
+      } else {
+        archIcon.className = 'fas fa-archive';
+        archIcon.parentElement.title = 'Archiver';
+      }
+    }
     
     fullscreenView.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
+
+  function fsArchiveIcon() {
+    const btn = document.getElementById('fsArchive');
+    return btn ? btn.querySelector('i') : null;
+  }
   
   function closeFullscreen() {
     fullscreenView.classList.remove('active');
+    setFsImmersive(false);
     document.body.style.overflow = 'auto';
     // Arrêter la vidéo
     const video = fsContainer.querySelector('video');
@@ -2322,13 +2861,18 @@ fsDelete.addEventListener('click', async () => {
     await deleteToTrash(currentFullscreenMedia.id);
     closeFullscreen();
 });
-    // Archive en plein écran
+    // Archive / désarchive en plein écran
   const fsArchive = document.getElementById('fsArchive');
   if (fsArchive) {
       fsArchive.addEventListener('click', async () => {
           if (!currentFullscreenMedia || !currentFullscreenMedia.id) return;
-          if (!confirm(`Archiver "${currentFullscreenMedia.fileName || 'ce fichier'}" ?`)) return;
-          await archiveMedia(currentFullscreenMedia.id);
+          if (currentFullscreenMedia.isArchived) {
+              if (!confirm(`Désarchiver "${currentFullscreenMedia.fileName || 'ce fichier'}" ?`)) return;
+              await unarchiveMedia(currentFullscreenMedia.id);
+          } else {
+              if (!confirm(`Archiver "${currentFullscreenMedia.fileName || 'ce fichier'}" ?`)) return;
+              await archiveMedia(currentFullscreenMedia.id);
+          }
           closeFullscreen();
       });
   }
@@ -2341,10 +2885,23 @@ fsDelete.addEventListener('click', async () => {
           openAlbumModal(currentFullscreenMedia);
       });
   }
+
+  // Étiqueter une personne en plein écran
+  const fsTagPerson = document.getElementById('fsTagPerson');
+  if (fsTagPerson) {
+      fsTagPerson.addEventListener('click', tagPersonOnMedia);
+  }
   // Fermer avec Échap
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       closeFullscreen();
+    }
+    if (fullscreenView.classList.contains('active')) {
+      if (e.key === 'ArrowLeft') {
+        fsPrev();
+      } else if (e.key === 'ArrowRight') {
+        fsNext();
+      }
     }
   });
 
@@ -2470,10 +3027,13 @@ auth.onAuthStateChanged(async (user) => {
     currentUser = user;
     authScreen.classList.add('hidden');
     userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'A';
-    userName.textContent = `AHMED SAID AIDARA ❤️‍🩹💘 IDA MARIE JOSÉ MONTEIRO`;
+    userName.textContent = user.displayName || user.email || 'Mon compte';
     await loadMedia();
     await loadAlbumsFromFirestore(); // ← CHARGER LES ALBUMS
     renderAlbumsScroll();
+    await loadPersonnes();
+    await loadLieux();
+    await loadDocuments();
     activateTab('photos');
   } else {
     currentUser = null;
@@ -2495,151 +3055,331 @@ auth.onAuthStateChanged(async (user) => {
   console.log('📸 GALERIE IDA - Coffre-Fort Photos prêt !');
   
   // ============================================================
-// 17. OUVERTURE DES PAGES DÉTAILLÉES (Albums, Personnes, Lieux, Documents)
-// ============================================================
-// ============================================================
-// 17. OUVERTURE DES PAGES DÉTAILLÉES (Albums, Personnes, Lieux, Documents)
+// 17. PAGES DÉTAILLÉES DYNAMIQUES (Albums, Personnes, Lieux, Documents)
+// Tout est calculé à partir des médias RÉELS du compte connecté :
+// plus aucune donnée de démonstration figée.
 // ============================================================
 
-// Fonction pour ouvrir une page détaillée
-function openDetailPage(title, items, type) {
-    // Cacher la vue collections
+// Affiche une grille de médias réels (photos/vidéos) en tant que
+// "collection" auto-générée (personne, lieu, captures d'écran, etc.)
+function openMediaCollection(title, mediaArray) {
+    currentAlbum = null;
+    isDynamicCollection = true;
+
+    const detailView = document.getElementById('detailView');
+    if (detailView) {
+        detailView.style.display = 'none';
+        detailView.classList.remove('active');
+    }
+
     collectionsView.classList.add('hidden');
     photosView.classList.remove('active');
-    
-    // Créer ou afficher la vue détail
-    let detailView = document.getElementById('detailView');
-    if (!detailView) {
-        detailView = document.createElement('div');
-        detailView.id = 'detailView';
-        detailView.style.cssText = `
-            display: none;
-            flex-direction: column;
-            padding-top: 4px;
-            position: relative;
-        `;
-        document.getElementById('contentArea').appendChild(detailView);
-    }
-    
-    detailView.style.display = 'flex';
-    detailView.classList.add('active');
-    
-    // Construire les cartes selon le type
-    let cardsHtml = '';
-    
-    if (type === 'albums') {
-        // Cartes albums avec images
-       const albumImages = {
-    'Tabaski 2026': '',
-    'Notre Gallerie...': '',
-    'Créer un album': ''
-};
-        
-        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px;">`;
-        items.forEach(item => {
-            const imgSrc = albumImages[item] || '';
-            if (item === 'Créer un album') {
-                cardsHtml += `
-                    <div style="background:white;border:1.5px dashed #dadce0;border-radius:18px;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1a73e8;font-weight:500;font-size:13px;cursor:pointer;transition:all 0.15s;" onclick="openAlbumDetail('${item}')">
-                        <i class="fas fa-folder-plus" style="font-size:28px;margin-bottom:4px;"></i>
-                        <span>${item}</span>
-                    </div>
-                `;
-            } else {
-                cardsHtml += `
-                    <div style="background:#f1f3f4;border-radius:18px;overflow:hidden;position:relative;height:140px;cursor:pointer;transition:transform 0.15s;" onclick="openAlbumDetail('${item}')"
+    albumView.classList.add('active');
 
- onmouseenter="this.style.transform='scale(0.97)'" onmouseleave="this.style.transform='scale(1)'">
-                        <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${item}" />
-                        <span style="position:absolute;bottom:10px;left:10px;color:white;font-weight:600;font-size:14px;text-shadow:0 1px 8px rgba(0,0,0,0.6);background:rgba(0,0,0,0.25);padding:3px 12px 3px 8px;border-radius:20px;backdrop-filter:blur(2px);">${item}</span>
-                    </div>
-                `;
-            }
-        });
-        cardsHtml += `</div>`;
-        
-    } else if (type === 'personnes') {
-        // Cartes personnes avec avatars
-        const personneImages = {
-    'Ida': '',
-    'Aidara': ''
-    
-};
-        
-        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:4px;">`;
-        items.forEach(item => {
-            const imgSrc = personneImages[item] || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face';
-            cardsHtml += `
-                <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;" onclick="openAlbumDetail('${item}')">
-                    <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                        <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${item}" />
-                    </div>
-                    <span style="font-size:12px;font-weight:500;margin-top:6px;color:#202124;">${item}</span>
-                </div>
-            `;
-        });
-        cardsHtml += `</div>`;
-        
-    } else if (type === 'lieux') {
-        // Cartes lieux avec images
-        const lieuxImages = {
-            'Votre carte': 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=200&h=150&fit=crop&crop=center',
-            'Dakar': 'https://images.unsplash.com/photo-1546189087-ec7d61a7a41a?w=200&h=150&fit=crop&crop=center',
-            'Paris': 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=200&h=150&fit=crop&crop=center'
-        };
-        
-        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px;">`;
-        items.forEach(item => {
-            const imgSrc = lieuxImages[item] || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=150&fit=crop&crop=center';
-            cardsHtml += `
-                <div style="background:#f1f3f4;border-radius:18px;overflow:hidden;position:relative;height:120px;cursor:pointer;transition:transform 0.15s;" onclick="openAlbumDetail('${item}')" onmouseenter="this.style.transform='scale(0.97)'" onmouseleave="this.style.transform='scale(1)'">
-                    <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${item}" />
-                    <span style="position:absolute;bottom:10px;left:10px;color:white;font-weight:600;font-size:14px;text-shadow:0 1px 8px rgba(0,0,0,0.6);background:rgba(0,0,0,0.25);padding:3px 12px 3px 8px;border-radius:20px;backdrop-filter:blur(2px);">${item}</span>
-                </div>
-            `;
-        });
-        cardsHtml += `</div>`;
-        
-    } else if (type === 'documents') {
-        // Cartes documents avec icônes
-        const docIcons = {
-            'Identité': 'fa-id-card',
-            'Infos sur des événements': 'fa-ticket',
-            'Livres et magazines': 'fa-book',
-            'Notes': 'fa-pen'
-        };
-        
-        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px;">`;
-        items.forEach(item => {
-            const icon = docIcons[item] || 'fa-file';
-            cardsHtml += `
-                <div style="background:#f2f4f7;border-radius:16px;padding:20px 4px 14px 4px;text-align:center;font-size:11px;font-weight:500;color:#202124;cursor:pointer;transition:all 0.15s;" onclick="openAlbumDetail('${item}')" onmouseenter="this.style.background='#e5e8ec'" onmouseleave="this.style.background='#f2f4f7'">
-                    <i class="fas ${icon}" style="font-size:28px;display:block;margin-bottom:6px;color:#1a73e8;"></i>
-                    <span>${item}</span>
-                </div>
-            `;
-        });
-        cardsHtml += `</div>`;
+    albumTitle.textContent = title;
+    const addBtn = document.getElementById('albumAddBtn');
+    if (addBtn) addBtn.style.display = 'none';
+    const optBtn = document.getElementById('albumOptionsBtn');
+    if (optBtn) optBtn.style.display = 'none';
+
+    albumGrid.innerHTML = '';
+
+    if (!mediaArray || mediaArray.length === 0) {
+        albumGrid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#5f6368;">
+                <i class="fas fa-folder-open" style="font-size:40px;display:block;margin-bottom:14px;opacity:0.3;"></i>
+                <p style="font-size:14px;">Rien ici pour le moment</p>
+            </div>
+        `;
+        return;
     }
-    
-    // Construire la page
-    detailView.innerHTML = `
-        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
-            <span class="back-btn" onclick="closeDetailPage()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;">
-                <i class="fas fa-arrow-left"></i>
-            </span>
-            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">${title}</h2>
-        </div>
-        <div id="detailContent" style="display:flex;flex-direction:column;gap:12px;padding-bottom:20px;">
-            ${cardsHtml}
-        </div>
-    `;
-    
-    // Cacher les autres vues
-    albumView.classList.remove('active');
+
+    mediaArray.forEach(media => {
+        const cell = media.mediaType === 'document' ? createDocumentCell(media) : createMediaCell(media, mediaArray);
+        albumGrid.appendChild(cell);
+    });
 }
 
-// Fonction pour fermer la page détaillée
+// Rendu d'une "cellule" document (pas de miniature image : icône + nom de fichier)
+function createDocumentCell(media) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f2f4f7;gap:6px;padding:10px 6px;text-align:center;';
+    const ext = (media.fileName || '').split('.').pop().toUpperCase();
+    let icon = 'fa-file';
+    if (/PDF/i.test(ext)) icon = 'fa-file-pdf';
+    else if (/DOCX?/i.test(ext)) icon = 'fa-file-word';
+    else if (/TXT/i.test(ext)) icon = 'fa-file-lines';
+    cell.innerHTML = `
+        <i class="fas ${icon}" style="font-size:30px;color:#1a73e8;"></i>
+        <span style="font-size:9px;color:#5f6368;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${media.fileName || 'Document'}</span>
+    `;
+    cell.onclick = () => {
+        if (media.url) window.open(media.url, '_blank');
+        else alert("Ce document n'est plus accessible.");
+    };
+    return cell;
+}
+
+// ------------------------------------------------------------
+// PERSONNES : basées sur l'étiquetage réel des photos (champ `people`)
+// ------------------------------------------------------------
+
+function getDistinctPeopleNames() {
+    const set = new Set();
+    allMedia.forEach(m => { if (Array.isArray(m.people)) m.people.forEach(p => p && set.add(p)); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+async function loadPersonnes() {
+    const container = document.getElementById('personnesScroll');
+    if (!container) return;
+    const names = getDistinctPeopleNames();
+    container.innerHTML = '';
+
+    if (names.length === 0) {
+        container.innerHTML = `<div style="font-size:12px;color:#5f6368;padding:6px 2px;line-height:1.5;">Étiquetez une personne depuis une photo (icône <i class="fas fa-user-tag"></i> en plein écran) pour la voir apparaître ici.</div>`;
+        return;
+    }
+
+    names.forEach(name => {
+        const media = allMedia.find(m => Array.isArray(m.people) && m.people.includes(name) && m.url);
+        const item = document.createElement('div');
+        item.className = 'people-item';
+        item.onclick = () => openPersonAlbum(name);
+        const avatarInner = media
+            ? `<img src="${media.url}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#aecbfa;font-size:26px;color:#1a3a6b;">👤</div>`;
+        item.innerHTML = `
+            <div class="circle">${avatarInner}</div>
+            <span class="pname">${name}</span>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function openPersonAlbum(name) {
+    const items = allMedia.filter(m => Array.isArray(m.people) && m.people.includes(name));
+    openMediaCollection(name, items);
+}
+
+function openPersonnesPage() {
+    const names = getDistinctPeopleNames();
+    const detailView = document.getElementById('detailView');
+    if (!detailView) {
+        const dv = document.createElement('div');
+        dv.id = 'detailView';
+        dv.style.cssText = 'display:none;flex-direction:column;padding-top:4px;position:relative;';
+        document.getElementById('contentArea').appendChild(dv);
+    }
+    const dv = document.getElementById('detailView');
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    albumView.classList.remove('active');
+    dv.style.display = 'flex';
+    dv.classList.add('active');
+
+    let cardsHtml;
+    if (names.length === 0) {
+        cardsHtml = `<div style="text-align:center;padding:40px 20px;color:#5f6368;font-size:13px;">Aucune personne étiquetée pour le moment.<br>Ouvrez une photo en plein écran et utilisez <i class="fas fa-user-tag"></i> pour en étiqueter une.</div>`;
+    } else {
+        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:4px;">`;
+        names.forEach(name => {
+            const media = allMedia.find(m => Array.isArray(m.people) && m.people.includes(name) && m.url);
+            const count = allMedia.filter(m => Array.isArray(m.people) && m.people.includes(name)).length;
+            const imgSrc = media ? media.url : '';
+            cardsHtml += `
+                <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;" onclick="openPersonAlbum('${name.replace(/'/g, "\\'")}')">
+                    <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.04);background:#aecbfa;display:flex;align-items:center;justify-content:center;font-size:26px;color:#1a3a6b;">
+                        ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${name}" />` : '👤'}
+                    </div>
+                    <span style="font-size:12px;font-weight:500;margin-top:6px;color:#202124;">${name}</span>
+                    <span style="font-size:10px;color:#5f6368;">${count} élément(s)</span>
+                </div>
+            `;
+        });
+        cardsHtml += `</div>`;
+    }
+
+    dv.innerHTML = `
+        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
+            <span class="back-btn" onclick="closeDetailPage()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;"><i class="fas fa-arrow-left"></i></span>
+            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">Personnes</h2>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:20px;">${cardsHtml}</div>
+    `;
+}
+
+// ------------------------------------------------------------
+// LIEUX : basés sur la géolocalisation EXIF réelle des photos
+// ------------------------------------------------------------
+
+function getPlacesSummary() {
+    const places = {};
+    allMedia.forEach(m => {
+        if (m.location && (m.location.city || m.location.country)) {
+            const key = [m.location.city, m.location.country].filter(Boolean).join(', ');
+            if (!places[key]) places[key] = { count: 0, sample: null };
+            places[key].count++;
+            if (!places[key].sample && m.url) places[key].sample = m.url;
+        }
+    });
+    return Object.entries(places)
+        .map(([key, v]) => ({ key, count: v.count, sample: v.sample }))
+        .sort((a, b) => b.count - a.count);
+}
+
+async function loadLieux() {
+    const container = document.getElementById('lieuxContainer');
+    if (!container) return;
+    const places = getPlacesSummary();
+    container.innerHTML = '';
+
+    const mapCard = document.createElement('div');
+    mapCard.className = 'lieux-map';
+    mapCard.textContent = places.length ? `${places.length} lieu(x) détecté(s)` : 'Votre carte';
+    mapCard.onclick = () => openLieuxPage();
+    container.appendChild(mapCard);
+
+    const minisWrap = document.createElement('div');
+    minisWrap.className = 'lieux-minis';
+    if (places.length === 0) {
+        minisWrap.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;color:#5f6368;text-align:center;padding:4px;">Aucun lieu détecté pour l'instant</div>`;
+    } else {
+        places.slice(0, 2).forEach(place => {
+            const mini = document.createElement('div');
+            mini.className = 'lieux-mini';
+            if (place.sample) mini.style.backgroundImage = `url('${place.sample}')`;
+            mini.onclick = () => openPlaceAlbum(place.key);
+            mini.innerHTML = `<span>${place.key}</span>`;
+            minisWrap.appendChild(mini);
+        });
+    }
+    container.appendChild(minisWrap);
+}
+
+function openPlaceAlbum(placeKey) {
+    const items = allMedia.filter(m => m.location && [m.location.city, m.location.country].filter(Boolean).join(', ') === placeKey);
+    openMediaCollection(placeKey, items);
+}
+
+function openLieuxPage() {
+    const places = getPlacesSummary();
+    let dv = document.getElementById('detailView');
+    if (!dv) {
+        dv = document.createElement('div');
+        dv.id = 'detailView';
+        dv.style.cssText = 'display:none;flex-direction:column;padding-top:4px;position:relative;';
+        document.getElementById('contentArea').appendChild(dv);
+    }
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    albumView.classList.remove('active');
+    dv.style.display = 'flex';
+    dv.classList.add('active');
+
+    let cardsHtml;
+    if (places.length === 0) {
+        cardsHtml = `<div style="text-align:center;padding:40px 20px;color:#5f6368;font-size:13px;">Aucun lieu détecté pour l'instant.<br>Les photos prises avec la localisation activée apparaîtront ici automatiquement.</div>`;
+    } else {
+        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px;">`;
+        places.forEach(place => {
+            cardsHtml += `
+                <div style="background:#f1f3f4;border-radius:18px;overflow:hidden;position:relative;height:120px;cursor:pointer;transition:transform 0.15s;background-size:cover;background-position:center;${place.sample ? `background-image:url('${place.sample}');` : ''}" onclick="openPlaceAlbum('${place.key.replace(/'/g, "\\'")}')" onmouseenter="this.style.transform='scale(0.97)'" onmouseleave="this.style.transform='scale(1)'">
+                    <span style="position:absolute;bottom:10px;left:10px;color:white;font-weight:600;font-size:14px;text-shadow:0 1px 8px rgba(0,0,0,0.6);background:rgba(0,0,0,0.25);padding:3px 12px 3px 8px;border-radius:20px;backdrop-filter:blur(2px);">${place.key} (${place.count})</span>
+                </div>
+            `;
+        });
+        cardsHtml += `</div>`;
+    }
+
+    dv.innerHTML = `
+        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
+            <span class="back-btn" onclick="closeDetailPage()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;"><i class="fas fa-arrow-left"></i></span>
+            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">Lieux</h2>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:20px;">${cardsHtml}</div>
+    `;
+}
+
+// ------------------------------------------------------------
+// DOCUMENTS : classés par type au moment de l'import
+// ------------------------------------------------------------
+
+const DOC_CATEGORIES = ['Identité', 'Événements', 'Livres', 'Notes'];
+
+function loadDocuments() {
+    const counts = {};
+    DOC_CATEGORIES.forEach(c => counts[c] = 0);
+    allMedia.forEach(m => {
+        if (m.mediaType === 'document') {
+            const cat = DOC_CATEGORIES.includes(m.docCategory) ? m.docCategory : null;
+            if (cat) counts[cat]++;
+        }
+    });
+    DOC_CATEGORIES.forEach(cat => {
+        const el = document.getElementById(`docCount-${cat}`);
+        if (el) el.textContent = counts[cat] > 0 ? `(${counts[cat]})` : '';
+    });
+}
+
+function openDocCategory(category) {
+    const items = allMedia.filter(m => m.mediaType === 'document' && m.docCategory === category);
+    openMediaCollection(category, items);
+}
+
+function openDocumentsPage() {
+    const items = allMedia.filter(m => m.mediaType === 'document');
+    openMediaCollection('Documents', items);
+}
+
+// ------------------------------------------------------------
+// ALBUMS (page détaillée = vrais albums Firestore du compte)
+// ------------------------------------------------------------
+
+function openAlbumsPage() {
+    const names = Object.keys(albumData);
+    let dv = document.getElementById('detailView');
+    if (!dv) {
+        dv = document.createElement('div');
+        dv.id = 'detailView';
+        dv.style.cssText = 'display:none;flex-direction:column;padding-top:4px;position:relative;';
+        document.getElementById('contentArea').appendChild(dv);
+    }
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    albumView.classList.remove('active');
+    dv.style.display = 'flex';
+    dv.classList.add('active');
+
+    let cardsHtml = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px;">`;
+    names.forEach(name => {
+        const images = albumData[name].images || [];
+        const imgSrc = images[0] || '';
+        cardsHtml += `
+            <div style="background:#f1f3f4;border-radius:18px;overflow:hidden;position:relative;height:140px;cursor:pointer;transition:transform 0.15s;" onclick="openAlbumDetail('${name.replace(/'/g, "\\'")}')" onmouseenter="this.style.transform='scale(0.97)'" onmouseleave="this.style.transform='scale(1)'">
+                ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${name}" />` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#1a73e8;"><i class="fas fa-folder" style="font-size:32px;"></i></div>`}
+                <span style="position:absolute;bottom:10px;left:10px;color:white;font-weight:600;font-size:14px;text-shadow:0 1px 8px rgba(0,0,0,0.6);background:rgba(0,0,0,0.25);padding:3px 12px 3px 8px;border-radius:20px;backdrop-filter:blur(2px);">${name}</span>
+            </div>
+        `;
+    });
+    cardsHtml += `
+        <div style="background:white;border:1.5px dashed #dadce0;border-radius:18px;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1a73e8;font-weight:500;font-size:13px;cursor:pointer;" onclick="createQuickAlbum()">
+            <i class="fas fa-folder-plus" style="font-size:28px;margin-bottom:4px;"></i>
+            <span>Créer un album</span>
+        </div>
+    `;
+    cardsHtml += `</div>`;
+
+    dv.innerHTML = `
+        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
+            <span class="back-btn" onclick="closeDetailPage()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;"><i class="fas fa-arrow-left"></i></span>
+            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">Albums</h2>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:20px;">${cardsHtml}</div>
+    `;
+}
+
 function closeDetailPage() {
     const detailView = document.getElementById('detailView');
     if (detailView) {
@@ -2650,117 +3390,130 @@ function closeDetailPage() {
     photosView.classList.remove('active');
 }
 
-// Fonction pour obtenir l'icône selon le type d'item
-function getIconForPageType(title, item) {
-    // Albums
-    if (title === 'Albums') return 'folder';
-    if (item.includes('Tabaski')) return 'mosque';
-    if (item.includes('Gallerie')) return 'images';
-    if (item.includes('Créer')) return 'plus-circle';
-    
-    // Personnes
-    if (title === 'Personnes') return 'user';
-    
-    // Lieux
-    if (title === 'Lieux') return 'map-pin';
-    if (item === 'Votre carte') return 'map';
-    if (item === 'Dakar') return 'location-dot';
-    if (item === 'Paris') return 'location-dot';
-    
-    // Documents
-    if (title === 'Documents') return 'file';
-    if (item === 'Identité') return 'id-card';
-    if (item.includes('événements')) return 'ticket';
-    if (item.includes('Livres')) return 'book';
-    if (item === 'Notes') return 'pen';
-    
-    return 'circle';
-}
-
-// ============================================================
-// 18. DONNÉES POUR LES PAGES DÉTAILLÉES
-// ============================================================
-
-// Données des albums
-const albumsList = [
-    { name: 'Tabaski 2026', icon: 'mosque' },
-    { name: 'Notre Gallerie...', icon: 'images' },
-    { name: 'Créer un album', icon: 'plus-circle' }
-];
-
-// Données des personnes
-const personnesList = ['Ida', 'Jean', 'Marie', 'Lucas'];
-
-// Données des lieux
-const lieuxList = ['Votre carte', 'Dakar', 'Paris'];
-
-// Données des documents
-const documentsList = ['Identité', 'Infos sur des événements', 'Livres et magazines', 'Notes'];
-
-// ============================================================
-// 19. FONCTIONS D'OUVERTURE SPÉCIFIQUES
-// ============================================================
-
-// ============================================================
-// 19. FONCTIONS D'OUVERTURE SPÉCIFIQUES
-// ============================================================
-
-function openAlbumsPage() {
-    openDetailPage('Albums', ['Tabaski 2026', 'Notre Gallerie...', 'Créer un album'], 'albums');
-}
-
-function openPersonnesPage() {
-    openDetailPage('Personnes', ['Ida', 'Jean', 'Marie', 'Lucas'], 'personnes');
-}
-
-function openLieuxPage() {
-    openDetailPage('Lieux', ['Votre carte', 'Dakar', 'Paris'], 'lieux');
-}
-
-function openDocumentsPage() {
-    openDetailPage('Documents', ['Identité', 'Infos sur des événements', 'Livres et magazines', 'Notes'], 'documents');
-}
-
-  // ============================================================
-// 20. OUVERTURE D'UN ALBUM DEPUIS LA PAGE DÉTAIL
-// ============================================================
-
 function openAlbumDetail(albumName) {
-    // Fermer la page détail
     const detailView = document.getElementById('detailView');
     if (detailView) {
         detailView.style.display = 'none';
         detailView.classList.remove('active');
     }
-    
-    // Ouvrir l'album comme avant
     openAlbum(albumName);
 }
-  
-// Fonction générique pour obtenir l'icône (utilisée dans openDetailPage)
-function getIconForItem(title, item) {
-    if (title === 'Albums') {
-        if (item.includes('Tabaski')) return 'mosque';
-        if (item.includes('Gallerie')) return 'images';
-        if (item.includes('Créer')) return 'plus-circle';
-        return 'folder';
-    }
-    if (title === 'Personnes') return 'user';
-    if (title === 'Lieux') {
-        if (item === 'Votre carte') return 'map';
-        if (item === 'Dakar' || item === 'Paris') return 'location-dot';
-        return 'map-pin';
-    }
-    if (title === 'Documents') {
-        if (item === 'Identité') return 'id-card';
-        if (item.includes('événements')) return 'ticket';
-        if (item.includes('Livres')) return 'book';
-        if (item === 'Notes') return 'pen';
-        return 'file';
-    }
-    return 'circle';
+
+// ------------------------------------------------------------
+// AUTRES COLLECTIONS AUTOMATIQUES : Captures d'écran, Moments,
+// Vidéos, Récemment ajoutés — tout calculé à partir des vrais médias.
+// ------------------------------------------------------------
+
+function openScreenshots() {
+    const items = allMedia.filter(m => m.isScreenshot && (m.mediaType === 'photo' || m.mediaType === 'video'));
+    openMediaCollection("Captures d'écran", items);
 }
-  // ============================================================
+
+function openVideosCollection() {
+    const items = allMedia.filter(m => m.mediaType === 'video');
+    openMediaCollection('Vidéos', items);
+}
+
+function openRecent() {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const items = allMedia.filter(m => {
+        if (m.mediaType === 'document') return false;
+        const d = getMediaDate(m);
+        return d.getTime() >= cutoff;
+    });
+    openMediaCollection('Récemment ajoutés (30 jours)', items);
+}
+
+function openMoments() {
+    const groups = {};
+    allMedia.forEach(m => {
+        if (m.mediaType === 'document') return;
+        const d = getMediaDate(m);
+        const key = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(m);
+    });
+    const monthKeys = Object.keys(groups);
+
+    let dv = document.getElementById('detailView');
+    if (!dv) {
+        dv = document.createElement('div');
+        dv.id = 'detailView';
+        dv.style.cssText = 'display:none;flex-direction:column;padding-top:4px;position:relative;';
+        document.getElementById('contentArea').appendChild(dv);
+    }
+    collectionsView.classList.add('hidden');
+    photosView.classList.remove('active');
+    albumView.classList.remove('active');
+    dv.style.display = 'flex';
+    dv.classList.add('active');
+
+    let cardsHtml;
+    if (monthKeys.length === 0) {
+        cardsHtml = `<div style="text-align:center;padding:40px 20px;color:#5f6368;font-size:13px;">Aucun souvenir pour le moment.</div>`;
+    } else {
+        cardsHtml = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px;">`;
+        monthKeys.forEach(key => {
+            const group = groups[key];
+            const sample = group.find(m => m.url)?.url || '';
+            cardsHtml += `
+                <div style="background:#f1f3f4;border-radius:18px;overflow:hidden;position:relative;height:120px;cursor:pointer;background-size:cover;background-position:center;${sample ? `background-image:url('${sample}');` : ''}" onclick="openMomentGroup('${key.replace(/'/g, "\\'")}')">
+                    <span style="position:absolute;bottom:10px;left:10px;color:white;font-weight:600;font-size:13px;text-shadow:0 1px 8px rgba(0,0,0,0.6);background:rgba(0,0,0,0.25);padding:3px 12px 3px 8px;border-radius:20px;backdrop-filter:blur(2px);text-transform:capitalize;">${key} (${group.length})</span>
+                </div>
+            `;
+        });
+        cardsHtml += `</div>`;
+    }
+
+    window.__momentsGroups = groups;
+
+    dv.innerHTML = `
+        <div class="album-header" style="position:sticky;top:0;background:white;z-index:10;padding:8px 0 16px 0;display:flex;align-items:center;gap:16px;">
+            <span class="back-btn" onclick="closeDetailPage()" style="font-size:24px;cursor:pointer;color:#1e1f22;padding:4px;"><i class="fas fa-arrow-left"></i></span>
+            <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">Moments</h2>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:20px;">${cardsHtml}</div>
+    `;
+}
+
+function openMomentGroup(key) {
+    const items = (window.__momentsGroups && window.__momentsGroups[key]) || [];
+    const detailView = document.getElementById('detailView');
+    if (detailView) {
+        detailView.style.display = 'none';
+        detailView.classList.remove('active');
+    }
+    openMediaCollection(key, items);
+}
+
+// ------------------------------------------------------------
+// ÉTIQUETAGE D'UNE PERSONNE DEPUIS LE PLEIN ÉCRAN
+// ------------------------------------------------------------
+
+async function tagPersonOnMedia() {
+    if (!currentFullscreenMedia || !currentFullscreenMedia.id) return;
+    const existing = getDistinctPeopleNames();
+    const hint = existing.length ? `\n\nPersonnes déjà étiquetées : ${existing.join(', ')}` : '';
+    const name = prompt(`Étiqueter une personne sur ce média :${hint}`);
+    if (!name || !name.trim()) return;
+    const cleanName = name.trim();
+    const media = currentFullscreenMedia;
+    const people = Array.isArray(media.people) ? [...media.people] : [];
+    if (people.includes(cleanName)) {
+        alert(`"${cleanName}" est déjà étiqueté(e) sur ce média.`);
+        return;
+    }
+    people.push(cleanName);
+    try {
+        await db.collection('media').doc(media.id).update({ people });
+        media.people = people;
+        loadPersonnes();
+        alert(`✅ "${cleanName}" a été étiqueté(e).`);
+    } catch (err) {
+        console.error('Erreur étiquetage personne:', err);
+        alert("Erreur lors de l'étiquetage.");
+    }
+}
 // 21. GESTION DE LA CORBEILLE
 // ============================================================
 
@@ -2851,9 +3604,6 @@ function openTrash() {
             </span>
             <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">🗑️ Corbeille</h2>
             <span style="font-size:14px;color:#5f6368;" id="trashCount">0 éléments</span>
-            <span class="add-photo" onclick="addFromCurrentView('trash')" style="font-size:24px;cursor:pointer;color:#1a73e8;padding:4px;">
-                <i class="fas fa-plus-circle"></i>
-            </span>
         </div>
         <div id="trashGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:4px;"></div>
         <div id="trashActions" style="display:none;position:sticky;bottom:0;background:white;padding:12px 0;gap:12px;margin-top:12px;border-top:1px solid #dadce0;">
@@ -2922,6 +3672,7 @@ function renderTrashGrid() {
         }
         
         const isVideo = media.mediaType === 'video' || (media.fileType && media.fileType.startsWith('video/'));
+        const isDoc = media.mediaType === 'document';
         
         if (isVideo) {
             const video = document.createElement('video');
@@ -2931,6 +3682,11 @@ function renderTrashGrid() {
             video.playsInline = true;
             video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
             cell.appendChild(video);
+        } else if (isDoc) {
+            cell.style.display = 'flex';
+            cell.style.alignItems = 'center';
+            cell.style.justifyContent = 'center';
+            cell.innerHTML = '<i class="fas fa-file" style="font-size:26px;color:#1a73e8;"></i>';
         } else {
             const img = document.createElement('img');
             img.src = media.url || '';
@@ -2939,6 +3695,7 @@ function renderTrashGrid() {
             img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
             cell.appendChild(img);
         }
+        
         
         // Clic pour sélectionner/déselectionner
         cell.addEventListener('click', (e) => {
@@ -3025,6 +3782,17 @@ async function deleteSelected() {
     
     for (const id of selectedCorbeille) {
         try {
+            const item = corbeilleItems.find(m => m.id === id);
+            if (item) {
+                if (item.r2Key) {
+                    try { await s3.deleteObject({ Bucket: R2_CONFIG.bucket, Key: item.r2Key }).promise(); }
+                    catch (e) { console.warn('Suppression stockage impossible:', e); }
+                }
+                if (item.thumbnailKey) {
+                    try { await s3.deleteObject({ Bucket: R2_CONFIG.bucket, Key: item.thumbnailKey }).promise(); }
+                    catch (e) { console.warn('Suppression miniature impossible:', e); }
+                }
+            }
             await db.collection('media').doc(id).delete();
         } catch (err) {
             console.error('Erreur suppression définitive:', err);
@@ -3070,9 +3838,6 @@ function openFavoris() {
             </span>
             <h2 style="font-size:20px;font-weight:600;color:#202124;flex:1;">⭐ Favoris</h2>
             <span style="font-size:14px;color:#5f6368;" id="favorisCount">0 éléments</span>
-            <span class="add-photo" onclick="addFromCurrentView('favoris')" style="font-size:24px;cursor:pointer;color:#1a73e8;padding:4px;">
-                <i class="fas fa-plus-circle"></i>
-            </span>
         </div>
         <div id="favorisGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:4px;"></div>
     `;
@@ -3202,7 +3967,7 @@ function renderFavorisGrid() {
         
         // Clic pour ouvrir en plein écran
         cell.addEventListener('click', () => {
-            openFullscreen(media, isVideo ? 'video' : 'image');
+            openFullscreenFromList(favorisItems, favorisItems.indexOf(media));
         });
         
         grid.appendChild(cell);
@@ -3271,7 +4036,9 @@ async function addToAlbum(albumName) {
     
     // Utiliser l'URL du média
     const imageUrl = currentModalMedia.url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=center';
-    albumData[albumName].images.push(imageUrl);
+    if (!albumData[albumName].images.includes(imageUrl)) {
+        albumData[albumName].images.push(imageUrl);
+    }
     
     // Mettre à jour Firestore avec le nom de l'album
     if (currentModalMedia.id) {
@@ -3283,6 +4050,18 @@ async function addToAlbum(albumName) {
             console.error('Erreur mise à jour album:', err);
         }
     }
+
+    // Sauvegarder la liste d'images dans le document de l'album
+    const albumId = albumData[albumName].id;
+    if (albumId) {
+        try {
+            await db.collection('albums').doc(albumId).update({
+                images: albumData[albumName].images
+            });
+        } catch (err) {
+            console.error('Erreur sauvegarde album:', err);
+        }
+    }
     
     // Fermer la modale
     closeAlbumModal();
@@ -3292,6 +4071,7 @@ async function addToAlbum(albumName) {
         currentAlbumImages = albumData[albumName].images;
         renderAlbumGrid();
     }
+    renderAlbumsScroll();
     
     alert(`✅ Ajouté à l'album "${albumName}"`);
 }
@@ -3377,6 +4157,24 @@ async function archiveMedia(mediaId) {
     } catch (err) {
         console.error('Erreur archive:', err);
         alert('Erreur lors de l\'archivage');
+    }
+}
+
+async function unarchiveMedia(mediaId) {
+    if (!mediaId) return;
+    try {
+        await db.collection('media').doc(mediaId).update({
+            isArchived: false,
+            archivedAt: null
+        });
+        alert('📤 Fichier désarchivé');
+        loadMedia();
+        if (document.getElementById('archiveView') && document.getElementById('archiveView').style.display === 'flex') {
+            loadArchive();
+        }
+    } catch (err) {
+        console.error('Erreur désarchivage:', err);
+        alert('Erreur lors du désarchivage');
     }
 }
   
@@ -3516,7 +4314,7 @@ function renderArchiveGrid() {
         cell.appendChild(badge);
         
         cell.addEventListener('click', () => {
-            openFullscreen(media, isVideo ? 'video' : 'image');
+            openFullscreenFromList(archiveItems, archiveItems.indexOf(media));
         });
         
         grid.appendChild(cell);
@@ -3570,6 +4368,92 @@ function renderAlbumsScroll() {
     createCard.onclick = createQuickAlbum;
     container.appendChild(createCard);
 }
+  // ============================================================
+  // GESTION D'ALBUM : renommer / supprimer
+  // ============================================================
+
+  function openAlbumOptionsMenu() {
+    if (!currentAlbum) return;
+    document.getElementById('albumOptionsTitle').textContent = currentAlbum;
+    document.getElementById('albumOptionsModal').classList.add('active');
+  }
+
+  function closeAlbumOptionsMenu() {
+    document.getElementById('albumOptionsModal').classList.remove('active');
+  }
+
+  async function renameCurrentAlbum() {
+    if (!currentAlbum || !albumData[currentAlbum]) return;
+    const oldName = currentAlbum;
+    const albumId = albumData[oldName].id;
+    const newName = prompt('Nouveau nom de l\'album :', oldName);
+    closeAlbumOptionsMenu();
+    if (!newName || !newName.trim() || newName.trim() === oldName) return;
+    const cleanName = newName.trim();
+
+    if (albumData[cleanName]) {
+      alert('Un album porte déjà ce nom.');
+      return;
+    }
+
+    try {
+      if (albumId) {
+        await db.collection('albums').doc(albumId).update({ name: cleanName });
+      }
+      // Mettre à jour les médias qui référencent cet album
+      const snapshot = await db.collection('media')
+        .where('userId', '==', currentUser.uid)
+        .where('album', '==', oldName)
+        .get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.update(doc.ref, { album: cleanName }));
+      if (snapshot.docs.length > 0) await batch.commit();
+
+      albumData[cleanName] = albumData[oldName];
+      delete albumData[oldName];
+
+      currentAlbum = cleanName;
+      albumTitle.textContent = cleanName;
+      renderAlbumsScroll();
+      alert(`✅ Album renommé en "${cleanName}"`);
+    } catch (err) {
+      console.error('Erreur renommage album:', err);
+      alert("Erreur lors du renommage de l'album");
+    }
+  }
+
+  async function deleteCurrentAlbum() {
+    if (!currentAlbum || !albumData[currentAlbum]) return;
+    const albumName = currentAlbum;
+    const albumId = albumData[albumName].id;
+
+    if (!confirm(`Supprimer l'album "${albumName}" ? Les photos elles-mêmes ne seront pas supprimées.`)) return;
+    closeAlbumOptionsMenu();
+
+    try {
+      if (albumId) {
+        await db.collection('albums').doc(albumId).delete();
+      }
+      // Détacher les médias de cet album (sans les supprimer)
+      const snapshot = await db.collection('media')
+        .where('userId', '==', currentUser.uid)
+        .where('album', '==', albumName)
+        .get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.update(doc.ref, { album: '' }));
+      if (snapshot.docs.length > 0) await batch.commit();
+
+      delete albumData[albumName];
+      currentAlbum = null;
+      closeAlbum();
+      renderAlbumsScroll();
+      alert(`✅ Album "${albumName}" supprimé`);
+    } catch (err) {
+      console.error('Erreur suppression album:', err);
+      alert("Erreur lors de la suppression de l'album");
+    }
+  }
+
   // Fonction pour créer un album  rapidement
 // Fonction pour créer un album rapidement
 // Fonction pour créer un album rapidement
@@ -3644,4 +4528,4 @@ async function loadAlbumsFromFirestore() {
 </script>
 
 </body>
-</html> 
+</html>  
