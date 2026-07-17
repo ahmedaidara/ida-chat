@@ -2,172 +2,305 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Appel Vidéo - Firebase</title>
-    <!-- Firebase -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp WebRTC Clone</title>
+    
+    <!-- SDK Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --wa-teal: #00a884;
+            --wa-bg: #eae6df;
+            --wa-dark: #111b21;
+            --wa-gray: #667781;
+            --danger: #ea0038;
+            --success: #1fa855;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: #0a0a0a;
-            color: #fff;
+            background-color: var(--wa-bg);
+            color: var(--wa-dark);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* En-tête de l'application */
+        header {
+            background-color: var(--wa-teal);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        header h1 { font-size: 1.2rem; }
+        .status-badge {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Zone de connexion */
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background-color: var(--wa-teal); color: white; width: 100%; }
+        .btn-primary:hover { background-color: #008f70; }
+
+        /* Conteneur principal */
+        main {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Liste des utilisateurs */
+        #users-sidebar {
+            width: 100%;
+            max-width: 320px;
+            background: white;
+            border-right: 1px solid #e9edef;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-title {
+            padding: 15px;
+            font-size: 1rem;
+            color: var(--wa-teal);
+            border-bottom: 1px solid #e9edef;
+        }
+
+        .users-list {
+            list-style: none;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f0f2f5;
+            cursor: pointer;
+        }
+        .user-item:hover { background-color: #f0f2f5; }
+        
+        .btn-call {
+            background-color: var(--success);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        /* Espace Appel Vidéo */
+        #video-container {
+            flex: 1;
+            position: relative;
+            background: #0b141a;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 10px;
         }
-        .container {
-            max-width: 500px;
+
+        #remote-video {
             width: 100%;
-            padding: 20px;
-            background: #1a1a1a;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        }
-        h1 { text-align: center; margin-bottom: 15px; font-size: 1.3rem; color: #00cc44; }
-        .video-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-        video {
-            width: 100%;
-            border-radius: 12px;
-            background: #000;
-            border: 2px solid #333;
-            aspect-ratio: 16/9;
+            height: 100%;
             object-fit: cover;
+            background: #111b21;
         }
-        #remote-video { border-color: #00cc44; }
-        .controls {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin: 10px 0;
-        }
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 25px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 80px;
-        }
-        button:hover { transform: scale(1.05); }
-        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-        .btn-start { background: #00cc44; color: #000; }
-        .btn-call { background: #0095f6; color: #fff; }
-        .btn-hangup { background: #ff3b30; color: #fff; }
-        .btn-mic { background: #444; color: #fff; flex: 0.5; min-width: 50px; }
-        .btn-mic.muted { background: #ff3b30; }
-        .status {
-            text-align: center;
-            padding: 10px;
-            border-radius: 10px;
+
+        #local-video {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 120px;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             background: #222;
-            margin-top: 10px;
-            font-size: 0.85rem;
-            min-height: 50px;
+            transform: scaleX(-1); /* Effet miroir naturel */
+            z-index: 5;
         }
-        .status .online { color: #00cc44; }
-        .status .offline { color: #ff3b30; }
-        .status .calling { color: #ffaa00; }
-        .status .connected { color: #00cc44; }
-        .call-notification {
-            background: #0095f6;
-            color: #fff;
-            padding: 10px;
+
+        /* Contrôles d'appel */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .btn-round {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn-mute { background-color: var(--wa-gray); }
+        .btn-mute.muted { background-color: var(--danger); }
+        .btn-hangup { background-color: var(--danger); display: none; }
+
+        /* Boite de Dialogue d'appel entrant */
+        #incoming-call-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-150%);
+            background: white;
+            padding: 15px 25px;
             border-radius: 12px;
-            margin: 10px 0;
-            display: none;
-            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 200;
+            transition: transform 0.3s ease-out;
+            width: calc(100% - 40px);
+            max-width: 450px;
         }
-        .call-notification.show { display: block; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .call-notification button {
-            border: none;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: 700;
-            cursor: pointer;
-            margin: 5px;
+
+        #incoming-call-box.active {
+            transform: translateX(-50%) translateY(0);
         }
-        .btn-accept { background: #00cc44; color: #000; }
-        .btn-reject { background: #ff3b30; color: #fff; }
-        .user-info {
+
+        .incoming-actions {
             display: flex;
             gap: 10px;
-            justify-content: center;
-            margin-bottom: 10px;
-            padding: 8px;
-            background: #222;
-            border-radius: 10px;
-            flex-wrap: wrap;
+            margin-left: auto;
         }
-        .user-info input {
-            padding: 8px 12px;
-            border-radius: 20px;
-            border: 2px solid #333;
-            background: #111;
-            color: #fff;
-            font-size: 0.9rem;
-            width: 120px;
-            text-align: center;
+
+        .btn-accept { background-color: var(--success); color: white; padding: 8px 16px; }
+        .btn-reject { background-color: var(--danger); color: white; padding: 8px 16px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            main { flex-direction: column-reverse; }
+            #users-sidebar { max-width: 100%; height: 40%; }
+            #video-container { height: 60%; }
+            #local-video { width: 90px; height: 120px; top: 10px; right: 10px; }
         }
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
-        .badge.online { background: #00cc44; color: #000; }
-        .badge.offline { background: #ff3b30; color: #fff; }
-        .badge.calling { background: #ffaa00; color: #000; }
-        .debug { font-size: 0.6rem; color: #666; margin-top: 5px; word-break: break-all; max-height: 100px; overflow-y: auto; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📹 Appel Vidéo</h1>
 
-        <div class="user-info">
-            <span style="color:#666;">👤</span>
-            <input type="text" id="username-input" placeholder="Ton nom" value="Moi" maxlength="15">
-            <span class="badge offline" id="status-badge">Hors ligne</span>
+    <!-- Écran d'initialisation / Login -->
+    <div id="login-screen">
+        <div class="card">
+            <h2 style="color: var(--wa-teal); margin-bottom: 10px;">WhatsApp Video</h2>
+            <p style="color: var(--wa-gray);">Entrez votre nom pour commencer</p>
+            <input type="text" id="username-input" placeholder="Ex: Jean Dupont" autocomplete="off">
+            <button class="btn-primary" id="start-btn">Démarrer</button>
+        </div>
+    </div>
+
+    <!-- En-tête -->
+    <header>
+        <h1 id="app-title">WhatsApp WebRTC</h1>
+        <div id="app-status" class="status-badge">Hors ligne</div>
+    </header>
+
+    <!-- Zone principale -->
+    <main>
+        <!-- Liste des utilisateurs connectés -->
+        <div id="users-sidebar">
+            <div class="sidebar-title">Utilisateurs en ligne</div>
+            <ul id="users-list" class="users-list">
+                <!-- Rempli dynamiquement -->
+            </ul>
         </div>
 
-        <div class="video-container">
-            <video id="local-video" autoplay muted playsinline></video>
+        <!-- Zone d'appel vidéo -->
+        <div id="video-container">
             <video id="remote-video" autoplay playsinline></video>
-        </div>
+            <video id="local-video" autoplay playsinline muted></video>
 
-        <div class="call-notification" id="call-notification">
-            <div id="caller-name">👤 Quelqu'un</div>
-            <div style="font-size:0.8rem; margin:5px 0;">📞 Vous appelle...</div>
-            <div>
-                <button class="btn-accept" onclick="acceptIncomingCall()">✅ Accepter</button>
-                <button class="btn-reject" onclick="rejectIncomingCall()">❌ Refuser</button>
+            <!-- Boutons de contrôle -->
+            <div class="controls">
+                <button class="btn-round btn-mute" id="mute-btn" title="Activer/Désactiver micro">🎙️</button>
+                <button class="btn-round btn-hangup" id="hangup-btn" title="Raccrocher">🛑</button>
             </div>
         </div>
+    </main>
 
-        <div class="controls">
-            <button class="btn-start" id="btn-start">🎥 Démarrer</button>
-            <button class="btn-call" id="btn-call" disabled>📞 Appeler</button>
-            <button class="btn-hangup" id="btn-hangup" disabled>📵 Raccrocher</button>
-            <button class="btn-mic" id="btn-mic" disabled>🎤</button>
+    <!-- Notification d'appel Entrant -->
+    <div id="incoming-call-box">
+        <div>
+            <strong id="caller-name">Quelqu'un</strong>
+            <div style="font-size: 0.85rem; color: var(--wa-gray);">Appel vidéo entrant...</div>
         </div>
-
-        <div class="status" id="status">🔴 Connectez-vous...</div>
-        <div class="debug" id="debug"></div>
+        <div class="incoming-actions">
+            <button class="btn-reject" id="reject-btn">Refuser</button>
+            <button class="btn-accept" id="accept-btn">Accepter</button>
+        </div>
     </div>
 
     <script>
-        // ============================================================
-        // CONFIGURATION FIREBASE
-        // ============================================================
+        // --- CONFIGURATION FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
             authDomain: "messagerie-65abc.firebaseapp.com",
@@ -177,552 +310,309 @@
             appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
         };
 
+        // Initialisation de Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // ============================================================
-        // CONFIGURATION WebRTC - AVEC SERVEURS TURN FIABLES
-        // ============================================================
-        const configuration = {
+        // Serveurs STUN publics de Google
+        const peerConfiguration = {
             iceServers: [
-                // STUN Google
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                // STUN alternatif
-                { urls: 'stun:stun.stunprotocol.org:3478' },
-                // TURN gratuit (important pour traverser les routeurs)
-                {
-                    urls: 'turn:turn.anyfirewall.com:443?transport=tcp',
-                    username: 'webrtc',
-                    credential: 'webrtc'
-                },
-                {
-                    urls: 'turn:turn.anyfirewall.com:443?transport=udp',
-                    username: 'webrtc',
-                    credential: 'webrtc'
-                }
-            ],
-            iceCandidatePoolSize: 10
+                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
+            ]
         };
 
-        // ============================================================
-        // ÉTAT
-        // ============================================================
+        // Variables Globales de l'application
         let localStream = null;
         let remoteStream = null;
         let peerConnection = null;
-        let currentUser = null;
-        let isConnected = false;
-        let isCaller = false;
-        let isInCall = false;
-        let callDocId = null;
-        let signalUnsubscribe = null;
-        let statusUnsubscribe = null;
-        let pendingCandidates = [];
+        let currentUserId = null;
+        let currentUsername = "";
+        let currentCallId = null;
+        let callListener = null;
 
         // Éléments DOM
+        const loginScreen = document.getElementById('login-screen');
+        const usernameInput = document.getElementById('username-input');
+        const startBtn = document.getElementById('start-btn');
+        const appStatus = document.getElementById('app-status');
+        const usersListElement = document.getElementById('users-list');
         const localVideo = document.getElementById('local-video');
         const remoteVideo = document.getElementById('remote-video');
-        const statusDiv = document.getElementById('status');
-        const statusBadge = document.getElementById('status-badge');
-        const usernameInput = document.getElementById('username-input');
-        const callNotification = document.getElementById('call-notification');
-        const callerNameSpan = document.getElementById('caller-name');
-        const debugDiv = document.getElementById('debug');
+        const muteBtn = document.getElementById('mute-btn');
+        const hangupBtn = document.getElementById('hangup-btn');
+        const incomingBox = document.getElementById('incoming-call-box');
+        const callerNameDoc = document.getElementById('caller-name');
+        const acceptBtn = document.getElementById('accept-btn');
+        const rejectBtn = document.getElementById('reject-btn');
 
-        const btnStart = document.getElementById('btn-start');
-        const btnCall = document.getElementById('btn-call');
-        const btnHangup = document.getElementById('btn-hangup');
-        const btnMic = document.getElementById('btn-mic');
+        // --- DEMARRAGE & INITIALISATION ---
+        startBtn.addEventListener('click', async () => {
+            currentUsername = usernameInput.value.trim();
+            if (!currentUsername) return alert("Veuillez entrer un nom valide.");
 
-        // ============================================================
-        // FONCTIONS UTILITAIRES
-        // ============================================================
-        function setStatus(text, type = 'offline') {
-            const emojis = { online: '🟢', offline: '🔴', calling: '🟡', connected: '🟢' };
-            statusDiv.innerHTML = `<span class="${type}">${emojis[type] || '🔴'} ${text}</span>`;
-            const labels = { online: 'En ligne', offline: 'Hors ligne', calling: 'En appel', connected: 'Connecté' };
-            statusBadge.textContent = labels[type] || 'Hors ligne';
-            statusBadge.className = 'badge ' + (type === 'online' || type === 'connected' ? 'online' : type === 'calling' ? 'calling' : 'offline');
+            try {
+                // Étape 1 : Obtenir l'accès aux flux caméra et micro
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                
+                // Masquer l'écran de login
+                loginScreen.style.display = 'none';
+                updateStatus("En ligne");
+
+                // Étape 2 : Créer l'utilisateur dans Firestore
+                currentUserId = db.collection('users').doc().id;
+                await db.collection('users').doc(currentUserId).set({
+                    name: currentUsername,
+                    status: "online",
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Étape 3 : Écouter la liste des utilisateurs et les appels entrants
+                listenUsersOnline();
+                listenIncomingCalls();
+
+                // Nettoyage automatique en cas de fermeture de l'onglet
+                window.addEventListener('beforeunload', cleanupUser);
+
+            } catch (err) {
+                console.error("Erreur d'accès médias : ", err);
+                alert("Impossible d'accéder à la caméra ou au micro. Vérifiez les permissions.");
+            }
+        });
+
+        function updateStatus(text) {
+            appStatus.innerText = text;
+            if(text === "En ligne") appStatus.style.background = "var(--success)";
+            if(text === "En appel") appStatus.style.background = "var(--wa-dark)";
         }
 
-        function debugLog(msg) {
-            console.log(msg);
-            debugDiv.textContent += '\n' + msg;
-            debugDiv.scrollTop = debugDiv.scrollHeight;
+        // --- GESTION DE LA LISTE DES UTILISATEURS EN LIGNE ---
+        function listenUsersOnline() {
+            db.collection('users').where('status', '==', 'online')
+            .onSnapshot(snapshot => {
+                usersListElement.innerHTML = "";
+                snapshot.forEach(doc => {
+                    if (doc.id === currentUserId) return; // Ne pas s'afficher soi-même
+
+                    const user = doc.data();
+                    const li = document.createElement('li');
+                    li.className = "user-item";
+                    li.innerHTML = `
+                        <span>${user.name}</span>
+                        <button class="btn-call" onclick="initiateCall('${doc.id}', '${user.name}')">Appeler</button>
+                    `;
+                    usersListElement.appendChild(li);
+                });
+            });
         }
 
-        function getUsername() {
-            return usernameInput.value.trim() || 'Anonyme';
-        }
+        // --- EMISSION D'UN APPEL (OFFER) ---
+        async function initiateCall(targetUserId, targetName) {
+            updateStatus("En appel");
+            hangupBtn.style.display = "block";
 
-        // ============================================================
-        // CONNEXION À FIREBASE
-        // ============================================================
-        async function connectToFirebase() {
-            const username = getUsername();
-            if (!username) { alert('Entrez un nom'); return false; }
+            // 1. Initialiser la connexion WebRTC
+            await createPeerConnection();
 
-            currentUser = {
-                id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                name: username,
-                room: 'appel_global'
+            // 2. Créer un document de session d'appel dans Firestore
+            const callDoc = db.collection('calls').doc();
+            currentCallId = callDoc.id;
+
+            // 3. Collecter les candidats ICE générés localement pour les envoyer à l'autre
+            const localIceCollection = callDoc.collection('offerCandidates');
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) localIceCollection.add(event.candidate.toJSON());
             };
 
-            const userRef = db.collection('users').doc(currentUser.id);
-            await userRef.set({
-                name: currentUser.name,
-                online: true,
-                room: currentUser.room,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            // 4. Créer la description SDP (l'offre) WebRTC
+            const offerDescription = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offerDescription);
+
+            const offer = {
+                sdp: offerDescription.sdp,
+                type: offerDescription.type
+            };
+
+            // 5. Sauvegarder l'appel dans Firestore pour notifier la cible
+            await callDoc.set({
+                callerId: currentUserId,
+                callerName: currentUsername,
+                receiverId: targetUserId,
+                status: "ringing",
+                offer: offer
             });
 
-            listenToUsers();
-            window.addEventListener('beforeunload', () => {
-                userRef.update({ online: false });
-            });
+            // 6. Écouter la réponse de la cible (Answer)
+            callListener = callDoc.onSnapshot(async snapshot => {
+                const data = snapshot.data();
+                if (!data) return;
 
-            setStatus(`✅ Connecté en tant que ${currentUser.name}`, 'online');
-            btnStart.disabled = false;
-            debugLog('✅ Connecté à Firebase');
-            return true;
-        }
+                // Si la cible accepte et qu'on n'a pas encore configuré la réponse distante
+                if (!peerConnection.currentRemoteDescription && data.answer) {
+                    const answerDescription = new RTCSessionDescription(data.answer);
+                    await peerConnection.setRemoteDescription(answerDescription);
+                }
 
-        // ============================================================
-        // ÉCOUTER LES AUTRES UTILISATEURS
-        // ============================================================
-        function listenToUsers() {
-            if (statusUnsubscribe) statusUnsubscribe();
-
-            statusUnsubscribe = db.collection('users')
-                .where('room', '==', 'appel_global')
-                .where('online', '==', true)
-                .onSnapshot((snapshot) => {
-                    const users = [];
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (doc.id !== currentUser.id) {
-                            users.push({ id: doc.id, ...data });
-                        }
-                    });
-
-                    if (users.length > 0 && !isInCall) {
-                        setStatus(`👥 ${users.length} personne(s) en ligne`, 'online');
-                        btnCall.disabled = false;
-                        debugLog(`👥 ${users.length} utilisateurs en ligne`);
-                    } else if (!isInCall) {
-                        setStatus('👤 Seul(e) en ligne', 'online');
-                        btnCall.disabled = true;
-                    }
-                });
-        }
-
-        // ============================================================
-        // DÉMARRER LA CAMÉRA
-        // ============================================================
-        async function startLocalMedia() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-                });
-                localVideo.srcObject = localStream;
-                btnStart.disabled = true;
-                btnMic.disabled = false;
-                btnCall.disabled = false;
-                setStatus('✅ Caméra prête', 'online');
-                debugLog('✅ Caméra/micro démarré');
-                return true;
-            } catch (err) {
-                console.error('Erreur caméra:', err);
-                setStatus('❌ Impossible d\'accéder à la caméra');
-                alert('❌ Autorisez la caméra et le micro');
-                return false;
-            }
-        }
-
-        btnStart.addEventListener('click', async () => {
-            if (!currentUser) { await connectToFirebase(); }
-            await startLocalMedia();
-        });
-
-        // ============================================================
-        // APPELER - AVEC ÉCHANGE COMPLET DES ICE CANDIDATES
-        // ============================================================
-        btnCall.addEventListener('click', async () => {
-            if (!localStream) { await startLocalMedia(); if (!localStream) return; }
-            if (isInCall) return;
-
-            isCaller = true;
-            isInCall = true;
-            btnCall.disabled = true;
-            btnHangup.disabled = false;
-            setStatus('📞 Appel en cours...', 'calling');
-            pendingCandidates = [];
-
-            try {
-                // Créer la connexion WebRTC
-                peerConnection = new RTCPeerConnection(configuration);
-
-                // Ajouter les pistes locales
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
-
-                // Gérer le flux distant
-                peerConnection.ontrack = (event) => {
-                    if (!remoteStream) {
-                        remoteStream = new MediaStream();
-                        remoteVideo.srcObject = remoteStream;
-                        debugLog('✅ Flux distant reçu !');
-                    }
-                    remoteStream.addTrack(event.track);
-                    setStatus('📞 En appel - Vidéo reçue', 'connected');
-                    isConnected = true;
-                };
-
-                // === IMPORTANT: Collecter TOUS les ICE candidates ===
-                peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        pendingCandidates.push(event.candidate);
-                        debugLog(`🧊 ICE candidate: ${event.candidate.candidate.substring(0, 50)}...`);
-                        // Envoyer le candidate immédiatement
-                        sendCandidateToFirestore(event.candidate);
-                    } else {
-                        // Tous les candidates ont été envoyés
-                        debugLog('✅ Tous les ICE candidates collectés');
-                    }
-                };
-
-                // === Gérer les changements d'état de connexion ===
-                peerConnection.onconnectionstatechange = () => {
-                    const state = peerConnection.connectionState;
-                    debugLog(`📡 État connexion: ${state}`);
-                    if (state === 'connected') {
-                        setStatus('📞 Connecté !', 'connected');
-                        isConnected = true;
-                    } else if (state === 'failed' || state === 'disconnected') {
-                        setStatus('❌ Connexion perdue', 'offline');
-                        resetCall();
-                    }
-                };
-
-                // Créer l'offre
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-
-                // === CRUCIAL: Créer un document pour l'appel ===
-                const callRef = db.collection('calls').doc();
-                callDocId = callRef.id;
-
-                await callRef.set({
-                    type: 'offer',
-                    from: currentUser.id,
-                    fromName: currentUser.name,
-                    to: 'any',
-                    room: 'appel_global',
-                    sdp: offer.sdp,
-                    candidates: [], // Liste des ICE candidates
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    status: 'ringing'
-                });
-
-                debugLog(`📤 Offre créée: ${callDocId}`);
-                listenForAnswer(callRef);
-
-            } catch (err) {
-                console.error('Erreur appel:', err);
-                debugLog('❌ Erreur: ' + err.message);
-                setStatus('❌ Erreur: ' + err.message);
-                resetCall();
-            }
-        });
-
-        // ============================================================
-        // ENVOYER UN ICE CANDIDATE
-        // ============================================================
-        async function sendCandidateToFirestore(candidate) {
-            if (!callDocId) return;
-            try {
-                const candidateData = {
-                    candidate: candidate.candidate,
-                    sdpMid: candidate.sdpMid,
-                    sdpMLineIndex: candidate.sdpMLineIndex
-                };
-                await db.collection('calls').doc(callDocId).update({
-                    candidates: firebase.firestore.FieldValue.arrayUnion(candidateData)
-                });
-            } catch (err) {
-                debugLog('❌ Erreur envoi candidate: ' + err.message);
-            }
-        }
-
-        // ============================================================
-        // ÉCOUTER LES RÉPONSES
-        // ============================================================
-        function listenForAnswer(callRef) {
-            if (signalUnsubscribe) signalUnsubscribe();
-
-            signalUnsubscribe = callRef.onSnapshot(async (doc) => {
-                if (!doc.exists) return;
-                const data = doc.data();
-
-                if (data.type === 'answer' && data.to === currentUser.id) {
-                    debugLog('📥 Réponse reçue');
-                    
-                    // Définir la réponse distante
-                    await peerConnection.setRemoteDescription({
-                        type: 'answer',
-                        sdp: data.sdp
-                    });
-
-                    // Ajouter les ICE candidates reçus
-                    if (data.candidates) {
-                        for (const cand of data.candidates) {
-                            try {
-                                await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
-                            } catch (e) {
-                                debugLog('⚠️ Candidate invalide: ' + e.message);
-                            }
-                        }
-                        debugLog(`✅ ${data.candidates.length} candidates ajoutés`);
-                    }
-
-                    setStatus('📞 Connexion établie !', 'connected');
-                    isConnected = true;
-                    doc.ref.delete().catch(() => {});
-                } else if (data.status === 'rejected') {
-                    setStatus('❌ Appel refusé', 'offline');
-                    resetCall();
-                } else if (data.status === 'ended') {
-                    setStatus('📵 Appel terminé', 'offline');
-                    resetCall();
+                // Écouter si l'appel est raccroché ou refusé par l'autre
+                if (data.status === "ended") {
+                    terminateCallFlow();
+                } else if (data.status === "rejected") {
+                    alert(`${targetName} a refusé l'appel.`);
+                    terminateCallFlow();
                 }
             });
+
+            // Écouter également les candidats ICE distants (venant du récepteur)
+            callDoc.collection('answerCandidates').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        const candidate = new RTCIceCandidate(change.doc.data());
+                        peerConnection.addIceCandidate(candidate);
+                    }
+                });
+            });
         }
 
-        // ============================================================
-        // ÉCOUTER LES APPELS ENTRANTS
-        // ============================================================
-        function listenForIncomingCalls() {
+        // --- RECEPTION ET ECOUTE DES APPELS ENTRANTS ---
+        function listenIncomingCalls() {
             db.collection('calls')
-                .where('to', '==', 'any')
-                .where('status', '==', 'ringing')
-                .onSnapshot((snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        if (change.type === 'added') {
-                            const data = change.doc.data();
-                            if (data.from !== currentUser.id && !isInCall) {
-                                showIncomingCall(change.doc, data);
-                            }
-                        }
-                    });
+            .where('receiverId', '==', currentUserId)
+            .where('status', '==', 'ringing')
+            .onSnapshot(snapshot => {
+                snapshot.forEach(doc => {
+                    const callData = doc.data();
+                    currentCallId = doc.id;
+                    callerNameDoc.innerText = callData.callerName;
+                    incomingBox.classList.add('active'); // Afficher la bannière WhatsApp
                 });
+            });
         }
 
-        function showIncomingCall(doc, data) {
-            callNotification.classList.add('show');
-            callerNameSpan.textContent = `👤 ${data.fromName || 'Quelqu\'un'}`;
-            setStatus('📞 Appel entrant', 'calling');
-            window._incomingCall = { doc, data };
-            debugLog(`📞 Appel entrant de ${data.fromName}`);
-        }
+        // Accepter l'appel
+        acceptBtn.addEventListener('click', async () => {
+            incomingBox.classList.remove('active');
+            updateStatus("En appel");
+            hangupBtn.style.display = "block";
 
-        // ============================================================
-        // ACCEPTER UN APPEL
-        // ============================================================
-        async function acceptIncomingCall() {
-            const incoming = window._incomingCall;
-            if (!incoming) return;
+            const callDoc = db.collection('calls').doc(currentCallId);
+            const callData = (await callDoc.get()).data();
 
-            callNotification.classList.remove('show');
-            isCaller = false;
-            isInCall = true;
-            btnCall.disabled = true;
-            btnHangup.disabled = false;
-            pendingCandidates = [];
+            await createPeerConnection();
 
-            try {
-                peerConnection = new RTCPeerConnection(configuration);
+            // Lier les candidats ICE locaux
+            const remoteIceCollection = callDoc.collection('answerCandidates');
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) remoteIceCollection.add(event.candidate.toJSON());
+            };
 
-                // Ajouter les pistes locales
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
+            // Enregistrer la description SDP de l'appelant
+            const offerDescription = callData.offer;
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
+
+            // Créer la réponse SDP (Answer) locale
+            const answerDescription = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answerDescription);
+
+            const answer = {
+                type: answerDescription.type,
+                sdp: answerDescription.sdp
+            };
+
+            // Mettre à jour l'état de l'appel dans la bdd
+            await callDoc.update({ answer: answer, status: "accepted" });
+
+            // Écouter les candidats ICE générés par l'appelant
+            callDoc.collection('offerCandidates').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                    }
                 });
+            });
 
-                // Gérer le flux distant
-                peerConnection.ontrack = (event) => {
-                    if (!remoteStream) {
-                        remoteStream = new MediaStream();
-                        remoteVideo.srcObject = remoteStream;
-                        debugLog('✅ Flux distant reçu !');
-                    }
-                    remoteStream.addTrack(event.track);
-                    setStatus('📞 En appel - Vidéo reçue', 'connected');
-                    isConnected = true;
-                };
-
-                // === COLLECTER LES ICE CANDIDATES ===
-                peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        pendingCandidates.push(event.candidate);
-                        sendCandidateToFirestore(event.candidate);
-                    } else {
-                        debugLog('✅ Tous les ICE candidates collectés');
-                    }
-                };
-
-                // === ÉTAT DE LA CONNEXION ===
-                peerConnection.onconnectionstatechange = () => {
-                    const state = peerConnection.connectionState;
-                    debugLog(`📡 État connexion: ${state}`);
-                    if (state === 'connected') {
-                        setStatus('📞 Connecté !', 'connected');
-                        isConnected = true;
-                    } else if (state === 'failed' || state === 'disconnected') {
-                        setStatus('❌ Connexion perdue', 'offline');
-                        resetCall();
-                    }
-                };
-
-                // Définir l'offre distante
-                await peerConnection.setRemoteDescription({
-                    type: 'offer',
-                    sdp: incoming.data.sdp
-                });
-
-                // Ajouter les ICE candidates de l'appelant
-                if (incoming.data.candidates) {
-                    for (const cand of incoming.data.candidates) {
-                        try {
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
-                        } catch (e) {
-                            debugLog('⚠️ Candidate invalide: ' + e.message);
-                        }
-                    }
-                    debugLog(`✅ ${incoming.data.candidates.length} candidates de l'appelant ajoutés`);
+            // Suivre si l'appelant coupe l'appel en cours
+            callListener = callDoc.onSnapshot(snapshot => {
+                const data = snapshot.data();
+                if (data && data.status === "ended") {
+                    terminateCallFlow();
                 }
+            });
+        });
 
-                // Créer la réponse
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                // Envoyer la réponse avec TOUS les candidates
-                await incoming.doc.ref.update({
-                    type: 'answer',
-                    to: currentUser.id,
-                    sdp: answer.sdp,
-                    candidates: pendingCandidates,
-                    status: 'answered'
-                });
-
-                setStatus('📞 Connexion établie !', 'connected');
-                isConnected = true;
-                debugLog('✅ Appel accepté');
-
-            } catch (err) {
-                console.error('Erreur acceptation:', err);
-                debugLog('❌ Erreur: ' + err.message);
-                setStatus('❌ Erreur: ' + err.message);
-                resetCall();
+        // Refuser l'appel
+        rejectBtn.addEventListener('click', async () => {
+            incomingBox.classList.remove('active');
+            if (currentCallId) {
+                await db.collection('calls').doc(currentCallId).update({ status: "rejected" });
+                currentCallId = null;
             }
+        });
+
+        // --- LOGIQUE COMMUNE WEBRTC ---
+        async function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(peerConfiguration);
+
+            // Injecter nos pistes audio/vidéo locales dans la connexion Peer
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            // Réception du flux distant de l'autre appareil
+            remoteStream = new MediaStream();
+            peerConnection.ontrack = event => {
+                event.streams[0].getTracks().forEach(track => {
+                    remoteStream.addTrack(track);
+                });
+                remoteVideo.srcObject = remoteStream;
+            };
         }
 
-        // ============================================================
-        // REFUSER UN APPEL
-        // ============================================================
-        async function rejectIncomingCall() {
-            const incoming = window._incomingCall;
-            if (!incoming) return;
-            callNotification.classList.remove('show');
-            await incoming.doc.ref.update({ status: 'rejected' });
-            setStatus('❌ Appel refusé', 'offline');
-            window._incomingCall = null;
-        }
+        // --- FIN D'APPEL ET NETTOYAGE ---
+        hangupBtn.addEventListener('click', async () => {
+            if (currentCallId) {
+                await db.collection('calls').doc(currentCallId).update({ status: "ended" });
+            }
+            terminateCallFlow();
+        });
 
-        // ============================================================
-        // RACCROCHER
-        // ============================================================
-        function resetCall() {
+        function terminateCallFlow() {
+            // Désactiver l'écoute Firestore de l'appel en cours
+            if (callListener) callListener();
+
+            // Fermer la connexion RTC
             if (peerConnection) {
                 peerConnection.close();
                 peerConnection = null;
             }
-            if (remoteStream) {
-                remoteStream.getTracks().forEach(t => t.stop());
-                remoteStream = null;
-                remoteVideo.srcObject = null;
-            }
-            if (signalUnsubscribe) {
-                signalUnsubscribe();
-                signalUnsubscribe = null;
-            }
-            if (callDocId) {
-                db.collection('calls').doc(callDocId).delete().catch(() => {});
-                callDocId = null;
-            }
-            pendingCandidates = [];
-            isConnected = false;
-            isInCall = false;
-            isCaller = false;
-            btnCall.disabled = false;
-            btnHangup.disabled = true;
-            callNotification.classList.remove('show');
-            window._incomingCall = null;
-            setStatus('📵 Appel terminé', 'online');
-            debugLog('📵 Appel terminé');
+
+            // Réinitialiser les balises vidéo
+            remoteVideo.srcObject = null;
+            hangupBtn.style.display = "none";
+            incomingBox.classList.remove('active');
+            currentCallId = null;
+            updateStatus("En ligne");
         }
 
-        btnHangup.addEventListener('click', () => {
-            if (callDocId) {
-                db.collection('calls').doc(callDocId).update({ status: 'ended' }).catch(() => {});
-            }
-            resetCall();
-        });
-
-        // ============================================================
-        // MICROPHONE
-        // ============================================================
-        function toggleMic() {
-            if (!localStream) return;
+        // Gestion du bouton couper/activer micro
+        muteBtn.addEventListener('click', () => {
             const audioTrack = localStream.getAudioTracks()[0];
             if (audioTrack) {
                 audioTrack.enabled = !audioTrack.enabled;
-                btnMic.textContent = audioTrack.enabled ? '🎤' : '🔇';
-                btnMic.classList.toggle('muted', !audioTrack.enabled);
+                muteBtn.classList.toggle('muted', !audioTrack.enabled);
+                muteBtn.innerText = audioTrack.enabled ? "🎙️" : "🔇";
             }
-        }
-        btnMic.addEventListener('click', toggleMic);
-
-        // ============================================================
-        // INITIALISATION
-        // ============================================================
-        async function init() {
-            setStatus('🔄 Connexion...', 'offline');
-            await connectToFirebase();
-            listenForIncomingCalls();
-            setTimeout(async () => {
-                if (!localStream) await startLocalMedia();
-            }, 1000);
-            debugLog('🎮 Appel Vidéo prêt !');
-        }
-
-        // Démarrer
-        init();
-
-        // ============================================================
-        // NETTOYAGE
-        // ============================================================
-        window.addEventListener('beforeunload', () => {
-            if (currentUser) {
-                db.collection('users').doc(currentUser.id).update({ online: false });
-            }
-            resetCall();
         });
 
-        console.log('%c📹 Appel Vidéo - Firebase', 'font-size:20px; font-weight:bold; color:#00cc44;');
-        console.log('%c🔑 Cliquez sur "Appeler" pour appeler quelqu\'un', 'font-size:14px; color:#ffaa00;');
+        // Supprimer l'utilisateur de Firestore lors de la déconnexion
+        async function cleanupUser() {
+            if (currentUserId) {
+                // Si on ferme pendant un appel, y mettre un terme proprement
+                if (currentCallId) {
+                    db.collection('calls').doc(currentCallId).update({ status: "ended" });
+                }
+                await db.collection('users').doc(currentUserId).delete();
+            }
+        }
     </script>
 </body>
 </html>
