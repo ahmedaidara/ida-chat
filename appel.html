@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Appel Direct - Firebase</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            color: #00cc44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        video {
+            width: 100%;
+            border-radius: 12px;
+            background: #000;
+            border: 2px solid #333;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+        }
+        #remote-video { border-color: #00cc44; }
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 80px;
+        }
+        button:hover { transform: scale(1.05); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-start { background: #00cc44; color: #000; }
+        .btn-call { background: #0095f6; color: #fff; }
+        .btn-hangup { background: #ff3b30; color: #fff; }
+        .btn-mic { background: #444; color: #fff; flex: 0.5; min-width: 50px; }
+        .btn-mic.muted { background: #ff3b30; }
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            background: #222;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .status .online { color: #00cc44; }
+        .status .offline { color: #ff3b30; }
+        .status .calling { color: #ffaa00; }
+        .status .incoming { color: #0095f6; }
+        .status .connected { color: #00cc44; }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #222;
+            border-radius: 10px;
+        }
+        .user-info input {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 2px solid #333;
+            background: #111;
+            color: #fff;
+            font-size: 0.9rem;
+            width: 120px;
+            text-align: center;
+        }
+        .user-info input:focus {
+            border-color: #0095f6;
+            outline: none;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge.online { background: #00cc44; color: #000; }
+        .badge.offline { background: #ff3b30; color: #fff; }
+        .badge.calling { background: #ffaa00; color: #000; }
+        .call-notification {
+            background: #0095f6;
+            color: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            margin: 10px 0;
+            display: none;
+            animation: pulse 1s infinite;
+            text-align: center;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .call-notification.show { display: block; }
+        .call-notification button {
+            background: #fff;
+            color: #0095f6;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .call-notification button:active { transform: scale(0.95); }
+        .call-notification .btn-accept { background: #00cc44; color: #000; }
+        .call-notification .btn-reject { background: #ff3b30; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📹 Appel Direct</h1>
+
+        <!-- Nom d'utilisateur -->
+        <div class="user-info">
+            <span style="color:#666;">👤</span>
+            <input type="text" id="username-input" placeholder="Ton nom" value="Moi" maxlength="15">
+            <span class="badge offline" id="status-badge">Hors ligne</span>
+        </div>
+
+        <div class="video-container">
+            <video id="local-video" autoplay muted playsinline></video>
+            <video id="remote-video" autoplay playsinline></video>
+        </div>
+
+        <!-- Notification d'appel entrant -->
+        <div class="call-notification" id="call-notification">
+            <div id="caller-name">👤 Quelqu'un</div>
+            <div style="font-size:0.8rem; margin:5px 0;">📞 Vous appelle...</div>
+            <div>
+                <button class="btn-accept" onclick="acceptIncomingCall()">✅ Accepter</button>
+                <button class="btn-reject" onclick="rejectIncomingCall()">❌ Refuser</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-start" id="btn-start">🎥 Démarrer</button>
+            <button class="btn-call" id="btn-call" disabled>📞 Appeler</button>
+            <button class="btn-hangup" id="btn-hangup" disabled>📵 Raccrocher</button>
+            <button class="btn-mic" id="btn-mic" disabled>🎤</button>
+        </div>
+
+        <div class="status" id="status">
+            <span class="offline">🔴 Connectez-vous à Firebase</span>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 1. CONFIGURATION FIREBASE (VOS IDENTIFIANTS)
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
+            authDomain: "messagerie-65abc.firebaseapp.com",
+            projectId: "messagerie-65abc",
+            storageBucket: "messagerie-65abc.firebasestorage.app",
+            messagingSenderId: "363641716532",
+            appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ============================================================
+        // 2. CONFIGURATION WebRTC
+        // ============================================================
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                {
+                    urls: 'turn:turn.anyfirewall.com:443?transport=tcp',
+                    username: 'webrtc',
+                    credential: 'webrtc'
+                }
+            ]
+        };
+
+        // ============================================================
+        // 3. ÉTAT
+        // ============================================================
+        let localStream = null;
+        let remoteStream = null;
+        let peerConnection = null;
+        let currentUser = null;
+        let isConnected = false;
+        let isCaller = false;
+        let isInCall = false;
+        let callDocId = null;
+        let signalUnsubscribe = null;
+        let statusUnsubscribe = null;
+
+        // Éléments DOM
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+        const statusDiv = document.getElementById('status');
+        const statusBadge = document.getElementById('status-badge');
+        const usernameInput = document.getElementById('username-input');
+        const callNotification = document.getElementById('call-notification');
+        const callerNameSpan = document.getElementById('caller-name');
+
+        const btnStart = document.getElementById('btn-start');
+        const btnCall = document.getElementById('btn-call');
+        const btnHangup = document.getElementById('btn-hangup');
+        const btnMic = document.getElementById('btn-mic');
+
+        // ============================================================
+        // 4. FONCTIONS UTILITAIRES
+        // ============================================================
+        function setStatus(text, type = 'offline') {
+            const emojis = { online: '🟢', offline: '🔴', calling: '🟡', incoming: '🔵', connected: '🟢' };
+            const labels = { online: 'En ligne', offline: 'Hors ligne', calling: 'En appel', incoming: 'Appel entrant', connected: 'Connecté' };
+            statusDiv.innerHTML = `<span class="${type}">${emojis[type] || '🔴'} ${text}</span>`;
+            statusBadge.textContent = labels[type] || 'Hors ligne';
+            statusBadge.className = 'badge ' + (type === 'online' || type === 'connected' ? 'online' : type === 'calling' || type === 'incoming' ? 'calling' : 'offline');
+        }
+
+        function getUsername() {
+            return usernameInput.value.trim() || 'Anonyme';
+        }
+
+        // ============================================================
+        // 5. CONNEXION À FIREBASE (STATUT EN LIGNE)
+        // ============================================================
+        async function connectToFirebase() {
+            const username = getUsername();
+            if (!username) {
+                alert('Entrez un nom');
+                return false;
+            }
+
+            currentUser = {
+                id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                name: username,
+                room: 'appel_global'
+            };
+
+            // Enregistrer dans Firestore
+            const userRef = db.collection('users').doc(currentUser.id);
+            await userRef.set({
+                name: currentUser.name,
+                online: true,
+                room: currentUser.room,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Écouter les changements de statut des autres
+            listenToUsers();
+
+            // Nettoyer à la déconnexion
+            window.addEventListener('beforeunload', () => {
+                userRef.update({ online: false });
+            });
+
+            setStatus(`✅ Connecté en tant que ${currentUser.name}`, 'online');
+            btnStart.disabled = false;
+            console.log('✅ Connecté à Firebase:', currentUser.name);
+            return true;
+        }
+
+        // ============================================================
+        // 6. ÉCOUTER LES AUTRES UTILISATEURS
+        // ============================================================
+        function listenToUsers() {
+            if (statusUnsubscribe) statusUnsubscribe();
+
+            statusUnsubscribe = db.collection('users')
+                .where('room', '==', 'appel_global')
+                .where('online', '==', true)
+                .onSnapshot((snapshot) => {
+                    const users = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (doc.id !== currentUser.id) {
+                            users.push({ id: doc.id, ...data });
+                        }
+                    });
+
+                    if (users.length > 0 && !isInCall) {
+                        setStatus(`👥 ${users.length} personne(s) en ligne - Cliquez sur "Appeler"`, 'online');
+                        btnCall.disabled = false;
+                    } else if (!isInCall) {
+                        setStatus('👤 Seul(e) en ligne - Attendez que quelqu\'un se connecte', 'online');
+                        btnCall.disabled = true;
+                    }
+                });
+        }
+
+        // ============================================================
+        // 7. DÉMARRER LA CAMÉRA
+        // ============================================================
+        async function startLocalMedia() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+                });
+                localVideo.srcObject = localStream;
+                btnStart.disabled = true;
+                btnMic.disabled = false;
+                setStatus('✅ Prêt - Cliquez sur "Appeler"', 'online');
+                btnCall.disabled = false;
+                console.log('✅ Caméra/micro démarré');
+                return true;
+            } catch (err) {
+                console.error('Erreur caméra:', err);
+                setStatus('❌ Impossible d\'accéder à la caméra/micro');
+                alert('❌ Autorisez la caméra et le micro dans les paramètres du navigateur');
+                return false;
+            }
+        }
+
+        btnStart.addEventListener('click', async () => {
+            if (!currentUser) {
+                await connectToFirebase();
+            }
+            await startLocalMedia();
+        });
+
+        // ============================================================
+        // 8. APPELER (CRÉER UNE OFFRE)
+        // ============================================================
+        btnCall.addEventListener('click', async () => {
+            if (!localStream) {
+                await startLocalMedia();
+                if (!localStream) return;
+            }
+
+            if (isInCall) return;
+            isCaller = true;
+            isInCall = true;
+            btnCall.disabled = true;
+            btnHangup.disabled = false;
+            setStatus('📞 Appel en cours...', 'calling');
+
+            try {
+                // Créer la connexion WebRTC
+                peerConnection = new RTCPeerConnection(configuration);
+
+                // Ajouter les pistes locales
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // Gérer le flux distant
+                peerConnection.ontrack = (event) => {
+                    if (!remoteStream) {
+                        remoteStream = new MediaStream();
+                        remoteVideo.srcObject = remoteStream;
+                    }
+                    remoteStream.addTrack(event.track);
+                    setStatus('📞 En appel', 'connected');
+                    isConnected = true;
+                };
+
+                // Créer l'offre
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                // Créer un document Firestore pour l'appel
+                const callRef = db.collection('calls').doc();
+                callDocId = callRef.id;
+                await callRef.set({
+                    type: 'offer',
+                    from: currentUser.id,
+                    fromName: currentUser.name,
+                    to: 'any',
+                    room: 'appel_global',
+                    sdp: offer.sdp,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'ringing'
+                });
+
+                // Écouter les réponses
+                listenForAnswer(callRef);
+
+                console.log('📤 Offre créée:', callDocId);
+
+            } catch (err) {
+                console.error('Erreur appel:', err);
+                setStatus('❌ Erreur: ' + err.message);
+                resetCall();
+            }
+        });
+
+        // ============================================================
+        // 9. ÉCOUTER LES RÉPONSES
+        // ============================================================
+        function listenForAnswer(callRef) {
+            if (signalUnsubscribe) signalUnsubscribe();
+
+            signalUnsubscribe = callRef.onSnapshot(async (doc) => {
+                if (!doc.exists) return;
+                const data = doc.data();
+
+                if (data.type === 'answer' && data.to === currentUser.id) {
+                    // Réponse reçue
+                    await peerConnection.setRemoteDescription({
+                        type: 'answer',
+                        sdp: data.sdp
+                    });
+                    setStatus('📞 Connecté !', 'connected');
+                    isConnected = true;
+                    console.log('✅ Réponse reçue, connexion établie');
+                    // Supprimer le document d'appel
+                    doc.ref.delete().catch(() => {});
+                } else if (data.status === 'rejected') {
+                    setStatus('❌ Appel refusé', 'offline');
+                    resetCall();
+                } else if (data.status === 'ended') {
+                    setStatus('📵 Appel terminé', 'offline');
+                    resetCall();
+                }
+            });
+        }
+
+        // ============================================================
+        // 10. ÉCOUTER LES APPELS ENTRANTS
+        // ============================================================
+        function listenForIncomingCalls() {
+            db.collection('calls')
+                .where('to', '==', 'any')
+                .where('status', '==', 'ringing')
+                .onSnapshot((snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const data = change.doc.data();
+                            if (data.from !== currentUser.id && !isInCall) {
+                                showIncomingCall(change.doc, data);
+                            }
+                        }
+                    });
+                });
+        }
+
+        function showIncomingCall(doc, data) {
+            callNotification.classList.add('show');
+            callerNameSpan.textContent = `👤 ${data.fromName || 'Quelqu\'un'}`;
+            setStatus('📞 Appel entrant', 'incoming');
+            
+            // Stocker les données pour l'acceptation
+            window._incomingCall = { doc, data };
+        }
+
+        // ============================================================
+        // 11. ACCEPTER UN APPEL
+        // ============================================================
+        async function acceptIncomingCall() {
+            const incoming = window._incomingCall;
+            if (!incoming) return;
+
+            callNotification.classList.remove('show');
+            isCaller = false;
+            isInCall = true;
+            btnCall.disabled = true;
+            btnHangup.disabled = false;
+
+            try {
+                // Créer la connexion WebRTC
+                peerConnection = new RTCPeerConnection(configuration);
+
+                // Ajouter les pistes locales
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // Gérer le flux distant
+                peerConnection.ontrack = (event) => {
+                    if (!remoteStream) {
+                        remoteStream = new MediaStream();
+                        remoteVideo.srcObject = remoteStream;
+                    }
+                    remoteStream.addTrack(event.track);
+                    setStatus('📞 En appel', 'connected');
+                    isConnected = true;
+                };
+
+                // Définir l'offre distante
+                await peerConnection.setRemoteDescription({
+                    type: 'offer',
+                    sdp: incoming.data.sdp
+                });
+
+                // Créer la réponse
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                // Envoyer la réponse
+                await incoming.doc.ref.update({
+                    type: 'answer',
+                    to: currentUser.id,
+                    sdp: answer.sdp,
+                    status: 'answered'
+                });
+
+                setStatus('📞 Connexion établie !', 'connected');
+                isConnected = true;
+                console.log('✅ Appel accepté');
+
+            } catch (err) {
+                console.error('Erreur acceptation:', err);
+                setStatus('❌ Erreur: ' + err.message);
+                resetCall();
+            }
+        }
+
+        // ============================================================
+        // 12. REFUSER UN APPEL
+        // ============================================================
+        async function rejectIncomingCall() {
+            const incoming = window._incomingCall;
+            if (!incoming) return;
+
+            callNotification.classList.remove('show');
+            await incoming.doc.ref.update({ status: 'rejected' });
+            setStatus('❌ Appel refusé', 'offline');
+            window._incomingCall = null;
+        }
+
+        // ============================================================
+        // 13. RACCROCHER
+        // ============================================================
+        function resetCall() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (remoteStream) {
+                remoteStream.getTracks().forEach(t => t.stop());
+                remoteStream = null;
+                remoteVideo.srcObject = null;
+            }
+            if (signalUnsubscribe) {
+                signalUnsubscribe();
+                signalUnsubscribe = null;
+            }
+            if (callDocId) {
+                db.collection('calls').doc(callDocId).delete().catch(() => {});
+                callDocId = null;
+            }
+            isConnected = false;
+            isInCall = false;
+            isCaller = false;
+            btnCall.disabled = false;
+            btnHangup.disabled = true;
+            callNotification.classList.remove('show');
+            setStatus('📵 Appel terminé', 'online');
+            window._incomingCall = null;
+            console.log('📵 Appel terminé');
+        }
+
+        btnHangup.addEventListener('click', () => {
+            if (callDocId) {
+                db.collection('calls').doc(callDocId).update({ status: 'ended' }).catch(() => {});
+            }
+            resetCall();
+        });
+
+        // ============================================================
+        // 14. MICROPHONE
+        // ============================================================
+        function toggleMic() {
+            if (!localStream) return;
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                btnMic.textContent = audioTrack.enabled ? '🎤' : '🔇';
+                btnMic.classList.toggle('muted', !audioTrack.enabled);
+            }
+        }
+
+        btnMic.addEventListener('click', toggleMic);
+
+        // ============================================================
+        // 15. INITIALISATION
+        // ============================================================
+        async function init() {
+            setStatus('🔄 Connexion à Firebase...', 'offline');
+            await connectToFirebase();
+            listenForIncomingCalls();
+
+            // Démarrer automatiquement la caméra
+            setTimeout(async () => {
+                if (!localStream) {
+                    await startLocalMedia();
+                }
+            }, 1000);
+
+            console.log('🎮 Appel Direct - Firebase prêt !');
+            console.log(`👤 Utilisateur: ${getUsername()}`);
+            console.log('📞 Les autres utilisateurs en ligne apparaîtront automatiquement');
+        }
+
+        // Démarrer
+        init();
+
+        // ============================================================
+        // 16. NETTOYAGE
+        // ============================================================
+        window.addEventListener('beforeunload', () => {
+            if (currentUser) {
+                db.collection('users').doc(currentUser.id).update({ online: false });
+            }
+            resetCall();
+        });
+
+        console.log('%c📹 Appel Direct - Firebase', 'font-size:20px; font-weight:bold; color:#00cc44;');
+        console.log('%c👤 Connectez-vous et les autres utilisateurs apparaîtront', 'font-size:14px; color:#0095f6;');
+        console.log('%c📞 Cliquez sur "Appeler" pour appeler quelqu\'un', 'font-size:14px; color:#ffaa00;');
+    </script>
+</body>
+</html>
