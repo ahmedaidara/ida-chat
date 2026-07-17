@@ -6487,7 +6487,9 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             }
         }
         
-    async function deleteSelectedMessage() {
+  <!-- Remplacer le contenu de la fonction deleteSelectedMessage (ligne ~5357) par ce code : -->
+
+async function deleteSelectedMessage() {
     if(!selectedMessageId) return;
     
     if(!confirm("Supprimer ce message ? Il sera remplacé par 'Message supprimé'")) return;
@@ -6497,9 +6499,9 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
         const doc = await msgRef.get();
         const data = doc.data();
         if (data.senderId !== currentUser.id) {
-    alert("🚨 Ida toi aussi tu ne peux supprimer que tes propres messages 😁​😁​!");
-    return;
-}
+            alert("🚨 Ida toi aussi tu ne peux supprimer que tes propres messages 😁​😁​!");
+            return;
+        }
         // Supprimer le fichier de Supabase si besoin
         if (data.mediaUrl && data.storage === 'supabase') {
             try {
@@ -6509,77 +6511,35 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             } catch(e) { console.log("Erreur suppression fichier:", e); }
         }
         
-        // Mettre à jour - SUPPRIMER TOUT CHAMP MODIFIED   
-        await msgRef.update({
-            text: "🚫 Ce message a été supprimé",
-            mediaUrl: null,
-            fileUrl: null,
-            type: "text",
-            isDeleted: true,
-            isDeletedMessage: true,
-            isGif: false,
-            isSticker: false,
-            deletedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // ---- NOUVEAU CODE : supprimer TOTALEMENT le message de Firestore ----
+        await msgRef.delete();  // Au lieu de update, on le supprime physiquement
         
-        // SUPPRIMER LE CHAMP "modified" S'IL EXISTE
-        try {
-            await msgRef.update({
-                modified: firebase.firestore.FieldValue.delete()
-            });
-        } catch(e) {}
-        
-        // ✅ Propager la suppression à toutes les citations de réponse pointant vers ce
-        // message : leur ancien contenu (replyToText) ne doit plus jamais réapparaître,
-        // ni pour soi, ni pour l'autre utilisateur en temps réel (voir ecouterMessagesSupprimes).
-        try {
-            const reponsesLiees = await db.collection('chats').doc(CHAT_ID).collection('messages')
-                .where('replyToId', '==', selectedMessageId)
-                .get();
-            if (!reponsesLiees.empty) {
-                const batch = db.batch();
-                reponsesLiees.forEach(docReponse => {
-                    batch.update(docReponse.ref, { replyToText: MARQUEUR_REPONSE_SUPPRIMEE });
-                });
-                await batch.commit();
-                
-                // Mise à jour visuelle immédiate des citations déjà affichées à l'écran
-                document.querySelectorAll('.reply-citation').forEach(citation => {
-                    const onclickAttr = citation.getAttribute('onclick') || '';
-                    if (onclickAttr.includes(`scrollToOriginalMessage('${selectedMessageId}')`)) {
-                        citation.outerHTML = `<div class="reply-citation" style="font-style: italic; opacity: 0.7; cursor: default;"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Message supprimé</div>`;
-                    }
-                });
-            }
-        } catch(e) { console.error("Erreur propagation suppression aux réponses:", e); }
+        // ---- FIN NOUVEAU CODE ----
         
         showTempNotification("✅ Message supprimé");
         
-        // MISE À JOUR VISUELLE IMMÉDIATE
+        // ---- NOUVEAU : suppression visuelle immédiate avec animation ----
         const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
         if (messageRow) {
-            const bulle = messageRow.querySelector('.message-bubble');
-            if (bulle) {
-                bulle.style.setProperty('background', '#e4e6eb', 'important');
-                bulle.style.setProperty('background-color', '#e4e6eb', 'important');
-                bulle.style.setProperty('color', '#65676b', 'important');
-                bulle.style.setProperty('font-style', 'italic', 'important');
-                
-                // Supprimer TOUS les badges modifiés
-                const badgesModif = messageRow.querySelectorAll('.vrai-badge-modif, .modified-badge, [class*="modif"]');
-                badgesModif.forEach(badge => badge.remove());
-                
-                // Changer le texte immédiatement
-                const span = bulle.querySelector('span');
-                if (span) {
-                    span.innerText = "🚫 Ce message a été supprimé";
+            // Effet "Thanos" ou fondu + translation
+            messageRow.style.transition = "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
+            messageRow.style.transform = "scale(0.8) rotate(5deg)";
+            messageRow.style.opacity = "0";
+            setTimeout(() => {
+                messageRow.remove();
+                // Nettoyer les dates en double et remettre à jour le cache
+                if (typeof nettoyerDatesDoublons === 'function') nettoyerDatesDoublons();
+                // Forcer le re-rendu des messages (pour que tout soit cohérent)
+                if (typeof listenToMessages === 'function') {
+                    // Rafraîchir l'écouteur sans recharger la page
+                    if (unsubscribeMessages) {
+                        unsubscribeMessages();
+                        listenToMessages();
+                    }
                 }
-                
-                // Supprimer les médias
-                const medias = bulle.querySelectorAll('img, video, audio, .video-wrapper, .audio-message, .audio-player-container, .custom-vocal-container, .img-msg');
-                medias.forEach(media => media.remove());
-            }
+            }, 400);
         }
+        // ---- FIN NOUVEAU ----
         
     } catch(error) {
         console.error("Erreur suppression:", error);
@@ -6590,7 +6550,7 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
 }
         
 // ========== MODIFIER UN MESSAGE (VERSION AVEC INPUT) ==========
-let messageEnCoursEdition = null; // Stocke l'ID du message qu'on est en train d'éditer
+let messageEnCoursEdition = null; // Stocke l'ID du message qu'on est en train d'éditer 
 
 async function editSelectedMessage() {
     if (!selectedMessageId) return;
@@ -6598,7 +6558,7 @@ async function editSelectedMessage() {
     const messageRow = document.querySelector(`[data-id="${selectedMessageId}"]`);
     if (!messageRow) return;
     
-    // Vérifier que c'est notre message (seul l'expéditeur peut modifier)
+    // Vérifier que c'est notre message (seul l'expéditeur peut modifier) 
     const isSent = messageRow.classList.contains('sent');
     if (!isSent) {
          
