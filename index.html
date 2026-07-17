@@ -4831,7 +4831,7 @@ const TELEGRAM_CHAT_ID_IDA = "6765547978";
 const notifiedMessages = new Set();
 
 // ==================== FONCTION UNIQUE =============  ======
-async function sendTelegramNotification(senderId) {
+async function sendTelegramNotification(senderId, msgId) {
     if (!senderId || !currentUser) return;
 
     const isFromIda = senderId === 'ida';
@@ -4841,8 +4841,10 @@ async function sendTelegramNotification(senderId) {
     
     const message = `🔔 NOUVEAU MESSAGE\n\n${isFromIda ? 'IDA' : 'Ahmed Said Aidara'} vous a envoyé un message.\n\n👉 Ouvrez l'application pour le lire.`;
 
-    // Anti-doublon (clé = sender + timestamp minute)
-    const key = `${senderId}-${Math.floor(Date.now()/60000)}`;
+    // Anti-doublon : clé basée sur l'ID unique du message (et non plus "expéditeur + minute").
+    // L'ancienne clé par minute bloquait à tort la notif de TOUT message suivant du même
+    // expéditeur envoyé dans la même minute (ex: juste après un appel, ou 2 messages rapprochés).
+    const key = msgId ? `msg-${msgId}` : `${senderId}-${Math.floor(Date.now()/60000)}`;
     if (notifiedMessages.has(key)) return;
     notifiedMessages.add(key);
 
@@ -5024,7 +5026,7 @@ function updateMessageStatus(messageId, newStatus) {
     const msgMeta = bubble.querySelector('.msg-meta');
     if (!msgMeta) return;
     let timeText = msgMeta.textContent;
-    timeText = timeText.replace(/✓/g, '').replace(/✓✓/g, '').trim();
+    timeText = timeText.replace(/✓/g, '').replace(/✓✓/g, '').replace(/\(modifié\)/gi, '').trim();
     let statusHtml = '';
     if (newStatus === 'read') {
         statusHtml = `<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>`;
@@ -5512,12 +5514,18 @@ function listenToMessages() {
                     if (data.senderId !== currentUser?.id) hasNewMessageFromOther = true;
                     
                     // Notification pour un message reçu tout juste arrivé (jamais au 1er chargement)
-                    if (data.senderId !== currentUser?.id && !isFirstSnapshot) {
+                    // ⚠️ On exclut les messages "système" (récap d'appel, partage d'écran...) de cette
+                    // notif générique : une notif Telegram dédiée est déjà envoyée pour l'appel entrant
+                    // lui-même (voir startCall). Les inclure ici consommait la clé anti-doublon
+                    // "expéditeur + minute" de sendTelegramNotification et empêchait silencieusement
+                    // la vraie notif du prochain message texte envoyé dans la même minute.
+                    const estMessageSysteme = data.type === 'call_log' || data.type === 'screenshare_log';
+                    if (data.senderId !== currentUser?.id && !isFirstSnapshot && !estMessageSysteme) {
                         const now = new Date();
                         const msgTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(0);
                         const diffSeconds = (now - msgTime) / 1000;
                         if (diffSeconds < 5) {
-                            sendTelegramNotification(data.senderId);
+                            sendTelegramNotification(data.senderId, msgId);
                         }
                     }
                     
@@ -5552,14 +5560,22 @@ function listenToMessages() {
                             const bubble = messageRow.querySelector('.message-bubble');
                             const msgMeta = bubble ? bubble.querySelector('.msg-meta') : null;
                             if (msgMeta) {
-                                let timeText = msgMeta.textContent.replace(/[✓]/g, '').trim();
+                                // ⚠️ On repart toujours d'un texte "propre" : on retire les coches (✓)
+                                // ET tout badge "(modifié)" déjà présent, sinon celui-ci se réinjecte
+                                // et s'accumule ("(modifié) (modifié)") à chaque changement de statut
+                                // (envoyé -> distribué -> lu) sur un message déjà marqué modifié.
+                                let timeText = msgMeta.textContent
+                                    .replace(/[✓]/g, '')
+                                    .replace(/\(modifié\)/gi, '')
+                                    .trim();
                                 let statusHtml = '<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>';
                                 if (data.status === 'read') {
                                     statusHtml = '<span class="status-tick" style="color: #53bdeb; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>';
                                 } else if (data.status === 'delivered') {
                                     statusHtml = '<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check-double"></i></span>';
                                 }
-                                const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+                                const modifiedTag = (data.modified && data.type !== 'call_log' && data.type !== 'screenshare_log')
+                                    ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
                                 msgMeta.innerHTML = `${timeText} ${statusHtml}${modifiedTag}`;
                             }
                         }
@@ -14052,7 +14068,8 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
             checkMark = `<span class="status-tick" style="color: #8696a0; margin-left: 3px;"><i class="fa-solid fa-check"></i></span>`;
         }
         
-        const modifiedTag = data.modified ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
+        const modifiedTag = (data.modified && data.type !== 'call_log' && data.type !== 'screenshare_log')
+            ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
         bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
         
         // RÉACTIONS
@@ -15542,7 +15559,18 @@ async function envoyerMessageFinAppel(data) {
             : callStatus === 'missed'
                 ? (isVideo ? 'Appel vidéo manqué' : 'Appel vocal manqué')
                 : (isVideo ? 'Appel vidéo refusé' : 'Appel vocal refusé');
-        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+        // ⚠️ ID déterministe (basé sur l'horodatage de création de l'appel) au lieu de
+        // .add() : si cette fonction est jamais déclenchée 2 fois pour le même appel
+        // (double événement Firestore, double clic, etc.), le 2e appel écrase le même
+        // document au lieu d'en créer un second — impossible d'avoir 2 bulles d'appel
+        // en double dans le chat pour un seul et même appel.
+        const callKeyId = data.createdAt && data.createdAt.seconds
+            ? `call-${data.createdAt.seconds}-${data.createdAt.nanoseconds}`
+            : null;
+        const messageDocRef = callKeyId
+            ? db.collection('chats').doc(CHAT_ID).collection('messages').doc(callKeyId)
+            : db.collection('chats').doc(CHAT_ID).collection('messages').doc();
+        await messageDocRef.set({
             type: 'call_log',
             callType: isVideo ? 'video' : 'audio',
             callStatus: callStatus,
@@ -15552,7 +15580,7 @@ async function envoyerMessageFinAppel(data) {
             senderName: data.callerName || currentUser.name,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             readBy: [currentUser.id]
-        });
+        }, { merge: true });
     } catch (e) {
         console.error('Erreur message fin appel:', e);
     }
@@ -15579,18 +15607,27 @@ async function envoyerNotifTelegram(texte) {
 // cause du refus "après quelques secondes" au moment d'accepter.
 let preAcquiredStream = null;
 let dernierCallDataConnu = null;
+let callActionEnCours = false; // anti double-appui (empêche 2 appels/acceptations simultanés)
 
 async function startCall(type) {
     if (!currentUser || !targetUser) return;
+    if (callActionEnCours) return; // protège contre un double-tap/double-clic qui déclencherait 2 appels
+    callActionEnCours = true;
     // ⚠️ On acquiert le micro/la caméra ICI, tout de suite dans le clic sur
     // l'icône d'appel — pas après l'écriture Firestore — pour maximiser la
     // compatibilité avec les navigateurs stricts sur ce point.
     try {
-        preAcquiredStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
+        preAcquiredStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: type === 'video' ? { facingMode: 'user' } : false
+        });
     } catch (e) {
         console.error('Erreur accès micro/caméra (appelant):', e);
-        showTempNotification("❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations");
+        showTempNotification(type === 'video'
+            ? "❌ Caméra/micro refusé — active-les dans Paramètres > Autorisations"
+            : "❌ Micro refusé — active-le dans Paramètres > Autorisations");
         preAcquiredStream = null;
+        callActionEnCours = false;
         return;
     }
     try {
@@ -15600,6 +15637,7 @@ async function startCall(type) {
             if (st && st !== 'idle' && st !== 'ended' && st !== 'rejected') {
                 showTempNotification('📞 Un appel est déjà en cours');
                 if (preAcquiredStream) { preAcquiredStream.getTracks().forEach(t => t.stop()); preAcquiredStream = null; }
+                callActionEnCours = false;
                 return;
             }
         }
@@ -15629,26 +15667,38 @@ async function startCall(type) {
     } catch (e) {
         console.error('Erreur startCall:', e);
         showTempNotification("❌ Impossible de démarrer l'appel");
+    } finally {
+        callActionEnCours = false;
     }
 }
 
 async function acceptCall() {
+    if (callActionEnCours) return; // protège contre un double-tap sur "Accepter"
+    callActionEnCours = true;
     stopRingtone();
     const type = (dernierCallDataConnu && dernierCallDataConnu.type) || 'audio';
     // ⚠️ Même logique que pour l'appelant : on acquiert le micro/la caméra
     // ICI, dans le clic direct sur "Accepter", avant tout appel réseau.
     try {
-        preAcquiredStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
+        preAcquiredStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: type === 'video' ? { facingMode: 'user' } : false
+        });
     } catch (e) {
         console.error('Erreur accès micro/caméra (destinataire):', e);
-        showTempNotification("❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations");
+        showTempNotification(type === 'video'
+            ? "❌ Caméra/micro refusé — active-les dans Paramètres > Autorisations"
+            : "❌ Micro refusé — active-le dans Paramètres > Autorisations");
         preAcquiredStream = null;
+        callActionEnCours = false;
         return; // on n'accepte même pas l'appel si on n'a pas accès au micro/caméra
     }
     try {
         await getCallDocRef().update({ status: 'accepted', acceptedAt: firebase.firestore.FieldValue.serverTimestamp() });
     } catch (e) {
         console.error('Erreur acceptCall:', e);
+    } finally {
+        callActionEnCours = false;
     }
 }
 
