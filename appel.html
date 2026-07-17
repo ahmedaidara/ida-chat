@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Appel Direct - Firebase</title>
+    <title>Appel Vidéo - Firebase</title>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -27,19 +27,10 @@
             border-radius: 20px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
-        h1 {
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-            color: #00cc44;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
+        h1 { text-align: center; margin-bottom: 15px; font-size: 1.3rem; color: #00cc44; }
         .video-container {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
             margin-bottom: 15px;
         }
@@ -85,26 +76,41 @@
             margin-top: 10px;
             font-size: 0.85rem;
             min-height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 4px;
         }
         .status .online { color: #00cc44; }
         .status .offline { color: #ff3b30; }
         .status .calling { color: #ffaa00; }
-        .status .incoming { color: #0095f6; }
         .status .connected { color: #00cc44; }
+        .call-notification {
+            background: #0095f6;
+            color: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            margin: 10px 0;
+            display: none;
+            text-align: center;
+        }
+        .call-notification.show { display: block; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .call-notification button {
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn-accept { background: #00cc44; color: #000; }
+        .btn-reject { background: #ff3b30; color: #fff; }
         .user-info {
             display: flex;
-            align-items: center;
             gap: 10px;
             justify-content: center;
             margin-bottom: 10px;
             padding: 8px;
             background: #222;
             border-radius: 10px;
+            flex-wrap: wrap;
         }
         .user-info input {
             padding: 8px 12px;
@@ -116,55 +122,17 @@
             width: 120px;
             text-align: center;
         }
-        .user-info input:focus {
-            border-color: #0095f6;
-            outline: none;
-        }
-        .badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
         .badge.online { background: #00cc44; color: #000; }
         .badge.offline { background: #ff3b30; color: #fff; }
         .badge.calling { background: #ffaa00; color: #000; }
-        .call-notification {
-            background: #0095f6;
-            color: #fff;
-            padding: 10px;
-            border-radius: 12px;
-            margin: 10px 0;
-            display: none;
-            animation: pulse 1s infinite;
-            text-align: center;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        .call-notification.show { display: block; }
-        .call-notification button {
-            background: #fff;
-            color: #0095f6;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: 700;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .call-notification button:active { transform: scale(0.95); }
-        .call-notification .btn-accept { background: #00cc44; color: #000; }
-        .call-notification .btn-reject { background: #ff3b30; color: #fff; }
+        .debug { font-size: 0.6rem; color: #666; margin-top: 5px; word-break: break-all; max-height: 100px; overflow-y: auto; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📹 Appel Direct</h1>
+        <h1>📹 Appel Vidéo</h1>
 
-        <!-- Nom d'utilisateur -->
         <div class="user-info">
             <span style="color:#666;">👤</span>
             <input type="text" id="username-input" placeholder="Ton nom" value="Moi" maxlength="15">
@@ -176,7 +144,6 @@
             <video id="remote-video" autoplay playsinline></video>
         </div>
 
-        <!-- Notification d'appel entrant -->
         <div class="call-notification" id="call-notification">
             <div id="caller-name">👤 Quelqu'un</div>
             <div style="font-size:0.8rem; margin:5px 0;">📞 Vous appelle...</div>
@@ -193,14 +160,13 @@
             <button class="btn-mic" id="btn-mic" disabled>🎤</button>
         </div>
 
-        <div class="status" id="status">
-            <span class="offline">🔴 Connectez-vous à Firebase</span>
-        </div>
+        <div class="status" id="status">🔴 Connectez-vous...</div>
+        <div class="debug" id="debug"></div>
     </div>
 
     <script>
         // ============================================================
-        // 1. CONFIGURATION FIREBASE (VOS IDENTIFIANTS)
+        // CONFIGURATION FIREBASE
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
@@ -215,22 +181,33 @@
         const db = firebase.firestore();
 
         // ============================================================
-        // 2. CONFIGURATION WebRTC
+        // CONFIGURATION WebRTC - AVEC SERVEURS TURN FIABLES
         // ============================================================
         const configuration = {
             iceServers: [
+                // STUN Google
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                // STUN alternatif
+                { urls: 'stun:stun.stunprotocol.org:3478' },
+                // TURN gratuit (important pour traverser les routeurs)
                 {
                     urls: 'turn:turn.anyfirewall.com:443?transport=tcp',
                     username: 'webrtc',
                     credential: 'webrtc'
+                },
+                {
+                    urls: 'turn:turn.anyfirewall.com:443?transport=udp',
+                    username: 'webrtc',
+                    credential: 'webrtc'
                 }
-            ]
+            ],
+            iceCandidatePoolSize: 10
         };
 
         // ============================================================
-        // 3. ÉTAT
+        // ÉTAT
         // ============================================================
         let localStream = null;
         let remoteStream = null;
@@ -242,6 +219,7 @@
         let callDocId = null;
         let signalUnsubscribe = null;
         let statusUnsubscribe = null;
+        let pendingCandidates = [];
 
         // Éléments DOM
         const localVideo = document.getElementById('local-video');
@@ -251,6 +229,7 @@
         const usernameInput = document.getElementById('username-input');
         const callNotification = document.getElementById('call-notification');
         const callerNameSpan = document.getElementById('caller-name');
+        const debugDiv = document.getElementById('debug');
 
         const btnStart = document.getElementById('btn-start');
         const btnCall = document.getElementById('btn-call');
@@ -258,14 +237,20 @@
         const btnMic = document.getElementById('btn-mic');
 
         // ============================================================
-        // 4. FONCTIONS UTILITAIRES
+        // FONCTIONS UTILITAIRES
         // ============================================================
         function setStatus(text, type = 'offline') {
-            const emojis = { online: '🟢', offline: '🔴', calling: '🟡', incoming: '🔵', connected: '🟢' };
-            const labels = { online: 'En ligne', offline: 'Hors ligne', calling: 'En appel', incoming: 'Appel entrant', connected: 'Connecté' };
+            const emojis = { online: '🟢', offline: '🔴', calling: '🟡', connected: '🟢' };
             statusDiv.innerHTML = `<span class="${type}">${emojis[type] || '🔴'} ${text}</span>`;
+            const labels = { online: 'En ligne', offline: 'Hors ligne', calling: 'En appel', connected: 'Connecté' };
             statusBadge.textContent = labels[type] || 'Hors ligne';
-            statusBadge.className = 'badge ' + (type === 'online' || type === 'connected' ? 'online' : type === 'calling' || type === 'incoming' ? 'calling' : 'offline');
+            statusBadge.className = 'badge ' + (type === 'online' || type === 'connected' ? 'online' : type === 'calling' ? 'calling' : 'offline');
+        }
+
+        function debugLog(msg) {
+            console.log(msg);
+            debugDiv.textContent += '\n' + msg;
+            debugDiv.scrollTop = debugDiv.scrollHeight;
         }
 
         function getUsername() {
@@ -273,14 +258,11 @@
         }
 
         // ============================================================
-        // 5. CONNEXION À FIREBASE (STATUT EN LIGNE)
+        // CONNEXION À FIREBASE
         // ============================================================
         async function connectToFirebase() {
             const username = getUsername();
-            if (!username) {
-                alert('Entrez un nom');
-                return false;
-            }
+            if (!username) { alert('Entrez un nom'); return false; }
 
             currentUser = {
                 id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -288,7 +270,6 @@
                 room: 'appel_global'
             };
 
-            // Enregistrer dans Firestore
             const userRef = db.collection('users').doc(currentUser.id);
             await userRef.set({
                 name: currentUser.name,
@@ -297,22 +278,19 @@
                 lastSeen: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Écouter les changements de statut des autres
             listenToUsers();
-
-            // Nettoyer à la déconnexion
             window.addEventListener('beforeunload', () => {
                 userRef.update({ online: false });
             });
 
             setStatus(`✅ Connecté en tant que ${currentUser.name}`, 'online');
             btnStart.disabled = false;
-            console.log('✅ Connecté à Firebase:', currentUser.name);
+            debugLog('✅ Connecté à Firebase');
             return true;
         }
 
         // ============================================================
-        // 6. ÉCOUTER LES AUTRES UTILISATEURS
+        // ÉCOUTER LES AUTRES UTILISATEURS
         // ============================================================
         function listenToUsers() {
             if (statusUnsubscribe) statusUnsubscribe();
@@ -330,17 +308,18 @@
                     });
 
                     if (users.length > 0 && !isInCall) {
-                        setStatus(`👥 ${users.length} personne(s) en ligne - Cliquez sur "Appeler"`, 'online');
+                        setStatus(`👥 ${users.length} personne(s) en ligne`, 'online');
                         btnCall.disabled = false;
+                        debugLog(`👥 ${users.length} utilisateurs en ligne`);
                     } else if (!isInCall) {
-                        setStatus('👤 Seul(e) en ligne - Attendez que quelqu\'un se connecte', 'online');
+                        setStatus('👤 Seul(e) en ligne', 'online');
                         btnCall.disabled = true;
                     }
                 });
         }
 
         // ============================================================
-        // 7. DÉMARRER LA CAMÉRA
+        // DÉMARRER LA CAMÉRA
         // ============================================================
         async function startLocalMedia() {
             try {
@@ -351,40 +330,36 @@
                 localVideo.srcObject = localStream;
                 btnStart.disabled = true;
                 btnMic.disabled = false;
-                setStatus('✅ Prêt - Cliquez sur "Appeler"', 'online');
                 btnCall.disabled = false;
-                console.log('✅ Caméra/micro démarré');
+                setStatus('✅ Caméra prête', 'online');
+                debugLog('✅ Caméra/micro démarré');
                 return true;
             } catch (err) {
                 console.error('Erreur caméra:', err);
-                setStatus('❌ Impossible d\'accéder à la caméra/micro');
-                alert('❌ Autorisez la caméra et le micro dans les paramètres du navigateur');
+                setStatus('❌ Impossible d\'accéder à la caméra');
+                alert('❌ Autorisez la caméra et le micro');
                 return false;
             }
         }
 
         btnStart.addEventListener('click', async () => {
-            if (!currentUser) {
-                await connectToFirebase();
-            }
+            if (!currentUser) { await connectToFirebase(); }
             await startLocalMedia();
         });
 
         // ============================================================
-        // 8. APPELER (CRÉER UNE OFFRE)
+        // APPELER - AVEC ÉCHANGE COMPLET DES ICE CANDIDATES
         // ============================================================
         btnCall.addEventListener('click', async () => {
-            if (!localStream) {
-                await startLocalMedia();
-                if (!localStream) return;
-            }
-
+            if (!localStream) { await startLocalMedia(); if (!localStream) return; }
             if (isInCall) return;
+
             isCaller = true;
             isInCall = true;
             btnCall.disabled = true;
             btnHangup.disabled = false;
             setStatus('📞 Appel en cours...', 'calling');
+            pendingCandidates = [];
 
             try {
                 // Créer la connexion WebRTC
@@ -400,19 +375,47 @@
                     if (!remoteStream) {
                         remoteStream = new MediaStream();
                         remoteVideo.srcObject = remoteStream;
+                        debugLog('✅ Flux distant reçu !');
                     }
                     remoteStream.addTrack(event.track);
-                    setStatus('📞 En appel', 'connected');
+                    setStatus('📞 En appel - Vidéo reçue', 'connected');
                     isConnected = true;
+                };
+
+                // === IMPORTANT: Collecter TOUS les ICE candidates ===
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        pendingCandidates.push(event.candidate);
+                        debugLog(`🧊 ICE candidate: ${event.candidate.candidate.substring(0, 50)}...`);
+                        // Envoyer le candidate immédiatement
+                        sendCandidateToFirestore(event.candidate);
+                    } else {
+                        // Tous les candidates ont été envoyés
+                        debugLog('✅ Tous les ICE candidates collectés');
+                    }
+                };
+
+                // === Gérer les changements d'état de connexion ===
+                peerConnection.onconnectionstatechange = () => {
+                    const state = peerConnection.connectionState;
+                    debugLog(`📡 État connexion: ${state}`);
+                    if (state === 'connected') {
+                        setStatus('📞 Connecté !', 'connected');
+                        isConnected = true;
+                    } else if (state === 'failed' || state === 'disconnected') {
+                        setStatus('❌ Connexion perdue', 'offline');
+                        resetCall();
+                    }
                 };
 
                 // Créer l'offre
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
 
-                // Créer un document Firestore pour l'appel
+                // === CRUCIAL: Créer un document pour l'appel ===
                 const callRef = db.collection('calls').doc();
                 callDocId = callRef.id;
+
                 await callRef.set({
                     type: 'offer',
                     from: currentUser.id,
@@ -420,24 +423,43 @@
                     to: 'any',
                     room: 'appel_global',
                     sdp: offer.sdp,
+                    candidates: [], // Liste des ICE candidates
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     status: 'ringing'
                 });
 
-                // Écouter les réponses
+                debugLog(`📤 Offre créée: ${callDocId}`);
                 listenForAnswer(callRef);
-
-                console.log('📤 Offre créée:', callDocId);
 
             } catch (err) {
                 console.error('Erreur appel:', err);
+                debugLog('❌ Erreur: ' + err.message);
                 setStatus('❌ Erreur: ' + err.message);
                 resetCall();
             }
         });
 
         // ============================================================
-        // 9. ÉCOUTER LES RÉPONSES
+        // ENVOYER UN ICE CANDIDATE
+        // ============================================================
+        async function sendCandidateToFirestore(candidate) {
+            if (!callDocId) return;
+            try {
+                const candidateData = {
+                    candidate: candidate.candidate,
+                    sdpMid: candidate.sdpMid,
+                    sdpMLineIndex: candidate.sdpMLineIndex
+                };
+                await db.collection('calls').doc(callDocId).update({
+                    candidates: firebase.firestore.FieldValue.arrayUnion(candidateData)
+                });
+            } catch (err) {
+                debugLog('❌ Erreur envoi candidate: ' + err.message);
+            }
+        }
+
+        // ============================================================
+        // ÉCOUTER LES RÉPONSES
         // ============================================================
         function listenForAnswer(callRef) {
             if (signalUnsubscribe) signalUnsubscribe();
@@ -447,15 +469,28 @@
                 const data = doc.data();
 
                 if (data.type === 'answer' && data.to === currentUser.id) {
-                    // Réponse reçue
+                    debugLog('📥 Réponse reçue');
+                    
+                    // Définir la réponse distante
                     await peerConnection.setRemoteDescription({
                         type: 'answer',
                         sdp: data.sdp
                     });
-                    setStatus('📞 Connecté !', 'connected');
+
+                    // Ajouter les ICE candidates reçus
+                    if (data.candidates) {
+                        for (const cand of data.candidates) {
+                            try {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+                            } catch (e) {
+                                debugLog('⚠️ Candidate invalide: ' + e.message);
+                            }
+                        }
+                        debugLog(`✅ ${data.candidates.length} candidates ajoutés`);
+                    }
+
+                    setStatus('📞 Connexion établie !', 'connected');
                     isConnected = true;
-                    console.log('✅ Réponse reçue, connexion établie');
-                    // Supprimer le document d'appel
                     doc.ref.delete().catch(() => {});
                 } else if (data.status === 'rejected') {
                     setStatus('❌ Appel refusé', 'offline');
@@ -468,7 +503,7 @@
         }
 
         // ============================================================
-        // 10. ÉCOUTER LES APPELS ENTRANTS
+        // ÉCOUTER LES APPELS ENTRANTS
         // ============================================================
         function listenForIncomingCalls() {
             db.collection('calls')
@@ -489,14 +524,13 @@
         function showIncomingCall(doc, data) {
             callNotification.classList.add('show');
             callerNameSpan.textContent = `👤 ${data.fromName || 'Quelqu\'un'}`;
-            setStatus('📞 Appel entrant', 'incoming');
-            
-            // Stocker les données pour l'acceptation
+            setStatus('📞 Appel entrant', 'calling');
             window._incomingCall = { doc, data };
+            debugLog(`📞 Appel entrant de ${data.fromName}`);
         }
 
         // ============================================================
-        // 11. ACCEPTER UN APPEL
+        // ACCEPTER UN APPEL
         // ============================================================
         async function acceptIncomingCall() {
             const incoming = window._incomingCall;
@@ -507,9 +541,9 @@
             isInCall = true;
             btnCall.disabled = true;
             btnHangup.disabled = false;
+            pendingCandidates = [];
 
             try {
-                // Créer la connexion WebRTC
                 peerConnection = new RTCPeerConnection(configuration);
 
                 // Ajouter les pistes locales
@@ -522,10 +556,34 @@
                     if (!remoteStream) {
                         remoteStream = new MediaStream();
                         remoteVideo.srcObject = remoteStream;
+                        debugLog('✅ Flux distant reçu !');
                     }
                     remoteStream.addTrack(event.track);
-                    setStatus('📞 En appel', 'connected');
+                    setStatus('📞 En appel - Vidéo reçue', 'connected');
                     isConnected = true;
+                };
+
+                // === COLLECTER LES ICE CANDIDATES ===
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        pendingCandidates.push(event.candidate);
+                        sendCandidateToFirestore(event.candidate);
+                    } else {
+                        debugLog('✅ Tous les ICE candidates collectés');
+                    }
+                };
+
+                // === ÉTAT DE LA CONNEXION ===
+                peerConnection.onconnectionstatechange = () => {
+                    const state = peerConnection.connectionState;
+                    debugLog(`📡 État connexion: ${state}`);
+                    if (state === 'connected') {
+                        setStatus('📞 Connecté !', 'connected');
+                        isConnected = true;
+                    } else if (state === 'failed' || state === 'disconnected') {
+                        setStatus('❌ Connexion perdue', 'offline');
+                        resetCall();
+                    }
                 };
 
                 // Définir l'offre distante
@@ -534,36 +592,49 @@
                     sdp: incoming.data.sdp
                 });
 
+                // Ajouter les ICE candidates de l'appelant
+                if (incoming.data.candidates) {
+                    for (const cand of incoming.data.candidates) {
+                        try {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+                        } catch (e) {
+                            debugLog('⚠️ Candidate invalide: ' + e.message);
+                        }
+                    }
+                    debugLog(`✅ ${incoming.data.candidates.length} candidates de l'appelant ajoutés`);
+                }
+
                 // Créer la réponse
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
 
-                // Envoyer la réponse
+                // Envoyer la réponse avec TOUS les candidates
                 await incoming.doc.ref.update({
                     type: 'answer',
                     to: currentUser.id,
                     sdp: answer.sdp,
+                    candidates: pendingCandidates,
                     status: 'answered'
                 });
 
                 setStatus('📞 Connexion établie !', 'connected');
                 isConnected = true;
-                console.log('✅ Appel accepté');
+                debugLog('✅ Appel accepté');
 
             } catch (err) {
                 console.error('Erreur acceptation:', err);
+                debugLog('❌ Erreur: ' + err.message);
                 setStatus('❌ Erreur: ' + err.message);
                 resetCall();
             }
         }
 
         // ============================================================
-        // 12. REFUSER UN APPEL
+        // REFUSER UN APPEL
         // ============================================================
         async function rejectIncomingCall() {
             const incoming = window._incomingCall;
             if (!incoming) return;
-
             callNotification.classList.remove('show');
             await incoming.doc.ref.update({ status: 'rejected' });
             setStatus('❌ Appel refusé', 'offline');
@@ -571,7 +642,7 @@
         }
 
         // ============================================================
-        // 13. RACCROCHER
+        // RACCROCHER
         // ============================================================
         function resetCall() {
             if (peerConnection) {
@@ -591,15 +662,16 @@
                 db.collection('calls').doc(callDocId).delete().catch(() => {});
                 callDocId = null;
             }
+            pendingCandidates = [];
             isConnected = false;
             isInCall = false;
             isCaller = false;
             btnCall.disabled = false;
             btnHangup.disabled = true;
             callNotification.classList.remove('show');
-            setStatus('📵 Appel terminé', 'online');
             window._incomingCall = null;
-            console.log('📵 Appel terminé');
+            setStatus('📵 Appel terminé', 'online');
+            debugLog('📵 Appel terminé');
         }
 
         btnHangup.addEventListener('click', () => {
@@ -610,7 +682,7 @@
         });
 
         // ============================================================
-        // 14. MICROPHONE
+        // MICROPHONE
         // ============================================================
         function toggleMic() {
             if (!localStream) return;
@@ -621,34 +693,26 @@
                 btnMic.classList.toggle('muted', !audioTrack.enabled);
             }
         }
-
         btnMic.addEventListener('click', toggleMic);
 
         // ============================================================
-        // 15. INITIALISATION
+        // INITIALISATION
         // ============================================================
         async function init() {
-            setStatus('🔄 Connexion à Firebase...', 'offline');
+            setStatus('🔄 Connexion...', 'offline');
             await connectToFirebase();
             listenForIncomingCalls();
-
-            // Démarrer automatiquement la caméra
             setTimeout(async () => {
-                if (!localStream) {
-                    await startLocalMedia();
-                }
+                if (!localStream) await startLocalMedia();
             }, 1000);
-
-            console.log('🎮 Appel Direct - Firebase prêt !');
-            console.log(`👤 Utilisateur: ${getUsername()}`);
-            console.log('📞 Les autres utilisateurs en ligne apparaîtront automatiquement');
+            debugLog('🎮 Appel Vidéo prêt !');
         }
 
         // Démarrer
         init();
 
         // ============================================================
-        // 16. NETTOYAGE
+        // NETTOYAGE
         // ============================================================
         window.addEventListener('beforeunload', () => {
             if (currentUser) {
@@ -657,9 +721,8 @@
             resetCall();
         });
 
-        console.log('%c📹 Appel Direct - Firebase', 'font-size:20px; font-weight:bold; color:#00cc44;');
-        console.log('%c👤 Connectez-vous et les autres utilisateurs apparaîtront', 'font-size:14px; color:#0095f6;');
-        console.log('%c📞 Cliquez sur "Appeler" pour appeler quelqu\'un', 'font-size:14px; color:#ffaa00;');
+        console.log('%c📹 Appel Vidéo - Firebase', 'font-size:20px; font-weight:bold; color:#00cc44;');
+        console.log('%c🔑 Cliquez sur "Appeler" pour appeler quelqu\'un', 'font-size:14px; color:#ffaa00;');
     </script>
 </body>
 </html>
