@@ -9028,6 +9028,29 @@ function gererSwipeMouvement(event, msgId) {
     }
 }
 
+      // Dans toggleBlurMode(), ajoute ceci :
+function toggleBlurMode() {
+    blurModeActive = !blurModeActive;
+    const container = document.getElementById('msg-area');
+    const blurBtn = document.getElementById('blur-toggle-btn');
+    if (blurModeActive) {
+        container.classList.add('blur-mode');
+        blurBtn.classList.add('active');
+        blurBtn.classList.remove('fa-eye-slash');
+        blurBtn.classList.add('fa-eye');
+        applyBlurToAllMessages();
+        
+        // ✅ AJOUTE UN INDICATEUR VISIBLE 
+     } else {
+        container.classList.remove('blur-mode');
+        blurBtn.classList.remove('active');
+        blurBtn.classList.remove('fa-eye');
+        blurBtn.classList.add('fa-eye-slash');
+        removeBlurFromAllMessages();
+        showTempNotification("👁️ Mode Flou DÉSACTIVÉ");
+    }
+}
+      
 function annulerAppuiLong() {
     if (appuiLongTimer) {
         clearTimeout(appuiLongTimer);
