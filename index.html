@@ -6358,6 +6358,7 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
         
        function handleContextMenu(e, msgId) {
     // Empêcher le comportement par défaut
+         if (blurModeActive) { if(e) e.preventDefault(); return false; }
     if (e && e.preventDefault) e.preventDefault();
     if (e && e.stopPropagation) e.stopPropagation();
     
