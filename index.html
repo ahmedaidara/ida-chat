@@ -15611,26 +15611,34 @@ let callActionEnCours = false; // anti double-appui (empêche 2 appels/acceptati
 
 async function startCall(type) {
     if (!currentUser || !targetUser) return;
-    if (callActionEnCours) return; // protège contre un double-tap/double-clic qui déclencherait 2 appels
+    if (callActionEnCours) return;
     callActionEnCours = true;
-    // ⚠️ On acquiert le micro/la caméra ICI, tout de suite dans le clic sur
-    // l'icône d'appel — pas après l'écriture Firestore — pour maximiser la
-    // compatibilité avec les navigateurs stricts sur ce point.
+    
+    // ⚠️ ACQUISITION DU FLUX - POUR L'APPELANT
     try {
-        preAcquiredStream = await navigator.mediaDevices.getUserMedia({
+        const constraints = {
             audio: true,
-            video: type === 'video' ? { facingMode: 'user' } : false
-        });
+            video: type === 'video' ? { 
+                facingMode: 'user',
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } : false
+        };
+        preAcquiredStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log(`✅ Flux ${type} acquis par l'appelant`);
     } catch (e) {
-        console.error('Erreur accès micro/caméra (appelant):', e);
-        showTempNotification(type === 'video'
+        console.error('Erreur accès média (appelant):', e);
+        let msg = type === 'video' 
             ? "❌ Caméra/micro refusé — active-les dans Paramètres > Autorisations"
-            : "❌ Micro refusé — active-le dans Paramètres > Autorisations");
+            : "❌ Micro refusé — active-le dans Paramètres > Autorisations";
+        showTempNotification(msg);
         preAcquiredStream = null;
         callActionEnCours = false;
         return;
     }
+    
     try {
+        // Vérifier si un appel est déjà en cours
         const existing = await getCallDocRef().get();
         if (existing.exists) {
             const st = existing.data().status;
@@ -15641,6 +15649,8 @@ async function startCall(type) {
                 return;
             }
         }
+        
+        // Créer l'appel dans Firestore
         await getCallDocRef().set({
             status: 'ringing',
             type: type,
@@ -15650,8 +15660,8 @@ async function startCall(type) {
             channel: CHAT_ID,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        // Notif Telegram fiable (réutilise le système déjà fonctionnel des messages,
-        // avec vos vrais bots personnels, plutôt que la fonction Supabase séparée)
+        
+        // Notification Telegram
         (async () => {
             try {
                 const isFromIda = currentUser.id === 'ida';
@@ -15661,42 +15671,63 @@ async function startCall(type) {
                 await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&disable_notification=false`);
             } catch (e) { console.error('Erreur Telegram appel:', e); }
         })();
-        // ⚠️ Pas de minuterie d'annulation automatique : l'appel sonne
-        // jusqu'à ce que l'un des deux raccroche/accepte/refuse manuellement.
+        
+        // Rejoindre le canal Agora
         await joinAgoraChannel(type);
+        
     } catch (e) {
         console.error('Erreur startCall:', e);
         showTempNotification("❌ Impossible de démarrer l'appel");
+        if (preAcquiredStream) { preAcquiredStream.getTracks().forEach(t => t.stop()); preAcquiredStream = null; }
     } finally {
         callActionEnCours = false;
     }
 }
 
 async function acceptCall() {
-    if (callActionEnCours) return; // protège contre un double-tap sur "Accepter"
+    if (callActionEnCours) return;
     callActionEnCours = true;
     stopRingtone();
+    
     const type = (dernierCallDataConnu && dernierCallDataConnu.type) || 'audio';
-    // ⚠️ Même logique que pour l'appelant : on acquiert le micro/la caméra
-    // ICI, dans le clic direct sur "Accepter", avant tout appel réseau.
+    
+    // ⚠️ ACQUISITION DU FLUX - POUR LE DESTINATAIRE (au moment de l'acceptation)
     try {
-        preAcquiredStream = await navigator.mediaDevices.getUserMedia({
+        const constraints = {
             audio: true,
-            video: type === 'video' ? { facingMode: 'user' } : false
-        });
+            video: type === 'video' ? { 
+                facingMode: 'user',
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } : false
+        };
+        preAcquiredStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log(`✅ Flux ${type} acquis par le destinataire`);
     } catch (e) {
-        console.error('Erreur accès micro/caméra (destinataire):', e);
-        showTempNotification(type === 'video'
-            ? "❌ Caméra/micro refusé — active-les dans Paramètres > Autorisations"
-            : "❌ Micro refusé — active-le dans Paramètres > Autorisations");
+        console.error('Erreur accès média (destinataire):', e);
+        let msg = type === 'video'
+            ? "❌ Caméra/micro refusé — active-les dans Paramètres > Autorisations, puis réessaie d'accepter"
+            : "❌ Micro refusé — active-le dans Paramètres > Autorisations, puis réessaie d'accepter";
+        showTempNotification(msg);
         preAcquiredStream = null;
         callActionEnCours = false;
-        return; // on n'accepte même pas l'appel si on n'a pas accès au micro/caméra
+        return;
     }
+    
     try {
-        await getCallDocRef().update({ status: 'accepted', acceptedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        // Mettre à jour le statut de l'appel
+        await getCallDocRef().update({ 
+            status: 'accepted', 
+            acceptedAt: firebase.firestore.FieldValue.serverTimestamp() 
+        });
+        
+        // Rejoindre le canal Agora
+        await joinAgoraChannel(type);
+        
     } catch (e) {
         console.error('Erreur acceptCall:', e);
+        if (preAcquiredStream) { preAcquiredStream.getTracks().forEach(t => t.stop()); preAcquiredStream = null; }
+        showTempNotification("❌ Erreur lors de l'acceptation");
     } finally {
         callActionEnCours = false;
     }
@@ -15737,14 +15768,18 @@ function tenterRaccrocher() {
 async function joinAgoraChannel(type) {
     if (agoraClient) return;
     const uid = AGORA_UID_MAP[currentUser.id];
+    
     try {
+        // Obtenir le token
         const tokenResp = await fetch(`${AGORA_FUNCTIONS_URL}?channel=${encodeURIComponent(CHAT_ID)}&uid=${uid}`);
         if (!tokenResp.ok) throw new Error('token http ' + tokenResp.status);
         const tokenData = await tokenResp.json();
         if (!tokenData.token) throw new Error('token manquant dans la réponse');
 
+        // Créer le client Agora
         agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
 
+        // Événements utilisateur
         agoraClient.on('user-published', async (user, mediaType) => {
             await agoraClient.subscribe(user, mediaType);
             if (mediaType === 'video') {
@@ -15755,64 +15790,87 @@ async function joinAgoraChannel(type) {
                 user.audioTrack.play();
             }
         });
+        
         agoraClient.on('user-unpublished', (user, mediaType) => {
             if (mediaType === 'video') {
                 remoteVideoTrackRef = null;
                 mettreAJourVuesVideo();
             }
         });
+        
+        agoraClient.on('user-left', () => {
+            remoteVideoTrackRef = null;
+            mettreAJourVuesVideo();
+        });
 
+        // Rejoindre le canal
         await agoraClient.join(AGORA_APP_ID, CHAT_ID, tokenData.token, uid);
 
-        // On réutilise le flux micro/caméra déjà obtenu pendant le clic (voir
-        // startCall/acceptCall) plutôt que d'en redemander un nouveau ici —
-        // cette 2e demande, faite depuis un callback Firestore (donc hors du
-        // clic utilisateur), est ce qui provoquait le refus par le navigateur.
+        // 🔥 PUBLIER LE FLUX PRÉ-ACQUIS (ou en créer un nouveau)
+        const tracksToPublish = [];
+        
         if (preAcquiredStream) {
+            // Utiliser le flux déjà acquis (micro/caméra)
             const audioTrackBrut = preAcquiredStream.getAudioTracks()[0];
-            const videoTrackBrut = preAcquiredStream.getVideoTracks()[0];
-            localAudioTrack = audioTrackBrut
-                ? AgoraRTC.createCustomAudioTrack({ mediaStreamTrack: audioTrackBrut })
-                : await AgoraRTC.createMicrophoneAudioTrack();
-            const tracksToPublish = [localAudioTrack];
-            if (type === 'video') {
-                localVideoTrack = videoTrackBrut
-                    ? AgoraRTC.createCustomVideoTrack({ mediaStreamTrack: videoTrackBrut })
-                    : await AgoraRTC.createCameraVideoTrack();
-                tracksToPublish.push(localVideoTrack);
-                mettreAJourVuesVideo();
+            if (audioTrackBrut) {
+                localAudioTrack = AgoraRTC.createCustomAudioTrack({ 
+                    mediaStreamTrack: audioTrackBrut 
+                });
+                tracksToPublish.push(localAudioTrack);
+            } else {
+                // Fallback si pas de piste audio
+                localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                tracksToPublish.push(localAudioTrack);
             }
-            preAcquiredStream = null; // consommé
-            await agoraClient.publish(tracksToPublish);
+            
+            if (type === 'video') {
+                const videoTrackBrut = preAcquiredStream.getVideoTracks()[0];
+                if (videoTrackBrut) {
+                    localVideoTrack = AgoraRTC.createCustomVideoTrack({ 
+                        mediaStreamTrack: videoTrackBrut 
+                    });
+                    tracksToPublish.push(localVideoTrack);
+                    mettreAJourVuesVideo();
+                } else {
+                    // Fallback si pas de piste vidéo
+                    localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+                    tracksToPublish.push(localVideoTrack);
+                    mettreAJourVuesVideo();
+                }
+            }
+            
+            preAcquiredStream = null; // Consommé
         } else {
-            // Filet de sécurité si jamais rien n'a été pré-acquis (ne devrait pas arriver)
+            // Filet de sécurité : créer de nouvelles pistes
             localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-            const tracksToPublish = [localAudioTrack];
+            tracksToPublish.push(localAudioTrack);
+            
             if (type === 'video') {
                 localVideoTrack = await AgoraRTC.createCameraVideoTrack();
                 tracksToPublish.push(localVideoTrack);
                 mettreAJourVuesVideo();
             }
+        }
+        
+        // Publier les pistes
+        if (tracksToPublish.length > 0) {
             await agoraClient.publish(tracksToPublish);
         }
+        
+        console.log('✅ Rejoint le canal Agora avec succès');
+        
     } catch (e) {
-        console.error('Erreur Agora:', e);
+        console.error('Erreur joinAgoraChannel:', e);
         if (preAcquiredStream) { preAcquiredStream.getTracks().forEach(t => t.stop()); preAcquiredStream = null; }
-        let msg = "❌ Micro/caméra inaccessible ou token invalide";
-        const estPermissionRefusee = e && e.message && /Permission denied|NotAllowedError/i.test(e.message);
-        if (estPermissionRefusee) {
-            msg = "❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations, puis réessaie";
+        let msg = "❌ Impossible de rejoindre l'appel";
+        if (e && e.message && /Permission denied|NotAllowedError/i.test(e.message)) {
+            msg = "❌ Micro/caméra refusé — active-les dans Paramètres > Autorisations";
         }
         showTempNotification(msg);
         cleanupCall();
         try {
             const docSnap = await getCallDocRef().get();
             const data = docSnap.exists ? docSnap.data() : null;
-            // ⚠️ CORRECTIF IMPORTANT : si c'est LE DESTINATAIRE qui vient d'accepter et
-            // que SON accès micro/caméra a échoué à ce moment précis, on ne coupe plus
-            // l'appel pour les DEUX personnes — on remet juste l'appel en sonnerie.
-            // L'appelant continue d'attendre pendant que le destinataire corrige son
-            // autorisation et peut réessayer d'accepter, sans que l'appel ne se termine.
             if (data && data.calleeId === currentUser.id && data.status === 'accepted') {
                 await getCallDocRef().update({ status: 'ringing' });
             } else {
@@ -15824,35 +15882,81 @@ async function joinAgoraChannel(type) {
 
 // Passer d'un appel vocal à un appel vidéo en cours d'appel
 async function passerEnAppelVideo() {
-    if (!agoraClient || localVideoTrack) return;
+    if (!agoraClient) {
+        showTempNotification("❌ Aucun appel en cours");
+        return;
+    }
+    
+    if (localVideoTrack) {
+        showTempNotification("📷 L'appel est déjà en vidéo");
+        return;
+    }
+    
     try {
-        localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        // ⚠️ Demander l'accès à la caméra maintenant (obligatoire)
+        // On ne peut PAS réutiliser le flux audio existant pour la vidéo
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+        });
+        
+        const videoTrackBrut = stream.getVideoTracks()[0];
+        if (!videoTrackBrut) {
+            showTempNotification("❌ Aucune piste vidéo disponible");
+            return;
+        }
+        
+        // Créer la piste vidéo personnalisée
+        localVideoTrack = AgoraRTC.createCustomVideoTrack({ 
+            mediaStreamTrack: videoTrackBrut 
+        });
+        
+        // Publier la piste vidéo
         await agoraClient.publish([localVideoTrack]);
+        
+        // Mettre à jour le type d'appel dans Firestore
         await getCallDocRef().update({ type: 'video' });
+        
+        // Activer l'interface vidéo
         activerModeVideo();
         mettreAJourVuesVideo();
+        
+        // Cacher le bouton "Passer en vidéo"
         document.getElementById('call-upgrade-video-btn').style.display = 'none';
         document.getElementById('call-switch-cam-btn').style.display = 'flex';
+        
         showTempNotification('🎥 Appel vidéo activé');
+        
     } catch (e) {
         console.error('Erreur passage vidéo:', e);
-        showTempNotification("❌ Impossible d'activer la caméra");
+        showTempNotification("❌ Impossible d'activer la caméra — vérifie les autorisations");
     }
 }
 
 async function switchCallCamera() {
-    if (!localVideoTrack) return;
+    if (!localVideoTrack) {
+        showTempNotification("📷 Aucune caméra active");
+        return;
+    }
+    
     try {
+        // Récupérer la liste des caméras
         if (availableCameras.length === 0) {
             availableCameras = await AgoraRTC.getCameras();
         }
+        
         if (availableCameras.length < 2) {
             showTempNotification('📷 Une seule caméra détectée');
             return;
         }
+        
+        // Passer à la caméra suivante
         currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
-        await localVideoTrack.setDevice(availableCameras[currentCameraIndex].deviceId);
+        const deviceId = availableCameras[currentCameraIndex].deviceId;
+        
+        // Changer de périphérique
+        await localVideoTrack.setDevice(deviceId);
         showTempNotification('🔄 Caméra changée');
+        
     } catch (e) {
         console.error('Erreur changement caméra:', e);
         showTempNotification('❌ Impossible de changer de caméra');
@@ -15889,19 +15993,36 @@ function cleanupCall() {
     stopCallTimer();
     clearTimeout(hangupResetTimer);
     hangupArmed = false;
-    if (localAudioTrack) { localAudioTrack.close(); localAudioTrack = null; }
-    if (localVideoTrack) { localVideoTrack.close(); localVideoTrack = null; }
+    
+    // Fermer les pistes audio/vidéo
+    if (localAudioTrack) { 
+        try { localAudioTrack.close(); } catch (e) {}
+        localAudioTrack = null; 
+    }
+    if (localVideoTrack) { 
+        try { localVideoTrack.close(); } catch (e) {}
+        localVideoTrack = null; 
+    }
+    if (preAcquiredStream) { 
+        try { preAcquiredStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+        preAcquiredStream = null; 
+    }
+    
     remoteVideoTrackRef = null;
     mainViewIsLocal = true;
     availableCameras = [];
+    currentCameraIndex = 0;
+    
     if (agoraClient) {
-        agoraClient.removeAllListeners();
-        agoraClient.leave().catch(() => {});
+        try {
+            agoraClient.removeAllListeners();
+            agoraClient.leave().catch(() => {});
+        } catch (e) {}
         agoraClient = null;
     }
+    
     hideCallOverlay();
 }
-
 function setCallTopbarText(data) {
     const el = document.getElementById('call-topbar-text');
     if (!el || !targetUser) return;
@@ -15924,14 +16045,47 @@ function activerModeVideo() {
 function mettreAJourVuesVideo() {
     const pipWrap = document.getElementById('call-pip');
     if (!pipWrap) return;
+    
     if (mainViewIsLocal) {
-        if (localVideoTrack) localVideoTrack.play('call-main-video');
-        if (remoteVideoTrackRef) { remoteVideoTrackRef.play('call-pip-video'); pipWrap.style.display = 'block'; }
-        else { pipWrap.style.display = 'none'; }
+        // Vue principale = caméra locale
+        if (localVideoTrack) {
+            try {
+                localVideoTrack.play('call-main-video');
+            } catch (e) {
+                console.warn('Erreur lecture locale:', e);
+            }
+        }
+        // Miniature = vidéo distante
+        if (remoteVideoTrackRef) {
+            try {
+                remoteVideoTrackRef.play('call-pip-video');
+                pipWrap.style.display = 'block';
+            } catch (e) {
+                pipWrap.style.display = 'none';
+            }
+        } else {
+            pipWrap.style.display = 'none';
+        }
     } else {
-        if (remoteVideoTrackRef) remoteVideoTrackRef.play('call-main-video');
-        if (localVideoTrack) { localVideoTrack.play('call-pip-video'); pipWrap.style.display = 'block'; }
-        else { pipWrap.style.display = 'none'; }
+        // Vue principale = vidéo distante
+        if (remoteVideoTrackRef) {
+            try {
+                remoteVideoTrackRef.play('call-main-video');
+            } catch (e) {
+                console.warn('Erreur lecture distante:', e);
+            }
+        }
+        // Miniature = caméra locale
+        if (localVideoTrack) {
+            try {
+                localVideoTrack.play('call-pip-video');
+                pipWrap.style.display = 'block';
+            } catch (e) {
+                pipWrap.style.display = 'none';
+            }
+        } else {
+            pipWrap.style.display = 'none';
+        }
     }
 }
 
@@ -16009,7 +16163,15 @@ function baseCallUI(data, phase) {
     updateChatCallBanner(data, phase);
 
     const isVideo = data.type === 'video';
-    if (isVideo) activerModeVideo(); else activerModeAudio();
+    if (isVideo) {
+        activerModeVideo();
+        // Afficher la vidéo locale immédiatement si disponible
+        if (localVideoTrack) {
+            try { localVideoTrack.play('call-main-video'); } catch (e) {}
+        }
+    } else {
+        activerModeAudio();
+    }
 
     const showCenter = !isVideo;
     document.getElementById('call-center-info').style.display = showCenter ? 'flex' : 'none';
@@ -16017,17 +16179,31 @@ function baseCallUI(data, phase) {
         document.getElementById('call-avatar-big').innerText = targetUser.name.substring(0, 3);
         document.getElementById('call-remote-name').innerText = targetUser.name;
     }
+    
     document.getElementById('call-status-text').innerText =
         phase === 'incoming' ? (isVideo ? 'Appel vidéo entrant...' : 'Appel entrant...') :
         phase === 'outgoing' ? (isVideo ? 'Appel vidéo en cours...' : 'Appel en cours...') :
         'En appel';
+    
     document.getElementById('call-timer-text').style.display = phase === 'active' ? 'block' : 'none';
-
     document.getElementById('call-incoming-actions').style.display = phase === 'incoming' ? 'flex' : 'none';
     document.getElementById('call-bottombar').style.display = phase === 'incoming' ? 'none' : 'flex';
 
-    document.getElementById('call-upgrade-video-btn').style.display = (!isVideo && phase !== 'incoming') ? 'flex' : 'none';
-    document.getElementById('call-switch-cam-btn').style.display = (isVideo && phase !== 'incoming') ? 'flex' : 'none';
+    // Bouton "Passer en vidéo" : disponible pour les appels audio ET vidéo
+    const upgradeBtn = document.getElementById('call-upgrade-video-btn');
+    if (phase !== 'incoming') {
+        // Si déjà en vidéo, on cache, sinon on affiche
+        if (isVideo) {
+            upgradeBtn.style.display = 'none';
+            document.getElementById('call-switch-cam-btn').style.display = 'flex';
+        } else {
+            upgradeBtn.style.display = 'flex';
+            document.getElementById('call-switch-cam-btn').style.display = 'none';
+        }
+    } else {
+        upgradeBtn.style.display = 'none';
+        document.getElementById('call-switch-cam-btn').style.display = 'none';
+    }
 }
 
 // Petit bandeau visible dans le fil de discussion tant que l'appel dure
