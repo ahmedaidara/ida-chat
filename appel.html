@@ -47,11 +47,32 @@
         }
 
         header h1 { font-size: 1.2rem; }
+        
         .status-badge {
             font-size: 0.85rem;
             padding: 4px 8px;
             border-radius: 12px;
             background: rgba(255,255,255,0.2);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-logout {
+            background-color: var(--danger);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-logout:hover {
+            opacity: 0.8;
         }
 
         #login-screen {
@@ -64,6 +85,10 @@
             align-items: center;
             padding: 20px;
             z-index: 100;
+        }
+
+        #login-screen.hidden {
+            display: none;
         }
 
         .card {
@@ -104,16 +129,6 @@
         .profile-btn.selected {
             background: var(--wa-teal);
             color: white;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 15px 0;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
         }
 
         button {
@@ -174,6 +189,8 @@
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
         }
 
         #video-container {
@@ -224,11 +241,16 @@
             color: white;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             font-size: 1.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
         .btn-mute { background-color: var(--wa-gray); }
         .btn-mute.muted { background-color: var(--danger); }
         .btn-hangup { background-color: var(--danger); display: none; }
+        .btn-camera { background-color: #4a6fa5; }
+        .btn-camera:hover { transform: scale(1.1); }
 
         #incoming-call-box {
             position: fixed;
@@ -258,8 +280,8 @@
             margin-left: auto;
         }
 
-        .btn-accept { background-color: var(--success); color: white; padding: 8px 16px; }
-        .btn-reject { background-color: var(--danger); color: white; padding: 8px 16px; }
+        .btn-accept { background-color: var(--success); color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-reject { background-color: var(--danger); color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; }
 
         .quality-indicator {
             position: absolute;
@@ -272,6 +294,12 @@
             font-size: 0.75rem;
             z-index: 5;
             display: none;
+        }
+
+        .saved-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--wa-gray);
         }
 
         @media (max-width: 768px) {
@@ -296,12 +324,17 @@
             </div>
             
             <button class="btn-primary" id="start-btn">Se connecter</button>
+            <div id="saved-profile-info" class="saved-info"></div>
         </div>
     </div>
 
     <header>
         <h1 id="app-title">WhatsApp WebRTC</h1>
-        <div id="app-status" class="status-badge">Hors ligne</div>
+        <div class="header-right">
+            <span id="user-name-display" style="font-weight: bold;"></span>
+            <div id="app-status" class="status-badge">Hors ligne</div>
+            <button class="btn-logout" id="logout-btn" style="display: none;">Déconnexion</button>
+        </div>
     </header>
 
     <main>
@@ -317,6 +350,7 @@
 
             <div class="controls">
                 <button class="btn-round btn-mute" id="mute-btn" title="Activer/Désactiver micro">🎙️</button>
+                <button class="btn-round btn-camera" id="camera-btn" title="Changer de caméra">📷</button>
                 <button class="btn-round btn-hangup" id="hangup-btn" title="Raccrocher">🛑</button>
             </div>
         </div>
@@ -373,15 +407,18 @@
         const MAX_RECONNECT_ATTEMPTS = 5;
         let isReconnecting = false;
         let selectedProfile = null;
+        let isUsingFrontCamera = true;
 
         // Éléments DOM
         const loginScreen = document.getElementById('login-screen');
         const startBtn = document.getElementById('start-btn');
         const appStatus = document.getElementById('app-status');
+        const userNameDisplay = document.getElementById('user-name-display');
         const usersListElement = document.getElementById('users-list');
         const localVideo = document.getElementById('local-video');
         const remoteVideo = document.getElementById('remote-video');
         const muteBtn = document.getElementById('mute-btn');
+        const cameraBtn = document.getElementById('camera-btn');
         const hangupBtn = document.getElementById('hangup-btn');
         const incomingBox = document.getElementById('incoming-call-box');
         const callerNameDoc = document.getElementById('caller-name');
@@ -389,22 +426,81 @@
         const rejectBtn = document.getElementById('reject-btn');
         const qualityIndicator = document.getElementById('quality-indicator');
         const profileBtns = document.querySelectorAll('.profile-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const savedProfileInfo = document.getElementById('saved-profile-info');
 
-        // Sélection du profil
-        profileBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                profileBtns.forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                selectedProfile = btn.dataset.profile;
-            });
-        });
+        // --- GESTION DE LA MÉMORISATION DU PROFIL ---
 
-        // --- DÉMARRAGE ULTRA HD ---
-        startBtn.addEventListener('click', async () => {
+        function saveProfile(profile) {
+            localStorage.setItem('whatsapp_profile', profile);
+        }
+
+        function getSavedProfile() {
+            return localStorage.getItem('whatsapp_profile');
+        }
+
+        function clearSavedProfile() {
+            localStorage.removeItem('whatsapp_profile');
+        }
+
+        // --- FONCTION DE CHANGEMENT DE CAMÉRA ---
+        async function switchCamera() {
+            if (!localStream) return;
+
+            try {
+                // Arrêter les tracks vidéo actuelles
+                const videoTracks = localStream.getVideoTracks();
+                videoTracks.forEach(track => track.stop());
+
+                // Changer de caméra
+                isUsingFrontCamera = !isUsingFrontCamera;
+                
+                const constraints = {
+                    video: {
+                        width: { ideal: 1920, max: 1920 },
+                        height: { ideal: 1080, max: 1080 },
+                        frameRate: { ideal: 60, max: 60 },
+                        facingMode: isUsingFrontCamera ? "user" : "environment",
+                        resizeMode: "none"
+                    },
+                    audio: false // On garde l'audio existant
+                };
+
+                const newVideoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const newVideoTrack = newVideoStream.getVideoTracks()[0];
+                
+                // Ajouter la nouvelle track vidéo au stream existant
+                localStream.addTrack(newVideoTrack);
+                
+                // Mettre à jour la vidéo locale
+                localVideo.srcObject = localStream;
+
+                // Si en appel, remplacer la track dans le peer connection
+                if (peerConnection) {
+                    const senders = peerConnection.getSenders();
+                    const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+                    if (videoSender) {
+                        await videoSender.replaceTrack(newVideoTrack);
+                    }
+                }
+
+                console.log(`📷 Caméra changée: ${isUsingFrontCamera ? 'Avant' : 'Arrière'}`);
+
+            } catch (error) {
+                console.error('Erreur lors du changement de caméra:', error);
+                alert('Impossible de changer de caméra. Vérifiez les permissions.');
+                // Réinitialiser l'état
+                isUsingFrontCamera = !isUsingFrontCamera;
+            }
+        }
+
+        // --- FONCTION DE CONNEXION ---
+        async function performLogin() {
             if (!selectedProfile) {
                 alert('Veuillez choisir un profil (IDAET ou AIDARA)');
-                return;
+                return false;
             }
+
             currentUsername = selectedProfile;
 
             try {
@@ -430,8 +526,13 @@
                 localStream = await navigator.mediaDevices.getUserMedia(constraints);
                 localVideo.srcObject = localStream;
                 
-                loginScreen.style.display = 'none';
+                loginScreen.classList.add('hidden');
+                userNameDisplay.textContent = `👤 ${currentUsername}`;
+                logoutBtn.style.display = 'inline-block';
                 updateStatus("En ligne");
+
+                // Sauvegarder le profil
+                saveProfile(currentUsername);
 
                 // Créer l'utilisateur dans Firestore
                 currentUserId = db.collection('users').doc().id;
@@ -446,18 +547,100 @@
 
                 window.addEventListener('beforeunload', cleanupUser);
 
+                return true;
+
             } catch (err) {
                 console.error("Erreur d'accès médias : ", err);
                 alert("Impossible d'accéder à la caméra ou au micro. Vérifiez les permissions.");
+                return false;
             }
-        });
+        }
+
+        // --- VÉRIFICATION AUTO-LOGIN ---
+        async function checkAutoLogin() {
+            const savedProfile = getSavedProfile();
+            if (savedProfile) {
+                savedProfileInfo.textContent = `👤 Connexion automatique avec ${savedProfile}...`;
+                
+                profileBtns.forEach(btn => {
+                    btn.classList.remove('selected');
+                    if (btn.dataset.profile === savedProfile) {
+                        btn.classList.add('selected');
+                    }
+                });
+
+                selectedProfile = savedProfile;
+                await performLogin();
+            }
+        }
 
         function updateStatus(text) {
             appStatus.innerText = text;
             if(text === "En ligne") appStatus.style.background = "var(--success)";
-            if(text === "En appel") appStatus.style.background = "var(--wa-dark)";
-            if(text === "Reconnexion...") appStatus.style.background = "orange";
+            else if(text === "En appel") appStatus.style.background = "var(--wa-dark)";
+            else if(text === "Reconnexion...") appStatus.style.background = "orange";
+            else appStatus.style.background = "rgba(255,255,255,0.2)";
         }
+
+        // --- SÉLECTION DU PROFIL ---
+        profileBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                profileBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedProfile = btn.dataset.profile;
+                savedProfileInfo.textContent = '';
+            });
+        });
+
+        // --- BOUTON SE CONNECTER ---
+        startBtn.addEventListener('click', async () => {
+            if (!selectedProfile) {
+                const saved = getSavedProfile();
+                if (saved) {
+                    profileBtns.forEach(btn => {
+                        if (btn.dataset.profile === saved) {
+                            btn.classList.add('selected');
+                            selectedProfile = saved;
+                        }
+                    });
+                } else {
+                    alert('Veuillez choisir un profil (IDAET ou AIDARA)');
+                    return;
+                }
+            }
+            await performLogin();
+        });
+
+        // --- BOUTON DÉCONNEXION ---
+        logoutBtn.addEventListener('click', async () => {
+            if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+                await cleanupUser();
+                clearSavedProfile();
+                
+                localVideo.srcObject = null;
+                remoteVideo.srcObject = null;
+                loginScreen.classList.remove('hidden');
+                logoutBtn.style.display = 'none';
+                userNameDisplay.textContent = '';
+                updateStatus("Hors ligne");
+                
+                currentUserId = null;
+                currentUsername = "";
+                selectedProfile = null;
+                
+                profileBtns.forEach(b => b.classList.remove('selected'));
+                savedProfileInfo.textContent = '👤 Déconnecté';
+                
+                // Réinitialiser les médias
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                }
+            }
+        });
+
+        // --- BOUTON CHANGER DE CAMÉRA ---
+        cameraBtn.addEventListener('click', switchCamera);
 
         // --- LISTE DES UTILISATEURS ---
         function listenUsersOnline() {
@@ -501,7 +684,7 @@
                 offerToReceiveVideo: true
             });
 
-            // Optimisation SDP pour 4K/Ultra HD
+            // Optimisation SDP pour Ultra HD
             offerDescription.sdp = offerDescription.sdp
                 .replace(/a=rtpmap:100 VP8\/90000/g, 'a=rtpmap:100 VP8/90000\r\na=fmtp:100 max-fr=60;max-fs=3600')
                 .replace(/a=rtpmap:96 VP8\/90000/g, 'a=rtpmap:96 VP8/90000\r\na=fmtp:96 max-fr=60;max-fs=3600');
@@ -543,7 +726,7 @@
             });
         }
 
-        // --- RECEPTION APPEL ---
+        // --- RÉCEPTION APPEL ---
         function listenIncomingCalls() {
             db.collection('calls')
             .where('receiverId', '==', currentUserId)
@@ -618,7 +801,7 @@
             }
         });
 
-        // --- CREATION PEER CONNECTION ULTRA HD ---
+        // --- CRÉATION PEER CONNECTION ULTRA HD ---
         async function createPeerConnection() {
             peerConnection = new RTCPeerConnection(peerConfiguration);
 
@@ -715,14 +898,12 @@
             updateStatus(`Reconnexion... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
 
             try {
-                // Tenter de recréer la connexion
                 if (peerConnection) {
                     peerConnection.close();
                 }
 
                 await createPeerConnection();
 
-                // Re-négocier l'appel
                 const callDoc = db.collection('calls').doc(currentCallId);
                 const callData = (await callDoc.get()).data();
 
@@ -778,7 +959,7 @@
 
         // --- MIC ---
         muteBtn.addEventListener('click', () => {
-            const audioTrack = localStream.getAudioTracks()[0];
+            const audioTrack = localStream?.getAudioTracks()[0];
             if (audioTrack) {
                 audioTrack.enabled = !audioTrack.enabled;
                 muteBtn.classList.toggle('muted', !audioTrack.enabled);
@@ -790,7 +971,7 @@
         async function cleanupUser() {
             if (currentUserId) {
                 if (currentCallId) {
-                    db.collection('calls').doc(currentCallId).update({ status: "ended" });
+                    await db.collection('calls').doc(currentCallId).update({ status: "ended" });
                 }
                 await db.collection('users').doc(currentUserId).delete();
             }
@@ -802,6 +983,9 @@
                 adjustBitrate();
             }
         }, 5000);
+
+        // --- LANCEMENT AUTO-LOGIN ---
+        checkAutoLogin();
 
     </script>
 </body>
