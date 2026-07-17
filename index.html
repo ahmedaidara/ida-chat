@@ -8957,7 +8957,17 @@ window.addEventListener('DOMContentLoaded', function() {
 let appuiLongTimer = null;
 let elementAppuye = null;
 
+<!-- SOLUTION POUR MOBILE (Safari/Samsung) : Le mode flou bloque l'appui long -->
+<!-- Modifie la fonction demarrerAppuiLong (vers ligne ~3830) -->
+
 function demarrerAppuiLong(event, msgId) {
+    // ✅ AJOUTE CETTE CONDITION EN PREMIER
+    if (blurModeActive) {
+        // Optionnel : vibration discrète pour signaler que c'est bloqué
+        if (navigator.vibrate) navigator.vibrate(50);
+        return;
+    }
+    
     // Annuler si déjà un timer
     if (appuiLongTimer) clearTimeout(appuiLongTimer);
     
@@ -8982,6 +8992,40 @@ function demarrerAppuiLong(event, msgId) {
         clearTimeout(appuiLongTimer);
         appuiLongTimer = null;
     }, 500);
+}
+
+// ✅ Ajoute aussi cette vérification dans les fonctions de swipe (gererSwipeMouvement)
+function gererSwipeMouvement(event, msgId) {
+    // BLOQUER LES SWIPES EN MODE FLOU
+    if (blurModeActive) {
+        swipeDepartX = null;
+        swipeDepartY = null;
+        return;
+    }
+    
+    if (swipeDepartX === null || swipeDeclenche) return;
+    const touche = event.touches ? event.touches[0] : event;
+    const deltaX = touche.clientX - swipeDepartX;
+    const deltaY = touche.clientY - swipeDepartY;
+    
+    // Tout mouvement annule l'appui long (comportement original conservé)
+    annulerAppuiLong();
+    
+    // Un swipe doit être surtout horizontal pour ne pas gêner le scroll vertical
+    if (Math.abs(deltaX) > SWIPE_SEUIL_PX && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+        swipeDeclenche = true;
+        const row = document.querySelector(`[data-id="${msgId}"]`);
+        const estMonMessage = row && row.classList.contains('sent');
+        
+        if (deltaX > 0) {
+            // Swipe vers la droite → Répondre
+            selectedMessageId = msgId;
+            initiateReply();
+        } else if (estMonMessage) {
+            // Swipe vers la gauche → Modifier (uniquement si l'utilisateur est l'auteur)
+            modifierMonMessageDirect(msgId);
+        }
+    }
 }
 
 function annulerAppuiLong() {
