@@ -281,7 +281,7 @@
         .giant-emoji { font-size: 3.5rem; background: none !important; padding: 0 !important; animation: bounceEmoji 0.4s ease-out; }
 
         .reply-bar-preview { display: none; background: var(--input-bg); padding: 8px 15px; border-top: 1px solid var(--border-color); justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted); }
-        .chat-input-bar { padding: 12px; background: var(--bg-main); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; }
+        .chat-input-bar { padding: 8px; background: var(--bg-main); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; }
         .input-box-container { display: flex; align-items: center; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 25px; padding: 4px 12px; width: 100%; }
 .chat-input {
     flex: 1;
@@ -2905,6 +2905,7 @@ input, textarea {
 
 /* La barre de saisie devient transparente */
 .chat-input-bar {
+  
     background: rgba(255, 255, 255, 0.12) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
@@ -3312,7 +3313,11 @@ input, textarea {
     -webkit-backdrop-filter: none !important;
     border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
-
+.chat-input-bar {
+    padding: 6px 12px !important; /* Réduit l'espace vertical interne */
+    gap: 0px !important;          /* Supprime l'espace entre les blocs d'outils et le textarea */
+    position: relative;
+}
 /* Les boutons de la barre d'outils */
 #etude-toolbar .toolbar-btn,
 #etude-toolbar button {
@@ -3326,7 +3331,12 @@ input, textarea {
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
       /* ===== FOND TRANSPARENT DERRIÈRE LES 4 ICÔNES ===== */
-
+.chat-input-bar textarea, 
+.chat-input-bar button {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  bottom: 0 !important;
+}
 .header-actions {
     display: flex !important;
     align-items: center !important;
@@ -3383,7 +3393,7 @@ input, textarea {
 #tools-panel {
     display: block !important;
     position: absolute !important;
-    bottom: 80px !important;
+    bottom: 60px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     background: rgba(255, 255, 255, 0.15) !important;
@@ -4029,31 +4039,69 @@ input, textarea {
 [data-theme="dark"] .media-picker-item:nth-child(6) span {
     color: #7a78e6 !important;
 }
-      
-      /* ===== ICÔNES DU HEADER (Recherche, Appel, Paramètres) ===== */
+      /* ULTRA FORCE - Icônes toujours blanches */
+.header-actions i,
+.header-actions .fa-solid,
+.header-actions .fa-regular,
+#call-audio-btn,
+#call-video-btn,
+.fa-magnifying-glass,
+.fa-gear {
+    color: #ffffff !important;
+}
 
-/* Mode clair - blanc cassé élégant */
+[data-theme="dark"] .header-actions i,
+[data-theme="dark"] .header-actions .fa-solid,
+[data-theme="dark"] .header-actions .fa-regular,
+[data-theme="dark"] #call-audio-btn,
+[data-theme="dark"] #call-video-btn,
+[data-theme="dark"] .fa-magnifying-glass,
+[data-theme="dark"] .fa-gear {
+    color: #ffffff !important;
+}
+      /* ===== ICÔNES DU HEADER TOUJOURS BLANCHES (mode clair ET sombre) ===== */
+
+.header-actions i,
+.header-actions i.fa-solid,
+.header-actions i.fa-regular {
+    color: #ffffff !important;
+    opacity: 0.9 !important;
+    transition: all 0.2s ease !important;
+}
+
+.header-actions i:hover,
+.header-actions i.fa-solid:hover,
+.header-actions i.fa-regular:hover {
+    opacity: 1 !important;
+    transform: scale(1.1) !important;
+}
+
+/* Forcer le blanc aussi en mode sombre */
+[data-theme="dark"] .header-actions i,
+[data-theme="dark"] .header-actions i.fa-solid,
+[data-theme="dark"] .header-actions i.fa-regular {
+    color: #ffffff !important;
+    opacity: 0.85 !important;
+}
+
+[data-theme="dark"] .header-actions i:hover,
+[data-theme="dark"] .header-actions i.fa-solid:hover,
+[data-theme="dark"] .header-actions i.fa-regular:hover {
+    opacity: 1 !important;
+}
+      
+      
+/* ===== ICÔNES DU HEADER TOUJOURS BLANCHES ===== */
+
 .header-actions i {
-    color: rgba(255, 255, 255, 0.85) !important;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+    color: #ffffff !important;
+    opacity: 0.9 !important;
     transition: all 0.2s ease !important;
 }
 
 .header-actions i:hover {
-    color: #ffffff !important;
+    opacity: 1 !important;
     transform: scale(1.1) !important;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Mode sombre - noir élégant */
-[data-theme="dark"] .header-actions i {
-    color: rgba(0, 0, 0, 0.75) !important;
-    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.15) !important;
-}
-
-[data-theme="dark"] .header-actions i:hover {
-    color: #000000 !important;
-    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.25) !important;
 }
 
 /* ===== ICÔNES DE LA BARRE DE SAISIE (Media, Audio) ===== */
@@ -4134,6 +4182,29 @@ input, textarea {
 .chat-header {
     background: transparent !important;
 }
+      
+      /* ===== TITRE MORPION ET DESSIN TOUJOURS EN BLANC ===== */
+
+/* Morpion - titre */
+.morpion-header span:first-child {
+    color: #ffffff !important;
+}
+
+/* Dessin / Tableau blanc - titre */
+.wb-header span:first-child {
+    color: #ffffff !important;
+}
+
+/* Mode sombre - aussi blanc */
+[data-theme="dark"] .morpion-header span:first-child {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .wb-header span:first-child {
+    color: #ffffff !important;
+}
+      
+      
     </style>
 </head>
 <body>
