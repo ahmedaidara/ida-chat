@@ -2754,6 +2754,70 @@ input, textarea {
     -webkit-backdrop-filter: blur(14px);
     color: #fff; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none;
 }
+      
+      
+      
+      /* ========== SOLUTION CORRECTE : ÉLIMINER LA BANDE BLANCHE SANS CHANGER LES COULEURS ========== */
+/* AJOUTE JUSTE CETTE PARTIE À LA FIN DE TA BALISE <style> */
+
+/* Supprimer l'espace blanc en bas sur toutes les pages */
+.app-container {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    bottom: 0 !important;
+}
+
+/* Forcer les overlays à occuper tout l'écran */
+.call-overlay,
+.photo-modal,
+.media-editor-overlay,
+.screenshare-viewer-overlay,
+.viewonce-viewer-overlay,
+#secret-overlay,
+#etude-overlay,
+#galerie-overlay,
+.search-page,
+.settings-page {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 100dvh !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    bottom: 0 !important;
+}
+
+/* Gérer les safe-areas sur iPhone sans ajouter de couleur */
+@supports (padding: env(safe-area-inset-bottom)) {
+    .app-container,
+    .call-overlay,
+    .photo-modal,
+    .media-editor-overlay,
+    .screenshare-viewer-overlay,
+    .viewonce-viewer-overlay,
+    #secret-overlay,
+    #etude-overlay,
+    #galerie-overlay,
+    .search-page,
+    .settings-page {
+        padding-bottom: 0 !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        margin-bottom: 0 !important;
+        bottom: 0 !important;
+    }
+}
+
+/* Supprimer les marges blanches en bas des body */
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    height: 100dvh !important;
+    bottom: 0 !important;
+}
     </style>
 </head>
 <body>
@@ -17096,6 +17160,26 @@ function nettoyerPartageEcran() {
       });
     }
   })();
+  
+  
+  // SUPPRIMER LA BANDE BLANCHE EN BAS
+document.addEventListener('DOMContentLoaded', function() {
+    // Détecter si c'est iPhone
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        // Forcer la hauteur à 100dvh pour tout
+        const elements = document.querySelectorAll('.app-container, .call-overlay, .photo-modal, .media-editor-overlay, .screenshare-viewer-overlay, .viewonce-viewer-overlay, #secret-overlay, #etude-overlay, #galerie-overlay, .search-page, .settings-page');
+        elements.forEach(el => {
+            if (el) {
+                el.style.height = '100dvh';
+                el.style.minHeight = '100dvh';
+                el.style.maxHeight = '100dvh';
+                el.style.paddingBottom = '0';
+                el.style.marginBottom = '0';
+                el.style.bottom = '0';
+            }
+        });
+    }
+});
 </script>
    <!-- Sélecteur de couleur pour les bulles -->
 <div class="color-picker-modal" id="color-picker-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:99999; justify-content:center; align-items:center;">
