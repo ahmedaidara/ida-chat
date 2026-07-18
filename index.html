@@ -3427,6 +3427,609 @@ input, textarea {
 [data-theme="dark"] #tools-panel .tool-item:hover {
     background: rgba(255, 255, 255, 0.12) !important;
 }
+      
+      /* ===== RÉPARER LE MENU DES 3 POINTS ===== */
+
+/* 1. Forcer l'affichage du panel */
+#tools-panel {
+    display: none !important;
+    position: fixed !important;
+    bottom: 100px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 20px !important;
+    padding: 20px !important;
+    z-index: 99999 !important;
+    min-width: 300px !important;
+    max-width: 90% !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 2. Quand le menu est affiché */
+#tools-panel.show,
+#tools-panel[style*="display: block"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* 3. Style des items du menu */
+#tools-panel .tool-item {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+    color: white !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+#tools-panel .tool-item:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) !important;
+}
+
+#tools-panel h4 {
+    color: white !important;
+    font-size: 0.9rem !important;
+}
+      
+      /* ===== MENU DES 3 POINTS TRANSPARENT ===== */
+
+#tools-panel {
+    display: none !important;
+    position: fixed !important;
+    bottom: 100px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(255, 255, 255, 0.12) !important;  /* ← TRANSPARENT */
+    backdrop-filter: blur(24px) !important;            /* ← EFFET FLOU */
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 20px !important;
+    padding: 20px !important;
+    z-index: 99999 !important;
+    min-width: 300px !important;
+    max-width: 90% !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Mode sombre - fond plus foncé mais toujours transparent */
+[data-theme="dark"] #tools-panel {
+    background: rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Les items du menu - transparents aussi */
+#tools-panel .tool-item {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+    color: var(--text-main) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-theme="dark"] #tools-panel .tool-item {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #f5f5f5 !important;
+}
+
+#tools-panel .tool-item:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) !important;
+}
+
+[data-theme="dark"] #tools-panel .tool-item:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Titre */
+#tools-panel h4 {
+    color: var(--text-main) !important;
+    font-size: 0.9rem !important;
+    opacity: 0.7 !important;
+}
+
+[data-theme="dark"] #tools-panel h4 {
+    color: #f5f5f5 !important;
+}
+
+/* Icônes et texte */
+#tools-panel .tool-item i {
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] #tools-panel .tool-item i {
+    color: #f5f5f5 !important;
+}
+
+#tools-panel .tool-item span {
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] #tools-panel .tool-item span {
+    color: #f5f5f5 !important;
+}
+      
+      /* ===== TOUS LES PANNEAUX FLOATING TRANSPARENTS ===== */
+
+/* PANNEAU MEDIA (Galerie, Appareil photo, Vidéo, Document, Position, Fichier) */
+#media-panel,
+#audio-panel,
+#position-panel,
+#tools-panel,
+#emoji-panel,
+.floating-panel {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Mode sombre */
+[data-theme="dark"] #media-panel,
+[data-theme="dark"] #audio-panel,
+[data-theme="dark"] #position-panel,
+[data-theme="dark"] #tools-panel,
+[data-theme="dark"] #emoji-panel,
+[data-theme="dark"] .floating-panel {
+    background: rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ===== MEDIA PICKER (les icônes rondes) ===== */
+.media-picker-item {
+    background: transparent !important;
+}
+
+.media-picker-icon {
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .media-picker-icon {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.media-picker-item span {
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .media-picker-item span {
+    color: #f5f5f5 !important;
+}
+
+/* ===== VOICE FILTERS (Audio) ===== */
+.voice-filter-chip {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .voice-filter-chip {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #f5f5f5 !important;
+}
+
+.voice-filter-chip.active {
+    background: var(--bubble-sent) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+/* ===== VOICE RECORD ZONE ===== */
+.voice-record-zone {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-radius: 14px !important;
+}
+
+[data-theme="dark"] .voice-record-zone {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ===== VOICE PREVIEW ===== */
+.voice-preview {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-radius: 14px !important;
+}
+
+[data-theme="dark"] .voice-preview {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ===== HEADER DES PANNEAUX ===== */
+.voice-panel-header {
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .voice-panel-header {
+    color: #f5f5f5 !important;
+}
+
+/* ===== BOUTONS DES PANNEAUX ===== */
+.voice-btn-cancel {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .voice-btn-cancel {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #f5f5f5 !important;
+}
+
+.voice-btn-send {
+    background: var(--bubble-sent) !important;
+    color: #fff !important;
+}
+
+/* ===== POSITION PANEL ===== */
+#position-panel h4 {
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] #position-panel h4 {
+    color: #f5f5f5 !important;
+}
+
+#position-panel .tool-item {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] #position-panel .tool-item {
+    color: #f5f5f5 !important;
+}
+
+#position-panel .tool-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+}
+
+[data-theme="dark"] #position-panel .tool-item:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ===== BOUTON FERMER DES PANNEAUX ===== */
+#media-panel button,
+#audio-panel button,
+#position-panel button,
+.floating-panel button {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-main) !important;
+    border-radius: 25px !important;
+    padding: 10px !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-theme="dark"] #media-panel button,
+[data-theme="dark"] #audio-panel button,
+[data-theme="dark"] #position-panel button,
+[data-theme="dark"] .floating-panel button {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #f5f5f5 !important;
+}
+
+#media-panel button:hover,
+#audio-panel button:hover,
+#position-panel button:hover,
+.floating-panel button:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] #media-panel button:hover,
+[data-theme="dark"] #audio-panel button:hover,
+[data-theme="dark"] #position-panel button:hover,
+[data-theme="dark"] .floating-panel button:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ===== SEPARATEURS ===== */
+#position-panel .tool-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] #position-panel .tool-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+#position-panel .tool-item:first-child {
+    border-top: none !important;
+}
+      /* ===== FOND TRANSPARENT ADAPTÉ AU THÈME ===== */
+
+#media-panel,
+#audio-panel,
+#position-panel,
+#tools-panel,
+#emoji-panel,
+.floating-panel {
+    background: rgba(255, 255, 255, 0.6) !important;  /* Blanc léger en mode clair */
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] #media-panel,
+[data-theme="dark"] #audio-panel,
+[data-theme="dark"] #position-panel,
+[data-theme="dark"] #tools-panel,
+[data-theme="dark"] #emoji-panel,
+[data-theme="dark"] .floating-panel {
+    background: rgba(0, 0, 0, 0.5) !important;  /* Noir léger en mode sombre */
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+      /* ===== COULEURS DES ICÔNES ET TEXTES DE LA BARRE D'OUTILS ===== */
+
+/* Bouton Étude */
+#etude-btn {
+    color: #9b2096 !important;
+}
+#etude-btn i {
+    color: #9b2096 !important;
+}
+#etude-btn span {
+    color: #9b2096 !important;
+}
+
+/* Bouton Jeux */
+.toolbar-btn[onclick*="ouvrirJeux"] {
+    color: #152cc2 !important;
+}
+.toolbar-btn[onclick*="ouvrirJeux"] i {
+    color: #152cc2 !important;
+}
+.toolbar-btn[onclick*="ouvrirJeux"] span {
+    color: #152cc2 !important;
+}
+
+/* Bouton Effets */
+.toolbar-btn[onclick*="ouvrirEffets"] {
+    color: #15c227 !important;
+}
+.toolbar-btn[onclick*="ouvrirEffets"] i {
+    color: #15c227 !important;
+}
+.toolbar-btn[onclick*="ouvrirEffets"] span {
+    color: #15c227 !important;
+}
+
+/* Bouton Dessin */
+.toolbar-btn[onclick*="creerTableauBlanc"] {
+    color: #FF6B00 !important;
+}
+.toolbar-btn[onclick*="creerTableauBlanc"] i {
+    color: #FF6B00 !important;
+}
+.toolbar-btn[onclick*="creerTableauBlanc"] span {
+    color: #FF6B00 !important;
+}
+
+/* Bouton Partage */
+#screenshare-toolbar-btn {
+    color: #0095f6 !important;
+}
+#screenshare-toolbar-btn i {
+    color: #0095f6 !important;
+}
+#screenshare-toolbar-btn span {
+    color: #0095f6 !important;
+}
+
+/* Bouton GIF */
+#gif-trigger-btn {
+    color: #e91e8c !important;
+}
+#gif-trigger-btn i {
+    color: #e91e8c !important;
+}
+#gif-trigger-btn span {
+    color: #e91e8c !important;
+}
+
+/* Bouton Galerie */
+.toolbar-btn[onclick*="openGaleriePage"] {
+    color: #d97706 !important;
+}
+.toolbar-btn[onclick*="openGaleriePage"] i {
+    color: #d97706 !important;
+}
+.toolbar-btn[onclick*="openGaleriePage"] span {
+    color: #d97706 !important;
+}
+
+/* ===== SURVOL ===== */
+#etude-btn:hover,
+.toolbar-btn[onclick*="ouvrirJeux"]:hover,
+.toolbar-btn[onclick*="ouvrirEffets"]:hover,
+.toolbar-btn[onclick*="creerTableauBlanc"]:hover,
+#screenshare-toolbar-btn:hover,
+#gif-trigger-btn:hover,
+.toolbar-btn[onclick*="openGaleriePage"]:hover {
+    opacity: 0.7 !important;
+    transform: scale(1.05) !important;
+}
+
+/* ===== MODE SOMBRE - couleurs plus vives ===== */
+[data-theme="dark"] #etude-btn {
+    color: #c266ff !important;
+}
+[data-theme="dark"] #etude-btn i {
+    color: #c266ff !important;
+}
+[data-theme="dark"] #etude-btn span {
+    color: #c266ff !important;
+}
+
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirJeux"] {
+    color: #4a5fff !important;
+}
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirJeux"] i {
+    color: #4a5fff !important;
+}
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirJeux"] span {
+    color: #4a5fff !important;
+}
+
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirEffets"] {
+    color: #4ae85a !important;
+}
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirEffets"] i {
+    color: #4ae85a !important;
+}
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirEffets"] span {
+    color: #4ae85a !important;
+}
+
+[data-theme="dark"] .toolbar-btn[onclick*="creerTableauBlanc"] {
+    color: #ff8a3d !important;
+}
+[data-theme="dark"] .toolbar-btn[onclick*="creerTableauBlanc"] i {
+    color: #ff8a3d !important;
+}
+[data-theme="dark"] .toolbar-btn[onclick*="creerTableauBlanc"] span {
+    color: #ff8a3d !important;
+}
+
+[data-theme="dark"] #screenshare-toolbar-btn {
+    color: #4db8ff !important;
+}
+[data-theme="dark"] #screenshare-toolbar-btn i {
+    color: #4db8ff !important;
+}
+[data-theme="dark"] #screenshare-toolbar-btn span {
+    color: #4db8ff !important;
+}
+
+[data-theme="dark"] #gif-trigger-btn {
+    color: #ff6bb5 !important;
+}
+[data-theme="dark"] #gif-trigger-btn i {
+    color: #ff6bb5 !important;
+}
+[data-theme="dark"] #gif-trigger-btn span {
+    color: #ff6bb5 !important;
+}
+
+[data-theme="dark"] .toolbar-btn[onclick*="openGaleriePage"] {
+    color: #f5a623 !important;
+}
+[data-theme="dark"] .toolbar-btn[onclick*="openGaleriePage"] i {
+    color: #f5a623 !important;
+}
+[data-theme="dark"] .toolbar-btn[onclick*="openGaleriePage"] span {
+    color: #f5a623 !important;
+}
+      /* ===== COULEURS DES ICÔNES DU MENU MEDIA ===== */
+
+/* Galerie */
+.media-picker-item:nth-child(1) .media-picker-icon {
+    background: #0095f6 !important;
+}
+.media-picker-item:nth-child(1) span {
+    color: #0095f6 !important;
+}
+
+/* Appareil photo */
+.media-picker-item:nth-child(2) .media-picker-icon {
+    background: #8e8e93 !important;
+}
+.media-picker-item:nth-child(2) span {
+    color: #8e8e93 !important;
+}
+
+/* Vidéo */
+.media-picker-item:nth-child(3) .media-picker-icon {
+    background: #34c759 !important;
+}
+.media-picker-item:nth-child(3) span {
+    color: #34c759 !important;
+}
+
+/* Document */
+.media-picker-item:nth-child(4) .media-picker-icon {
+    background: #ff9500 !important;
+}
+.media-picker-item:nth-child(4) span {
+    color: #ff9500 !important;
+}
+
+/* Position */
+.media-picker-item:nth-child(5) .media-picker-icon {
+    background: #ff3b30 !important;
+}
+.media-picker-item:nth-child(5) span {
+    color: #ff3b30 !important;
+}
+
+/* Fichier */
+.media-picker-item:nth-child(6) .media-picker-icon {
+    background: #5856d6 !important;
+}
+.media-picker-item:nth-child(6) span {
+    color: #5856d6 !important;
+}
+
+/* ===== SURVOL ===== */
+.media-picker-item:hover {
+    transform: scale(1.05) !important;
+}
+
+.media-picker-item:hover .media-picker-icon {
+    transform: scale(1.1) !important;
+}
+
+.media-picker-item:hover span {
+    opacity: 0.8 !important;
+}
+
+/* ===== MODE SOMBRE - couleurs adaptées ===== */
+[data-theme="dark"] .media-picker-item:nth-child(1) span {
+    color: #4db8ff !important;
+}
+[data-theme="dark"] .media-picker-item:nth-child(2) span {
+    color: #a8a8ad !important;
+}
+[data-theme="dark"] .media-picker-item:nth-child(3) span {
+    color: #5ddb7a !important;
+}
+[data-theme="dark"] .media-picker-item:nth-child(4) span {
+    color: #ffb84d !important;
+}
+[data-theme="dark"] .media-picker-item:nth-child(5) span {
+    color: #ff6b63 !important;
+}
+[data-theme="dark"] .media-picker-item:nth-child(6) span {
+    color: #7a78e6 !important;
+}
     </style>
 </head>
 <body>
