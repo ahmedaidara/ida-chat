@@ -4030,6 +4030,106 @@ input, textarea {
 [data-theme="dark"] .media-picker-item:nth-child(6) span {
     color: #7a78e6 !important;
 }
+      
+      /* ===== ICÔNES DU HEADER (Recherche, Appel, Paramètres) ===== */
+
+/* Mode clair - blanc cassé élégant */
+.header-actions i {
+    color: rgba(255, 255, 255, 0.85) !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.header-actions i:hover {
+    color: #ffffff !important;
+    transform: scale(1.1) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Mode sombre - noir élégant */
+[data-theme="dark"] .header-actions i {
+    color: rgba(0, 0, 0, 0.75) !important;
+    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .header-actions i:hover {
+    color: #000000 !important;
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ===== ICÔNES DE LA BARRE DE SAISIE (Media, Audio) ===== */
+
+/* Mode clair - blanc cassé élégant */
+.input-actions i {
+    color: rgba(255, 255, 255, 0.85) !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.input-actions i:hover {
+    color: #ffffff !important;
+    transform: scale(1.1) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Mode sombre - noir élégant */
+[data-theme="dark"] .input-actions i {
+    color: rgba(0, 0, 0, 0.75) !important;
+    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .input-actions i:hover {
+    color: #000000 !important;
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ===== ICÔNE DES 3 POINTS ===== */
+
+/* Mode clair */
+#tools-menu-btn {
+    color: rgba(255, 255, 255, 0.85) !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+#tools-menu-btn:hover {
+    color: #ffffff !important;
+    transform: scale(1.1) !important;
+}
+
+/* Mode sombre */
+[data-theme="dark"] #tools-menu-btn {
+    color: rgba(0, 0, 0, 0.75) !important;
+    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] #tools-menu-btn:hover {
+    color: #000000 !important;
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ===== SEND BUTTON (avion en papier) ===== */
+
+/* Mode clair */
+#send-btn {
+    color: rgba(255, 255, 255, 0.85) !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+#send-btn:hover {
+    color: #ffffff !important;
+    transform: scale(1.1) !important;
+}
+
+/* Mode sombre */
+[data-theme="dark"] #send-btn {
+    color: rgba(0, 0, 0, 0.75) !important;
+    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] #send-btn:hover {
+    color: #000000 !important;
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.25) !important;
+}
     </style>
 </head>
 <body>
@@ -4356,7 +4456,7 @@ input, textarea {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message...2" oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
