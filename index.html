@@ -4203,8 +4203,60 @@ input, textarea {
 [data-theme="dark"] .wb-header span:first-child {
     color: #ffffff !important;
 }
-      
-      
+      /* ===== MORPION : CSS PUR SANS SÉLECTEUR DE TEXTE ===== */
+
+/* Tous les statuts en blanc par défaut */
+.morpion-status {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* Le premier enfant (ou le statut quand c'est ton tour) */
+.morpion-status:first-of-type {
+    color: #e74c3c !important;  /* ROUGE */
+}
+
+/* Le statut quand c'est au tour de l'autre */
+.morpion-status:last-of-type {
+    color: #27ae60 !important;  /* VERT */
+}
+      /* ===== SUPPRIMER LES MARGES SUR LES CÔTÉS POUR LE FOND D'ÉCRAN ===== */
+
+/* Supprimer le padding du container */
+.app-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+/* Supprimer les marges du body */
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Supprimer le padding de la zone de messages */
+.messages-area {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Supprimer les bordures du container */
+.app-container {
+    border-left: none !important;
+    border-right: none !important;
+}
+
+/* Sur mobile */
+@media (max-width: 800px) {
+    .app-container {
+        border-left: none !important;
+        border-right: none !important;
+        padding: 0 !important;
+    }
+}
     </style>
 </head>
 <body>
