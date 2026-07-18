@@ -2870,7 +2870,563 @@ input, textarea {
         padding-top: 50px !important;
     }
 }
+      /* ========== FOND D'ÉCRAN PLEIN ÉCRAN AVEC HEADER ET BARRE TRANSPARENTS ========== */
+/* Le fond d'écran s'applique à TOUTE l'application */
+.app-container {
+    background: var(--bg-main);
+    position: relative;
+    overflow: hidden;
+}
+
+/* La zone de messages a son fond indépendant (défini par l'utilisateur) */
+.messages-area {
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    flex: 1;
+    position: relative;
+    z-index: 0;
+}
+
+/* Le header devient transparent pour laisser voir le fond */
+.chat-header {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+    position: relative;
+    z-index: 2;
+}
+
+/* Mode sombre - header transparent */
+[data-theme="dark"] .chat-header {
+    background: rgba(0, 0, 0, 0.35) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* La barre de saisie devient transparente */
+.chat-input-bar {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    position: relative;
+    z-index: 2;
+}
+
+/* Mode sombre - barre de saisie transparente */
+[data-theme="dark"] .chat-input-bar {
+    background: rgba(0, 0, 0, 0.35) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Le conteneur du champ de saisie devient transparent */
+.input-box-container {
+    background: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .input-box-container {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* La zone de saisie de texte */
+.chat-input {
+    color: var(--text-main) !important;
+}
+
+/* Les icônes dans la barre de saisie */
+.input-actions i {
+    color: var(--text-main) !important;
+    opacity: 0.8;
+}
+
+/* La barre d'outils Étude devient transparente */
+#etude-toolbar {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] #etude-toolbar {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Le conteneur de la barre d'outils Étude */
+#etude-toolbar .toolbar-btn {
+    color: var(--text-main) !important;
+}
+
+/* Le texte et les éléments du header restent lisibles */
+.chat-header .header-info .h-name,
+.chat-header .header-info .h-status,
+.chat-header .header-actions i {
+    color: var(--text-main) !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="dark"] .chat-header .header-info .h-name,
+[data-theme="dark"] .chat-header .header-info .h-status,
+[data-theme="dark"] .chat-header .header-actions i {
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Le fond des messages reçus devient semi-transparent pour laisser voir le fond */
+.received .message-bubble {
+    background: rgba(239, 239, 239, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+[data-theme="dark"] .received .message-bubble {
+    background: rgba(38, 38, 38, 0.85) !important;
+}
+
+/* Le bandeau de saisie de la réponse */
+.reply-bar-preview {
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .reply-bar-preview {
+    background: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* L'indicateur de frappe */
+.typing-indicator {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+[data-theme="dark"] .typing-indicator {
+    background: rgba(0, 0, 0, 0.3) !important;
+}
       
+      /* ========== HEADER TRANSPARENT ========== */
+.chat-header {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none !important;
+}
+
+/* Mode sombre - header transparent */
+[data-theme="dark"] .chat-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Rendre le texte lisible sur le fond */
+.chat-header .header-info .h-name,
+.chat-header .header-info .h-status,
+.chat-header .header-actions i,
+.header-left .header-avatar {
+    color: var(--text-main) !important;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Le statut en ligne */
+.chat-header .h-status span {
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Le mood status */
+.mood-status {
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+}
+
+[data-theme="dark"] .mood-status {
+    background: rgba(0, 0, 0, 0.3) !important;
+}
+      /* Barre d'outils Étude transparente */
+#etude-toolbar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] #etude-toolbar {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+      
+      /* ===== FOND UNIQUE POUR TOUTE LA PAGE ===== */
+
+/* 1. Le fond s'applique au conteneur principal */
+.app-container {
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+}
+
+/* 2. La zone de messages n'a PLUS de fond propre */
+.messages-area {
+    background: transparent !important;
+    background-image: none !important;
+}
+
+/* 3. Header transparent */
+.chat-header {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 4. Barre d'outils transparente */
+#etude-toolbar {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* 5. Barre de saisie transparente */
+.chat-input-bar {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 6. Mode sombre */
+[data-theme="dark"] .chat-header,
+[data-theme="dark"] #etude-toolbar,
+[data-theme="dark"] .chat-input-bar {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+      
+      
+      /* ========== BARRE D'OUTILS ÉTUDE TRANSPARENTE ========== */
+
+#etude-toolbar {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-top: none !important;
+    padding: 6px 12px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+#etude-toolbar::-webkit-scrollbar {
+    display: none !important;
+}
+
+/* Mode sombre */
+[data-theme="dark"] #etude-toolbar {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ===== BOUTONS DE LA BARRE ===== */
+
+#etude-toolbar .toolbar-btn,
+#etude-toolbar button {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 20px !important;
+    padding: 6px 14px !important;
+    color: var(--text-main) !important;
+    font-size: 0.72rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+#etude-toolbar .toolbar-btn:hover,
+#etude-toolbar button:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+#etude-toolbar .toolbar-btn:active,
+#etude-toolbar button:active {
+    transform: scale(0.95) !important;
+}
+
+/* Mode sombre - boutons */
+[data-theme="dark"] #etude-toolbar .toolbar-btn,
+[data-theme="dark"] #etude-toolbar button {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-theme="dark"] #etude-toolbar .toolbar-btn:hover,
+[data-theme="dark"] #etude-toolbar button:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ===== SÉPARATEURS ===== */
+
+#etude-toolbar .separator,
+#etude-toolbar > span:not(.toolbar-btn) {
+    width: 1px !important;
+    height: 24px !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    flex-shrink: 0 !important;
+    margin: 0 4px !important;
+}
+
+[data-theme="dark"] #etude-toolbar .separator,
+[data-theme="dark"] #etude-toolbar > span:not(.toolbar-btn) {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ===== BOUTON ÉTUDE SPÉCIAL ===== */
+
+#etude-btn {
+    background: rgba(155, 32, 150, 0.15) !important;
+    border: 1px solid rgba(155, 32, 150, 0.25) !important;
+    color: #9b2096 !important;
+}
+
+#etude-btn:hover {
+    background: rgba(155, 32, 150, 0.25) !important;
+    border-color: rgba(155, 32, 150, 0.4) !important;
+}
+
+[data-theme="dark"] #etude-btn {
+    background: rgba(155, 32, 150, 0.2) !important;
+    border: 1px solid rgba(155, 32, 150, 0.3) !important;
+    color: #c266ff !important;
+}
+
+/* ===== TOUS LES AUTRES BOUTONS SPÉCIFIQUES ===== */
+
+/* Bouton Jeux */
+#etude-toolbar .toolbar-btn[onclick*="ouvrirJeux"] {
+    border-color: rgba(21, 44, 194, 0.25) !important;
+}
+#etude-toolbar .toolbar-btn[onclick*="ouvrirJeux"]:hover {
+    background: rgba(21, 44, 194, 0.15) !important;
+}
+
+/* Bouton Effets */
+#etude-toolbar .toolbar-btn[onclick*="ouvrirEffets"] {
+    border-color: rgba(21, 194, 39, 0.25) !important;
+}
+#etude-toolbar .toolbar-btn[onclick*="ouvrirEffets"]:hover {
+    background: rgba(21, 194, 39, 0.15) !important;
+}
+
+/* Bouton Dessin */
+#etude-toolbar .toolbar-btn[onclick*="creerTableauBlanc"] {
+    border-color: rgba(255, 107, 0, 0.25) !important;
+}
+#etude-toolbar .toolbar-btn[onclick*="creerTableauBlanc"]:hover {
+    background: rgba(255, 107, 0, 0.15) !important;
+}
+
+/* Bouton Partage */
+#etude-toolbar .toolbar-btn[onclick*="proposerPartageEcran"] {
+    border-color: rgba(0, 149, 246, 0.25) !important;
+}
+#etude-toolbar .toolbar-btn[onclick*="proposerPartageEcran"]:hover {
+    background: rgba(0, 149, 246, 0.15) !important;
+}
+
+/* Bouton GIF */
+#etude-toolbar .toolbar-btn[onclick*="gif-trigger-btn"],
+#gif-trigger-btn {
+    border-color: rgba(233, 30, 140, 0.25) !important;
+}
+#etude-toolbar .toolbar-btn[onclick*="gif-trigger-btn"]:hover,
+#gif-trigger-btn:hover {
+    background: rgba(233, 30, 140, 0.15) !important;
+}
+
+/* Bouton Galerie */
+#etude-toolbar .toolbar-btn[onclick*="openGaleriePage"] {
+    border-color: rgba(217, 119, 6, 0.25) !important;
+}
+#etude-toolbar .toolbar-btn[onclick*="openGaleriePage"]:hover {
+    background: rgba(217, 119, 6, 0.15) !important;
+}
+      /* ===== SUPPRIME TOUTE TRANSPARENCE ===== */
+
+/* Le fond d'écran s'applique à toute la page */
+.app-container {
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+}
+
+/* La zone de messages utilise le même fond */
+.messages-area {
+    background: transparent !important;
+    background-image: none !important;
+}
+
+/* Header - fond transparent (laisse voir le fond d'écran) */
+.chat-header {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Barre d'outils - fond transparent */
+#etude-toolbar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Barre de saisie - fond transparent */
+.chat-input-bar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Les boutons de la barre d'outils */
+#etude-toolbar .toolbar-btn,
+#etude-toolbar button {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Le champ de saisie */
+.input-box-container {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+      /* ===== FOND TRANSPARENT DERRIÈRE LES 4 ICÔNES ===== */
+
+.header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    padding: 6px 14px !important;
+    border-radius: 30px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Mode sombre */
+[data-theme="dark"] .header-actions {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Les icônes elles-mêmes */
+.header-actions i {
+    color: var(--text-main) !important;
+    font-size: 1.1rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    padding: 4px !important;
+    opacity: 0.85 !important;
+}
+
+.header-actions i:hover {
+    opacity: 1 !important;
+    transform: scale(1.1) !important;
+}
+
+/* Mode sombre - icônes plus lumineuses */
+[data-theme="dark"] .header-actions i {
+    opacity: 0.9 !important;
+}
+      /* Fond transparent derrière le bloc gauche */
+.header-left {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    padding: 6px 16px 6px 10px !important;
+    border-radius: 30px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .header-left {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+      /* ===== FORCER L'AFFICHAGE DU MENU DES 3 POINTS ===== */
+
+#tools-panel {
+    display: block !important;
+    position: absolute !important;
+    bottom: 80px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 20px !important;
+    padding: 20px !important;
+    z-index: 999 !important;
+    min-width: 280px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Mode sombre */
+[data-theme="dark"] #tools-panel {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Les items du menu */
+#tools-panel .tool-item {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+    transition: all 0.2s ease !important;
+}
+
+#tools-panel .tool-item:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) !important;
+}
+
+[data-theme="dark"] #tools-panel .tool-item {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="dark"] #tools-panel .tool-item:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
     </style>
 </head>
 <body>
@@ -8421,33 +8977,25 @@ function initSettingsBubbles() {
 }
 
 // ========== FOND D'ÉCRAN DU CHAT (avec persistance + upload d'image perso) ==========
-
-// Applique un fond d'écran sur la zone de chat et le sauvegarde pour qu'il persiste au rafraîchissement
 function appliquerFondEcran(bg) {
-    const msgArea = document.getElementById('msg-area');
-    if (!msgArea) return;
+    const app = document.querySelector('.app-container');
+    if (!app) return;
+    
     if (!bg || bg === 'none') {
-        msgArea.style.backgroundImage = 'none';
-        msgArea.style.backgroundColor = '';
-        msgArea.style.backgroundSize = '';
+        app.style.background = 'var(--bg-main)';
     } else if (bg.startsWith('gradient:')) {
-        const valeur = bg.slice('gradient:'.length);
-        if (valeur.includes('|')) {
-            // Fond à motif : "image-de-fond|couleur-de-fond|taille-du-motif"
-            const [image, couleur, taille] = valeur.split('|');
-            msgArea.style.backgroundImage = image;
-            msgArea.style.backgroundColor = couleur || '';
-            msgArea.style.backgroundSize = taille || '';
-        } else {
-            msgArea.style.backgroundImage = valeur;
-            msgArea.style.backgroundColor = '';
-            msgArea.style.backgroundSize = 'cover';
-        }
+        app.style.background = bg.slice('gradient:'.length);
+        app.style.backgroundSize = 'cover';
     } else {
-        msgArea.style.backgroundImage = `url('${bg}')`;
-        msgArea.style.backgroundColor = '';
-        msgArea.style.backgroundSize = 'cover';
+        app.style.background = `url('${bg}') center/cover no-repeat fixed`;
     }
+    
+    // La zone de messages prend le même fond
+    const msgArea = document.getElementById('msg-area');
+    if (msgArea) {
+        msgArea.style.background = 'transparent';
+    }
+    
     localStorage.setItem('chat_background', bg || 'none');
 }
 
@@ -13019,9 +13567,9 @@ function ecouterStatutAutreAvecHorodatage() {
             } else if (heureDeconnexion) {
                 const h = heureDeconnexion.getHours().toString().padStart(2, '0');
                 const m = heureDeconnexion.getMinutes().toString().padStart(2, '0');
-                statutHtml = `<span style="color: #8696a0;">⚪ Vu à ${h}:${m}</span>`;
+                statutHtml = `<span style="color: #8696a0;">Vu à ${h}:${m}</span>`;
             } else {
-                statutHtml = `<span style="color: #8696a0;">⚪ Hors ligne</span>`;
+                statutHtml = `<span style="color: #8696a0;">Hors ligne</span>`;
             }
             
             // Batterie avec indicateur de dernier appareil
