@@ -99,7 +99,6 @@
     max-width: 450px; 
     height: 100vh; 
     height: 100dvh;  /* ← AJOUTE CETTE LIGNE (dynamic viewport height) */
-    background: var(--bg-main); 
     color: var(--text-main); 
     display: flex; 
     flex-direction: column; 
@@ -109,7 +108,7 @@
     overflow: hidden;  /* ← AJOUTE CETTE LIGNE */
     padding-top: env(safe-area-inset-top); /* le fond de l'app remonte sous la barre d'état, maintenant translucide */
     box-sizing: border-box;
-}        @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
+}      @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
 
         /* ÉCRAN DE SÉLECTION */
         #login-screen { position: absolute; inset: 0; background: linear-gradient(135deg, #4f5bd5, #962fbf, #d62976, #feda75); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; padding: 20px; text-align: center; }
