@@ -1,13 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="CHAT-IDA">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#FAFAFA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
@@ -100,126 +93,7 @@
         }
         [data-theme="dark"] body { background: #000000; }
         [data-theme="light"] body { background: #FAFAFA; }
-    html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        min-height: 100% !important;
-        max-height: 100% !important;
-        overflow: hidden !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: var(--bg-main, #ffffff) !important;
-    }
 
-    .app-container {
-        height: 100dvh !important;
-        height: 100vh !important;
-        min-height: 100dvh !important;
-        max-height: 100dvh !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        padding-top: env(safe-area-inset-top, 0px) !important;
-        padding-bottom: 0 !important;
-        padding-left: env(safe-area-inset-left, 0px) !important;
-        padding-right: env(safe-area-inset-right, 0px) !important;
-        border: none !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        overflow: hidden !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: var(--bg-main, #ffffff) !important;
-    }
-
-    /* TOUTES LES OVERLAYS EN PLEIN ÉCRAN */
-    .call-overlay,
-    .photo-modal,
-    .media-editor-overlay,
-    .screenshare-viewer-overlay,
-    .viewonce-viewer-overlay,
-    #secret-overlay,
-    #etude-overlay,
-    #galerie-overlay,
-    .search-page,
-    .settings-page {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        height: 100dvh !important;
-        max-height: 100dvh !important;
-        min-height: 100dvh !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        padding-top: env(safe-area-inset-top, 0px) !important;
-        padding-bottom: 0 !important;
-        padding-left: env(safe-area-inset-left, 0px) !important;
-        padding-right: env(safe-area-inset-right, 0px) !important;
-        overflow: hidden !important;
-        border: none !important;
-        border-radius: 0 !important;
-        background: var(--bg-main, #ffffff) !important;
-    }
-
-    /* FORCER LE FOND SUR LES SAFE-AREAS */
-    @supports (padding: env(safe-area-inset-bottom)) {
-        .app-container,
-        .call-overlay,
-        .photo-modal,
-        .media-editor-overlay,
-        .screenshare-viewer-overlay,
-        .viewonce-viewer-overlay,
-        #secret-overlay,
-        #etude-overlay,
-        #galerie-overlay,
-        .search-page,
-        .settings-page {
-            padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-            margin-bottom: 0 !important;
-            bottom: 0 !important;
-        }
-    }
-
-    /* SPÉCIFIQUE IPHONE */
-    @media screen and (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {
-        .app-container,
-        .call-overlay,
-        .photo-modal,
-        .media-editor-overlay,
-        .screenshare-viewer-overlay,
-        .viewonce-viewer-overlay,
-        #secret-overlay,
-        #etude-overlay,
-        #galerie-overlay,
-        .search-page,
-        .settings-page {
-            height: 100dvh !important;
-            min-height: 100dvh !important;
-            max-height: 100dvh !important;
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
-        }
-        
-        body {
-            min-height: 100dvh !important;
-            max-height: 100dvh !important;
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
-        }
-    }
 .app-container { 
     width: 100%; 
     max-width: 450px; 
@@ -2881,7 +2755,54 @@ input, textarea {
     color: #fff; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none;
 }
       
-      
+      /* AJOUTE JUSTE CES LIGNES À LA FIN DE TON <style> */
+
+/* 1. Supprimer le env(safe-area-inset-bottom) partout */
+* {
+    --safe-area-inset-bottom: 0px !important;
+}
+
+/* 2. Le champ de texte COLLÉ EN BAS */
+.chat-input-bar {
+    position: sticky !important;
+    bottom: 0 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* 3. Le conteneur principal occupe tout l'écran sans padding */
+.app-container {
+    height: 100dvh !important;
+    height: 100vh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    padding-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+}
+
+/* 4. Supprimer le padding-bottom de tous les overlays */
+.call-overlay,
+.photo-modal,
+.media-editor-overlay,
+.screenshare-viewer-overlay,
+.viewonce-viewer-overlay,
+#secret-overlay,
+#etude-overlay,
+.search-page,
+.settings-page {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    bottom: 0 !important;
+}
+
+/* 5. Forcer la barre d'outils en bas */
+.chat-input-bar {
+    position: relative !important;
+    bottom: 0 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
       
       
     </style>
@@ -3210,7 +3131,7 @@ input, textarea {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message...1" oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Message...2" oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
@@ -17207,9 +17128,6 @@ function nettoyerPartageEcran() {
     getScreenShareDocRef().set({ status: 'idle' }, { merge: true }).catch(() => {});
 }
 // ==================== FIN PARTAGE D'ÉCRAN ====================
-      
-      
-   
   </script>
   <!-- Script pour nettoyer et désactiver la console -->
 <script>
