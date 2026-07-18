@@ -17209,26 +17209,7 @@ function nettoyerPartageEcran() {
 // ==================== FIN PARTAGE D'ÉCRAN ====================
       
       
-      // FORCER LE PLEIN ÉCRAN SUR IPHONE
-document.addEventListener('DOMContentLoaded', function() {
-    const appContainer = document.querySelector('.app-container');
-    if (!appContainer) return;
-    
-    function adjustHeight() {
-        appContainer.style.height = window.innerHeight + 'px';
-        appContainer.style.maxHeight = window.innerHeight + 'px';
-        appContainer.style.minHeight = window.innerHeight + 'px';
-    }
-    
-    adjustHeight();
-    window.addEventListener('resize', adjustHeight);
-    window.addEventListener('orientationchange', function() {
-        setTimeout(adjustHeight, 300);
-    });
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', adjustHeight);
-    }
-});
+   
   </script>
   <!-- Script pour nettoyer et désactiver la console -->
 <script>
