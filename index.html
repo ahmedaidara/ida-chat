@@ -4257,6 +4257,20 @@ body {
         padding: 0 !important;
     }
 }
+      
+      /* ===== CACHER LES NOTIFICATIONS DE FLASH ===== */
+
+.flash-notification {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+/* Cacher aussi les messages "Flash envoyé" */
+.flash-notification span {
+    display: none !important;
+}
     </style>
 </head>
 <body>
@@ -6754,6 +6768,8 @@ setTimeout(() => { if (!document.hidden && estProcheDuBasDuChat()) markMessagesA
               // ✅ Correction : "marquerMessagesCommeLus" n'existait pas non plus (nom réel :
               // marquerTousMessagesCommeLus). Ce bug empêchait aussi restaurerMonMood (juste
               // après) de s'exécuter, car il levait une exception avant d'y arriver.
+          setTimeout(ecouterBatterieAutre, 1000);
+
               setTimeout(marquerTousMessagesCommeLus, 2000);
 setTimeout(restaurerMonMood, 500);
 
@@ -14542,30 +14558,100 @@ function écouterBatterieCorrespondant() {
 }
       
       
-      // Mettre à jour ton propre niveau de batterie dans la base de données
+    // ========== METTRE À JOUR SA PROPRE BATTERIE ==========
 async function mettreAJourMaBatterie() {
     if (!currentUser) return;
 
     try {
-        // Utilise l'API Battery du navigateur
         if (navigator.getBattery) {
             const battery = await navigator.getBattery();
             
             const updateData = () => {
                 db.collection('users').doc(currentUser.id).set({
                     batteryLevel: Math.round(battery.level * 100),
-                    isCharging: battery.charging
+                    isCharging: battery.charging,
+                    lastBatteryUpdate: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             };
 
-            // Mettre à jour immédiatement et à chaque changement
             updateData();
             battery.addEventListener('levelchange', updateData);
             battery.addEventListener('chargingchange', updateData);
         }
     } catch (error) {
-        console.error("Erreur lors de la récupération de la batterie :", error);
+        console.error("Erreur batterie:", error);
     }
+}
+    // ========== VERSION SIMPLIFIÉE POUR LA BATTERIE ==========
+
+function ecouterBatterieAutre() {
+    if (!currentUser || !targetUser) return;
+    
+    db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            const level = data.batteryLevel || data.battery?.level || 0;
+            const charging = data.isCharging || data.battery?.charging || false;
+            
+            const percentEl = document.getElementById('battery-percent');
+            const iconEl = document.getElementById('battery-icon');
+            
+            if (percentEl) percentEl.textContent = level + '%';
+            if (iconEl) {
+                iconEl.textContent = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
+                iconEl.className = 'battery-icon' + (charging ? ' battery-charging' : '');
+            }
+        }
+    });
+}
+
+// ========== AFFICHER LA BATTERIE DE L'AUTRE ==========
+function afficherBatterieAutre(batterie) {
+    const batteryIndicator = document.getElementById('battery-indicator');
+    const batteryIcon = document.getElementById('battery-icon');
+    const batteryPercent = document.getElementById('battery-percent');
+    
+    if (!batteryIndicator || !batteryIcon || !batteryPercent) {
+        // Créer les éléments s'ils n'existent pas
+        creerIndicateurBatterie();
+        return;
+    }
+    
+    const level = batterie.level || 0;
+    const charging = batterie.charging || false;
+    
+    // Icône
+    if (charging) {
+        batteryIcon.textContent = '⚡';
+        batteryIcon.className = 'battery-icon battery-charging';
+    } else if (level <= 15) {
+        batteryIcon.textContent = '🪫';
+        batteryIcon.className = 'battery-icon battery-low';
+    } else if (level <= 30) {
+        batteryIcon.textContent = '🔋';
+        batteryIcon.className = 'battery-icon battery-medium';
+    } else {
+        batteryIcon.textContent = '🔋';
+        batteryIcon.className = 'battery-icon battery-high';
+    }
+    
+    batteryPercent.textContent = level + '%';
+    batteryIndicator.style.display = 'inline-flex';
+}
+
+// ========== CRÉER L'INDICATEUR DE BATTERIE ==========
+function creerIndicateurBatterie() {
+    const statusSpan = document.getElementById('header-status-text');
+    if (!statusSpan) return;
+    
+    const indicator = document.createElement('span');
+    indicator.id = 'battery-indicator';
+    indicator.className = 'battery-indicator';
+    indicator.innerHTML = `
+        <span class="battery-icon" id="battery-icon">🔋</span>
+        <span class="battery-percent" id="battery-percent">--%</span>
+    `;
+    statusSpan.appendChild(indicator);
 }
       
       function afficherStatutAutre(statusSpan, enLigne, heureDeconnexion, batterie) {
