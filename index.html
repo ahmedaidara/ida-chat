@@ -2803,7 +2803,73 @@ input, textarea {
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
 }
-      
+      /* AJOUTE CES LIGNES À LA FIN DE TON <style> */
+
+/* ========== CORRECTION EN-TÊTE DES PAGES ========== */
+
+/* Donner un padding en haut pour la barre d'état (heure/batterie/wifi) */
+.search-page,
+.settings-page,
+#secret-overlay,
+#etude-overlay,
+#galerie-overlay,
+.media-gallery-page,
+.documents-gallery-page {
+    padding-top: env(safe-area-inset-top, 44px) !important;
+    padding-top: constant(safe-area-inset-top, 44px) !important;
+}
+
+/* Le header des pages doit être visible et accessible */
+.search-page-header,
+.settings-header,
+#secret-overlay > div:first-child,
+#etude-overlay > div:first-child,
+#galerie-overlay > div:first-child {
+    margin-top: 0 !important;
+    padding-top: 8px !important;
+    min-height: 52px !important;
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+}
+
+/* Forcer le bouton QUITTER à être bien visible et cliquable */
+.search-page-header .fa-arrow-left,
+.settings-header .fa-arrow-left,
+#secret-overlay button,
+#etude-overlay button,
+#galerie-overlay button {
+    padding: 10px 16px !important;
+    min-height: 44px !important;
+    min-width: 44px !important;
+    font-size: 1rem !important;
+    z-index: 30 !important;
+    position: relative !important;
+}
+
+/* Sur iPhone, la barre d'état est noire, on adapte */
+@supports (padding: env(safe-area-inset-top)) {
+    .search-page,
+    .settings-page,
+    #secret-overlay,
+    #etude-overlay,
+    #galerie-overlay {
+        padding-top: env(safe-area-inset-top, 44px) !important;
+        padding-top: constant(safe-area-inset-top, 44px) !important;
+    }
+}
+
+/* Version spécifique iPhone */
+@media screen and (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {
+    .search-page,
+    .settings-page,
+    #secret-overlay,
+    #etude-overlay,
+    #galerie-overlay {
+        padding-top: 50px !important;
+    }
+}
       
     </style>
 </head>
