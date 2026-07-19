@@ -98,19 +98,29 @@
     width: 100%; 
     max-width: 450px; 
     height: 100vh; 
-    height: 100dvh;  /* ← AJOUTE CETTE LIGNE (dynamic viewport height) */
+    height: 100dvh;
+    background: var(--bg-main); 
     color: var(--text-main); 
     display: flex; 
     flex-direction: column; 
     position: relative; 
     border-left: 1px solid var(--border-color); 
     border-right: 1px solid var(--border-color); 
-    overflow: hidden;  /* ← AJOUTE CETTE LIGNE */
-  padding-top: env(safe-area-inset-top, 0px);
-    background-clip: padding-box;
-    padding-top: env(safe-area-inset-top); /* le fond de l'app remonte sous la barre d'état, maintenant translucide */
-    box-sizing: border-box;
-}      @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
+    overflow: hidden;
+    
+    /* ↓ LA MÉTHODE RADICALE ↓ */
+    padding-top: 40px !important; /* Force un espace pour la barre d'iOS */
+    background-clip: padding-box !important; /* Empêche le fond d'aller sous la barre */
+}    @media (min-width: 800px) { 
+    .app-container { 
+        height: 92vh !important; /* Force la hauteur en mode carte */
+        border-radius: 12px; 
+        box-shadow: 0 12px 30px rgba(0,0,0,0.5); 
+        
+        /* Sur grand écran, on supprime l'espace de l'encoche iPhone */
+        padding-top: 0px !important; 
+    } 
+}
 
         /* ÉCRAN DE SÉLECTION */
         #login-screen { position: absolute; inset: 0; background: linear-gradient(135deg, #4f5bd5, #962fbf, #d62976, #feda75); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; padding: 20px; text-align: center; }
@@ -4599,7 +4609,7 @@ body {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message...1" oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Message...2" oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
@@ -18755,7 +18765,19 @@ function nettoyerPartageEcran() {
     <div class="screenshare-viewer-topbar" id="screenshare-viewer-topbar">Partage d'écran — <span id="screenshare-viewer-timer">00:00</span></div>
     <button class="screenshare-viewer-bottombar" onclick="quitterPartageEcran()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Quitter</button>
 </div>
+<script>
+// Détection radicale de l'iPhone / iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+if (!isIOS) {
+    // Si ce N'EST PAS un iPhone (ex: votre Tecno), on retire l'espace forcé
+    const container = document.querySelector('.app-container');
+    if (container) {
+        container.style.setProperty('padding-top', '0px', 'important');
+    }
+}
+</script>
 </body>   
   
 </html>
