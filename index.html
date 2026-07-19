@@ -15376,32 +15376,41 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                     bubbleHtml += `<span style="white-space: pre-wrap; display: block; margin-top: 4px;">${formatText(escapeHTML(data.text))}</span>`;
                 }
             }
-        } else if (data.type === 'media_group' && Array.isArray(data.items)) {
-            const items = data.items;
-            const total = items.length;
-            const visibles = items.slice(0, 3);
-            const restants = total - visibles.length;
-            // Positions de l'éventail : chaque carte est décalée et légèrement pivotée,
-            // effet "polaroid jeté sur la table" — la dernière (au-dessus) est la plus droite.
-            const FAN_POSITIONS = [
-                { top: 0, left: 0, rotate: -8 },
-                { top: 26, left: 34, rotate: 6 },
-                { top: 46, left: 10, rotate: -4 }
-            ];
-            let cardsHtml = '';
-            visibles.forEach((item, i) => {
-                const pos = FAN_POSITIONS[i] || FAN_POSITIONS[FAN_POSITIONS.length - 1];
-                const estFrontMost = i === visibles.length - 1;
-                const contenu = item.type === 'video'
-                    ? `<video src="${item.url}" muted playsinline></video><div class="media-fan-video-icon"><i class="fa-solid fa-play"></i></div>`
-                    : `<img src="${item.url}" loading="lazy">`;
-                cardsHtml += `
-                    <div class="media-fan-card" style="top:${pos.top}px; left:${pos.left}px; transform:rotate(${pos.rotate}deg); z-index:${i + 1};" onclick="ouvrirMediaGroupItem('${item.url}', '${item.type}')">
-                        ${contenu}
-                        ${estFrontMost && restants > 0 ? `<div class="media-fan-more-badge">+${restants}</div>` : ''}
-                    </div>`;
-            });
-            bubbleHtml += `<div class="media-fan">${cardsHtml}</div>`;
+       } else if (data.type === 'media_group' && Array.isArray(data.items)) {
+    const items = data.items;
+    const total = items.length;
+    
+    // Générer autant de positions qu'il y a d'images
+    const FAN_POSITIONS = [];
+    const angleTotal = Math.min(total * 6, 30); // Rotation max 30°
+    for (let i = 0; i < total; i++) {
+        const progress = total > 1 ? i / (total - 1) : 0.5;
+        const angle = -angleTotal / 2 + progress * angleTotal;
+        const offsetX = 20 + progress * 30;
+        const offsetY = 10 + progress * 25;
+        FAN_POSITIONS.push({
+            top: offsetY,
+            left: offsetX,
+            rotate: angle
+        });
+    }
+    
+    let cardsHtml = '';
+    items.forEach((item, i) => {
+        const pos = FAN_POSITIONS[i] || { top: i * 20, left: i * 15, rotate: 0 };
+        const estFrontMost = i === items.length - 1;
+        const contenu = item.type === 'video'
+            ? `<video src="${item.url}" muted playsinline></video><div class="media-fan-video-icon"><i class="fa-solid fa-play"></i></div>`
+            : `<img src="${item.url}" loading="lazy">`;
+        cardsHtml += `
+            <div class="media-fan-card" style="top:${pos.top}px; left:${pos.left}px; transform:rotate(${pos.rotate}deg); z-index:${i + 1};" onclick="ouvrirMediaGroupItem('${item.url}', '${item.type}')">
+                ${contenu}
+            </div>`;
+    });
+    
+    // Ajuster la hauteur en fonction du nombre d'images
+    const hauteur = Math.min(80 + total * 30, 350);
+    bubbleHtml += `<div class="media-fan" style="height:${hauteur}px;">${cardsHtml}</div>`;
         } else if (data.type === 'document') {
             const ext = data.fileExt || (data.fileName || '').split('.').pop().toLowerCase();
             const icone = icoenPourExtensionDoc(ext);
@@ -18559,6 +18568,9 @@ function nettoyerPartageEcran() {
       });
     }
   })();
+  
+  
+  
 </script>
    <!-- Sélecteur de couleur pour les bulles -->
 <div class="color-picker-modal" id="color-picker-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:99999; justify-content:center; align-items:center;">
