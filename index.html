@@ -185,11 +185,21 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
 }
 
-.received .message-bubble { 
-    background: var(--bubble-received) !important; 
-    color: var(--text-main) !important; 
-    border-bottom-left-radius: 4px !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+/* ===== PLUS DE BULLE DERRIÈRE LES PHOTOS/VIDÉOS ===== */
+
+.message-row.received .message-bubble,
+.received .message-bubble {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* Garder juste un petit espacement */
+.message-row.received {
+    padding: 4px 0 !important;
 }
 
 /* Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs et stickers */
@@ -2977,15 +2987,8 @@ input, textarea {
 }
 
 /* Le fond des messages reçus devient semi-transparent pour laisser voir le fond */
-.received .message-bubble {
-    background: rgba(239, 239, 239, 0.85) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-}
-
-[data-theme="dark"] .received .message-bubble {
-    background: rgba(38, 38, 38, 0.85) !important;
-}
+ 
+ 
 
 /* Le bandeau de saisie de la réponse */
 .reply-bar-preview {
@@ -4547,7 +4550,7 @@ input, textarea {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Message...1" oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
