@@ -106,6 +106,8 @@
     border-left: 1px solid var(--border-color); 
     border-right: 1px solid var(--border-color); 
     overflow: hidden;  /* ← AJOUTE CETTE LIGNE */
+  padding-top: env(safe-area-inset-top, 0px);
+    background-clip: padding-box;
     padding-top: env(safe-area-inset-top); /* le fond de l'app remonte sous la barre d'état, maintenant translucide */
     box-sizing: border-box;
 }      @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
