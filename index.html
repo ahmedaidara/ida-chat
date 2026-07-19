@@ -18569,7 +18569,89 @@ function nettoyerPartageEcran() {
     }
   })();
   
-  
+  // --- SYSTÈME DE GALERIE PAR ZONES DE CLIC UNIVERSELLES ---
+let currentMediaList = [];
+let currentMediaIndex = 0;
+
+function openMediaViewer(index) {
+    if (index < 0 || index >= currentMediaList.length) return;
+    currentMediaIndex = index;
+    
+    const media = currentMediaList[currentMediaIndex];
+    const modal = document.getElementById('photo-modal');
+    
+    let container = modal.querySelector('.modal-media-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'modal-media-container';
+        container.style.cssText = 'width:100%; height:80%; display:flex; justify-content:center; align-items:center; position:relative; z-index:1;';
+        modal.insertBefore(container, modal.querySelector('.photo-modal-actions') || modal.firstChild);
+    }
+    container.innerHTML = '';
+    
+    const oldImg = document.getElementById('modal-image');
+    if (oldImg) oldImg.style.display = 'none';
+
+    if (media.tagName === 'VIDEO') {
+        const video = document.createElement('video');
+        video.src = media.src;
+        video.controls = true;
+        video.autoplay = true;
+        video.style.cssText = 'max-width:100%; max-height:100%; object-fit:contain;';
+        container.appendChild(video);
+    } else {
+        const img = document.createElement('img');
+        img.src = media.src;
+        img.style.cssText = 'max-width:100%; max-height:100%; object-fit:contain;';
+        container.appendChild(img);
+    }
+    
+    modal.style.display = 'flex';
+}
+
+// Détection des clics dans le chat
+document.getElementById('msg-area').addEventListener('click', function(e) {
+    const target = e.target.closest('img, video');
+    if (!target || target.closest('.wb-card') || target.id === 'modal-image') return;
+    
+    currentMediaList = Array.from(document.querySelectorAll('#msg-area img, #msg-area video'))
+                            .filter(m => !m.closest('.wb-card'));
+    
+    const index = currentMediaList.indexOf(target);
+    if (index !== -1) {
+        e.stopPropagation();
+        openMediaViewer(index);
+    }
+});
+
+function nextMedia() { if (currentMediaIndex < currentMediaList.length - 1) openMediaViewer(currentMediaIndex + 1); }
+function prevMedia() { if (currentMediaIndex > 0) openMediaViewer(currentMediaIndex - 1); }
+
+// --- GESTION DES CLICS GAUCHE / DROITE (PC & MOBILE) ---
+document.getElementById('photo-modal').addEventListener('click', function(e) {
+    // Si on clique sur un bouton de fermeture ou une action précise, on n'intercepte pas
+    if (e.target.closest('.photo-modal-actions') || e.target.closest('video')) return;
+
+    const rect = this.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const halfWidth = rect.width / 2;
+
+    if (clickX < halfWidth) {
+        prevMedia(); // Clic côté gauche -> Précédent
+    } else {
+        nextMedia(); // Clic côté droite -> Suivant
+    }
+});
+
+// --- CORRECTION FLÈCHES CLAVIER PC ---
+window.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('photo-modal');
+    if (!modal || modal.style.display === 'none') return;
+    
+    if (e.key === 'ArrowRight') { e.preventDefault(); nextMedia(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevMedia(); }
+    if (e.key === 'Escape') { e.preventDefault(); modal.style.display = 'none'; }
+}, true); // "true" pour intercepter l'événement avant tout le monde
   
 </script>
    <!-- Sélecteur de couleur pour les bulles -->
