@@ -106,8 +106,6 @@
     border-left: 1px solid var(--border-color); 
     border-right: 1px solid var(--border-color); 
     overflow: hidden;  /* ← AJOUTE CETTE LIGNE */
-  padding-top: env(safe-area-inset-top, 0px);
-    background-clip: padding-box;
     padding-top: env(safe-area-inset-top); /* le fond de l'app remonte sous la barre d'état, maintenant translucide */
     box-sizing: border-box;
 }      @media(min-width: 800px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); } }
@@ -4259,20 +4257,6 @@ body {
         padding: 0 !important;
     }
 }
-      
-      /* ===== CACHER LES NOTIFICATIONS DE FLASH ===== */
-
-.flash-notification {
-    display: none !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    visibility: hidden !important;
-}
-
-/* Cacher aussi les messages "Flash envoyé" */
-.flash-notification span {
-    display: none !important;
-}
     </style>
 </head>
 <body>
@@ -6770,8 +6754,6 @@ setTimeout(() => { if (!document.hidden && estProcheDuBasDuChat()) markMessagesA
               // ✅ Correction : "marquerMessagesCommeLus" n'existait pas non plus (nom réel :
               // marquerTousMessagesCommeLus). Ce bug empêchait aussi restaurerMonMood (juste
               // après) de s'exécuter, car il levait une exception avant d'y arriver.
-          setTimeout(ecouterBatterieAutre, 1000);
-
               setTimeout(marquerTousMessagesCommeLus, 2000);
 setTimeout(restaurerMonMood, 500);
 
@@ -14560,100 +14542,30 @@ function écouterBatterieCorrespondant() {
 }
       
       
-    // ========== METTRE À JOUR SA PROPRE BATTERIE ==========
+      // Mettre à jour ton propre niveau de batterie dans la base de données
 async function mettreAJourMaBatterie() {
     if (!currentUser) return;
 
     try {
+        // Utilise l'API Battery du navigateur
         if (navigator.getBattery) {
             const battery = await navigator.getBattery();
             
             const updateData = () => {
                 db.collection('users').doc(currentUser.id).set({
                     batteryLevel: Math.round(battery.level * 100),
-                    isCharging: battery.charging,
-                    lastBatteryUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                    isCharging: battery.charging
                 }, { merge: true });
             };
 
+            // Mettre à jour immédiatement et à chaque changement
             updateData();
             battery.addEventListener('levelchange', updateData);
             battery.addEventListener('chargingchange', updateData);
         }
     } catch (error) {
-        console.error("Erreur batterie:", error);
+        console.error("Erreur lors de la récupération de la batterie :", error);
     }
-}
-    // ========== VERSION SIMPLIFIÉE POUR LA BATTERIE ==========
-
-function ecouterBatterieAutre() {
-    if (!currentUser || !targetUser) return;
-    
-    db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
-        if (doc.exists) {
-            const data = doc.data();
-            const level = data.batteryLevel || data.battery?.level || 0;
-            const charging = data.isCharging || data.battery?.charging || false;
-            
-            const percentEl = document.getElementById('battery-percent');
-            const iconEl = document.getElementById('battery-icon');
-            
-            if (percentEl) percentEl.textContent = level + '%';
-            if (iconEl) {
-                iconEl.textContent = charging ? '⚡' : (level <= 15 ? '🪫' : '🔋');
-                iconEl.className = 'battery-icon' + (charging ? ' battery-charging' : '');
-            }
-        }
-    });
-}
-
-// ========== AFFICHER LA BATTERIE DE L'AUTRE ==========
-function afficherBatterieAutre(batterie) {
-    const batteryIndicator = document.getElementById('battery-indicator');
-    const batteryIcon = document.getElementById('battery-icon');
-    const batteryPercent = document.getElementById('battery-percent');
-    
-    if (!batteryIndicator || !batteryIcon || !batteryPercent) {
-        // Créer les éléments s'ils n'existent pas
-        creerIndicateurBatterie();
-        return;
-    }
-    
-    const level = batterie.level || 0;
-    const charging = batterie.charging || false;
-    
-    // Icône
-    if (charging) {
-        batteryIcon.textContent = '⚡';
-        batteryIcon.className = 'battery-icon battery-charging';
-    } else if (level <= 15) {
-        batteryIcon.textContent = '🪫';
-        batteryIcon.className = 'battery-icon battery-low';
-    } else if (level <= 30) {
-        batteryIcon.textContent = '🔋';
-        batteryIcon.className = 'battery-icon battery-medium';
-    } else {
-        batteryIcon.textContent = '🔋';
-        batteryIcon.className = 'battery-icon battery-high';
-    }
-    
-    batteryPercent.textContent = level + '%';
-    batteryIndicator.style.display = 'inline-flex';
-}
-
-// ========== CRÉER L'INDICATEUR DE BATTERIE ==========
-function creerIndicateurBatterie() {
-    const statusSpan = document.getElementById('header-status-text');
-    if (!statusSpan) return;
-    
-    const indicator = document.createElement('span');
-    indicator.id = 'battery-indicator';
-    indicator.className = 'battery-indicator';
-    indicator.innerHTML = `
-        <span class="battery-icon" id="battery-icon">🔋</span>
-        <span class="battery-percent" id="battery-percent">--%</span>
-    `;
-    statusSpan.appendChild(indicator);
 }
       
       function afficherStatutAutre(statusSpan, enLigne, heureDeconnexion, batterie) {
@@ -18755,37 +18667,7 @@ function nettoyerPartageEcran() {
     <div class="screenshare-viewer-topbar" id="screenshare-viewer-topbar">Partage d'écran — <span id="screenshare-viewer-timer">00:00</span></div>
     <button class="screenshare-viewer-bottombar" onclick="quitterPartageEcran()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Quitter</button>
 </div>
- <script>
-window.addEventListener('DOMContentLoaded', () => {
-    // Détection stricte de l'iPhone / iOS
-    const isiPhone = /iPhone|iPod/.test(navigator.userAgent) || 
-                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    // On applique le correctif UNIQUEMENT sur iPhone et UNIQUEMENT sur écran mobile (< 800px)
-    if (isiPhone && window.innerWidth < 800) {
-        // 1. On crée une barre de protection pour l'encoche
-        const notchSpacer = document.createElement('div');
-        notchSpacer.style.height = '44px'; // Taille standard de la barre iOS
-        notchSpacer.style.width = '100%';
-        notchSpacer.style.backgroundColor = 'var(--bg-main)'; // S'adapte à ta couleur de fond
-        notchSpacer.style.position = 'fixed';
-        notchSpacer.style.top = '0';
-        notchSpacer.style.left = '0';
-        notchSpacer.style.zIndex = '99999';
-
-        // 2. On pousse l'application vers le bas pour lui laisser de la place
-        const container = document.querySelector('.app-container');
-        if (container) {
-            container.style.marginTop = '44px';
-            container.style.height = 'calc(100dvh - 44px)';
-            
-            // On ajoute la barre au-dessus de l'application
-            document.body.insertBefore(notchSpacer, document.body.firstChild);
-        }
-    }
-});
-</script>
-  
 </body>   
   
 </html>
