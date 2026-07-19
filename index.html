@@ -4203,60 +4203,8 @@ input, textarea {
 [data-theme="dark"] .wb-header span:first-child {
     color: #ffffff !important;
 }
-      /* ===== MORPION : CSS PUR SANS SÉLECTEUR DE TEXTE ===== */
-
-/* Tous les statuts en blanc par défaut */
-.morpion-status {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
-/* Le premier enfant (ou le statut quand c'est ton tour) */
-.morpion-status:first-of-type {
-    color: #e74c3c !important;  /* ROUGE */
-}
-
-/* Le statut quand c'est au tour de l'autre */
-.morpion-status:last-of-type {
-    color: #27ae60 !important;  /* VERT */
-}
-      /* ===== SUPPRIMER LES MARGES SUR LES CÔTÉS POUR LE FOND D'ÉCRAN ===== */
-
-/* Supprimer le padding du container */
-.app-container {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    padding: 0 !important;
-    border-left: none !important;
-    border-right: none !important;
-}
-
-/* Supprimer les marges du body */
-body {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Supprimer le padding de la zone de messages */
-.messages-area {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-}
-
-/* Supprimer les bordures du container */
-.app-container {
-    border-left: none !important;
-    border-right: none !important;
-}
-
-/* Sur mobile */
-@media (max-width: 800px) {
-    .app-container {
-        border-left: none !important;
-        border-right: none !important;
-        padding: 0 !important;
-    }
-}
+      
+      
     </style>
 </head>
 <body>
@@ -4583,7 +4531,7 @@ body {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Mes sage..." oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
