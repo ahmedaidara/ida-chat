@@ -4203,29 +4203,7 @@ input, textarea {
 [data-theme="dark"] .wb-header span:first-child {
     color: #ffffff !important;
 }
-      /* ===== SUPPRIMER UNIQUEMENT LES TRAITS SUR LES CÔTÉS ===== */
-
-.app-container {
-    border-left: none !important;
-    border-right: none !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-}
-
-/* Sur mobile aussi */
-@media (max-width: 800px) {
-    .app-container {
-        border-left: none !important;
-        border-right: none !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-    }
-}
-
-/* NE PAS TOUCHER au padding-top qui gère la barre d'état */
-.app-container {
-    padding-top: env(safe-area-inset-top) !important;  /* GARDE CE PADDING POUR IPHONE */
-}
+      
       
     </style>
 </head>
