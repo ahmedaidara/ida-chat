@@ -15822,6 +15822,7 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                 bubbleHtml += `<div class="screenshare-invite-card"><span class="screenshare-invite-text"><i class="fa-solid fa-display"></i> ❌ Invitation refusée</span></div>`;
             }
 } else if (data.type === 'location') {
+          try {
             const estLive = data.mode === 'live';
             const dejaTerminee = data.liveEnded || (data.expiresAt && Date.now() > data.expiresAt);
             let statutTexte = estLive ? (dejaTerminee ? 'Partage terminé' : 'Position en direct') : 'Position partagée';
@@ -15837,7 +15838,9 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
             if (estLive && !dejaTerminee) {
                 setTimeout(() => ecouterPositionEnDirect(msgId), 0);
             }
+          } catch(eLoc) { console.error('Erreur rendu carte position:', eLoc); }
 } else if (data.type === 'meteo') {
+          try {
             bubbleHtml += `
                 <div class="location-card" style="cursor:default; gap:0; flex-direction:column; align-items:stretch;">
                     <div class="location-card-titre" style="padding:8px 10px 0;">🌤️ Météo à deux</div>
@@ -15855,13 +15858,19 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                         </div>
                     </div>
                 </div>`;
+          } catch(eMeteo) { console.error('Erreur rendu carte météo:', eMeteo); }
 } else if (data.type === 'sos_calin') {
+          try {
             bubbleHtml += `<div class="location-card" style="cursor:default;"><div class="location-card-map"><i class="fa-solid fa-hand-holding-heart" style="color:#ff2d55;"></i></div><div class="location-card-info"><div class="location-card-titre">SOS Câlin 🆘</div><div class="location-card-statut">${escapeHTML(data.senderName)} a besoin de câlins</div></div></div>`;
-            if (!estExpediteur) setTimeout(declencherAnimationCoeurGeant, 200);
+            if (data.senderId !== currentUser.id) setTimeout(declencherAnimationCoeurGeant, 200);
+          } catch(eSos) { console.error('Erreur rendu carte SOS Câlin:', eSos); }
 } else if (data.type === 'cadeau') {
+          try {
             bubbleHtml += `<div class="location-card" style="cursor:default;"><div class="location-card-map" style="font-size:1.6rem;">${escapeHTML((data.cadeau || '🎁').split(' ')[0])}</div><div class="location-card-info"><div class="location-card-titre">Cadeau virtuel</div><div class="location-card-statut">${escapeHTML(data.cadeau || '')}</div></div></div>`;
-            if (!estExpediteur) setTimeout(() => declencherAnimationCadeau(data.cadeau || '🎁'), 200);
+            if (data.senderId !== currentUser.id) setTimeout(() => declencherAnimationCadeau(data.cadeau || '🎁'), 200);
+          } catch(eCadeau) { console.error('Erreur rendu carte cadeau:', eCadeau); }
 } else if (data.type === 'tresor') {
+          try {
             const dejaRevele = !!data.revealed;
             bubbleHtml += `
                 <div class="tresor-card" data-id="${msgId}" onclick="reveleTresor('${msgId}')">
@@ -15870,6 +15879,7 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                     <div class="tresor-secret-zone" style="display:${dejaRevele ? 'block' : 'none'};">${escapeHtmlTexte(data.secret || '')}</div>
                     ${!dejaRevele ? `<div class="tresor-card-cta">Appuie pour ouvrir</div>` : ''}
                 </div>`;
+          } catch(eTresor) { console.error('Erreur rendu carte trésor:', eTresor); }
 } else if (data.type === 'call_log') {
             const isMissed = data.callStatus === 'missed';
             const isDeclined = data.callStatus === 'declined';
