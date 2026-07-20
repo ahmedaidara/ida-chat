@@ -4391,30 +4391,45 @@ input, textarea {
         .voice-transcript-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
         .voice-transcript-texte { font-size: 0.85rem; color: var(--text-main); min-height: 1.2em; }
         .audio-transcription-affichee { font-size: 0.78rem; opacity: 0.85; margin-top: 4px; font-style: italic; }
+      .input-group {
+    margin-bottom: 18px;
+}
+.input-group input:focus {
+    border-color: #a800ff;
+    box-shadow: 0 0 20px rgba(168,0,255,0.15);
+}
+.login-card .user-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 5px 20px rgba(168,0,255,0.3);
+}
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <div id="login-screen">
-            <div class="login-card">
-                <h2> Qui êtes-vous ?</h2>
-                <button class="user-btn btn-ida" onclick="selectUser('ida')">
-                    <div class="avatar">IDA</div>
-                    <div class="user-info-btn">
-                        <span class="name">IDA SEUL</span>
-                        <span class="tag">Ida</span>
-                    </div>
-                </button>
-                <button class="user-btn btn-aidara" onclick="selectUser('aidara')">
-                    <div class="avatar">AID</div>
-                    <div class="user-info-btn">
-                        <span class="name">Ahmed Said Aidara</span>
-                        <span class="tag">Aidara</span>
-                    </div>
-                </button>
-            </div>
+       <div id="login-screen">
+    <div class="login-card">
+        <h2>🔐 CHAT-IDA AIDARA</h2>
+        <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 20px;">Entrez votre mot de passe </p>
+        
+        <div class="input-group">
+            <input type="password" id="login-password" placeholder="Mot de passe..." 
+                   style="width:100%; padding:14px 18px; border-radius:12px; border:2px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.08); color:#fff; font-size:1rem; outline:none;"
+                   onkeydown="if(event.key==='Enter') loginWithPassword()">
         </div>
+        
+        <button class="user-btn" onclick="loginWithPassword()" 
+                style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:14px; background:linear-gradient(45deg, #a800ff, #0076ff); border:none; border-radius:12px; color:white; font-weight:600; cursor:pointer; transition:transform 0.2s;">
+            <span>🔑 Se connecter</span>
+        </button>
+        
+        <div id="login-error" style="color:#ff4444; font-size:0.85rem; margin-top:12px; text-align:center; min-height:24px;"></div>
+        
+        <div style="text-align:center; margin-top:15px; font-size:0.65rem; color:rgba(255,255,255,0.3);">
+            💡 hum c qui toiii
+        </div>
+    </div>
+</div>
 
         <script>
             // Exécuté immédiatement (pas d'attente de DOMContentLoaded ni des SDK externes) :
@@ -7035,16 +7050,15 @@ async function enregistrerTokenPush() {
     }
 }
         // ========== SÉLECTION UTILISATEUR======= ===
-        function selectUser(userKey) {
-            if(userKey === 'ida') {
-                currentUser = { id: 'ida', name: 'IDA ', full: 'Ida' };
-                targetUser = { id: 'aidara', name: 'Aidara', full: 'Aidara' };
-            } else {
-                currentUser = { id: 'aidara', name: 'Ahmed Said Aidara', full: 'Aidara' };
-                targetUser = { id: 'ida', name: 'Ida Marie José Monteiro', full: 'Ida' };
-            }
-          
-           localStorage.setItem('lastUser', userKey);
+     function selectUser(userKey) {
+    if(userKey === 'ida') {
+        currentUser = { id: 'ida', name: 'IDA ', full: 'Ida' };
+        targetUser = { id: 'aidara', name: 'Aidara', full: 'Aidara' };
+    } else {
+        currentUser = { id: 'aidara', name: 'Ahmed Said Aidara', full: 'Aidara' };
+        targetUser = { id: 'ida', name: 'Ida Marie José Monteiro', full: 'Ida' };
+    }
+    localStorage.setItem('lastUser', userKey);
     console.log("💾 Sauvegardé:", localStorage.getItem('lastUser'));
 
             document.getElementById('login-screen').style.display = 'none';
@@ -11893,17 +11907,12 @@ function closePhotoModal() {
  // ========== CONNEXION AUTOMATIQUE UNIQUE ==========
 function autoLogin() {
     const lastUser = localStorage.getItem('lastUser');
-    console.log("🔍 Vérification localStorage:", lastUser);
-    
     if (lastUser === 'ida') {
-        console.log("🔐 Connexion auto : IDA");
         selectUser('ida');
     } else if (lastUser === 'aidara') {
-        console.log("🔐 Connexion auto : AIDARA");
         selectUser('aidara');
-    } else {
-        console.log("👋 Aucun utilisateur sauvegardé");
     }
+    // Si pas d'utilisateur, on reste sur l'écran de connexion
 }
 
 // Un seul event listener
@@ -20257,6 +20266,119 @@ window.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { e.preventDefault(); modal.style.display = 'none'; }
 }, true); // "true" pour intercepter l'événement avant tout le monde
   
+  // ============================================================
+// CONNEXION AVEC MOT DE PASSE
+// ============================================================
+
+// Configuration Firebase (déjà présente)
+// const firebaseConfig = { ... }
+// firebase.initializeApp(firebaseConfig);
+// const db = firebase.firestore();
+
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function collectLoginInfo() {
+    return {
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent || 'unknown',
+        platform: navigator.platform || 'unknown',
+        language: navigator.language || 'unknown',
+        screen: `${screen.width}x${screen.height}`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown'
+    };
+}
+
+async function getIP() {
+    try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        return data.ip;
+    } catch { return 'unavailable'; }
+}
+
+async function saveLoginLog(entry) {
+    try {
+        await db.collection('auth_logs').add({
+            ...entry,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (e) { console.error('Erreur log:', e); }
+}
+
+async function loginWithPassword() {
+    const input = document.getElementById('login-password');
+    const password = input.value.trim();
+    const errorEl = document.getElementById('login-error');
+    
+    errorEl.textContent = '';
+    
+    if (!password) {
+        errorEl.textContent = '⚠️ Veuillez entrer un mot de passe';
+        return;
+    }
+    
+    const info = await collectLoginInfo();
+    const ip = await getIP();
+    const fullInfo = { ...info, ip };
+    
+    try {
+        // Récupérer les mots de passe depuis Firebase
+        const idaDoc = await db.collection('passwords').doc('ida').get();
+        const aidaraDoc = await db.collection('passwords').doc('aidara').get();
+        
+        // Créer les mots de passe par défaut si inexistants
+        if (!idaDoc.exists) {
+            const hash = await hashPassword('I9#mK2$pL8@vT7!zR4&wN5*yQ1^uB3~');
+            await db.collection('passwords').doc('ida').set({ password: hash });
+        }
+        if (!aidaraDoc.exists) {
+            const hash = await hashPassword('AR8!mP2$vT9#zL4@yN7&wX1*uB5^qC3~');
+            await db.collection('passwords').doc('aidara').set({ password: hash });
+        }
+        
+        const hashedInput = await hashPassword(password);
+        
+        // Vérifier IDA
+        if (idaDoc.exists && idaDoc.data().password === hashedInput) {
+            await saveLoginLog({ type: 'login_success', user: 'ida', ...fullInfo });
+            localStorage.setItem('lastUser', 'ida');
+            errorEl.style.color = '#00cc44';
+            errorEl.textContent = '✅ Connexion réussie !';
+            input.value = '';
+            setTimeout(() => selectUser('ida'), 500);
+            return;
+        }
+        
+        // Vérifier AIDARA
+        if (aidaraDoc.exists && aidaraDoc.data().password === hashedInput) {
+            await saveLoginLog({ type: 'login_success', user: 'aidara', ...fullInfo });
+            localStorage.setItem('lastUser', 'aidara');
+            errorEl.style.color = '#00cc44';
+            errorEl.textContent = '✅ Connexion réussie !';
+            input.value = '';
+            setTimeout(() => selectUser('aidara'), 500);
+            return;
+        }
+        
+        // Échec
+        await saveLoginLog({ type: 'login_failed', password_entered: password, ...fullInfo });
+        errorEl.style.color = '#ff4444';
+        errorEl.textContent = '❌ Mot de passe incorrect';
+        input.value = '';
+        input.focus();
+        
+    } catch (e) {
+        console.error(e);
+        errorEl.style.color = '#ff4444';
+        errorEl.textContent = '❌ Erreur de connexion au serveur';
+    }
+}
 </script>
    <!-- Sélecteur de couleur pour les bulles -->
 <div class="color-picker-modal" id="color-picker-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:99999; justify-content:center; align-items:center;">
