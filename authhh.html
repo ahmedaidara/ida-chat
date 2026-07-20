@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔐 ADMIN · CHAT-IDA</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, 'Inter', sans-serif; }
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #a800ff, #0076ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .badge {
+            background: rgba(168,0,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #a800ff;
+            border: 1px solid rgba(168,0,255,0.2);
+        }
+        .card {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h2 i { color: #a800ff; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 600px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+        .user-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .user-card .user-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .user-card .user-name.ida { color: #c266ff; }
+        .user-card .user-name.aidara { color: #4db8ff; }
+        .user-card .status {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 12px;
+        }
+        .user-card .status .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .user-card .status .dot.active { background: #00cc44; }
+        .user-card .status .dot.inactive { background: #ff4444; }
+        .pwd-display {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #00cc44;
+            word-break: break-all;
+            margin-bottom: 12px;
+        }
+        .pwd-display .label {
+            color: #666;
+            font-size: 0.65rem;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .input-row input:focus {
+            border-color: #a800ff;
+            box-shadow: 0 0 20px rgba(168,0,255,0.1);
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-primary { background: linear-gradient(45deg, #a800ff, #0076ff); color: #fff; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(168,0,255,0.3); }
+        .btn-success { background: rgba(0,204,68,0.2); color: #00cc44; border: 1px solid rgba(0,204,68,0.2); }
+        .btn-success:hover { background: rgba(0,204,68,0.3); }
+        .btn-danger { background: rgba(255,68,68,0.2); color: #ff4444; border: 1px solid rgba(255,68,68,0.2); }
+        .btn-danger:hover { background: rgba(255,68,68,0.3); }
+        .btn-secondary { background: rgba(255,255,255,0.06); color: #aaa; border: 1px solid rgba(255,255,255,0.06); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+        .btn-sm { padding: 6px 14px; font-size: 0.75rem; }
+        .msg { font-size: 0.8rem; margin-top: 8px; min-height: 20px; }
+        .msg.success { color: #00cc44; }
+        .msg.error { color: #ff4444; }
+        .msg.info { color: #ffd700; }
+        
+        /* LOGS */
+        .logs-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+        }
+        .log-item {
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.02);
+            margin-bottom: 8px;
+            border-left: 3px solid #555;
+            transition: all 0.2s;
+        }
+        .log-item:hover { background: rgba(255,255,255,0.05); }
+        .log-item.success { border-left-color: #00cc44; }
+        .log-item.error { border-left-color: #ff4444; }
+        .log-item .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .log-item .log-header .log-user {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .log-item .log-header .log-user.ida { color: #c266ff; }
+        .log-item .log-header .log-user.aidara { color: #4db8ff; }
+        .log-item .log-header .log-user.unknown { color: #888; }
+        .log-item .log-header .log-date {
+            font-size: 0.7rem;
+            color: #666;
+        }
+        .log-item .log-body {
+            font-size: 0.75rem;
+            color: #aaa;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+        .log-item .log-body strong { color: #ddd; }
+        .log-item .log-body .tag {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .log-item .log-body .tag.success { background: rgba(0,204,68,0.2); color: #00cc44; }
+        .log-item .log-body .tag.error { background: rgba(255,68,68,0.2); color: #ff4444; }
+        .log-item .log-body .tag.info { background: rgba(255,215,0,0.2); color: #ffd700; }
+        
+        .logs-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .logs-stats .stat {
+            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .logs-stats .stat .number {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .logs-stats .stat .label {
+            font-size: 0.65rem;
+            color: #666;
+            margin-top: 2px;
+        }
+        .logs-stats .stat .number.success { color: #00cc44; }
+        .logs-stats .stat .number.error { color: #ff4444; }
+        .logs-stats .stat .number.total { color: #a800ff; }
+        
+        .refresh-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: #888;
+            padding: 6px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s;
+        }
+        .refresh-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .refresh-btn:active { transform: scale(0.95); }
+        
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .flex-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .mt-10 { margin-top: 10px; }
+        .mb-10 { margin-bottom: 10px; }
+        .text-center { text-align: center; }
+        .text-muted { color: #666; font-size: 0.8rem; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #a800ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #555;
+        }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.5; }
+        
+        .copy-btn {
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.1); color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- HEADER -->
+    <div class="header">
+        <div>
+            <h1>🔐 ADMIN · CHAT-IDA</h1>
+            <div style="font-size:0.75rem; color:#555; margin-top:4px;">Gestion des mots de passe · Surveillance des connexions</div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span class="badge">🛡️ Sécurisé</span>
+            <button class="refresh-btn" onclick="refreshAll()">🔄 Rafraîchir</button>
+        </div>
+    </div>
+
+    <!-- MOTS DE PASSE -->
+    <div class="card">
+        <h2><i>🔑</i> Gestion des mots de passe</h2>
+        <div class="grid-2">
+            <!-- IDA -->
+            <div class="user-card">
+                <div class="user-name ida">👤 IDA</div>
+                <div class="status">
+                    <span class="dot" id="ida-status-dot"></span>
+                    <span id="ida-status-text">Chargement...</span>
+                </div>
+                <div class="pwd-display" id="ida-pwd-display">
+                    <div class="label">🔒 Mot de passe actuel</div>
+                    <div id="ida-pwd-text">Chargement...</div>
+                </div>
+                <div class="input-row">
+                    <input type="text" id="ida-new-pwd" placeholder="Nouveau mot de passe..." onkeydown="if(event.key==='Enter') updatePassword('ida')">
+                </div>
+                <div class="flex-row">
+                    <button class="btn btn-success btn-sm" onclick="updatePassword('ida')">💾 Mettre à jour</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePassword('ida')">🗑️ Supprimer</button>
+                    <button class="btn btn-secondary btn-sm" onclick="generatePassword('ida')">🎲 Générer</button>
+                </div>
+                <div id="ida-msg" class="msg"></div>
+            </div>
+            
+            <!-- AIDARA -->
+            <div class="user-card">
+                <div class="user-name aidara">👤 AIDARA</div>
+                <div class="status">
+                    <span class="dot" id="aidara-status-dot"></span>
+                    <span id="aidara-status-text">Chargement...</span>
+                </div>
+                <div class="pwd-display" id="aidara-pwd-display">
+                    <div class="label">🔒 Mot de passe actuel</div>
+                    <div id="aidara-pwd-text">Chargement...</div>
+                </div>
+                <div class="input-row">
+                    <input type="text" id="aidara-new-pwd" placeholder="Nouveau mot de passe..." onkeydown="if(event.key==='Enter') updatePassword('aidara')">
+                </div>
+                <div class="flex-row">
+                    <button class="btn btn-success btn-sm" onclick="updatePassword('aidara')">💾 Mettre à jour</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePassword('aidara')">🗑️ Supprimer</button>
+                    <button class="btn btn-secondary btn-sm" onclick="generatePassword('aidara')">🎲 Générer</button>
+                </div>
+                <div id="aidara-msg" class="msg"></div>
+            </div>
+        </div>
+        <div style="margin-top:15px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
+            <div class="flex-row">
+                <button class="btn btn-secondary btn-sm" onclick="resetDefaultPasswords()">🔄 Rétablir mots de passe par défaut</button>
+                <span style="font-size:0.65rem; color:#555; align-self:center;">⚠️ Attention : les mots de passe par défaut sont publics</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="card">
+        <div class="flex-between">
+            <h2><i>📋</i> Historique des connexions</h2>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary btn-sm" onclick="clearLogs()">🗑️ Effacer</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportLogs()">📤 Exporter</button>
+            </div>
+        </div>
+        
+        <div class="logs-stats" id="logs-stats">
+            <div class="stat">
+                <div class="number total" id="stat-total">-</div>
+                <div class="label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="number success" id="stat-success">-</div>
+                <div class="label">✅ Réussies</div>
+            </div>
+            <div class="stat">
+                <div class="number error" id="stat-error">-</div>
+                <div class="label">❌ Échecs</div>
+            </div>
+            <div class="stat">
+                <div class="number" id="stat-ida" style="color:#c266ff;">-</div>
+                <div class="label">👤 IDA</div>
+            </div>
+            <div class="stat">
+                <div class="number" id="stat-aidara" style="color:#4db8ff;">-</div>
+                <div class="label">👤 AIDARA</div>
+            </div>
+        </div>
+        
+        <div class="logs-container" id="logs-container">
+            <div class="loading"><div class="spinner"></div> Chargement des logs...</div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="text-align:center; font-size:0.65rem; color:#333; padding:20px 0;">
+        CHAT-IDA Admin v2.0 · 🔒 Accès réservé à l'administrateur
+    </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION FIREBASE
+// ============================================================
+const firebaseConfig = {
+    apiKey: "AIzaSyDGC2LQYeSrlb6MRwtLlQGDzz-yJHtKf8c",
+    authDomain: "messagerie-65abc.firebaseapp.com",
+    projectId: "messagerie-65abc",
+    storageBucket: "messagerie-65abc.firebasestorage.app",
+    messagingSenderId: "363641716532",
+    appId: "1:363641716532:web:d16bd3b4eaf4abf4e8ef61"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ============================================================
+// FONCTIONS DE HACHAGE
+// ============================================================
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function generateRandomPassword(length = 16) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+// ============================================================
+// GESTION DES MOTS DE PASSE
+// ============================================================
+
+async function loadPasswords() {
+    try {
+        const idaDoc = await db.collection('passwords').doc('ida').get();
+        const aidaraDoc = await db.collection('passwords').doc('aidara').get();
+        
+        // IDA
+        if (idaDoc.exists) {
+            document.getElementById('ida-pwd-text').textContent = '🔒 ' + idaDoc.data().password.substring(0, 20) + '...';
+            document.getElementById('ida-status-dot').className = 'dot active';
+            document.getElementById('ida-status-text').textContent = '✅ Configuré';
+        } else {
+            document.getElementById('ida-pwd-text').textContent = '⚠️ Aucun mot de passe';
+            document.getElementById('ida-status-dot').className = 'dot inactive';
+            document.getElementById('ida-status-text').textContent = '❌ Non configuré';
+        }
+        
+        // AIDARA
+        if (aidaraDoc.exists) {
+            document.getElementById('aidara-pwd-text').textContent = '🔒 ' + aidaraDoc.data().password.substring(0, 20) + '...';
+            document.getElementById('aidara-status-dot').className = 'dot active';
+            document.getElementById('aidara-status-text').textContent = '✅ Configuré';
+        } else {
+            document.getElementById('aidara-pwd-text').textContent = '⚠️ Aucun mot de passe';
+            document.getElementById('aidara-status-dot').className = 'dot inactive';
+            document.getElementById('aidara-status-text').textContent = '❌ Non configuré';
+        }
+    } catch (e) {
+        console.error('Erreur chargement mots de passe:', e);
+    }
+}
+
+async function updatePassword(user) {
+    const input = document.getElementById(`${user}-new-pwd`);
+    const newPwd = input.value.trim();
+    const msgEl = document.getElementById(`${user}-msg`);
+    
+    if (!newPwd || newPwd.length < 8) {
+        msgEl.className = 'msg error';
+        msgEl.textContent = '⚠️ Le mot de passe doit contenir au moins 8 caractères';
+        return;
+    }
+    
+    msgEl.className = 'msg info';
+    msgEl.textContent = '⏳ Mise à jour en cours...';
+    
+    try {
+        const hashed = await hashPassword(newPwd);
+        await db.collection('passwords').doc(user).set({ password: hashed });
+        
+        msgEl.className = 'msg success';
+        msgEl.textContent = '✅ Mot de passe mis à jour avec succès !';
+        input.value = '';
+        
+        // Ajouter un log admin
+        await db.collection('auth_logs').add({
+            type: 'admin_password_update',
+            user: user,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        loadPasswords();
+    } catch (e) {
+        msgEl.className = 'msg error';
+        msgEl.textContent = `❌ Erreur: ${e.message}`;
+    }
+}
+
+async function deletePassword(user) {
+    if (!confirm(`⚠️ Supprimer définitivement le mot de passe de ${user.toUpperCase()} ?`)) return;
+    
+    const msgEl = document.getElementById(`${user}-msg`);
+    msgEl.className = 'msg info';
+    msgEl.textContent = '⏳ Suppression en cours...';
+    
+    try {
+        await db.collection('passwords').doc(user).delete();
+        
+        msgEl.className = 'msg success';
+        msgEl.textContent = '✅ Mot de passe supprimé !';
+        
+        await db.collection('auth_logs').add({
+            type: 'admin_password_delete',
+            user: user,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        loadPasswords();
+    } catch (e) {
+        msgEl.className = 'msg error';
+        msgEl.textContent = `❌ Erreur: ${e.message}`;
+    }
+}
+
+async function generatePassword(user) {
+    const newPwd = generateRandomPassword(16);
+    document.getElementById(`${user}-new-pwd`).value = newPwd;
+    await updatePassword(user);
+}
+
+async function resetDefaultPasswords() {
+    if (!confirm('⚠️ Rétablir les mots de passe par défaut ?\n\nIDA: I9#mK2$pL8@vT7!zR4&wN5*yQ1^uB3~\nAIDARA: AR8!mP2$vT9#zL4@yN7&wX1*uB5^qC3~')) return;
+    
+    try {
+        const idaHash = await hashPassword('I9#mK2$pL8@vT7!zR4&wN5*yQ1^uB3~');
+        const aidaraHash = await hashPassword('AR8!mP2$vT9#zL4@yN7&wX1*uB5^qC3~');
+        
+        await db.collection('passwords').doc('ida').set({ password: idaHash });
+        await db.collection('passwords').doc('aidara').set({ password: aidaraHash });
+        
+        await db.collection('auth_logs').add({
+            type: 'admin_reset_default',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        loadPasswords();
+        showTempNotification('✅ Mots de passe par défaut rétablis');
+    } catch (e) {
+        console.error(e);
+        alert('❌ Erreur: ' + e.message);
+    }
+}
+
+// ============================================================
+// LOGS - AFFICHAGE COMPLET
+// ============================================================
+
+let logsUnsubscribe = null;
+let allLogsCache = [];
+
+function formatDate(timestamp) {
+    if (!timestamp) return '--:-- --/--/----';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleString('fr-FR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+}
+
+function getDeviceInfo(data) {
+    const parts = [];
+    if (data.platform) parts.push(`📱 ${data.platform}`);
+    if (data.userAgent) {
+        const ua = data.userAgent;
+        // Extraire le navigateur
+        if (ua.includes('Chrome')) parts.push('🌐 Chrome');
+        else if (ua.includes('Firefox')) parts.push('🌐 Firefox');
+        else if (ua.includes('Safari') && !ua.includes('Chrome')) parts.push('🌐 Safari');
+        else if (ua.includes('Edge')) parts.push('🌐 Edge');
+        else parts.push('🌐 ' + ua.split(' ').slice(0, 2).join(' '));
+    }
+    if (data.screen) parts.push(`🖥️ ${data.screen}`);
+    if (data.language) parts.push(`🌍 ${data.language}`);
+    if (data.timezone) parts.push(`🕐 ${data.timezone}`);
+    if (data.deviceMemory) parts.push(`💾 ${data.deviceMemory}GB RAM`);
+    if (data.hardwareConcurrency) parts.push(`🧠 ${data.hardwareConcurrency} cœurs`);
+    if (data.cookies === true) parts.push('🍪 Cookies');
+    if (data.cookies === false) parts.push('🚫 Cookies bloqués');
+    return parts;
+}
+
+function getBrowserInfo(ua) {
+    if (!ua) return 'Inconnu';
+    if (ua.includes('Chrome') && !ua.includes('Edg')) return 'Chrome';
+    if (ua.includes('Firefox')) return 'Firefox';
+    if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+    if (ua.includes('Edg')) return 'Edge';
+    if (ua.includes('OPR') || ua.includes('Opera')) return 'Opera';
+    return ua.split(' ').slice(0, 2).join(' ');
+}
+
+function loadLogs() {
+    const container = document.getElementById('logs-container');
+    container.innerHTML = '<div class="loading"><div class="spinner"></div> Chargement des logs...</div>';
+    
+    if (logsUnsubscribe) {
+        logsUnsubscribe();
+        logsUnsubscribe = null;
+    }
+    
+    logsUnsubscribe = db.collection('auth_logs')
+        .orderBy('timestamp', 'desc')
+        .limit(500)
+        .onSnapshot(snapshot => {
+            allLogsCache = [];
+            snapshot.forEach(doc => {
+                allLogsCache.push({ id: doc.id, ...doc.data() });
+            });
+            renderLogs();
+            updateStats();
+        }, error => {
+            console.error('Erreur logs:', error);
+            container.innerHTML = `<div class="empty-state"><i>❌</i><p>Erreur de chargement: ${error.message}</p></div>`;
+        });
+}
+
+function renderLogs() {
+    const container = document.getElementById('logs-container');
+    
+    if (allLogsCache.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i>📭</i><p>Aucune connexion enregistrée</p></div>`;
+        return;
+    }
+    
+    let html = '';
+    allLogsCache.forEach(log => {
+        const isSuccess = log.type === 'login_success';
+        const isFailed = log.type === 'login_failed';
+        const isAdmin = log.type === 'admin_password_update' || log.type === 'admin_password_delete' || log.type === 'admin_reset_default';
+        
+        const userClass = log.user === 'ida' ? 'ida' : (log.user === 'aidara' ? 'aidara' : 'unknown');
+        const userLabel = log.user === 'ida' ? 'IDA' : (log.user === 'aidara' ? 'AIDARA' : 'Inconnu');
+        
+        const dateStr = formatDate(log.timestamp);
+        const deviceInfo = getDeviceInfo(log);
+        const browser = getBrowserInfo(log.userAgent);
+        
+        let statusTag = '';
+        let statusClass = '';
+        if (isSuccess) {
+            statusTag = '<span class="tag success">✅ RÉUSSI</span>';
+            statusClass = 'success';
+        } else if (isFailed) {
+            statusTag = '<span class="tag error">❌ ÉCHEC</span>';
+            statusClass = 'error';
+        } else if (isAdmin) {
+            statusTag = '<span class="tag info">⚙️ ADMIN</span>';
+            statusClass = 'success';
+        }
+        
+        let passwordDisplay = '';
+        if (log.password_entered) {
+            passwordDisplay = `&nbsp;|&nbsp;<strong>Mot de passe:</strong> <span style="color:#ffd700;font-family:monospace;">${log.password_entered}</span>`;
+        }
+        
+        html += `
+            <div class="log-item ${statusClass}">
+                <div class="log-header">
+                    <span class="log-user ${userClass}">
+                        ${statusTag} ${userLabel}
+                    </span>
+                    <span class="log-date">${dateStr}</span>
+                </div>
+                <div class="log-body">
+                    <strong>IP:</strong> ${log.ip || 'N/A'} ${passwordDisplay}
+                </div>
+                <div class="log-body">
+                    <strong>Navigateur:</strong> ${browser} &nbsp;|&nbsp;
+                    <strong>Appareil:</strong> ${log.platform || 'N/A'} &nbsp;|&nbsp;
+                    <strong>Langue:</strong> ${log.language || 'N/A'}
+                </div>
+                ${deviceInfo.length > 0 ? `<div class="log-body">${deviceInfo.join(' · ')}</div>` : ''}
+                ${log.userAgent ? `<div class="log-body" style="font-size:0.6rem;color:#555;word-break:break-all;">UA: ${log.userAgent}</div>` : ''}
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function updateStats() {
+    const total = allLogsCache.length;
+    const success = allLogsCache.filter(l => l.type === 'login_success').length;
+    const failed = allLogsCache.filter(l => l.type === 'login_failed').length;
+    const ida = allLogsCache.filter(l => l.user === 'ida' && l.type === 'login_success').length;
+    const aidara = allLogsCache.filter(l => l.user === 'aidara' && l.type === 'login_success').length;
+    
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-success').textContent = success;
+    document.getElementById('stat-error').textContent = failed;
+    document.getElementById('stat-ida').textContent = ida;
+    document.getElementById('stat-aidara').textContent = aidara;
+}
+
+async function clearLogs() {
+    if (!confirm('⚠️ Supprimer TOUS les logs ? Cette action est irréversible !')) return;
+    
+    try {
+        const snapshot = await db.collection('auth_logs').get();
+        const batch = db.batch();
+        snapshot.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        showTempNotification('✅ Logs supprimés');
+        loadLogs();
+    } catch (e) {
+        console.error(e);
+        alert('❌ Erreur: ' + e.message);
+    }
+}
+
+function exportLogs() {
+    if (allLogsCache.length === 0) {
+        alert('Aucun log à exporter');
+        return;
+    }
+    
+    let csv = 'Date,Utilisateur,Type,IP,Appareil,Navigateur,Langue,Écran,Fuseau,UserAgent\n';
+    allLogsCache.forEach(log => {
+        const date = formatDate(log.timestamp);
+        const user = log.user || 'inconnu';
+        const type = log.type || 'unknown';
+        const ip = log.ip || 'N/A';
+        const platform = log.platform || 'N/A';
+        const browser = getBrowserInfo(log.userAgent);
+        const lang = log.language || 'N/A';
+        const screen = log.screen || 'N/A';
+        const tz = log.timezone || 'N/A';
+        const ua = (log.userAgent || 'N/A').replace(/,/g, ';');
+        csv += `${date},${user},${type},${ip},${platform},${browser},${lang},${screen},${tz},${ua}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `logs_chat_ida_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showTempNotification('📤 Export CSV téléchargé');
+}
+
+// ============================================================
+// NOTIFICATIONS TEMPORAIRES
+// ============================================================
+function showTempNotification(message) {
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.85); color: #fff;
+        padding: 12px 24px; border-radius: 12px;
+        font-size: 0.85rem; z-index: 9999;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.05);
+        animation: fadeInUp 0.3s ease;
+        max-width: 90%;
+        text-align: center;
+    `;
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    setTimeout(() => {
+        notif.style.opacity = '0';
+        notif.style.transition = 'opacity 0.3s';
+        setTimeout(() => notif.remove(), 300);
+    }, 3000);
+}
+
+// ============================================================
+// RAFRAÎCHISSEMENT
+// ============================================================
+function refreshAll() {
+    loadPasswords();
+    loadLogs();
+    showTempNotification('🔄 Rafraîchi !');
+}
+
+// ============================================================
+// INITIALISATION
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    loadPasswords();
+    loadLogs();
+});
+
+// Nettoyer l'écouteur
+window.addEventListener('beforeunload', function() {
+    if (logsUnsubscribe) {
+        logsUnsubscribe();
+        logsUnsubscribe = null;
+    }
+});
+
+// ============================================================
+// MOTS DE PASSE PAR DÉFAUT (création si inexistants)
+// ============================================================
+(async function initDefaultPasswords() {
+    try {
+        const idaDoc = await db.collection('passwords').doc('ida').get();
+        const aidaraDoc = await db.collection('passwords').doc('aidara').get();
+        
+        if (!idaDoc.exists) {
+            const hash = await hashPassword('I9#mK2$pL8@vT7!zR4&wN5*yQ1^uB3~');
+            await db.collection('passwords').doc('ida').set({ password: hash });
+        }
+        if (!aidaraDoc.exists) {
+            const hash = await hashPassword('AR8!mP2$vT9#zL4@yN7&wX1*uB5^qC3~');
+            await db.collection('passwords').doc('aidara').set({ password: hash });
+        }
+    } catch (e) {
+        console.error('Erreur initialisation:', e);
+    }
+})();
+
+console.log('🔐 Admin CHAT-IDA chargé');
+console.log('📋 Les logs sont en temps réel');
+</script>
+
+</body>
+</html>
