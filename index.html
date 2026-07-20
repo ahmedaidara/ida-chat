@@ -3882,6 +3882,15 @@ input, textarea {
     color: #d97706 !important;
 }
 
+/* ===== Boutons ajoutés (Ensemble, Bucket-list, Favoris, Notes, Calendrier, Position, Météo) : chacun sa couleur ===== */
+.toolbar-btn[onclick*="ouvrirRegarderEnsemble"], .toolbar-btn[onclick*="ouvrirRegarderEnsemble"] i, .toolbar-btn[onclick*="ouvrirRegarderEnsemble"] span { color: #7c3aed !important; }
+.toolbar-btn[onclick*="ouvrirBucketList"], .toolbar-btn[onclick*="ouvrirBucketList"] i, .toolbar-btn[onclick*="ouvrirBucketList"] span { color: #16a34a !important; }
+.toolbar-btn[onclick*="ouvrirFavorisPage"], .toolbar-btn[onclick*="ouvrirFavorisPage"] i, .toolbar-btn[onclick*="ouvrirFavorisPage"] span { color: #eab308 !important; }
+.toolbar-btn[onclick*="ouvrirNotesPartagees"], .toolbar-btn[onclick*="ouvrirNotesPartagees"] i, .toolbar-btn[onclick*="ouvrirNotesPartagees"] span { color: #0ea5e9 !important; }
+.toolbar-btn[onclick*="ouvrirCalendrierPage"], .toolbar-btn[onclick*="ouvrirCalendrierPage"] i, .toolbar-btn[onclick*="ouvrirCalendrierPage"] span { color: #db2777 !important; }
+.toolbar-btn[onclick*="ouvrirMenuPosition"], .toolbar-btn[onclick*="ouvrirMenuPosition"] i, .toolbar-btn[onclick*="ouvrirMenuPosition"] span { color: #ff3b30 !important; }
+.toolbar-btn[onclick*="ouvrirMeteoADeux"], .toolbar-btn[onclick*="ouvrirMeteoADeux"] i, .toolbar-btn[onclick*="ouvrirMeteoADeux"] span { color: #06b6d4 !important; }
+
 /* ===== SURVOL ===== */
 #etude-btn:hover,
 .toolbar-btn[onclick*="ouvrirJeux"]:hover,
@@ -3889,10 +3898,26 @@ input, textarea {
 .toolbar-btn[onclick*="creerTableauBlanc"]:hover,
 #screenshare-toolbar-btn:hover,
 #gif-trigger-btn:hover,
-.toolbar-btn[onclick*="openGaleriePage"]:hover {
+.toolbar-btn[onclick*="openGaleriePage"]:hover,
+.toolbar-btn[onclick*="ouvrirRegarderEnsemble"]:hover,
+.toolbar-btn[onclick*="ouvrirBucketList"]:hover,
+.toolbar-btn[onclick*="ouvrirFavorisPage"]:hover,
+.toolbar-btn[onclick*="ouvrirNotesPartagees"]:hover,
+.toolbar-btn[onclick*="ouvrirCalendrierPage"]:hover,
+.toolbar-btn[onclick*="ouvrirMenuPosition"]:hover,
+.toolbar-btn[onclick*="ouvrirMeteoADeux"]:hover {
     opacity: 0.7 !important;
     transform: scale(1.05) !important;
 }
+
+/* ===== Mode sombre : couleurs légèrement plus vives pour rester lisibles ===== */
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirRegarderEnsemble"], [data-theme="dark"] .toolbar-btn[onclick*="ouvrirRegarderEnsemble"] i, [data-theme="dark"] .toolbar-btn[onclick*="ouvrirRegarderEnsemble"] span { color: #a78bfa !important; }
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirBucketList"], [data-theme="dark"] .toolbar-btn[onclick*="ouvrirBucketList"] i, [data-theme="dark"] .toolbar-btn[onclick*="ouvrirBucketList"] span { color: #4ade80 !important; }
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirFavorisPage"], [data-theme="dark"] .toolbar-btn[onclick*="ouvrirFavorisPage"] i, [data-theme="dark"] .toolbar-btn[onclick*="ouvrirFavorisPage"] span { color: #fde047 !important; }
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirNotesPartagees"], [data-theme="dark"] .toolbar-btn[onclick*="ouvrirNotesPartagees"] i, [data-theme="dark"] .toolbar-btn[onclick*="ouvrirNotesPartagees"] span { color: #38bdf8 !important; }
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirCalendrierPage"], [data-theme="dark"] .toolbar-btn[onclick*="ouvrirCalendrierPage"] i, [data-theme="dark"] .toolbar-btn[onclick*="ouvrirCalendrierPage"] span { color: #f472b6 !important; }
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirMenuPosition"], [data-theme="dark"] .toolbar-btn[onclick*="ouvrirMenuPosition"] i, [data-theme="dark"] .toolbar-btn[onclick*="ouvrirMenuPosition"] span { color: #ff6b60 !important; }
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirMeteoADeux"], [data-theme="dark"] .toolbar-btn[onclick*="ouvrirMeteoADeux"] i, [data-theme="dark"] .toolbar-btn[onclick*="ouvrirMeteoADeux"] span { color: #22d3ee !important; }
 
 /* ===== MODE SOMBRE - couleurs plus vives ===== */
 [data-theme="dark"] #etude-btn {
@@ -4239,10 +4264,26 @@ input, textarea {
 }
 
         /* ========== MINI-JEUX : MENU + ROUE DE LA CHANCE + 8BALL + VRAI/FAUX ========== */
-        .jeux-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
-        .jeux-modal-box { background: var(--bg-main); color: var(--text-main); border-radius: 20px; padding: 25px 20px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.4); max-height: 85vh; overflow-y: auto; }
+        .jeux-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
+        .jeux-modal-box {
+            background: rgba(255, 255, 255, 0.14) !important;
+            backdrop-filter: blur(28px) !important;
+            -webkit-backdrop-filter: blur(28px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: var(--text-main);
+            border-radius: 22px; padding: 25px 20px; width: 100%; max-width: 340px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+            max-height: 85vh; overflow-y: auto;
+        }
+        [data-theme="dark"] .jeux-modal-box {
+            background: rgba(20, 20, 20, 0.55) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
         .jeux-modal-box h3 { margin-bottom: 18px; font-size: 1.1rem; }
-        .jeux-menu-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: var(--bubble-received); margin-bottom: 10px; cursor: pointer; text-align: left; font-weight: 600; transition: transform 0.15s; }
+        .jeux-menu-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.12); margin-bottom: 10px; cursor: pointer; text-align: left; font-weight: 600; transition: transform 0.15s, background 0.15s; }
+        [data-theme="dark"] .jeux-menu-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); }
+        .jeux-menu-item:hover { background: rgba(255,255,255,0.22); }
+        [data-theme="dark"] .jeux-menu-item:hover { background: rgba(255,255,255,0.1); }
         .jeux-menu-item:active { transform: scale(0.97); }
         .jeux-menu-item i { font-size: 1.3rem; width: 24px; text-align: center; }
         .jeux-modal-close { margin-top: 8px; padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: transparent; color: var(--text-main); cursor: pointer; }
@@ -4290,7 +4331,8 @@ input, textarea {
         .liste-add-row input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); font-size: 0.85rem; }
         .liste-add-row button { padding: 0 16px; border-radius: 10px; border: none; background: linear-gradient(45deg, #a800ff, #0076ff); color: #fff; font-weight: 700; cursor: pointer; }
         .liste-items-scroll { max-height: 45vh; overflow-y: auto; margin-bottom: 10px; }
-        .liste-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-radius: 12px; background: var(--bubble-received); margin-bottom: 8px; }
+        .liste-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.12); margin-bottom: 8px; cursor: default; }
+        [data-theme="dark"] .liste-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); }
         .liste-item-done .liste-item-texte div:first-child { text-decoration: line-through; opacity: 0.6; }
         .liste-item-check { cursor: pointer; font-size: 1.1rem; color: #16a34a; margin-top: 2px; }
         .liste-item-texte { flex: 1; font-size: 0.85rem; word-break: break-word; }
@@ -4299,6 +4341,21 @@ input, textarea {
         .liste-item-actions i { cursor: pointer; }
         .favoris-colonne-titre { font-weight: 700; font-size: 0.8rem; margin: 10px 0 6px; color: var(--text-muted); }
         .calendrier-form input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); font-size: 0.85rem; margin-bottom: 8px; }
+        .liste-item-date-modif { font-size: 0.68rem; color: var(--text-muted); opacity: 0.75; margin-top: 3px; }
+
+        /* ========== ÉDITEUR PLEIN ÉCRAN (bucket-list, notes partagées...) ========== */
+        .fs-editor-overlay { display: none; position: fixed; inset: 0; background: var(--bg-main); z-index: 8000; flex-direction: column; }
+        .fs-editor-overlay.show { display: flex; }
+        .fs-editor-header { display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 14px; border-bottom: 1px solid var(--border-color); }
+        .fs-editor-close, .fs-editor-save { font-size: 1.3rem; cursor: pointer; padding: 6px; color: var(--text-main); }
+        .fs-editor-save { color: #16a34a; }
+        .fs-editor-titre-zone { flex: 1; text-align: center; }
+        .fs-editor-titre { font-weight: 700; font-size: 0.95rem; }
+        .fs-editor-date { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+        .fs-editor-textarea { flex: 1; border: none; outline: none; resize: none; padding: 20px; font-size: 1.05rem; line-height: 1.6; background: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; }
+        .calendrier-header-titre { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; position: relative; }
+        .calendrier-btn-plus { position: absolute; right: 0; font-size: 1.3rem; color: #db2777; cursor: pointer; }
+        .calendrier-btn-plus:active { transform: scale(0.92); }
 
         /* ========== COMPTEUR DE JOURS ENSEMBLE + STATS DU COUPLE ========== */
         .jours-ensemble-banner { text-align: center; padding: 18px 15px 20px; background: linear-gradient(135deg, #a800ff, #0076ff); color: #fff; }
@@ -4749,7 +4806,7 @@ input, textarea {
                  <i class="fa-solid fa-image" id="media-btn" onclick="ouvrirMenuMedia()" style="cursor:pointer; font-size:1.3rem;" title="Photo/Vidéo/Galerie"></i>
     <i class="fa-solid fa-microphone" id="audio-btn" onclick="ouvrirMenuAudio()" style="cursor:pointer; font-size:1.3rem;" title="Message vocal avec effets"></i>
                        <!-- ========== NOUVEAU : TIROIR GIPHY ========== -->
-        <div id="giphy-drawer" style="display: none; position: absolute; bottom: 75px; left: 10px; right: 10px; background: var(--bg-main); border-radius: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); padding: 12px; z-index: 1000; max-height: 350px; flex-direction: column; border: 1px solid var(--border-color);">
+        <div id="giphy-drawer" style="display: none; position: absolute; bottom: 75px; left: 10px; right: 10px; background: var(--bg-main); border-radius: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); padding: 12px; z-index: 4000; max-height: 350px; flex-direction: column; border: 1px solid var(--border-color);">
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
                 <input type="text" id="giphy-search" placeholder="🔍 Rechercher GIF ou sticker..." style="flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 0.9rem;">
                 <button id="btn-toggle-type" style="background: #f0f2f5; border: none; padding: 0 20px; border-radius: 25px; font-weight: bold; font-size: 0.8rem; cursor: pointer; color: #000;">🎨 GIFS</button>
@@ -5398,7 +5455,7 @@ input, textarea {
 </div>
 
 <!-- Menu Position (position actuelle ou position en direct) -->
-<div class="floating-panel" id="position-panel" style="display:none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 101;">
+<div class="floating-panel" id="position-panel" style="display:none; bottom: 80px; left: 15px; right: 15px; background: var(--panel-bg); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; z-index: 4000;">
     <h4 style="margin-bottom: 10px;">📍 Partager une position</h4>
     <div class="tool-item" onclick="partagerPositionActuelle()" style="flex-direction:row; justify-content:flex-start; gap:14px; padding:12px 6px; text-align:left;">
         <i class="fa-solid fa-location-dot" style="font-size: 1.4rem; color:#ff3b30; width:28px; text-align:center;"></i>
@@ -5772,13 +5829,34 @@ function fermerMenuPosition() {
 
 function obtenirPositionActuelle() {
     return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) { reject(new Error('Géolocalisation non supportée')); return; }
+        if (!navigator.geolocation) { reject(new Error('Géolocalisation non supportée par ce navigateur')); return; }
+        if (window.isSecureContext === false) { reject(new Error('INSECURE_CONTEXT')); return; }
         navigator.geolocation.getCurrentPosition(
             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
             (err) => reject(err),
             { enableHighAccuracy: true, timeout: 12000 }
         );
     });
+}
+
+// Traduit une erreur de géolocalisation en message clair et actionnable pour l'utilisateur.
+function messageErreurGeoloc(err) {
+    if (err && err.message === 'INSECURE_CONTEXT') {
+        return "❌ La géolocalisation nécessite que le site soit ouvert en HTTPS (pas en simple http:// ni en fichier local).";
+    }
+    if (!err || typeof err.code === 'undefined') {
+        return "❌ Impossible d'accéder à ta position (erreur inconnue).";
+    }
+    switch (err.code) {
+        case 1: // PERMISSION_DENIED
+            return "❌ Localisation refusée. Va dans les réglages de ton navigateur/téléphone → Site → Localisation, et autorise-la pour cette app.";
+        case 2: // POSITION_UNAVAILABLE
+            return "❌ Position indisponible pour le moment (GPS/réseau). Réessaie dans un instant.";
+        case 3: // TIMEOUT
+            return "❌ La localisation a mis trop de temps à répondre. Réessaie.";
+        default:
+            return "❌ Impossible d'accéder à ta position.";
+    }
 }
 
 async function partagerPositionActuelle() {
@@ -5802,7 +5880,7 @@ async function partagerPositionActuelle() {
         console.error('Erreur position:', e);
         sauvegarderStatutPermission('loc', 'denied');
         majStatutPermission('loc', 'denied');
-        showTempNotification("❌ Impossible d'accéder à ta position (autorisation refusée ?)");
+        showTempNotification(messageErreurGeoloc(e));
     }
 }
 
@@ -5830,7 +5908,7 @@ async function partagerPositionAvecETA() {
         console.error('Erreur position ETA:', e);
         sauvegarderStatutPermission('loc', 'denied');
         majStatutPermission('loc', 'denied');
-        showTempNotification("❌ Impossible d'accéder à ta position (autorisation refusée ?)");
+        showTempNotification(messageErreurGeoloc(e));
     }
 }
 
@@ -5882,7 +5960,7 @@ async function partagerPositionEnDirect() {
         console.error('Erreur position en direct:', e);
         sauvegarderStatutPermission('loc', 'denied');
         majStatutPermission('loc', 'denied');
-        showTempNotification("❌ Impossible d'accéder à ta position (autorisation refusée ?)");
+        showTempNotification(messageErreurGeoloc(e));
     }
 }
 
@@ -17440,16 +17518,17 @@ function ouvrirBucketList() {
             if (snap.empty) { cont.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Rien pour l\'instant. Ajoute une idée ✨</p>'; return; }
             snap.forEach(doc => {
                 const d = doc.data();
+                const dateModifStr = formaterDateModif(d.noteModifiee);
                 const item = document.createElement('div');
                 item.className = 'liste-item' + (d.done ? ' liste-item-done' : '');
                 item.innerHTML = `
                     <div class="liste-item-check" onclick="toggleBucketItem('${doc.id}', ${!d.done})"><i class="fa-solid ${d.done ? 'fa-circle-check' : 'fa-circle'}"></i></div>
-                    <div class="liste-item-texte">
+                    <div class="liste-item-texte" style="cursor:pointer;" onclick="ouvrirNoteBucketPleinEcran('${doc.id}')">
                         <div>${escapeHtmlTexte(d.text)}</div>
-                        ${d.note ? `<div class="liste-item-note">📝 ${escapeHtmlTexte(d.note)}</div>` : ''}
+                        ${d.note ? `<div class="liste-item-note">📝 ${escapeHtmlTexte(d.note)}</div>` : `<div class="liste-item-note" style="opacity:0.6;">Toucher pour écrire un souvenir...</div>`}
+                        ${dateModifStr ? `<div class="liste-item-date-modif">Modifié le ${dateModifStr}</div>` : ''}
                     </div>
                     <div class="liste-item-actions">
-                        <i class="fa-solid fa-pen" onclick="editerNoteBucketItem('${doc.id}', ${JSON.stringify(d.note || '').replace(/"/g, '&quot;')})" title="Ajouter/éditer un souvenir"></i>
                         <i class="fa-solid fa-trash" onclick="supprimerBucketItem('${doc.id}')" title="Supprimer"></i>
                     </div>`;
                 cont.appendChild(item);
@@ -17465,7 +17544,7 @@ async function ajouterBucketItem() {
     const text = input.value.trim();
     if (!text) return;
     await db.collection('chats').doc(CHAT_ID).collection('bucket_list').add({
-        text, done: false, note: '', createdBy: currentUser.id, createdByName: currentUser.name,
+        text, done: false, note: '', noteModifiee: null, createdBy: currentUser.id, createdByName: currentUser.name,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     input.value = '';
@@ -17473,10 +17552,20 @@ async function ajouterBucketItem() {
 async function toggleBucketItem(id, done) {
     await db.collection('chats').doc(CHAT_ID).collection('bucket_list').doc(id).update({ done });
 }
-async function editerNoteBucketItem(id, ancienneNote) {
-    const note = prompt("Petit souvenir / note sur cette expérience :", ancienneNote || '');
-    if (note === null) return;
-    await db.collection('chats').doc(CHAT_ID).collection('bucket_list').doc(id).update({ note });
+async function ouvrirNoteBucketPleinEcran(id) {
+    const doc = await db.collection('chats').doc(CHAT_ID).collection('bucket_list').doc(id).get();
+    const d = doc.data();
+    if (!d) return;
+    ouvrirEditeurPleinEcran({
+        titre: d.text,
+        collection: 'bucket_list',
+        docId: id,
+        champTexte: 'note',
+        champDate: 'noteModifiee',
+        valeurActuelle: d.note || '',
+        dateModif: d.noteModifiee,
+        placeholder: 'Écris ici tout ce que tu veux garder de ce souvenir...'
+    });
 }
 async function supprimerBucketItem(id) {
     await db.collection('chats').doc(CHAT_ID).collection('bucket_list').doc(id).delete();
@@ -17509,10 +17598,14 @@ function ouvrirFavorisPage() {
             let videMoi = true, videAutre = true;
             snap.forEach(doc => {
                 const d = doc.data();
+                const dateStr = formaterDateModif(d.addedAt);
                 const item = document.createElement('div');
                 item.className = 'liste-item';
-                item.innerHTML = `<div class="liste-item-texte"><div>${escapeHtmlTexte(d.text)}</div></div>
-                    <div class="liste-item-actions"><i class="fa-solid fa-trash" onclick="supprimerFavori('${doc.id}')"></i></div>`;
+                item.innerHTML = `<div class="liste-item-texte" style="cursor:pointer;" onclick="naviguerVersMessageFavori('${(d.messageId || '').replace(/'/g, "\\'")}')">
+                        <div>${escapeHtmlTexte(d.text)}</div>
+                        ${dateStr ? `<div class="liste-item-date-modif">${dateStr}</div>` : ''}
+                    </div>
+                    <div class="liste-item-actions"><i class="fa-solid fa-trash" onclick="event.stopPropagation(); supprimerFavori('${doc.id}')"></i></div>`;
                 if (d.addedBy === currentUser.id) { contMoi.appendChild(item); videMoi = false; }
                 else { contAutre.appendChild(item); videAutre = false; }
             });
@@ -17521,6 +17614,24 @@ function ouvrirFavorisPage() {
             document.getElementById('favoris-titre-moi').textContent = currentUser ? currentUser.name : 'Moi';
             document.getElementById('favoris-titre-autre').textContent = targetUser ? targetUser.name : "L'autre";
         });
+}
+function naviguerVersMessageFavori(msgId) {
+    fermerFavorisPage();
+    setTimeout(() => {
+        const row = document.querySelector(`#msg-area [data-id="${msgId}"]`);
+        if (!row) {
+            showTempNotification("⚠️ Ce message est introuvable (probablement supprimé)");
+            return;
+        }
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const bulle = row.querySelector('.message-bubble');
+        if (bulle) {
+            bulle.classList.remove('msg-flash-highlight');
+            void bulle.offsetWidth;
+            bulle.classList.add('msg-flash-highlight');
+            setTimeout(() => bulle.classList.remove('msg-flash-highlight'), 1200);
+        }
+    }, 250);
 }
 function fermerFavorisPage() {
     document.getElementById('favoris-modal').style.display = 'none';
@@ -17543,10 +17654,13 @@ function ouvrirNotesPartagees() {
             if (snap.empty) { cont.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Aucune note. Liste de courses, idée cadeau, film à voir...</p>'; return; }
             snap.forEach(doc => {
                 const d = doc.data();
+                const dateModifStr = formaterDateModif(d.modifiee || d.createdAt);
                 const item = document.createElement('div');
                 item.className = 'liste-item';
-                item.innerHTML = `<div class="liste-item-texte"><div>${escapeHtmlTexte(d.text)}</div>
-                    <div class="liste-item-note">par ${escapeHtmlTexte(d.createdByName || '')}</div></div>
+                item.innerHTML = `<div class="liste-item-texte" style="cursor:pointer;" onclick="ouvrirNotePartageePleinEcran('${doc.id}')">
+                    <div>${escapeHtmlTexte(d.text)}</div>
+                    <div class="liste-item-note">par ${escapeHtmlTexte(d.createdByName || '')}</div>
+                    ${dateModifStr ? `<div class="liste-item-date-modif">Modifié le ${dateModifStr}</div>` : ''}</div>
                     <div class="liste-item-actions"><i class="fa-solid fa-trash" onclick="supprimerNotePartagee('${doc.id}')"></i></div>`;
                 cont.appendChild(item);
             });
@@ -17562,9 +17676,24 @@ async function ajouterNotePartagee() {
     if (!text) return;
     await db.collection('chats').doc(CHAT_ID).collection('notes_partagees').add({
         text, createdBy: currentUser.id, createdByName: currentUser.name,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), modifiee: firebase.firestore.FieldValue.serverTimestamp()
     });
     input.value = '';
+}
+async function ouvrirNotePartageePleinEcran(id) {
+    const doc = await db.collection('chats').doc(CHAT_ID).collection('notes_partagees').doc(id).get();
+    const d = doc.data();
+    if (!d) return;
+    ouvrirEditeurPleinEcran({
+        titre: 'Note partagée',
+        collection: 'notes_partagees',
+        docId: id,
+        champTexte: 'text',
+        champDate: 'modifiee',
+        valeurActuelle: d.text || '',
+        dateModif: d.modifiee || d.createdAt,
+        placeholder: 'Écris ta note ici...'
+    });
 }
 async function supprimerNotePartagee(id) {
     await db.collection('chats').doc(CHAT_ID).collection('notes_partagees').doc(id).delete();
@@ -17607,6 +17736,10 @@ function fermerCalendrierPage() {
     document.getElementById('calendrier-modal').style.display = 'none';
     if (calendrierUnsub) { calendrierUnsub(); calendrierUnsub = null; }
 }
+function toggleFormulaireCalendrier() {
+    const form = document.getElementById('calendrier-form');
+    form.style.display = (form.style.display === 'none' || !form.style.display) ? 'block' : 'none';
+}
 async function ajouterEvenementCalendrier() {
     const titre = document.getElementById('calendrier-titre-input').value.trim();
     const date = document.getElementById('calendrier-date-input').value;
@@ -17614,27 +17747,41 @@ async function ajouterEvenementCalendrier() {
     if (!titre || !date) { showTempNotification('Titre et date obligatoires'); return; }
     await db.collection('chats').doc(CHAT_ID).collection('calendar_events').add({
         title: titre, date, note, createdBy: currentUser.id, createdByName: currentUser.name,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), dernierRappelEnvoye: null
     });
     document.getElementById('calendrier-titre-input').value = '';
     document.getElementById('calendrier-date-input').value = '';
     document.getElementById('calendrier-note-input').value = '';
+    document.getElementById('calendrier-form').style.display = 'none';
 }
 async function supprimerEvenement(id) {
     await db.collection('chats').doc(CHAT_ID).collection('calendar_events').doc(id).delete();
 }
+// Envoie un rappel directement comme MESSAGE dans le chat (pas juste une notif) :
+// le jour J, la veille, puis chaque semaine complète restante avant l'événement.
+// Un seul rappel par jour et par événement (champ dernierRappelEnvoye anti-doublon).
 async function verifierRappelsCalendrierAuChargement() {
     try {
         const snap = await db.collection('chats').doc(CHAT_ID).collection('calendar_events').get();
-        const aujourdhui = new Date(); aujourdhui.setHours(0,0,0,0);
-        snap.forEach(doc => {
+        const aujourdhui = new Date(); aujourdhui.setHours(0, 0, 0, 0);
+        const todayStr = aujourdhui.toISOString().slice(0, 10);
+        for (const doc of snap.docs) {
             const d = doc.data();
+            if (!d.date) continue;
             const dateEvt = new Date(d.date + 'T00:00:00');
             const diffJours = Math.round((dateEvt - aujourdhui) / 86400000);
-            if (diffJours === 0) envoyerNotificationTelegram('📅 Rappel', `C'est aujourd'hui : ${d.title} !`);
-            else if (diffJours === 1) envoyerNotificationTelegram('📅 Rappel', `C'est demain : ${d.title} !`);
-        });
-    } catch(e) { console.error('Vérification rappels calendrier :', e); }
+            if (diffJours < 0) continue;
+            const doitRappeler = diffJours === 0 || diffJours === 1 || (diffJours > 1 && diffJours % 7 === 0);
+            if (!doitRappeler) continue;
+            if (d.dernierRappelEnvoye === todayStr) continue;
+            let texte;
+            if (diffJours === 0) texte = `📅 Rappel : c'est aujourd'hui — ${d.title} !${d.note ? ' (' + d.note + ')' : ''}`;
+            else if (diffJours === 1) texte = `📅 Rappel : c'est demain — ${d.title} !`;
+            else texte = `📅 Rappel : dans ${diffJours} jours — ${d.title}`;
+            await envoyerMessageSimple(texte);
+            await db.collection('chats').doc(CHAT_ID).collection('calendar_events').doc(doc.id).update({ dernierRappelEnvoye: todayStr });
+        }
+    } catch (e) { console.error('Vérification rappels calendrier :', e); }
 }
 
 // ---------- UTILITAIRE COMMUN ----------
@@ -17643,6 +17790,42 @@ function escapeHtmlTexte(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+// Formate un timestamp Firestore en date+heure lisible (ou chaîne vide si absent).
+function formaterDateModif(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) +
+        ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ---------- ÉDITEUR PLEIN ÉCRAN (réutilisé par la bucket-list et les notes partagées) ----------
+let editeurPleinEcranContexte = null;
+function ouvrirEditeurPleinEcran(config) {
+    editeurPleinEcranContexte = config;
+    document.getElementById('fs-editor-titre').textContent = config.titre || '';
+    document.getElementById('fs-editor-textarea').value = config.valeurActuelle || '';
+    document.getElementById('fs-editor-textarea').placeholder = config.placeholder || 'Écris ici...';
+    document.getElementById('fs-editor-date').textContent = config.dateModif ? `Modifié le ${formaterDateModif(config.dateModif)}` : 'Pas encore modifié';
+    document.getElementById('fs-editor-overlay').classList.add('show');
+    setTimeout(() => document.getElementById('fs-editor-textarea').focus(), 200);
+}
+function fermerEditeurPleinEcran() {
+    document.getElementById('fs-editor-overlay').classList.remove('show');
+    editeurPleinEcranContexte = null;
+}
+async function sauvegarderEditeurPleinEcran() {
+    if (!editeurPleinEcranContexte) return;
+    const texte = document.getElementById('fs-editor-textarea').value;
+    const maj = {};
+    maj[editeurPleinEcranContexte.champTexte] = texte;
+    maj[editeurPleinEcranContexte.champDate] = firebase.firestore.FieldValue.serverTimestamp();
+    await db.collection('chats').doc(CHAT_ID).collection(editeurPleinEcranContexte.collection)
+        .doc(editeurPleinEcranContexte.docId).update(maj);
+    showTempNotification('✅ Enregistré');
+    fermerEditeurPleinEcran();
 }
 
 // ---------- MÉTÉO À DEUX ----------
@@ -17698,7 +17881,7 @@ async function ouvrirMeteoADeux() {
         });
     } catch (e) {
         console.error('Erreur météo à deux:', e);
-        showTempNotification("❌ Impossible de récupérer la météo (position indisponible ?)");
+        showTempNotification(messageErreurGeoloc(e));
     }
 }
 
@@ -17952,6 +18135,8 @@ function ecouterMessagesAutodestruction() {
 // photos du mois en galerie. Rien n'est envoyé à un serveur externe, tout se passe
 // dans le téléphone.
 async function exporterNotreHistoire() {
+    // Si déjà ouvert, on ne relance pas une deuxième fois
+    if (document.getElementById('histoire-overlay')) return;
     showTempNotification('📖 Préparation de votre histoire...');
     try {
         const snap = await db.collection('chats').doc(CHAT_ID).collection('messages')
@@ -18063,22 +18248,85 @@ async function exporterNotreHistoire() {
 </body>
 </html>`;
 
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Notre-Histoire-${new Date().toISOString().slice(0, 10)}.html`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-        showTempNotification('📖 "Notre histoire" téléchargée ! Tu peux aussi l\'imprimer en PDF depuis ton navigateur.');
+        ouvrirHistoireEnIframe(html);
     } catch (e) {
         console.error('Erreur export Notre histoire:', e);
         showTempNotification("❌ Erreur pendant l'export, réessaie");
     }
 }
 
+// Affiche "Notre histoire" en plein écran dans une iframe, exactement comme la Galerie et Étude.
+function ouvrirHistoireEnIframe(html) {
+    if (document.getElementById('histoire-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'histoire-overlay';
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.92);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        z-index: 99999; display: flex; flex-direction: column;
+        animation: fadeInOverlay 0.3s ease;
+    `;
+
+    const header = document.createElement('div');
+    header.style.cssText = `
+        background: linear-gradient(135deg, #4f0a2e, #a800ff, #4f0a2e);
+        background-size: 200% 200%;
+        animation: gradientMove 4s ease infinite;
+        padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 2px solid #ff007f; flex-shrink: 0; min-height: 60px; z-index: 10;
+    `;
+    header.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-book-open" style="color:#ff007f; font-size:1.3rem;"></i>
+            <span style="color:white; font-weight:700; font-size:1.1rem; letter-spacing:0.5px;">📖 Notre Histoire</span>
+        </div>
+        <button id="btn-fermer-histoire" style="
+            background: rgba(255, 50, 50, 0.15); border: 1px solid rgba(255, 50, 50, 0.3);
+            color: #ff6b6b; padding: 8px 20px; border-radius: 25px; cursor: pointer;
+            font-size: 0.9rem; font-weight: 600; transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 8px;
+        "
+        onmouseover="this.style.background='rgba(255,50,50,0.3)'; this.style.transform='scale(1.05)';"
+        onmouseout="this.style.background='rgba(255,50,50,0.15)'; this.style.transform='scale(1)';">
+            <i class="fa-solid fa-xmark"></i> Quitter
+        </button>
+    `;
+
+    setTimeout(() => {
+        const btnFermer = document.getElementById('btn-fermer-histoire');
+        if (btnFermer) {
+            btnFermer.onclick = function() {
+                const overlayEl = document.getElementById('histoire-overlay');
+                if (overlayEl) {
+                    overlayEl.style.transition = 'all 0.3s ease';
+                    overlayEl.style.opacity = '0';
+                    overlayEl.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        overlayEl.remove();
+                        document.body.style.overflow = '';
+                    }, 300);
+                }
+            };
+        }
+    }, 100);
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'histoire-iframe';
+    // Pas de fichier "histoire.html" séparé sur le serveur : le contenu est généré à la
+    // volée depuis vos messages/photos réels, donc on l'injecte directement via srcdoc
+    // plutôt que via une URL — le rendu et le comportement (plein écran, quitter) sont
+    // identiques à la Galerie et à Étude.
+    iframe.srcdoc = html;
+    iframe.style.cssText = `flex: 1; width: 100%; border: none; background: #fdf6f0; display: block;`;
+
+    overlay.appendChild(header);
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    showTempNotification('📖 "Notre histoire" est prête !');
+}
 // ========== DÉTECTION DU CLAVIER POUR CACHER LA BARRE (MOBILE) ==========
 function detecterClavierMobile() {
     const toolbar = document.getElementById('etude-toolbar');
@@ -20207,15 +20455,18 @@ window.addEventListener('keydown', function(e) {
 <!-- ========== CALENDRIER À DEUX ========== -->
 <div class="jeux-modal-overlay" id="calendrier-modal">
     <div class="jeux-modal-box liste-modal-box">
-        <h3>💗 Notre calendrier</h3>
-        <div class="calendrier-form">
+        <div class="calendrier-header-titre">
+            <h3 style="margin:0;">💗 Notre calendrier</h3>
+            <i class="fa-solid fa-circle-plus calendrier-btn-plus" onclick="toggleFormulaireCalendrier()" title="Ajouter un événement"></i>
+        </div>
+        <div class="calendrier-form" id="calendrier-form" style="display:none;">
             <input type="text" id="calendrier-titre-input" placeholder="Titre (anniv, rdv...)">
             <input type="date" id="calendrier-date-input">
             <input type="text" id="calendrier-note-input" placeholder="Note (optionnel)">
             <button class="watch-btn-primary" onclick="ajouterEvenementCalendrier()">Ajouter</button>
         </div>
         <div class="liste-items-scroll" id="calendrier-items"></div>
-        <p style="color:var(--text-muted); font-size:0.7rem;">Rappel envoyé par notification quand l'app est ouverte la veille ou le jour J.</p>
+        <p style="color:var(--text-muted); font-size:0.7rem;">Rappel envoyé chaque semaine dans le chat jusqu'au jour J (dès que l'un de vous ouvre l'app).</p>
         <button class="jeux-modal-close" onclick="fermerCalendrierPage()">Fermer</button>
     </div>
 </div>
@@ -20269,6 +20520,19 @@ window.addEventListener('keydown', function(e) {
         <div class="liste-items-scroll" id="recettes-items" style="margin-top:10px;"></div>
         <button class="jeux-modal-close" onclick="fermerRecettesADeux()">Fermer</button>
     </div>
+</div>
+
+<!-- ========== ÉDITEUR PLEIN ÉCRAN (bucket-list, notes partagées...) ========== -->
+<div class="fs-editor-overlay" id="fs-editor-overlay">
+    <div class="fs-editor-header">
+        <i class="fa-solid fa-xmark fs-editor-close" onclick="fermerEditeurPleinEcran()" title="Fermer"></i>
+        <div class="fs-editor-titre-zone">
+            <div class="fs-editor-titre" id="fs-editor-titre"></div>
+            <div class="fs-editor-date" id="fs-editor-date"></div>
+        </div>
+        <i class="fa-solid fa-check fs-editor-save" onclick="sauvegarderEditeurPleinEcran()" title="Enregistrer"></i>
+    </div>
+    <textarea id="fs-editor-textarea" class="fs-editor-textarea" placeholder="Écris ici..."></textarea>
 </div>
 
 </body>   
