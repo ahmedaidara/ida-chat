@@ -919,6 +919,13 @@
     color: var(--text-muted);
     cursor: default;
 }
+.flamme-card {
+    background: rgba(0,0,0,0.03) !important;
+    transform: rotate(-1.5deg);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+}
+.flamme-card:active { transform: rotate(-1.5deg) scale(0.97); }
+[data-theme="dark"] .flamme-card { background: rgba(255,255,255,0.05) !important; }
 
 .viewonce-viewer-overlay {
     display: none;
@@ -4381,6 +4388,67 @@ input, textarea {
         .cadeau-choix-emoji { font-size: 1.8rem; }
         .cadeau-choix-nom { font-size: 0.7rem; margin-top: 4px; }
         .tresor-card { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border-radius: 14px; padding: 12px 14px; cursor: pointer; max-width: 220px; }
+
+        /* ========================================================================
+           ✅ NOUVELLE ANIMATION "CARTE SPÉCIALE" (item 6) — remplace l'ancien rendu
+           .cadeau-overlay / .coeur-geant-overlay (bounce basique jugé "moche") par une
+           ouverture élégante : overlay flouté + carte en spring/rebond + explosion de
+           confettis 3D en éventail + focus clavier auto si c'est une lettre.
+           Utilisée à la fois à l'ENVOI (aperçu local immédiat pour l'expéditeur) et à
+           la RÉCEPTION (quand le destinataire appuie sur la carte fermée dans le chat).
+           ======================================================================== */
+        .carte-speciale-overlay {
+            position: fixed; inset: 0; z-index: 9000; display: none;
+            align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .carte-speciale-overlay.active { display: flex; animation: carteOverlayIn 0.25s ease forwards; }
+        @keyframes carteOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+        .carte-speciale-box {
+            position: relative; max-width: 320px; width: 88%;
+            background: var(--bg-main); color: var(--text-main);
+            border-radius: 26px; padding: 32px 22px 26px;
+            text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,0.45);
+            transform: scale(0.8) translateY(28px); opacity: 0;
+            animation: carteSpringIn 0.55s cubic-bezier(.34,1.56,.64,1) forwards;
+        }
+        @keyframes carteSpringIn {
+            0% { transform: scale(0.8) translateY(30px); opacity: 0; }
+            60% { transform: scale(1.04) translateY(-6px); opacity: 1; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .carte-speciale-close {
+            position: absolute; top: 10px; right: 10px; width: 34px; height: 34px;
+            border-radius: 50%; background: rgba(128,128,128,0.18);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-main); font-size: 0.95rem;
+        }
+        .carte-speciale-icone { font-size: 3.2rem; margin-bottom: 12px; line-height: 1; }
+        .carte-speciale-titre { font-weight: 700; font-size: 1.08rem; margin-bottom: 8px; }
+        .carte-speciale-texte { font-size: 0.92rem; color: var(--text-main); white-space: pre-wrap; line-height: 1.4; }
+        .carte-confetti-piece {
+            position: fixed; font-size: 1.5rem; pointer-events: none; z-index: 9001;
+            will-change: transform, opacity; left: 0; top: 0;
+        }
+        @keyframes confettiBurst {
+            0% { transform: translate(0,0) rotate(0deg) scale(0.5); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(1); opacity: 0; }
+        }
+        /* Carte "fermée" dans le chat : cadeau/lettre/SOS non ouverts (remplace .location-card
+           moche). Pas de fond de bulle classique, léger effet éventail (rotation). */
+        .carte-fermee {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 14px 18px; border-radius: 18px; cursor: pointer;
+            max-width: 240px; background: rgba(0,0,0,0.03);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+            transform: rotate(-1.5deg); transition: transform 0.15s ease;
+        }
+        [data-theme="dark"] .carte-fermee { background: rgba(255,255,255,0.05); }
+        .carte-fermee:active { transform: rotate(-1.5deg) scale(0.96); }
+        .carte-fermee-icone { font-size: 1.7rem; flex-shrink: 0; }
+        .carte-fermee-titre { font-weight: 700; font-size: 0.85rem; }
+        .carte-fermee-sous { font-size: 0.72rem; color: var(--text-muted); }
         .tresor-card-titre { font-weight: 700; font-size: 0.9rem; }
         .tresor-card-indice { font-size: 0.78rem; margin-top: 4px; opacity: 0.9; font-style: italic; }
         .tresor-secret-zone { margin-top: 8px; background: rgba(255,255,255,0.2); border-radius: 10px; padding: 8px 10px; font-size: 0.85rem; font-weight: 600; }
@@ -4388,8 +4456,13 @@ input, textarea {
 
         /* ========== TRANSCRIPTION VOCALE AUTOMATIQUE ========== */
         .voice-transcript-zone { margin: 10px 14px; padding: 10px 12px; border-radius: 12px; background: var(--bubble-received); }
-        .voice-transcript-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
-        .voice-transcript-texte { font-size: 0.85rem; color: var(--text-main); min-height: 1.2em; }
+        .voice-transcript-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .voice-transcript-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .voice-transcript-icon { font-size: 0.82rem; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color .15s ease; }
+        .voice-transcript-icon:hover { color: var(--accent, #8b5cf6); }
+        .voice-transcript-texte { font-size: 0.85rem; color: var(--text-main); min-height: 1.2em; outline: none; }
+        .voice-transcript-texte[contenteditable="true"] { border: 1px dashed var(--text-muted); border-radius: 8px; padding: 6px 8px; }
+        #voice-viewonce-btn.active { background: #8b5cf6; border-color: #8b5cf6 !important; color: #fff !important; }
         .audio-transcription-affichee { font-size: 0.78rem; opacity: 0.85; margin-top: 4px; font-style: italic; }
       .input-group {
     margin-bottom: 18px;
@@ -4402,6 +4475,39 @@ input, textarea {
     transform: scale(1.02);
     box-shadow: 0 5px 20px rgba(168,0,255,0.3);
 }
+
+/* ================================================================
+   ✅ Texte des fenêtres d'outils TOUJOURS BLANC, quel que soit le
+   mode (clair ou sombre). Ces fenêtres (tools-panel, audio-panel,
+   media-panel, position-panel, emoji-panel, menus jeux/cadeau/vocal...)
+   ont un fond "verre dépoli" qui reste sombre même en mode clair
+   (à cause du flou sur l'arrière-plan), donc le texte noir du mode
+   clair y devenait illisible. Placé en dernier dans la feuille de
+   style pour gagner les égalités de spécificité/priorité face aux
+   règles précédentes qui utilisaient var(--text-main).
+   ================================================================ */
+#tools-panel :not([style*="color"]),
+#audio-panel :not([style*="color"]),
+#media-panel :not([style*="color"]),
+#position-panel :not([style*="color"]),
+#emoji-panel :not([style*="color"]),
+.jeux-modal-box :not([style*="color"]),
+#cadeau-modal .jeux-modal-box :not([style*="color"]) {
+    color: #ffffff !important;
+}
+#tools-panel, #audio-panel, #media-panel, #position-panel, #emoji-panel, .jeux-modal-box {
+    color: #ffffff !important;
+}
+#giphy-drawer, #giphy-drawer span, #giphy-drawer input::placeholder {
+    color: #ffffff !important;
+}
+#voice-transcript-zone, #voice-transcript-zone :not([style*="color"]),
+.voice-record-status, .voice-record-timer,
+.voice-filter-chip, .voice-panel-header span {
+    color: #ffffff !important;
+}
+.voice-filter-chip { background: rgba(255,255,255,0.12) !important; border-color: rgba(255,255,255,0.18) !important; }
+
     </style>
 </head>
 <body>
@@ -4622,14 +4728,14 @@ input, textarea {
     </button>
         <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
-    <button class="toolbar-btn" onclick="ouvrirEffets()" style="
+    <button class="toolbar-btn" onclick="ouvrirFlamme()" style="
         display: flex;
         align-items: center;
         gap: 4px;
         padding: 4px 12px;
         border-radius: 16px;
         background: transparent;
-        color: #15c227;
+        color: #ff5722;
         border: none;
         font-size: 0.7rem;
         font-weight: 500;
@@ -4637,9 +4743,9 @@ input, textarea {
         transition: all 0.2s ease;
         flex-shrink: 0;
         font-family: 'Inter', sans-serif;
-    ">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-        <span>Effets</span>
+    " title="Photo/vidéo flamme (vue unique, appareil photo)">
+        <i class="fa-solid fa-fire"></i>
+        <span>Flamme</span>
     </button>
       <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
@@ -5384,7 +5490,10 @@ input, textarea {
 <div class="floating-panel" id="audio-panel">
     <div class="voice-panel-header">
         <span>🎤 Message vocal</span>
-        <i class="fa-solid fa-xmark voice-panel-close" onclick="fermerMenuAudio()"></i>
+        <span style="display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-1" id="voice-viewonce-btn" onclick="toggleVocalVueUnique()" title="Vue unique : écoutable une seule fois par chacun" style="cursor:pointer; font-size:0.85rem; padding:4px 7px; border-radius:8px; border:1px solid rgba(255,255,255,0.25);"></i>
+            <i class="fa-solid fa-xmark voice-panel-close" onclick="fermerMenuAudio()"></i>
+        </span>
     </div>
 
     <div class="voice-filters" id="voice-filters-row">
@@ -5419,7 +5528,13 @@ input, textarea {
 
     <!-- 📝 Transcription automatique du message vocal (best-effort, selon le navigateur) -->
     <div class="voice-transcript-zone" id="voice-transcript-zone" style="display:none;">
-        <div class="voice-transcript-label"><i class="fa-solid fa-closed-captioning"></i> Transcription automatique</div>
+        <div class="voice-transcript-label">
+            <span><i class="fa-solid fa-closed-captioning"></i> Transcription automatique</span>
+            <span class="voice-transcript-actions">
+                <i class="fa-solid fa-pen voice-transcript-icon" id="voice-transcript-edit-btn" onclick="modifierTranscriptionVocale()" title="Modifier le texte"></i>
+                <i class="fa-solid fa-paper-plane voice-transcript-icon" id="voice-transcript-send-btn" onclick="envoyerTranscriptionCommeTexte()" title="Envoyer ce texte"></i>
+            </span>
+        </div>
         <div class="voice-transcript-texte" id="voice-transcript-texte"></div>
     </div>
 
@@ -6071,7 +6186,7 @@ function couleurPourExtensionDoc(ext) {
 }
 
 // ========== ENVOI UNIFIÉ VERS SUPABASE + FIRESTORE (URL légère, jamais de base64) ==========
-async function sendMediaMessage(type, file, caption, viewOnce) {
+async function sendMediaMessage(type, file, caption, viewOnce, flammeCouleur) {
     const url = await uploadVersSupabase(file, type);
     if (!url) {
         showTempNotification("❌ Échec de l'upload");
@@ -6093,6 +6208,12 @@ async function sendMediaMessage(type, file, caption, viewOnce) {
     if (viewOnce) {
         msgData.viewOnce = true;
         msgData.viewOnceOpenedBy = []; // liste des id utilisateur ayant déjà consulté (chacun 1 fois)
+    }
+    // 🔥 Flamme (item 4) : média envoyé depuis l'outil Flamme, affiché en carte
+    // colorée distincte dans le chat au lieu de la bulle classique.
+    if (flammeCouleur) {
+        msgData.flamme = true;
+        msgData.flammeCouleur = flammeCouleur;
     }
     const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
     await messageRef.set(msgData);
@@ -8293,6 +8414,7 @@ const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
             if (msgType === 'meteo') return '🌤️ Météo à deux';
             if (msgType === 'sos_calin') return '🆘 SOS Câlin';
             if (msgType === 'cadeau') return '🎁 Cadeau virtuel';
+            if (msgType === 'lettre') return '💌 Lettre';
             if (msgType === 'tresor') return '🎁 Trésor caché';
             if (msgType === 'drawing') return '🎨 Dessin';
             return "[Média]";
@@ -11045,6 +11167,13 @@ async function copierMessage() {
 let mediaRecorderAudio = null;
 let audioChunksEnregistres = [];
 let filtreAudioActif = 'normal';
+let audioVueUnique = false; // 🎤1️⃣ vocal en cours d'enregistrement/prêt à l'envoi : vue unique activée ?
+function toggleVocalVueUnique() {
+    audioVueUnique = !audioVueUnique;
+    const btn = document.getElementById('voice-viewonce-btn');
+    if (btn) btn.classList.toggle('active', audioVueUnique);
+    showTempNotification(audioVueUnique ? "1️⃣ Vue unique activée pour ce vocal" : "Vue unique désactivée");
+}
 let audioBlobOriginal = null;
 let audioBlobFiltre = null;
 let previewAudioURL = null;
@@ -11069,7 +11198,16 @@ function fermerMenuMedia() {
 }
 
 // Fermer TOUS les menus quand on clique ailleurs
+// ⚠️ On utilise composedPath() plutôt que .contains(e.target) : certains boutons
+// (ex. play/pause du vocal) remplacent leur innerHTML au clic, ce qui détache
+// e.target du DOM avant que ce listener (bubbling) ne s'exécute. Avec .contains(),
+// un noeud détaché n'est "contenu" par rien => le panneau se fermait à tort et
+// réinitialisait (donc effaçait) l'enregistrement vocal en cours. composedPath()
+// capture le chemin AVANT toute mutation du DOM, donc reste fiable.
 document.addEventListener('click', function(e) {
+    const chemin = typeof e.composedPath === 'function' ? e.composedPath() : [e.target];
+    const estDans = (el) => !!el && chemin.includes(el);
+
     const mediaPanel = document.getElementById('media-panel');
     const audioPanel = document.getElementById('audio-panel');
     const toolsPanel = document.getElementById('tools-panel');
@@ -11077,17 +11215,17 @@ document.addEventListener('click', function(e) {
     const toolsBtn = document.getElementById('tools-menu-btn');
     const mediaBtn = document.getElementById('media-btn');
     const audioBtn = document.getElementById('audio-btn');
-    
-    if (mediaPanel && !mediaPanel.contains(e.target) && e.target !== mediaBtn) {
+
+    if (mediaPanel && !estDans(mediaPanel) && !estDans(mediaBtn)) {
         mediaPanel.style.display = 'none';
     }
-    if (audioPanel && !audioPanel.contains(e.target) && e.target !== audioBtn) {
+    if (audioPanel && !estDans(audioPanel) && !estDans(audioBtn)) {
         audioPanel.style.display = 'none';
     }
-    if (toolsPanel && !toolsPanel.contains(e.target) && e.target !== toolsBtn) {
+    if (toolsPanel && !estDans(toolsPanel) && !estDans(toolsBtn)) {
         toolsPanel.style.display = 'none';
     }
-    if (positionPanel && !positionPanel.contains(e.target) && e.target.getAttribute('onclick') !== 'ouvrirMenuPosition()') {
+    if (positionPanel && !estDans(positionPanel) && chemin.every(el => !el || el.getAttribute?.('onclick') !== 'ouvrirMenuPosition()')) {
         positionPanel.style.display = 'none';
     }
 });
@@ -11129,6 +11267,39 @@ function prendreVideo() {
     input.click();
 }
 
+// ========== 🔥 FLAMME (item 4) — remplace l'ancien outil "Effets/Filtre" jamais
+// terminé. Ouvre directement l'appareil photo/vidéo natif ; le média est envoyé en
+// vue unique avec un design "flamme" distinctif (icône flamme + couleur aléatoire
+// différente à chaque envoi), au lieu d'une bulle de chat classique. ==========
+const FLAMME_COULEURS = ['#ff5722', '#e91e63', '#9c27b0', '#3f51b5', '#00bcd6', '#4caf50', '#ff9800', '#795548', '#ff3b30', '#a800ff'];
+function ouvrirFlamme() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    // "image/*,video/*" + capture=environment : sur mobile, la caméra native
+    // s'ouvre et laisse l'utilisateur choisir lui-même photo ou vidéo.
+    input.accept = 'image/*,video/*';
+    input.capture = 'environment';
+    input.style.cssText = 'position:fixed; top:-9999px; left:-9999px; opacity:0; width:1px; height:1px;';
+    document.body.appendChild(input);
+    input.onchange = (e) => {
+        const fichier = e.target.files && e.target.files[0];
+        if (fichier) {
+            const type = fichier.type.startsWith('video/') ? 'video' : 'image';
+            const tailleMax = type === 'video' ? 50 * 1024 * 1024 : 15 * 1024 * 1024;
+            if (fichier.size > tailleMax) {
+                showTempNotification(type === 'video' ? "❌ Vidéo trop grande (max 50 MB)" : "❌ Photo trop grande (max 15 MB)");
+            } else {
+                const couleur = FLAMME_COULEURS[Math.floor(Math.random() * FLAMME_COULEURS.length)];
+                // ⚠️ On passe l'objet File réel (pas une dataURL) : uploadVersSupabase()
+                // lit file.name/file.size/file.type, une chaîne base64 s'y casserait.
+                sendMediaMessage(type, fichier, null, true, couleur);
+            }
+        }
+        input.remove();
+    };
+    input.click();
+}
+
 // ========== MENU AUDIO ==========
 function ouvrirMenuAudio() {
     const audioPanel = document.getElementById('audio-panel');
@@ -11158,6 +11329,9 @@ function fermerMenuAudio() {
 }
 
 function reinitialiserAudioUI() {
+    audioVueUnique = false;
+    const vuBtn = document.getElementById('voice-viewonce-btn');
+    if (vuBtn) vuBtn.classList.remove('active');
     audioChunksEnregistres = [];
     if (audioBlobOriginal) {
         URL.revokeObjectURL(URL.createObjectURL(audioBlobOriginal));
@@ -11382,41 +11556,107 @@ function arreterEnregistrementAudio() {
 // et le message vocal continue de fonctionner normalement (rien n'est cassé).
 let reconnaissanceVocaleActive = null;
 let transcriptionVocaleTexte = '';
+let transcriptionVocaleTexteBrut = ''; // texte final accumulé sur tous les redémarrages
+let transcriptionVocaleEnCours = false; // reste true tant que l'enregistrement tourne, sert à savoir si on doit relancer
+let transcriptionModifieeManuellement = false;
+
 function demarrerTranscriptionVocale() {
     transcriptionVocaleTexte = '';
+    transcriptionVocaleTexteBrut = '';
+    transcriptionModifieeManuellement = false;
+    transcriptionVocaleEnCours = true;
     const zone = document.getElementById('voice-transcript-zone');
     const texteEl = document.getElementById('voice-transcript-texte');
+    if (texteEl) texteEl.setAttribute('contenteditable', 'false');
+
+    // La transcription requiert un contexte sécurisé (https ou localhost) : sur http,
+    // window.SpeechRecognition existe parfois mais .start() échoue silencieusement.
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { if (zone) zone.style.display = 'none'; return; }
+    if (!SR || (window.isSecureContext === false)) {
+        if (zone) zone.style.display = 'none';
+        return;
+    }
+    lancerReconnaissanceVocale(SR, zone, texteEl);
+}
+
+function lancerReconnaissanceVocale(SR, zone, texteEl) {
     try {
         reconnaissanceVocaleActive = new SR();
         reconnaissanceVocaleActive.lang = 'fr-FR';
         reconnaissanceVocaleActive.continuous = true;
         reconnaissanceVocaleActive.interimResults = true;
         reconnaissanceVocaleActive.onresult = (event) => {
-            let texteFinal = '', texteProvisoire = '';
+            let texteFinalSession = '', texteProvisoire = '';
             for (let i = 0; i < event.results.length; i++) {
-                if (event.results[i].isFinal) texteFinal += event.results[i][0].transcript;
+                if (event.results[i].isFinal) texteFinalSession += event.results[i][0].transcript;
                 else texteProvisoire += event.results[i][0].transcript;
             }
-            transcriptionVocaleTexte = texteFinal.trim();
-            if (texteEl) texteEl.textContent = (texteFinal + ' ' + texteProvisoire).trim() || '...';
+            const texteComplet = (transcriptionVocaleTexteBrut + ' ' + texteFinalSession).trim();
+            if (!transcriptionModifieeManuellement) {
+                transcriptionVocaleTexte = texteComplet;
+                if (texteEl) texteEl.textContent = (texteComplet + ' ' + texteProvisoire).trim() || '...';
+            }
             if (zone) zone.style.display = 'block';
         };
-        reconnaissanceVocaleActive.onerror = () => {};
+        reconnaissanceVocaleActive.onerror = (e) => {
+            console.error('Erreur reconnaissance vocale:', e && e.error);
+        };
+        // 🔁 Beaucoup de navigateurs mobiles coupent la reconnaissance après quelques
+        // secondes de silence même en mode "continuous". On la relance automatiquement
+        // tant que l'enregistrement est toujours en cours, pour que "ça ne marche pas"
+        // ne se produise plus sur un vocal un peu long.
+        reconnaissanceVocaleActive.onend = () => {
+            if (transcriptionVocaleTexte) transcriptionVocaleTexteBrut = transcriptionVocaleTexte;
+            if (transcriptionVocaleEnCours) {
+                try { lancerReconnaissanceVocale(SR, zone, texteEl); } catch (e) {}
+            }
+        };
         reconnaissanceVocaleActive.start();
         if (zone) zone.style.display = 'block';
-        if (texteEl) texteEl.textContent = '...';
+        if (texteEl && !texteEl.textContent) texteEl.textContent = '...';
     } catch (e) {
         console.error('Transcription vocale indisponible:', e);
         if (zone) zone.style.display = 'none';
     }
 }
+
 function arreterTranscriptionVocale() {
+    transcriptionVocaleEnCours = false;
     if (reconnaissanceVocaleActive) {
-        try { reconnaissanceVocaleActive.stop(); } catch (e) {}
+        try { reconnaissanceVocaleActive.onend = null; reconnaissanceVocaleActive.stop(); } catch (e) {}
         reconnaissanceVocaleActive = null;
     }
+}
+
+// ✏️ Rend le texte transcrit modifiable (icône "modifier" à côté de la transcription)
+function modifierTranscriptionVocale() {
+    const texteEl = document.getElementById('voice-transcript-texte');
+    if (!texteEl) return;
+    const estEditable = texteEl.getAttribute('contenteditable') === 'true';
+    if (!estEditable) {
+        texteEl.setAttribute('contenteditable', 'true');
+        texteEl.focus();
+        // Place le curseur à la fin
+        const range = document.createRange();
+        range.selectNodeContents(texteEl);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else {
+        texteEl.setAttribute('contenteditable', 'false');
+        transcriptionModifieeManuellement = true;
+        transcriptionVocaleTexte = texteEl.textContent.trim();
+    }
+}
+
+// 📤 Envoie directement le texte transcrit comme message texte classique
+async function envoyerTranscriptionCommeTexte() {
+    const texteEl = document.getElementById('voice-transcript-texte');
+    const texte = (texteEl ? texteEl.textContent : transcriptionVocaleTexte || '').trim();
+    if (!texte || texte === '...') { showTempNotification('❌ Aucun texte transcrit à envoyer'); return; }
+    await envoyerMessageSimple(texte);
+    showTempNotification('✅ Texte envoyé');
 }
 
 async function appliquerFiltreAudio() {
@@ -11711,8 +11951,9 @@ async function envoyerAudioAvecFiltre() {
     if (audioUrl) {
         // 📝 On capture le texte transcrit AVANT que fermerMenuAudio() ne réinitialise l'UI
         const transcriptionAEnvoyer = transcriptionVocaleTexte ? transcriptionVocaleTexte.trim() : '';
+        const vocalEstVueUnique = audioVueUnique; // capturé avant que fermerMenuAudio() ne réinitialise le flag
         // On envoie juste l'URL dans Firestore (très petit)
-        await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+        const donneesVocal = {
             text: null,
             senderId: currentUser.id,
             senderName: currentUser.name,
@@ -11723,7 +11964,14 @@ async function envoyerAudioAvecFiltre() {
             mediaUrl: audioUrl,  // ← JUSTE L'URL, pas le fichier !
             filtreAudio: filtreAudioActif,
             transcription: transcriptionAEnvoyer || null
-        });
+        };
+        // ✅ Vue unique (item 2) : chacun des deux ne pourra écouter ce vocal en entier
+        // qu'une seule fois (voir rendreCarteVueUniqueAudio / ouvrirVocalVueUnique).
+        if (vocalEstVueUnique) {
+            donneesVocal.viewOnce = true;
+            donneesVocal.viewOnceOpenedBy = [];
+        }
+        await db.collection('chats').doc(CHAT_ID).collection('messages').add(donneesVocal);
         
         showTempNotification("✅ Audio envoyé avec succès !");
         fermerMenuAudio();
@@ -13388,7 +13636,7 @@ if (typeof db !== 'undefined' && typeof CHAT_ID !== 'undefined') {
 // INTÉGRATION GIFS + STICKERS (TENOR + EMOJIS)
 // =========================================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+function initialiserTiroirGiphy() {
     const drawer = document.getElementById('giphy-drawer');
     const resultsContainer = document.getElementById('giphy-results');
     const searchInput = document.getElementById('giphy-search');
@@ -13648,12 +13896,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Fermer en cliquant ailleurs
+    // ⚠️ triggerBtn contient des <span> enfants (icône + texte "GIF") : un clic sur ces
+    // enfants donne e.target = le span, pas le bouton lui-même. Avec "e.target !== triggerBtn"
+    // ce clic était donc traité comme "en dehors du bouton", ce qui refermait le tiroir
+    // GIF immédiatement après son ouverture. On utilise triggerBtn.contains(e.target).
     document.addEventListener('click', (e) => {
-        if (drawer && drawer.style.display === 'flex' && !drawer.contains(e.target) && e.target !== triggerBtn) {
+        if (drawer && drawer.style.display === 'flex' && !drawer.contains(e.target) && !(triggerBtn && triggerBtn.contains(e.target))) {
             drawer.style.display = 'none';
         }
     });
-});
+}
+// ⚠️ Robustesse : si ce script s'exécute après que DOMContentLoaded ait déjà été déclenché
+// (selon l'endroit où le script est chargé), l'ancien addEventListener('DOMContentLoaded', ...)
+// ne se déclenchait alors jamais et le bouton GIF restait inerte. On initialise donc
+// immédiatement si le DOM est déjà prêt, sinon on attend l'évènement comme avant.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialiserTiroirGiphy);
+} else {
+    initialiserTiroirGiphy();
+}
       
       // =========================================================================
 // OPTIMISATION MULTIMÉDIA : FORÇAGE DE LA TAILLE DES GIFS TENOR (ID & AIDARA)
@@ -15557,13 +15818,30 @@ document.addEventListener('click', function(e) {
 // indépendamment l'un de l'autre — on suit donc une LISTE des personnes ayant déjà
 // consulté (viewOnceOpenedBy), pas un simple booléen partagé.
 function rendreCarteVueUnique(msgId, data, type) {
-    const icone = type === 'video' ? 'fa-video' : 'fa-image';
+    const icone = data.flamme ? 'fa-fire' : (type === 'video' ? 'fa-video' : 'fa-image');
     const dejaVuParMoi = Array.isArray(data.viewOnceOpenedBy) && data.viewOnceOpenedBy.includes(currentUser.id);
     if (dejaVuParMoi) {
+        if (data.flamme) {
+            return `
+                <div class="viewonce-card flamme-card opened" style="background: rgba(120,120,120,0.18); border-color: rgba(120,120,120,0.3);">
+                    <i class="fa-solid fa-fire" style="opacity:0.4;"></i>
+                    <span>Flamme déjà vue</span>
+                </div>
+            `;
+        }
         return `
             <div class="viewonce-card opened">
                 <i class="fa-solid fa-eye-slash"></i>
                 <span>${type === 'video' ? 'Vidéo' : 'Photo'} déjà vue</span>
+            </div>
+        `;
+    }
+    if (data.flamme) {
+        const couleur = data.flammeCouleur || '#ff5722';
+        return `
+            <div class="viewonce-card flamme-card" style="background:${couleur}22; border:1.5px solid ${couleur};" onclick="ouvrirVueUnique('${msgId}')">
+                <i class="fa-solid ${icone}" style="color:${couleur};"></i>
+                <span style="color:${couleur};"> ${type === 'video' ? 'Vidéo' : 'Photo'} flamme 🔥</span>
             </div>
         `;
     }
@@ -15617,6 +15895,68 @@ async function fermerVueUnique() {
         } catch (err) {
             console.error("Erreur fermeture vue unique:", err);
         }
+    }
+}
+
+// ========== VOCAL À VUE UNIQUE (item 2) — même logique que photo/vidéo, mais on ne
+// marque "écouté" qu'à la FIN de la lecture complète (pas au simple clic d'ouverture),
+// puisque la demande est "celui qui lit le vocal AU COMPLET une fois n'aura plus
+// l'occasion de le lire une deuxième fois". Chacun des deux garde son propre droit
+// à une écoute, indépendamment de l'autre (même principe que viewOnceOpenedBy).
+function rendreCarteVueUniqueAudio(msgId, data) {
+    const dejaEcouteParMoi = Array.isArray(data.viewOnceOpenedBy) && data.viewOnceOpenedBy.includes(currentUser.id);
+    if (dejaEcouteParMoi) {
+        return `
+            <div class="viewonce-card opened">
+                <i class="fa-solid fa-eye-slash"></i>
+                <span>Vocal déjà écouté</span>
+            </div>
+        `;
+    }
+    return `
+        <div class="viewonce-card" id="carte-vocal-${msgId}" onclick="ouvrirVocalVueUnique('${msgId}')">
+            <i class="fa-solid fa-microphone-lines"></i>
+            <span> Vocal vue unique 1️⃣ — appuie pour écouter</span>
+        </div>
+    `;
+}
+
+let vocalVueUniqueLecteurActif = null;
+async function ouvrirVocalVueUnique(msgId) {
+    const carte = document.getElementById(`carte-vocal-${msgId}`);
+    try {
+        const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).get();
+        if (!doc.exists) return;
+        const data = doc.data();
+        const dejaEcouteParMoi = Array.isArray(data.viewOnceOpenedBy) && data.viewOnceOpenedBy.includes(currentUser.id);
+        if (dejaEcouteParMoi) return;
+
+        if (vocalVueUniqueLecteurActif) { vocalVueUniqueLecteurActif.pause(); vocalVueUniqueLecteurActif = null; }
+
+        if (carte) {
+            carte.onclick = null;
+            carte.innerHTML = `<i class="fa-solid fa-volume-high"></i><span> Lecture en cours...</span>`;
+        }
+
+        const audio = new Audio(data.mediaUrl);
+        vocalVueUniqueLecteurActif = audio;
+        audio.addEventListener('ended', async () => {
+            vocalVueUniqueLecteurActif = null;
+            if (carte) {
+                carte.outerHTML = `<div class="viewonce-card opened"><i class="fa-solid fa-eye-slash"></i><span>Vocal déjà écouté</span></div>`;
+            }
+            try {
+                await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({
+                    viewOnceOpenedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.id),
+                    viewOnceOpenedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) { console.error('Erreur marquage vocal vue unique:', e); }
+        });
+        audio.play();
+    } catch (err) {
+        console.error("Erreur lecture vocal vue unique:", err);
+        showTempNotification("❌ Impossible de lire ce vocal");
+        if (carte) carte.onclick = () => ouvrirVocalVueUnique(msgId);
     }
 }
 
@@ -15866,7 +16206,9 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
             `;
         } else if (data.type === 'audio') {
             const audioId = `audio_${msgId}`;
-            if (!data.isEphemeralAudio) {
+            if (data.viewOnce) {
+                bubbleHtml += rendreCarteVueUniqueAudio(msgId, data);
+            } else if (!data.isEphemeralAudio) {
                 bubbleHtml += `
                     <div class="audio-player-container" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.08); padding: 6px 12px; border-radius: 25px; min-width: 200px;">
                         <button class="audio-play-btn" data-audio="${audioId}" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #0095f6;">
@@ -15948,14 +16290,35 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
           } catch(eMeteo) { console.error('Erreur rendu carte météo:', eMeteo); }
 } else if (data.type === 'sos_calin') {
           try {
-            bubbleHtml += `<div class="location-card" style="cursor:default;"><div class="location-card-map"><i class="fa-solid fa-hand-holding-heart" style="color:#ff2d55;"></i></div><div class="location-card-info"><div class="location-card-titre">SOS Câlin 🆘</div><div class="location-card-statut">${escapeHTML(data.senderName)} a besoin de câlins</div></div></div>`;
-            if (data.senderId !== currentUser.id) setTimeout(declencherAnimationCoeurGeant, 200);
+            carteSpecialeDonnees[msgId] = { type: 'sos_calin', senderName: data.senderName || '' };
+            const dejaOuverteSos = !!data.opened || data.senderId === currentUser.id;
+            if (dejaOuverteSos) {
+                bubbleHtml += `<div class="carte-fermee" style="opacity:0.7;" onclick="ouvrirAnimationCarteSpeciale('sos_calin', carteSpecialeDonnees['${msgId}'])"><div class="carte-fermee-icone">🆘</div><div><div class="carte-fermee-titre">SOS Câlin</div><div class="carte-fermee-sous">${escapeHTML(data.senderName)}  </div></div></div>`;
+            } else {
+                bubbleHtml += `<div class="carte-fermee" data-id="${msgId}" onclick="ouvrirCarteRecue('${msgId}')"><div class="carte-fermee-icone">🆘</div><div><div class="carte-fermee-titre">SOS Câlin</div><div class="carte-fermee-sous">Appuie pour voir</div></div></div>`;
+            }
           } catch(eSos) { console.error('Erreur rendu carte SOS Câlin:', eSos); }
 } else if (data.type === 'cadeau') {
           try {
-            bubbleHtml += `<div class="location-card" style="cursor:default;"><div class="location-card-map" style="font-size:1.6rem;">${escapeHTML((data.cadeau || '🎁').split(' ')[0])}</div><div class="location-card-info"><div class="location-card-titre">Cadeau virtuel</div><div class="location-card-statut">${escapeHTML(data.cadeau || '')}</div></div></div>`;
-            if (data.senderId !== currentUser.id) setTimeout(() => declencherAnimationCadeau(data.cadeau || '🎁'), 200);
+            carteSpecialeDonnees[msgId] = { type: 'cadeau', cadeau: data.cadeau || '' };
+            const dejaOuvertCadeau = !!data.opened || data.senderId === currentUser.id;
+            const emojiCadeau = (data.cadeau || '🎁').split(' ')[0];
+            if (dejaOuvertCadeau) {
+                bubbleHtml += `<div class="carte-fermee" style="opacity:0.7;" onclick="ouvrirAnimationCarteSpeciale('cadeau', carteSpecialeDonnees['${msgId}'])"><div class="carte-fermee-icone">${emojiCadeau}</div><div><div class="carte-fermee-titre">Cadeau virtuel</div><div class="carte-fermee-sous">${escapeHTML(data.cadeau || '')}</div></div></div>`;
+            } else {
+                bubbleHtml += `<div class="carte-fermee" data-id="${msgId}" onclick="ouvrirCarteRecue('${msgId}')"><div class="carte-fermee-icone">🎁</div><div><div class="carte-fermee-titre">Cadeau virtuel</div><div class="carte-fermee-sous">Appuie pour voir</div></div></div>`;
+            }
           } catch(eCadeau) { console.error('Erreur rendu carte cadeau:', eCadeau); }
+} else if (data.type === 'lettre') {
+          try {
+            carteSpecialeDonnees[msgId] = { type: 'lettre', senderName: data.senderName || '', texte: data.text || '' };
+            const dejaOuverteLettre = !!data.opened || data.senderId === currentUser.id;
+            if (dejaOuverteLettre) {
+                bubbleHtml += `<div class="carte-fermee" style="opacity:0.7;" onclick="ouvrirAnimationCarteSpeciale('lettre', carteSpecialeDonnees['${msgId}'])"><div class="carte-fermee-icone">💌</div><div><div class="carte-fermee-titre">Lettre de ${escapeHTML(data.senderName || '')}</div><div class="carte-fermee-sous">Appuie pour relire</div></div></div>`;
+            } else {
+                bubbleHtml += `<div class="carte-fermee" data-id="${msgId}" onclick="ouvrirCarteRecue('${msgId}')"><div class="carte-fermee-icone">💌</div><div><div class="carte-fermee-titre">Lettre de ${escapeHTML(data.senderName || '')}</div><div class="carte-fermee-sous">Appuie pour ouvrir</div></div></div>`;
+            }
+          } catch(eLettre) { console.error('Erreur rendu carte lettre:', eLettre); }
 } else if (data.type === 'tresor') {
           try {
             const dejaRevele = !!data.revealed;
@@ -17936,16 +18299,119 @@ async function envoyerSOSCalin() {
     });
     envoyerNotificationTelegram('🆘 SOS Câlin', `${currentUser.name} a besoin d'un câlin, va vite la/le voir 💜`);
     showTempNotification('🆘 SOS Câlin envoyé');
-    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+    ouvrirAnimationCarteSpeciale('sos_calin', { senderName: currentUser.name });
 }
-function declencherAnimationCoeurGeant() {
-    const overlay = document.createElement('div');
-    overlay.className = 'coeur-geant-overlay';
-    overlay.innerHTML = '<i class="fa-solid fa-heart"></i>';
-    document.body.appendChild(overlay);
-    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-    setTimeout(() => overlay.remove(), 2500);
+// ========================================================================
+// ✅ NOUVELLE ANIMATION "CARTE SPÉCIALE" (item 6) — cadeau / SOS Câlin / lettre.
+// Se joue aussi bien pour l'expéditeur (aperçu immédiat après envoi) que pour le
+// destinataire (quand il/elle appuie sur la carte fermée dans le chat).
+// ========================================================================
+// ⚠️ Les données (nom, texte, cadeau...) passent par cette map indexée par msgId plutôt
+// que d'être injectées telles quelles dans l'attribut onclick="" : un texte contenant une
+// apostrophe (très fréquent en français) casserait l'attribut HTML et, comme ça a déjà causé
+// un bug bloquant une fois sur ces mêmes cartes, on évite absolument de reproduire ça ici.
+const carteSpecialeDonnees = {};
+
+async function ouvrirCarteRecue(msgId) {
+    const donnees = carteSpecialeDonnees[msgId];
+    if (!donnees) return;
+    ouvrirAnimationCarteSpeciale(donnees.type, donnees);
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({ opened: true });
+    } catch (e) { console.error('Erreur marquage carte ouverte:', e); }
 }
+
+function fermerCarteSpeciale() {
+    const overlay = document.getElementById('carte-speciale-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        overlay.innerHTML = '';
+    }
+}
+
+function lancerConfettiCarteSpeciale(centreX, centreY, emojis) {
+    const nombre = 10 + Math.floor(Math.random() * 6);
+    for (let i = 0; i < nombre; i++) {
+        const piece = document.createElement('span');
+        piece.className = 'carte-confetti-piece';
+        piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        // Éventail : dispersion vers le haut et les côtés depuis le haut de la carte
+        const angle = Math.PI + Math.random() * Math.PI; // demi-cercle vers le haut
+        const distance = 90 + Math.random() * 140;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance - 30;
+        piece.style.left = centreX + 'px';
+        piece.style.top = centreY + 'px';
+        piece.style.setProperty('--tx', tx.toFixed(0) + 'px');
+        piece.style.setProperty('--ty', ty.toFixed(0) + 'px');
+        piece.style.setProperty('--rot', (Math.random() * 360 - 180).toFixed(0) + 'deg');
+        piece.style.animation = `confettiBurst ${(0.9 + Math.random() * 0.5).toFixed(2)}s cubic-bezier(.22,.61,.36,1) forwards`;
+        document.body.appendChild(piece);
+        setTimeout(() => piece.remove(), 1700);
+    }
+}
+
+// typeCarte: 'cadeau' | 'sos_calin' | 'lettre'
+function ouvrirAnimationCarteSpeciale(typeCarte, options) {
+    options = options || {};
+    let overlay = document.getElementById('carte-speciale-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'carte-speciale-overlay';
+        overlay.className = 'carte-speciale-overlay';
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) fermerCarteSpeciale(); });
+        document.body.appendChild(overlay);
+    }
+
+    let icone = '🎁', titre = 'Cadeau virtuel', texte = '', emojisConfetti = ['✨', '🎉'];
+    if (typeCarte === 'cadeau') {
+        icone = (options.cadeau || '🎁').split(' ')[0];
+        titre = 'Cadeau virtuel';
+        texte = options.cadeau || '';
+        emojisConfetti = [icone, '✨', '🎉', '💫'];
+    } else if (typeCarte === 'sos_calin') {
+        icone = '🆘';
+        titre = 'SOS Câlin';
+        texte = `${options.senderName || ''} `;
+        emojisConfetti = ['❤️', '🤗', '💕', '✨'];
+    } else if (typeCarte === 'lettre') {
+        icone = '💌';
+        titre = `Lettre de ${options.senderName || ''}`;
+        texte = options.texte || '';
+        emojisConfetti = ['💌', '💕', '✨'];
+    }
+
+    overlay.innerHTML = `
+        <div class="carte-speciale-box">
+            <div class="carte-speciale-close" onclick="fermerCarteSpeciale()"><i class="fa-solid fa-xmark"></i></div>
+            <div class="carte-speciale-icone">${icone}</div>
+            <div class="carte-speciale-titre">${escapeHtmlTexte(titre)}</div>
+            <div class="carte-speciale-texte">${escapeHtmlTexte(texte)}</div>
+        </div>
+    `;
+    overlay.classList.add('active');
+    if (navigator.vibrate) navigator.vibrate(typeCarte === 'sos_calin' ? [300, 100, 300, 100, 300] : 150);
+
+    // L'explosion de confettis se déclenche juste au moment où la carte se stabilise
+    // (fin de l'animation spring, ~0.55s), puis focus clavier auto si c'est une lettre.
+    setTimeout(() => {
+        const box = overlay.querySelector('.carte-speciale-box');
+        if (box) {
+            const rect = box.getBoundingClientRect();
+            lancerConfettiCarteSpeciale(rect.left + rect.width / 2, rect.top + 24, emojisConfetti);
+        }
+        if (typeCarte === 'lettre') {
+            const input = document.getElementById('chat-in');
+            if (input) input.focus();
+        }
+    }, 520);
+}
+
+// (anciennes fonctions declencherAnimationCadeau / declencherAnimationCoeurGeant
+// remplacées par ouvrirAnimationCarteSpeciale ci-dessus — conservées en alias pour
+// compatibilité si jamais appelées ailleurs, sans dupliquer la logique)
+function declencherAnimationCoeurGeant(options) { ouvrirAnimationCarteSpeciale('sos_calin', options || {}); }
+function declencherAnimationCadeau(cadeau, options) { ouvrirAnimationCarteSpeciale('cadeau', Object.assign({ cadeau }, options || {})); }
 
 // ---------- CADEAU VIRTUEL ----------
 const CADEAUX_VIRTUELS = { cafe: '☕ Café', fleur: '🌸 Fleur', pizza: '🍕 Pizza', chocolat: '🍫 Chocolat', glace: '🍦 Glace', calin: '🤗 Câlin virtuel' };
@@ -17964,8 +18430,8 @@ async function envoyerCadeauVirtuel(cle) {
         timestamp: firebase.firestore.FieldValue.serverTimestamp(), readBy: [currentUser.id]
     });
     envoyerNotificationTelegram('🎁 Cadeau reçu', `${currentUser.name} t'envoie : ${cadeau} !`);
-    showTempNotification(`${cadeau} envoyé !`);
     fermerMenuCadeauVirtuel();
+    ouvrirAnimationCarteSpeciale('cadeau', { cadeau });
 }
 function declencherAnimationCadeau(cadeau) {
     const overlay = document.createElement('div');
@@ -17996,8 +18462,8 @@ async function programmerLettre() {
         text: texte, sendDate: date, senderId: currentUser.id, senderName: currentUser.name,
         delivered: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    showTempNotification('💌 Lettre programmée !');
     fermerLettreProgrammee();
+    ouvrirAnimationCarteSpeciale('lettre', { senderName: currentUser.name, texte: `Programmée pour le ${date} 💌\n\n${texte}` });
 }
 async function verifierLettresProgrammees() {
     if (!currentUser) return;
@@ -18010,7 +18476,7 @@ async function verifierLettresProgrammees() {
             if (d.senderId === currentUser.id) continue; // seul le/la destinataire déclenche la livraison
             if (d.sendDate <= todayStr) {
                 await db.collection('chats').doc(CHAT_ID).collection('messages').add({
-                    type: 'text', text: `💌 Lettre programmée de ${d.senderName} :\n\n${d.text}`,
+                    type: 'lettre', text: d.text,
                     senderId: d.senderId, senderName: d.senderName,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(), readBy: []
                 });
