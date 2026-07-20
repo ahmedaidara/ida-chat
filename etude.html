@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+  <meta name="theme-color" content="#F5F5F7">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Étude — Ida & Aidara</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,22 +52,28 @@ html[data-accent="indigo"]{ --accent:#5E5CE6; --accent-2:#8B89F0; }
 html[data-accent="mint"]{ --accent:#00C48C; --accent-2:#3DDBAB; }
 
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-html,body{height:100%;}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  font-size:calc(15px * var(--font-scale));
-  overflow:hidden;
-  overscroll-behavior:none;
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg); /* S'assure que le fond global colle au thème */
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 #app{
-  position:fixed; inset:0;
-  display:flex; flex-direction:column;
-  max-width:520px; margin:0 auto;
-  background:var(--bg);
-  height:100dvh;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
 }
 button{font-family:inherit;}
 img,video{max-width:100%; display:block;}
