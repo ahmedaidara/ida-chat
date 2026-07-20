@@ -1377,11 +1377,9 @@
   <!-- ===== AUTH SCREEN ===== -->
   <div class="auth-screen" id="authScreen">
     <div class="auth-card">
-      <h2 id="authTitle">📸 Connexion</h2>
-      <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
-      <input type="password" id="authPassword" placeholder="Mot de passe" autocomplete="current-password" />
-      <button id="authButton">Se connecter</button>
-      <button class="toggle-auth" id="authToggle">Créer un compte</button>
+      <h2 id="authTitle">🔒 Accès protégé</h2>
+      <input type="password" id="authCode" placeholder="Code d'accès" autocomplete="off" />
+      <button id="authButton">Valider</button>
       <div id="authError"></div>
     </div>
   </div>
@@ -1656,10 +1654,8 @@
   // ============================================================
   
   const authScreen = document.getElementById('authScreen');
-  const authEmail = document.getElementById('authEmail');
-  const authPassword = document.getElementById('authPassword');
+  const authCode = document.getElementById('authCode');
   const authButton = document.getElementById('authButton');
-  const authToggle = document.getElementById('authToggle');
   const authTitle = document.getElementById('authTitle');
   const authError = document.getElementById('authError');
   
@@ -1691,38 +1687,61 @@
   const dateLabel = document.getElementById('dateLabel');
 
   // ============================================================
-  // 4. AUTHENTIFICATION
+  // 4. AUTHENTIFICATION PAR CODE D'ACCÈS
   // ============================================================
-  
-  let isLogin = true;
-  
-  authToggle.addEventListener('click', () => {
-    isLogin = !isLogin;
-    authTitle.textContent = isLogin ? '📸 Connexion' : '📸 Créer un compte';
-    authToggle.textContent = isLogin ? 'Créer un compte' : 'Déjà un compte ? Se connecter';
-    authButton.textContent = isLogin ? 'Se connecter' : 'Créer un compte';
-    authError.textContent = '';
-  });
-  
+
+  const ACCESS_FLAG_KEY = 'galerie_access_ok';
+
+  // Session Firebase anonyme ouverte silencieusement dès le chargement
+  auth.signInAnonymously().catch(err => console.error('Connexion anonyme:', err));
+
+  async function verifyAccessCode(code) {
+    const doc = await db.collection('app_codes').doc('galerie').get();
+    if (!doc.exists) return false;
+    return doc.data().code === code;
+  }
+
+  async function unlockApp(user) {
+    currentUser = user;
+    authScreen.classList.add('hidden');
+    userAvatar.textContent = 'A';
+    userName.textContent = 'Mon compte';
+    await loadMedia();
+    await loadAlbumsFromFirestore();
+    renderAlbumsScroll();
+    await loadPersonnes();
+    await loadLieux();
+    await loadDocuments();
+    activateTab('photos');
+  }
+
   authButton.addEventListener('click', async () => {
-    const email = authEmail.value.trim();
-    const password = authPassword.value.trim();
-    if (!email || !password) {
-      authError.textContent = 'Veuillez remplir tous les champs.';
+    const code = authCode.value.trim();
+    if (!code) {
+      authError.textContent = "Veuillez saisir le code d'accès.";
       return;
     }
+    authButton.disabled = true;
+    authError.textContent = '';
     try {
-      if (isLogin) {
-        await auth.signInWithEmailAndPassword(email, password);
-      } else {
-        await auth.createUserWithEmailAndPassword(email, password);
+      const ok = await verifyAccessCode(code);
+      if (!ok) {
+        authError.textContent = 'Code incorrect.';
+        authButton.disabled = false;
+        return;
       }
+      localStorage.setItem(ACCESS_FLAG_KEY, '1');
+      if (!auth.currentUser) {
+        await auth.signInAnonymously();
+      }
+      await unlockApp(auth.currentUser);
     } catch (err) {
       authError.textContent = err.message;
+      authButton.disabled = false;
     }
   });
-  
-  authPassword.addEventListener('keydown', (e) => {
+
+  authCode.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') authButton.click();
   });
 
@@ -3019,22 +3038,14 @@ fsDelete.addEventListener('click', async () => {
   // ============================================================
   
   logoutBtn.addEventListener('click', async () => {
+    localStorage.removeItem(ACCESS_FLAG_KEY);
     await auth.signOut();
+    location.reload();
   });
   
 auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    currentUser = user;
-    authScreen.classList.add('hidden');
-    userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'A';
-    userName.textContent = user.displayName || user.email || 'Mon compte';
-    await loadMedia();
-    await loadAlbumsFromFirestore(); // ← CHARGER LES ALBUMS
-    renderAlbumsScroll();
-    await loadPersonnes();
-    await loadLieux();
-    await loadDocuments();
-    activateTab('photos');
+  if (user && localStorage.getItem(ACCESS_FLAG_KEY) === '1') {
+    await unlockApp(user);
   } else {
     currentUser = null;
     authScreen.classList.remove('hidden');
@@ -4528,4 +4539,4 @@ async function loadAlbumsFromFirestore() {
 </script>
 
 </body>
-</html>  
+</html>
