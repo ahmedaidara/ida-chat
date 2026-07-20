@@ -4728,6 +4728,28 @@ input, textarea {
     </button>
         <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
+    <!-- BOUTON IA (ajouté juste après Jeux) -->
+    <button class="toolbar-btn" id="ia-toolbar-btn" onclick="ouvrirParametresIA()" style="
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background: transparent;
+        color: #7c3aed;
+        border: none;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        font-family: 'Inter', sans-serif;
+    " title="Paramètres de l'IA">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>IA</span>
+    </button>
+        <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+
     <button class="toolbar-btn" onclick="ouvrirFlamme()" style="
         display: flex;
         align-items: center;
@@ -7830,6 +7852,11 @@ if (!isFirstSnapshot) {
     const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
     await messageRef.set(msgData);
     setTimeout(() => checkMessageDelivery(messageRef.id), 3000);
+
+    // 🤖 Hook IA : @bot, /game, /quiz, détection rappel/résumé (silencieux si IA désactivée)
+    if (!isCoded && !msgData.isSecretMessage) {
+        handleIAApresEnvoi(finalText);
+    }
 }
       
       
@@ -21122,6 +21149,393 @@ async function loginWithPassword() {
     </div>
     <textarea id="fs-editor-textarea" class="fs-editor-textarea" placeholder="Écris ici..."></textarea>
 </div>
+
+<!-- ========== PAGE PARAMÈTRES IA ========== -->
+<div class="settings-page" id="ia-params-page">
+    <div class="settings-header">
+        <i class="fa-solid fa-arrow-left" onclick="fermerParametresIA()"></i>
+        <h3>Paramètres IA</h3>
+    </div>
+
+    <div class="settings-content">
+        <div class="settings-section" style="animation-delay:0.02s;">
+            <h4><i class="fa-solid fa-wand-magic-sparkles"></i> IA du Duo</h4>
+            <div class="info-row">
+                <span class="info-label">Activer l'IA</span>
+                <div class="ios-toggle-switch" id="ia-toggle-enabled" onclick="toggleIAOption('enabled')"></div>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Réponse auto à @bot / @ia</span>
+                <div class="ios-toggle-switch" id="ia-toggle-botMention" onclick="toggleIAOption('botMention')"></div>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Détection rappels / rendez-vous</span>
+                <div class="ios-toggle-switch" id="ia-toggle-reminderDetect" onclick="toggleIAOption('reminderDetect')"></div>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Mode Jeux & Quiz (/game, /quiz)</span>
+                <div class="ios-toggle-switch" id="ia-toggle-gameMode" onclick="toggleIAOption('gameMode')"></div>
+            </div>
+        </div>
+
+        <div class="settings-section" style="animation-delay:0.03s;">
+            <h4><i class="fa-solid fa-masks-theater"></i> Ton de l'IA</h4>
+            <select id="ia-tone-select" onchange="changerTonIA(this.value)" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:0.9rem;">
+                <option value="complice">😏 Complice & Dynamique</option>
+                <option value="romantique">💕 Romantique & Doux</option>
+                <option value="neutre">📋 Neutre & Factuel</option>
+                <option value="sarcastique">🙃 Humoristique & Sarcastique</option>
+            </select>
+        </div>
+
+        <div class="settings-section" style="animation-delay:0.04s;">
+            <h4><i class="fa-solid fa-key"></i> Clé API Groq (optionnel)</h4>
+            <p style="color:var(--text-muted); font-size:0.75rem; margin-bottom:10px;">
+                Laisse vide pour utiliser la clé par défaut de l'app. Ta clé n'est stockée que sur cet appareil (localStorage).
+            </p>
+            <input type="password" id="ia-custom-key-input" placeholder="gsk_..." autocomplete="off" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:0.85rem; margin-bottom:10px;">
+            <button class="watch-btn-primary" onclick="sauvegarderCleIA()" style="width:100%;">Enregistrer la clé</button>
+        </div>
+
+        <div class="settings-section" style="animation-delay:0.05s;">
+            <p style="color:var(--text-muted); font-size:0.7rem;">
+                Modèle utilisé : <b id="ia-model-label">llama-3.3-70b-versatile</b> (bascule automatique sur llama-3.1-70b-versatile en cas d'indisponibilité).
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ========== MODALE RÉSULTAT IA (résumé, etc.) ========== -->
+<div class="jeux-modal-overlay" id="ia-resultat-modal">
+    <div class="jeux-modal-box">
+        <h3 id="ia-resultat-titre">🤖 IA</h3>
+        <p id="ia-resultat-contenu" style="font-size:0.85rem; color:var(--text-main); white-space:pre-wrap; margin:10px 0;"></p>
+        <button class="jeux-modal-close" onclick="document.getElementById('ia-resultat-modal').style.display='none'">Fermer</button>
+    </div>
+</div>
+
+<script>
+// ==================================================================
+// ================  MODULE IA (Groq / Llama)  =====================
+// ==================================================================
+
+// --- Config par défaut ---
+const IA_CONFIG_DEFAUT = {
+    enabled: true,
+    botMention: true,
+    reminderDetect: true,
+    gameMode: true,
+    tone: 'complice',
+    customApiKey: ''
+};
+
+// ⚠️ Ne JAMAIS mettre de vraie clé en dur ici : ce fichier est servi tel quel
+// au navigateur, donc lisible par n'importe qui (source, devtools réseau).
+// Renseigne ta clé via la page "Paramètres IA" (champ masqué, stockée en localStorage),
+// ou remplace la ligne ci-dessous par ta clé UNIQUEMENT si le fichier reste privé et
+// n'est jamais publié/hébergé publiquement.
+const GROQ_API_KEY_DEFAUT = ""; // <-- optionnel : ta clé (après rotation) si tu préfères la coder ici
+
+const GROQ_MODELE_PRINCIPAL = "llama-3.3-70b-versatile";
+const GROQ_MODELE_SECOURS = "llama-3.1-70b-versatile";
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+
+function chargerIAConfig() {
+    try {
+        const sauvegarde = JSON.parse(localStorage.getItem('ia_config') || '{}');
+        return Object.assign({}, IA_CONFIG_DEFAUT, sauvegarde);
+    } catch (e) {
+        return Object.assign({}, IA_CONFIG_DEFAUT);
+    }
+}
+let iaConfig = chargerIAConfig();
+
+function sauvegarderIAConfig() {
+    localStorage.setItem('ia_config', JSON.stringify(iaConfig));
+}
+
+function getGroqApiKey() {
+    return (iaConfig.customApiKey && iaConfig.customApiKey.trim())
+        ? iaConfig.customApiKey.trim()
+        : GROQ_API_KEY_DEFAUT;
+}
+
+const TONE_PROMPTS = {
+    complice: "Tu es l'IA complice d'un couple dans leur chat privé. Ton dynamique, drôle, taquin, jamais barbant. Réponses courtes (2-4 phrases max), en français, avec emojis avec parcimonie.",
+    romantique: "Tu es l'IA d'un couple dans leur chat privé. Ton doux, romantique, bienveillant. Réponses courtes (2-4 phrases max), en français.",
+    neutre: "Tu es l'assistant IA d'un couple dans leur chat privé. Ton neutre, factuel, concis. Réponses courtes (2-4 phrases max), en français.",
+    sarcastique: "Tu es l'IA d'un couple dans leur chat privé. Ton humoristique et légèrement sarcastique mais toujours gentil. Réponses courtes (2-4 phrases max), en français."
+};
+
+// --- Appel générique à l'API Groq, avec repli automatique sur le modèle 3.1 ---
+async function appellerGroqIA(systemPrompt, userPrompt, maxTokens) {
+    const apiKey = getGroqApiKey();
+    if (!apiKey) {
+        console.warn("IA : aucune clé Groq configurée (Paramètres > IA > Clé API).");
+        return null;
+    }
+    const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+    ];
+    const tenter = async (modele) => {
+        const res = await fetch(GROQ_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + apiKey
+            },
+            body: JSON.stringify({
+                model: modele,
+                messages: messages,
+                temperature: 0.8,
+                max_tokens: maxTokens || 250
+            })
+        });
+        if (!res.ok) {
+            const errTxt = await res.text().catch(() => "");
+            throw new Error("Groq " + res.status + " : " + errTxt);
+        }
+        const data = await res.json();
+        return data.choices && data.choices[0] && data.choices[0].message
+            ? data.choices[0].message.content.trim()
+            : null;
+    };
+    try {
+        return await tenter(GROQ_MODELE_PRINCIPAL);
+    } catch (e1) {
+        console.warn("Modèle principal indisponible, repli sur", GROQ_MODELE_SECOURS, e1);
+        try {
+            return await tenter(GROQ_MODELE_SECOURS);
+        } catch (e2) {
+            console.error("Erreur Groq (les deux modèles) :", e2);
+            return null;
+        }
+    }
+}
+
+// --- Indicateur "IA en train d'écrire" (réutilise l'indicateur de frappe existant) ---
+function afficherFrappeIA() {
+    const ind = document.getElementById('typing-ind');
+    const txt = document.getElementById('typing-txt');
+    if (ind && txt) { txt.innerText = "🤖 IA écrit..."; ind.style.display = 'flex'; }
+}
+function masquerFrappeIA() {
+    const ind = document.getElementById('typing-ind');
+    if (ind) ind.style.display = 'none';
+}
+
+// --- Envoi d'un message IA dans le chat (sender distinct des deux partenaires) ---
+async function envoyerMessageIA(texte) {
+    if (!texte) return;
+    await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+        text: texte,
+        senderId: "ia-bot-duo",
+        senderName: "🤖 IA du Duo",
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "sent",
+        readBy: [],
+        type: "text",
+        mediaUrl: null,
+        isIA: true
+    });
+}
+
+// ==================================================================
+// ================  RÔLE 1 : @bot / @ia (complice)  ================
+// ==================================================================
+async function repondreEnTantQueBot(texteDeclencheur) {
+    afficherFrappeIA();
+    const question = texteDeclencheur.replace(/@bot|@ia/gi, '').trim() || texteDeclencheur;
+    const nomA = (currentUser && currentUser.name) || 'Un des deux';
+    const nomB = (targetUser && targetUser.name) || "L'autre";
+    const system = TONE_PROMPTS[iaConfig.tone] || TONE_PROMPTS.complice;
+    const contexte = `${system} Tu interviens dans la conversation entre ${nomA} et ${nomB} car l'un des deux t'a mentionné avec @bot. Tu peux arbitrer un débat, proposer des idées de sortie/date, répondre à une question de couple, ou lancer un petit défi.`;
+    const reponse = await appellerGroqIA(contexte, question, 220);
+    masquerFrappeIA();
+    if (reponse) await envoyerMessageIA(reponse);
+    else await envoyerMessageIA("Oups, je n'arrive pas à me connecter là tout de suite 😅 (vérifiez la clé API dans Paramètres > IA)");
+}
+
+// ==================================================================
+// ================  RÔLE 3 : Maître du jeu (/game, /quiz)  =========
+// ==================================================================
+let jeuIAEnCours = { actif: false, type: null };
+
+async function demarrerJeuIA(commande) {
+    const cmd = commande.toLowerCase().trim();
+    afficherFrappeIA();
+    let system, prompt, type;
+    if (cmd.startsWith('/quiz')) {
+        type = 'quiz';
+        system = "Tu es le maître du jeu d'un quiz de culture générale ou de couple pour deux partenaires. Pose UNE seule question à la fois (culture générale OU question de couple type 'Qui est le plus susceptible de...'), courte, en français, sans donner la réponse.";
+        prompt = "Lance une nouvelle question de quiz.";
+    } else {
+        type = 'action_verite';
+        system = "Tu es le maître du jeu d'un Action ou Vérité pour un couple. Pose UNE seule proposition à la fois (soit une question 'Vérité', soit un défi 'Action'), courte, fun, bienveillante, en français.";
+        prompt = "Lance une nouvelle manche.";
+    }
+    const question = await appellerGroqIA(system, prompt, 150);
+    masquerFrappeIA();
+    if (question) {
+        jeuIAEnCours = { actif: true, type: type };
+        await envoyerMessageIA(`🎮 ${question}\n\n(répondez normalement dans le chat — tapez "/stop" pour arrêter le jeu)`);
+    }
+}
+
+async function continuerJeuIA(reponseJoueur) {
+    afficherFrappeIA();
+    const system = jeuIAEnCours.type === 'quiz'
+        ? "Tu es le maître du jeu d'un quiz. Le joueur vient de répondre à ta question. Dis brièvement si c'est correct ou non, puis pose directement la question suivante. Reste court, en français."
+        : "Tu es le maître du jeu d'un Action ou Vérité pour un couple. Le joueur vient de répondre/réaliser l'action. Réagis brièvement avec humour, puis propose directement la manche suivante. Reste court, en français.";
+    const suite = await appellerGroqIA(system, reponseJoueur, 180);
+    masquerFrappeIA();
+    if (suite) await envoyerMessageIA(`🎮 ${suite}`);
+}
+
+function arreterJeuIA() {
+    jeuIAEnCours = { actif: false, type: null };
+    envoyerMessageIA("🎮 Jeu terminé ! Tapez /game ou /quiz pour relancer une manche.");
+}
+
+// ==================================================================
+// ==========  RÔLE 2 : Assistant invisible (parser silencieux)  ====
+// ==================================================================
+function afficherSuggestionFlottante(message, labelBtn, onClick) {
+    const ancienne = document.getElementById('ia-suggestion-toast');
+    if (ancienne) ancienne.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'ia-suggestion-toast';
+    toast.style.cssText = `
+        position: absolute; left: 12px; right: 12px; bottom: 78px; z-index: 500;
+        background: var(--panel-bg); backdrop-filter: blur(12px);
+        border: 1px solid var(--border-color); border-radius: 14px;
+        padding: 10px 12px; display: flex; align-items: center; gap: 10px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.15); font-size: 0.8rem; color: var(--text-main);
+        animation: settingsFadeInUp 0.25s ease-out;
+    `;
+    toast.innerHTML = `
+        <span style="flex:1;">${message}</span>
+        <button style="background:var(--bubble-sent); color:#fff; border:none; border-radius:10px; padding:6px 10px; font-size:0.75rem; cursor:pointer;">${labelBtn}</button>
+        <i class="fa-solid fa-xmark" style="cursor:pointer; color:var(--text-muted);"></i>
+    `;
+    const [btnAction, btnFermer] = toast.querySelectorAll('button, i');
+    btnAction.onclick = () => { onClick(); toast.remove(); };
+    btnFermer.onclick = () => toast.remove();
+
+    const container = document.querySelector('.app-container') || document.body;
+    container.appendChild(toast);
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 9000);
+}
+
+function ouvrirCalendrierAvecTitre(texte) {
+    const modal = document.getElementById('calendrier-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    const form = document.getElementById('calendrier-form');
+    if (form) form.style.display = 'flex';
+    const input = document.getElementById('calendrier-titre-input');
+    if (input) input.value = texte.slice(0, 60);
+}
+
+async function resumerTexte(texte) {
+    const resume = await appellerGroqIA(
+        "Résume ce message en 1 à 2 phrases très courtes, en français, sans reformuler mot à mot.",
+        texte,
+        120
+    );
+    document.getElementById('ia-resultat-titre').innerText = "📝 Résumé";
+    document.getElementById('ia-resultat-contenu').innerText = resume || "Impossible de générer le résumé pour le moment.";
+    document.getElementById('ia-resultat-modal').style.display = 'flex';
+}
+
+function analyserMessagePourSuggestions(texte) {
+    if (!texte) return;
+    const regexRendezVous = /\b\d{1,2}h(\d{2})?\b|demain|ce soir|rendez-vous|\brdv\b|on se voit/i;
+    const regexLien = /https?:\/\/[^\s]+/i;
+
+    if (iaConfig.reminderDetect && regexRendezVous.test(texte)) {
+        afficherSuggestionFlottante("🔔 On dirait un rendez-vous — ajouter un rappel ?", "Ajouter", () => ouvrirCalendrierAvecTitre(texte));
+        return; // une seule suggestion à la fois pour ne pas surcharger l'UI
+    }
+    if (regexLien.test(texte) || texte.length > 220) {
+        afficherSuggestionFlottante("📝 Message long ou lien détecté — générer un résumé ?", "Résumer", () => resumerTexte(texte));
+    }
+}
+
+// ==================================================================
+// ================  ROUTEUR PRINCIPAL (appelé après envoi)  ========
+// ==================================================================
+function handleIAApresEnvoi(texte) {
+    if (!iaConfig.enabled || !texte) return;
+    const cmd = texte.toLowerCase().trim();
+
+    if (jeuIAEnCours.actif) {
+        if (cmd === '/stop' || cmd === 'stop jeu') { arreterJeuIA(); return; }
+        continuerJeuIA(texte);
+        return;
+    }
+    if (iaConfig.gameMode && (cmd.startsWith('/game') || cmd.startsWith('/quiz'))) {
+        demarrerJeuIA(texte);
+        return;
+    }
+    if (iaConfig.botMention && /@bot|@ia\b/i.test(texte)) {
+        repondreEnTantQueBot(texte);
+        return;
+    }
+    analyserMessagePourSuggestions(texte);
+}
+
+// ==================================================================
+// ================  PAGE PARAMÈTRES IA  ============================
+// ==================================================================
+function majAffichageToggle(id, actif) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', !!actif);
+}
+
+function rafraichirUIParametresIA() {
+    majAffichageToggle('ia-toggle-enabled', iaConfig.enabled);
+    majAffichageToggle('ia-toggle-botMention', iaConfig.botMention);
+    majAffichageToggle('ia-toggle-reminderDetect', iaConfig.reminderDetect);
+    majAffichageToggle('ia-toggle-gameMode', iaConfig.gameMode);
+    const select = document.getElementById('ia-tone-select');
+    if (select) select.value = iaConfig.tone;
+    const keyInput = document.getElementById('ia-custom-key-input');
+    if (keyInput) keyInput.value = iaConfig.customApiKey || '';
+}
+
+function toggleIAOption(cle) {
+    iaConfig[cle] = !iaConfig[cle];
+    sauvegarderIAConfig();
+    rafraichirUIParametresIA();
+}
+
+function changerTonIA(valeur) {
+    iaConfig.tone = valeur;
+    sauvegarderIAConfig();
+}
+
+function sauvegarderCleIA() {
+    const input = document.getElementById('ia-custom-key-input');
+    iaConfig.customApiKey = input ? input.value.trim() : '';
+    sauvegarderIAConfig();
+    if (typeof showTempNotification === 'function') {
+        showTempNotification("🔑 Clé API enregistrée sur cet appareil");
+    }
+}
+
+function ouvrirParametresIA() {
+    const page = document.getElementById('ia-params-page');
+    if (page) page.style.display = 'flex';
+    rafraichirUIParametresIA();
+}
+function fermerParametresIA() {
+    const page = document.getElementById('ia-params-page');
+    if (page) page.style.display = 'none';
+}
+</script>
 
 </body>   
   
