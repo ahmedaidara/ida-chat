@@ -16444,7 +16444,8 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
         
         const modifiedTag = (data.modified && data.type !== 'call_log' && data.type !== 'screenshare_log')
             ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
-        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}</div>`;
+        const iaTag = data.isIA ? ' <span style="font-size:0.65rem; opacity:0.75; font-weight:600;">IDA-GPT</span>' : '';
+        bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}${iaTag}</div>`;
         
         // RÉACTIONS
         if (data.reactions && Object.keys(data.reactions).length > 0) {
@@ -17967,7 +17968,13 @@ async function ouvrirNoteBucketPleinEcran(id) {
     });
 }
 async function supprimerBucketItem(id) {
-    await db.collection('chats').doc(CHAT_ID).collection('bucket_list').doc(id).delete();
+    if (!confirm("Supprimer cet élément de la bucket list ?")) return;
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('bucket_list').doc(id).delete();
+    } catch (e) {
+        console.error("Suppression bucket list impossible :", e);
+        if (typeof showTempNotification === 'function') showTempNotification("❌ Suppression impossible (droits Firestore ?)");
+    }
 }
 
 // ---------- FAVORIS ----------
@@ -18095,7 +18102,13 @@ async function ouvrirNotePartageePleinEcran(id) {
     });
 }
 async function supprimerNotePartagee(id) {
-    await db.collection('chats').doc(CHAT_ID).collection('notes_partagees').doc(id).delete();
+    if (!confirm("Supprimer cette note ?")) return;
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('notes_partagees').doc(id).delete();
+    } catch (e) {
+        console.error("Suppression note partagée impossible :", e);
+        if (typeof showTempNotification === 'function') showTempNotification("❌ Suppression impossible (droits Firestore ?)");
+    }
 }
 
 // ---------- CALENDRIER À DEUX ----------
@@ -18154,7 +18167,13 @@ async function ajouterEvenementCalendrier() {
     document.getElementById('calendrier-form').style.display = 'none';
 }
 async function supprimerEvenement(id) {
-    await db.collection('chats').doc(CHAT_ID).collection('calendar_events').doc(id).delete();
+    if (!confirm("Supprimer cet événement du calendrier ?")) return;
+    try {
+        await db.collection('chats').doc(CHAT_ID).collection('calendar_events').doc(id).delete();
+    } catch (e) {
+        console.error("Suppression événement calendrier impossible :", e);
+        if (typeof showTempNotification === 'function') showTempNotification("❌ Suppression impossible (droits Firestore ?)");
+    }
 }
 // Envoie un rappel directement comme MESSAGE dans le chat (pas juste une notif) :
 // le jour J, la veille, puis chaque semaine complète restante avant l'événement.
@@ -18621,7 +18640,7 @@ function ecouterMessagesAutodestruction() {
         .onSnapshot((snap) => {
             snap.forEach((doc) => {
                 const d = doc.data();
-                if (d.senderId === currentUser.id) return; // seul le/la destinataire déclenche la disparition
+                if (d.senderId === currentUser.id) return; // seul le/la destinataire déclenche la disparition 
                 db.collection('chats').doc(CHAT_ID).collection('messages').doc(doc.id)
                     .update({ selfDestructTriggered: true }).catch(() => {});
                 setTimeout(() => {
@@ -21201,6 +21220,15 @@ async function loginWithPassword() {
             <button class="watch-btn-primary" onclick="sauvegarderCleIA()" style="width:100%;">Enregistrer la clé</button>
         </div>
 
+        <div class="settings-section" id="ia-instructions-section" style="animation-delay:0.045s; display:none;">
+            <h4><i class="fa-solid fa-heart-circle-check"></i> Instructions personnalisées</h4>
+            <p style="color:var(--text-muted); font-size:0.75rem; margin-bottom:10px;">
+                Raconte votre histoire, vos préférences, vos valeurs, ce que l'IA doit faire ou éviter. Elle en tiendra compte dans toutes ses réponses.
+            </p>
+            <textarea id="ia-instructions-textarea" placeholder="Ex : Nous sommes ensemble depuis... On aime... Ne propose jamais... Toujours vouvoyer... etc." style="width:100%; min-height:140px; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:0.85rem; margin-bottom:10px; font-family:'Inter',sans-serif;"></textarea>
+            <button class="watch-btn-primary" onclick="sauvegarderInstructionsIA()" style="width:100%;">Enregistrer les instructions</button>
+        </div>
+
         <div class="settings-section" style="animation-delay:0.05s;">
             <p style="color:var(--text-muted); font-size:0.7rem;">
                 Modèle utilisé : <b id="ia-model-label">llama-3.3-70b-versatile</b> (bascule automatique sur llama-3.1-70b-versatile en cas d'indisponibilité).
@@ -21231,7 +21259,8 @@ const IA_CONFIG_DEFAUT = {
     gameMode: true,
     canExecuteActions: false,
     tone: 'complice',
-    customApiKey: ''
+    customApiKey: '',
+    customInstructions: ''
 };
 
 // ⚠️ Ne JAMAIS mettre de vraie clé en dur ici : ce fichier est servi tel quel
@@ -21302,16 +21331,17 @@ const TONE_PROMPTS = {
 };
 
 // --- Appel générique à l'API Groq, avec repli automatique sur le modèle 3.1 ---
-async function appellerGroqIA(systemPrompt, userPrompt, maxTokens) {
+async function appellerGroqIA(systemPrompt, userPrompt, maxTokens, historique) {
     const apiKey = getGroqApiKey();
     if (!apiKey) {
         console.warn("IA : aucune clé Groq configurée (Paramètres > IA > Clé API).");
         return null;
     }
-    const messages = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-    ];
+    const messages = [{ role: "system", content: systemPrompt }];
+    if (Array.isArray(historique)) {
+        historique.forEach(m => messages.push(m));
+    }
+    messages.push({ role: "user", content: userPrompt });
     const tenter = async (modele) => {
         const res = await fetch(GROQ_ENDPOINT, {
             method: "POST",
@@ -21424,22 +21454,51 @@ async function interpreterCommandeAction(texte) {
 // ==================================================================
 // ================  RÔLE 1 : @bot / @ia (complice)  ================
 // ==================================================================
+// Mémoire de conversation avec l'IA (multi-tours) : permet de dire "change",
+// "donne-en une autre", etc. sans que l'IA reparte sur un tout autre sujet.
+// Remise à zéro possible en tapant "/nouveausujet".
+let iaHistorique = [];
+const IA_HISTORIQUE_MAX = 12; // 6 échanges (question+réponse)
+
+function construireSystemPrompt() {
+    const base = TONE_PROMPTS[iaConfig.tone] || TONE_PROMPTS.complice;
+    const instructions = (iaConfig.customInstructions || '').trim();
+    return instructions
+        ? `${base}\n\nInstructions du couple à respecter en priorité :\n${instructions}`
+        : base;
+}
+
 async function repondreEnTantQueBot(texteDeclencheur) {
     afficherFrappeIA();
+
+    if (texteDeclencheur.toLowerCase().replace(/[´@\/]/g, '').trim() === 'nouveausujet') {
+        iaHistorique = [];
+        masquerFrappeIA();
+        await envoyerMessageIA("🧹 C'est repartie, nouveau sujet !");
+        return;
+    }
 
     // On tente d'abord une action concrète (dessin, roue, etc.) si autorisé
     const actionDeclenchee = await interpreterCommandeAction(texteDeclencheur);
     if (actionDeclenchee) { masquerFrappeIA(); return; }
 
-    const question = texteDeclencheur.replace(/@bot|@ia/gi, '').trim() || texteDeclencheur;
+    const question = texteDeclencheur.replace(/@bot|@ia/gi, '').replace(/´´/g, '').trim() || texteDeclencheur;
     const nomA = (currentUser && currentUser.name) || 'Un des deux';
     const nomB = (targetUser && targetUser.name) || "L'autre";
-    const system = TONE_PROMPTS[iaConfig.tone] || TONE_PROMPTS.complice;
-    const contexte = `${system} Tu interviens dans la conversation entre ${nomA} et ${nomB} car l'un des deux t'a mentionné avec @bot. Tu peux arbitrer un débat, proposer des idées de sortie/date, répondre à une question de couple, ou lancer un petit défi.`;
-    const reponse = await appellerGroqIA(contexte, question, 220);
+    const system = `${construireSystemPrompt()} Tu interviens dans la conversation entre ${nomA} et ${nomB} car l'un des deux t'a mentionné. Tu peux arbitrer un débat, proposer des idées de sortie/date, répondre à une question de couple, ou lancer un petit défi. Si le message fait suite à l'échange précédent (ex: "change", "une autre idée", "et sinon ?"), continue EXACTEMENT le même sujet au lieu d'en changer.`;
+
+    const reponse = await appellerGroqIA(system, question, 220, iaHistorique);
     masquerFrappeIA();
-    if (reponse) await envoyerMessageIA(reponse);
-    else await envoyerMessageIA("Oups, je n'arrive pas à me connecter là tout de suite 😅 (vérifiez la clé API dans Paramètres > IA)");
+    if (reponse) {
+        iaHistorique.push({ role: "user", content: question });
+        iaHistorique.push({ role: "assistant", content: reponse });
+        if (iaHistorique.length > IA_HISTORIQUE_MAX) {
+            iaHistorique = iaHistorique.slice(iaHistorique.length - IA_HISTORIQUE_MAX);
+        }
+        await envoyerMessageIA(reponse);
+    } else {
+        await envoyerMessageIA("Oups, je n'arrive pas à me connecter là tout de suite 😅 (vérifiez la clé API dans Paramètres > IA)");
+    }
 }
 
 // ==================================================================
@@ -21565,7 +21624,7 @@ function handleIAApresEnvoi(texte) {
         demarrerJeuIA(texte);
         return;
     }
-    if (iaConfig.botMention && /@|\bia\b/i.test(texte)) {
+    if (iaConfig.botMention && (/@|\bia\b/i.test(texte) || /^´´/.test(texte) || /´´$/.test(texte))) {
         repondreEnTantQueBot(texte);
         return;
     }
@@ -21590,6 +21649,27 @@ function rafraichirUIParametresIA() {
     if (select) select.value = iaConfig.tone;
     const keyInput = document.getElementById('ia-custom-key-input');
     if (keyInput) keyInput.value = iaConfig.customApiKey || '';
+
+    // Section "Instructions personnalisées" : réservée à Aidara, jamais affichée à Ida.
+    const sectionInstructions = document.getElementById('ia-instructions-section');
+    if (sectionInstructions) {
+        const estAidara = !!currentUser && currentUser.id === 'aidara';
+        sectionInstructions.style.display = estAidara ? 'block' : 'none';
+        if (estAidara) {
+            const zone = document.getElementById('ia-instructions-textarea');
+            if (zone) zone.value = iaConfig.customInstructions || '';
+        }
+    }
+}
+
+function sauvegarderInstructionsIA() {
+    if (!currentUser || currentUser.id !== 'aidara') return; // sécurité supplémentaire côté UI
+    const zone = document.getElementById('ia-instructions-textarea');
+    iaConfig.customInstructions = zone ? zone.value.trim() : '';
+    sauvegarderIAConfig();
+    if (typeof showTempNotification === 'function') {
+        showTempNotification("💾 Instructions IA enregistrées");
+    }
 }
 
 function toggleIAOption(cle) {
