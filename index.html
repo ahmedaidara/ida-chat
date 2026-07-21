@@ -920,11 +920,22 @@
     cursor: default;
 }
 .flamme-card {
-    background: rgba(0,0,0,0.03) !important;
+    background: linear-gradient(135deg, #ff0055, #ff7300) !important;
+    color: #ffffff !important;
     transform: rotate(-1.5deg);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 18px rgba(255, 115, 0, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
-.flamme-card:active { transform: rotate(-1.5deg) scale(0.97); }
+
+.flamme-card i, 
+.flamme-card span {
+    color: #ffffff !important;
+}
+
+.flamme-card:active {
+    transform: rotate(-1.5deg) scale(0.96) !important;
+    box-shadow: 0 2px 10px rgba(255, 0, 85, 0.6) !important;
+}
 [data-theme="dark"] .flamme-card { background: rgba(255,255,255,0.05) !important; }
 
 .viewonce-viewer-overlay {
@@ -4413,6 +4424,20 @@ input, textarea {
             transform: scale(0.8) translateY(28px); opacity: 0;
             animation: carteSpringIn 0.55s cubic-bezier(.34,1.56,.64,1) forwards;
         }
+      
+      /* ===== SUPPRIMER LE FOND BLANC DES CARTES CADEAU ===== */
+.carte-speciale-box {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Mode sombre */
+[data-theme="dark"] .carte-speciale-box {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
         @keyframes carteSpringIn {
             0% { transform: scale(0.8) translateY(30px); opacity: 0; }
             60% { transform: scale(1.04) translateY(-6px); opacity: 1; }
@@ -4507,7 +4532,150 @@ input, textarea {
     color: #ffffff !important;
 }
 .voice-filter-chip { background: rgba(255,255,255,0.12) !important; border-color: rgba(255,255,255,0.18) !important; }
+/* ===== COULEURS DES BOUTONS IA ET FLAMME ===== */
 
+/* Bouton IA - Violet */
+#ia-toolbar-btn,
+#ia-toolbar-btn i,
+#ia-toolbar-btn span {
+    color: #7c3aed !important;
+}
+
+#ia-toolbar-btn:hover,
+#ia-toolbar-btn:hover i,
+#ia-toolbar-btn:hover span {
+    opacity: 0.8 !important;
+    transform: scale(1.05) !important;
+}
+
+/* Bouton Flamme - Orange */
+.toolbar-btn[onclick*="ouvrirFlamme"],
+.toolbar-btn[onclick*="ouvrirFlamme"] i,
+.toolbar-btn[onclick*="ouvrirFlamme"] span {
+    color: #ff5722 !important;
+}
+
+.toolbar-btn[onclick*="ouvrirFlamme"]:hover,
+.toolbar-btn[onclick*="ouvrirFlamme"]:hover i,
+.toolbar-btn[onclick*="ouvrirFlamme"]:hover span {
+    opacity: 0.8 !important;
+    transform: scale(1.05) !important;
+}
+
+/* Mode sombre - couleurs plus vives */
+[data-theme="dark"] #ia-toolbar-btn,
+[data-theme="dark"] #ia-toolbar-btn i,
+[data-theme="dark"] #ia-toolbar-btn span {
+    color: #a78bfa !important;
+}
+
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirFlamme"],
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirFlamme"] i,
+[data-theme="dark"] .toolbar-btn[onclick*="ouvrirFlamme"] span {
+    color: #ff8a65 !important;
+}
+      
+      /* ===== ANIMATION CADEAU DANS LE CHAT ===== */
+@keyframes cadeauPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.cadeau-chat-icon {
+    font-size: 3.5rem !important;
+    cursor: pointer;
+    display: inline-block;
+    padding: 4px;
+    transition: transform 0.2s ease;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.cadeau-chat-icon:hover {
+    transform: scale(1.15);
+}
+
+/* ✅ Supprimer la bulle derrière le cadeau */
+.message-row:has(.cadeau-chat-icon) .message-bubble {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4px 8px !important;
+}
+
+/* ✅ Heure sous le cadeau */
+.message-row:has(.cadeau-chat-icon) .msg-meta {
+    margin-top: 2px !important;
+    padding: 0 4px !important;
+    background: transparent !important;
+}
+      
+      /* ===== SUPPRESSION TOTALE DE LA BULLE POUR LES CADEAUX ===== */
+.message-row .message-bubble:has(.cadeau-chat-icon),
+.message-row .message-bubble:has([class*="cadeau"]),
+.message-row:has(.cadeau-chat-icon) .message-bubble {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4px 8px !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ✅ Supprimer aussi le fond gris des messages reçus */
+.message-row.received:has(.cadeau-chat-icon) .message-bubble {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* ✅ Supprimer aussi le dégradé des messages envoyés */
+.message-row.sent:has(.cadeau-chat-icon) .message-bubble {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+      /* ===== ANIMATION LETTRE DANS LE CHAT ===== */
+@keyframes lettrePulse {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.1) rotate(-3deg); }
+}
+
+.lettre-chat-icon {
+    font-size: 3.5rem !important;
+    cursor: pointer;
+    display: inline-block;
+    padding: 4px;
+    transition: transform 0.2s ease;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.lettre-chat-icon:hover {
+    transform: scale(1.15) rotate(-2deg);
+}
+
+/* ✅ Supprimer la bulle derrière la lettre */
+.message-row:has(.lettre-chat-icon) .message-bubble,
+.message-bubble:has(.lettre-chat-icon),
+.message-row.received:has(.lettre-chat-icon) .message-bubble,
+.message-row.sent:has(.lettre-chat-icon) .message-bubble {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4px 8px !important;
+}
+
+/* ✅ Heure sous la lettre */
+.message-row:has(.lettre-chat-icon) .msg-meta {
+    margin-top: 2px !important;
+    padding: 0 4px !important;
+    background: transparent !important;
+}
     </style>
 </head>
 <body>
@@ -4745,7 +4913,7 @@ input, textarea {
         flex-shrink: 0;
         font-family: 'Inter', sans-serif;
     " title="Paramètres de l'IA">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
+         <i class="fa-solid fa-wand-magic-sparkles" style="color: #7c3aed;"></i>
         <span>IA</span>
     </button>
         <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
@@ -16147,7 +16315,7 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
                 let htmlComplet = formatText(escapeHTML(displayText)).replace(/\n/g, '<br>');
                 bubbleHtml += `<span class="msg-text-tronque" style="white-space: pre-wrap; display: block; font-size: 0.82rem; line-height: 1.35;">${htmlTronque}…</span>`;
                 bubbleHtml += `<span class="msg-text-complet" style="white-space: pre-wrap; display: none; font-size: 0.82rem; line-height: 1.35;">${htmlComplet}</span>`;
-                bubbleHtml += `<span class="voir-tout-btn"  style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px;">VOIR TOUT</span>`;
+                bubbleHtml += `<span class="voir-tout-btn" style="color:#00c853; font-weight:600; cursor:pointer; display:inline-block; margin-top:2px; font-size:0.6rem;">VOIR TOUT</span>`;
             } else { 
                 displayText = formatText(escapeHTML(displayText));
                 displayText = displayText.replace(/\n/g, '<br>');
@@ -16327,26 +16495,35 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
           } catch(eSos) { console.error('Erreur rendu carte SOS Câlin:', eSos); }
 } else if (data.type === 'cadeau') {
           try {
-            carteSpecialeDonnees[msgId] = { type: 'cadeau', cadeau: data.cadeau || '' };
+            carteSpecialeDonnees[msgId] = { 
+                type: 'cadeau', 
+                cadeau: data.cadeau || '🎁 Cadeau',
+                emoji: (data.cadeau || '🎁').split(' ')[0] || '🎁',
+                texte: data.cadeau || ''
+            };
             const dejaOuvertCadeau = !!data.opened || data.senderId === currentUser.id;
-            const emojiCadeau = (data.cadeau || '🎁').split(' ')[0];
+            
+            // ✅ Affichage simplifié : juste un 🎁 sans fond
             if (dejaOuvertCadeau) {
-                bubbleHtml += `<div class="carte-fermee" style="opacity:0.7;" onclick="ouvrirAnimationCarteSpeciale('cadeau', carteSpecialeDonnees['${msgId}'])"><div class="carte-fermee-icone">${emojiCadeau}</div><div><div class="carte-fermee-titre">Cadeau virtuel</div><div class="carte-fermee-sous">${escapeHTML(data.cadeau || '')}</div></div></div>`;
+                bubbleHtml += `<div class="cadeau-chat-icon" style="font-size: 3.5rem; cursor: pointer; display: inline-block; padding: 4px; opacity: 0.7; transition: transform 0.2s;" onclick="ouvrirAnimationCarteSpeciale('cadeau', carteSpecialeDonnees['${msgId}'])">🎁</div>`;
             } else {
-                bubbleHtml += `<div class="carte-fermee" data-id="${msgId}" onclick="ouvrirCarteRecue('${msgId}')"><div class="carte-fermee-icone">🎁</div><div><div class="carte-fermee-titre">Cadeau virtuel</div><div class="carte-fermee-sous">Appuie pour voir</div></div></div>`;
+                bubbleHtml += `<div class="cadeau-chat-icon" data-id="${msgId}" style="font-size: 3.5rem; cursor: pointer; display: inline-block; padding: 4px; transition: transform 0.2s; animation: cadeauPulse 2s infinite;" onclick="ouvrirCarteRecue('${msgId}')">🎁</div>`;
             }
           } catch(eCadeau) { console.error('Erreur rendu carte cadeau:', eCadeau); }
 } else if (data.type === 'lettre') {
           try {
-            carteSpecialeDonnees[msgId] = { type: 'lettre', senderName: data.senderName || '', texte: data.text || '' };
-            const dejaOuverteLettre = !!data.opened || data.senderId === currentUser.id;
-            if (dejaOuverteLettre) {
-                bubbleHtml += `<div class="carte-fermee" style="opacity:0.7;" onclick="ouvrirAnimationCarteSpeciale('lettre', carteSpecialeDonnees['${msgId}'])"><div class="carte-fermee-icone">💌</div><div><div class="carte-fermee-titre">Lettre de ${escapeHTML(data.senderName || '')}</div><div class="carte-fermee-sous">Appuie pour relire</div></div></div>`;
-            } else {
-                bubbleHtml += `<div class="carte-fermee" data-id="${msgId}" onclick="ouvrirCarteRecue('${msgId}')"><div class="carte-fermee-icone">💌</div><div><div class="carte-fermee-titre">Lettre de ${escapeHTML(data.senderName || '')}</div><div class="carte-fermee-sous">Appuie pour ouvrir</div></div></div>`;
-            }
+            // ✅ On stocke le texte pour l'animation
+            carteSpecialeDonnees[msgId] = { 
+                type: 'lettre', 
+                senderName: data.senderName || '', 
+                texte: data.text || '',
+                emoji: '💌'
+            };
+            
+            // ✅ On affiche TOUJOURS seulement 💌, pour tout le monde (expéditeur ET receveur)
+            bubbleHtml += `<div class="lettre-chat-icon" data-id="${msgId}" style="font-size: 3.5rem; cursor: pointer; display: inline-block; padding: 4px; transition: transform 0.2s; animation: lettrePulse 2s infinite;" onclick="ouvrirCarteRecue('${msgId}')">💌</div>`;
           } catch(eLettre) { console.error('Erreur rendu carte lettre:', eLettre); }
-} else if (data.type === 'tresor') {
+} else if (data.type === 'tresor') { 
           try {
             const dejaRevele = !!data.revealed;
             bubbleHtml += `
@@ -16444,7 +16621,7 @@ bubbleHtml += `<div class="reply-citation" onclick="event.stopPropagation(); scr
         
         const modifiedTag = (data.modified && data.type !== 'call_log' && data.type !== 'screenshare_log')
             ? ' <span style="font-size:0.65rem; opacity:0.6;">(modifié)</span>' : '';
-        const iaTag = data.isIA ? ' <span style="font-size:0.65rem; opacity:0.75; font-weight:600;">IDA-GPT</span>' : '';
+        const iaTag = data.isIA ? ' <span style="font-size:0.65rem; opacity:0.75; font-weight:600; color: #00cc44;">IDA-GPT</span>' : '';
         bubbleHtml += `<div class="msg-meta">${timeStr} ${isSent ? checkMark : ''}${modifiedTag}${iaTag}</div>`;
         
         // RÉACTIONS
@@ -18361,10 +18538,14 @@ const carteSpecialeDonnees = {};
 async function ouvrirCarteRecue(msgId) {
     const donnees = carteSpecialeDonnees[msgId];
     if (!donnees) return;
-    ouvrirAnimationCarteSpeciale(donnees.type, donnees);
+    
+    // ✅ Marquer comme ouvert dans Firestore
     try {
         await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).update({ opened: true });
     } catch (e) { console.error('Erreur marquage carte ouverte:', e); }
+    
+    // ✅ Ouvrir l'animation
+    ouvrirAnimationCarteSpeciale(donnees.type, donnees);
 }
 
 function fermerCarteSpeciale() {
@@ -18427,14 +18608,16 @@ function ouvrirAnimationCarteSpeciale(typeCarte, options) {
         emojisConfetti = ['💌', '💕', '✨'];
     }
 
-    overlay.innerHTML = `
-        <div class="carte-speciale-box">
-            <div class="carte-speciale-close" onclick="fermerCarteSpeciale()"><i class="fa-solid fa-xmark"></i></div>
-            <div class="carte-speciale-icone">${icone}</div>
-            <div class="carte-speciale-titre">${escapeHtmlTexte(titre)}</div>
-            <div class="carte-speciale-texte">${escapeHtmlTexte(texte)}</div>
+  overlay.innerHTML = `
+    <div class="carte-speciale-box" style="background: transparent !important; backdrop-filter: none !important; box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 90% !important; width: auto !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; min-height: 60vh !important;">
+        <div class="carte-speciale-close" onclick="fermerCarteSpeciale()" style="color: #fff !important; background: transparent !important; position: fixed !important; top: calc(env(safe-area-inset-top, 16px) + 20px) !important; right: 20px !important; width: 40px !important; height: 40px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; font-size: 1.5rem !important; z-index: 10 !important; transition: all 0.2s ease !important; text-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;">
+            <i class="fa-solid fa-xmark"></i>
         </div>
-    `;
+        <div class="carte-speciale-icone" style="font-size: 12rem !important; margin-bottom: 20px !important; line-height: 1 !important; text-shadow: 0 0 80px rgba(255,255,255,0.15), 0 0 160px rgba(255,255,255,0.05); animation: emojiBounce 0.7s ease;">${icone}</div>
+        <div class="carte-speciale-titre" style="color: #fff !important; font-weight: 700; font-size: 1.4rem; margin-bottom: 10px; text-shadow: 0 2px 24px rgba(0,0,0,0.8); letter-spacing: 0.5px;">${escapeHtmlTexte(titre)}</div>
+        <div class="carte-speciale-texte" style="color: #fff !important; font-size: 1rem; line-height: 1.6; text-shadow: 0 2px 20px rgba(0,0,0,0.7); white-space: pre-wrap; max-width: 90%; opacity: 0.95;">${escapeHtmlTexte(texte)}</div>
+    </div>
+`;
     overlay.classList.add('active');
     if (navigator.vibrate) navigator.vibrate(typeCarte === 'sos_calin' ? [300, 100, 300, 100, 300] : 150);
 
@@ -18460,7 +18643,17 @@ function declencherAnimationCoeurGeant(options) { ouvrirAnimationCarteSpeciale('
 function declencherAnimationCadeau(cadeau, options) { ouvrirAnimationCarteSpeciale('cadeau', Object.assign({ cadeau }, options || {})); }
 
 // ---------- CADEAU VIRTUEL ----------
-const CADEAUX_VIRTUELS = { cafe: '☕ Café', fleur: '🌸 Fleur', pizza: '🍕 Pizza', chocolat: '🍫 Chocolat', glace: '🍦 Glace', calin: '🤗 Câlin virtuel' };
+const CADEAUX_VIRTUELS = { 
+    cafe: '☕ Café', 
+    fleur: '🌸 Fleur', 
+    pizza: '🍕 Pizza', 
+    chocolat: '🍫 Chocolat', 
+    glace: '🍦 Glace', 
+    calin: '🤗 Câlin virtuel',
+    coccinelle: '🐞 Coccinelle porte-bonheur',
+    rose: '🌹 Rose rouge',
+    marteau: '🔨 Marteau magique'
+};
 function ouvrirMenuCadeauVirtuel() {
     document.getElementById('cadeau-modal').style.display = 'flex';
 }
@@ -18477,7 +18670,16 @@ async function envoyerCadeauVirtuel(cle) {
     });
     envoyerNotificationTelegram('🎁 Cadeau reçu', `${currentUser.name} t'envoie : ${cadeau} !`);
     fermerMenuCadeauVirtuel();
-    ouvrirAnimationCarteSpeciale('cadeau', { cadeau });
+    
+    // ✅ Extraction de l'emoji pour l'animation
+    const emoji = cadeau.split(' ')[0];
+    const nom = cadeau.replace(emoji, '').trim();
+    
+    ouvrirAnimationCarteSpeciale('cadeau', { 
+        cadeau: cadeau,
+        emoji: emoji,
+        nom: nom
+    });
 }
 function declencherAnimationCadeau(cadeau) {
     const overlay = document.createElement('div');
@@ -18488,28 +18690,46 @@ function declencherAnimationCadeau(cadeau) {
     setTimeout(() => overlay.remove(), 2200);
 }
 
-// ---------- LETTRES PROGRAMMÉES ----------
+// ---------- LETTRES PROGRAMMÉES ---------- 
 // Honnêteté : sans serveur dédié, l'envoi ne peut se déclencher que lorsque le/la
 // destinataire ouvre l'app à la date prévue (ou après). Dès qu'il/elle ouvre l'app
-// ce jour-là ou plus tard, la lettre est livrée automatiquement dans le chat.
 function ouvrirLettreProgrammee() {
-    document.getElementById('lettre-texte-input').value = '';
-    document.getElementById('lettre-date-input').value = '';
-    document.getElementById('lettre-modal').style.display = 'flex';
+    const modal = document.getElementById('lettre-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+    }
+    const input = document.getElementById('lettre-texte-input');
+    if (input) input.value = '';
 }
 function fermerLettreProgrammee() {
     document.getElementById('lettre-modal').style.display = 'none';
 }
 async function programmerLettre() {
     const texte = document.getElementById('lettre-texte-input').value.trim();
-    const date = document.getElementById('lettre-date-input').value;
-    if (!texte || !date) { showTempNotification('Écris ta lettre et choisis une date'); return; }
-    await db.collection('chats').doc(CHAT_ID).collection('lettres_programmees').add({
-        text: texte, sendDate: date, senderId: currentUser.id, senderName: currentUser.name,
-        delivered: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    if (!texte) { showTempNotification('Écris ta lettre d\'abord 💌'); return; }
+    
+    // ✅ Envoi direct dans le chat (comme le cadeau)
+    await db.collection('chats').doc(CHAT_ID).collection('messages').add({
+        type: 'lettre',
+        text: texte,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        readBy: [currentUser.id],
+        opened: false
     });
+    
     fermerLettreProgrammee();
-    ouvrirAnimationCarteSpeciale('lettre', { senderName: currentUser.name, texte: `Programmée pour le ${date} 💌\n\n${texte}` });
+    showTempNotification('💌 Lettre envoyée !');
+    
+    // ✅ Aperçu immédiat pour l'expéditeur
+    ouvrirAnimationCarteSpeciale('lettre', { 
+        senderName: currentUser.name, 
+        texte: texte,
+        emoji: '💌'
+    });
 }
 async function verifierLettresProgrammees() {
     if (!currentUser) return;
@@ -21116,19 +21336,23 @@ async function loginWithPassword() {
             <div class="cadeau-choix" onclick="envoyerCadeauVirtuel('chocolat')"><div class="cadeau-choix-emoji">🍫</div><div class="cadeau-choix-nom">Chocolat</div></div>
             <div class="cadeau-choix" onclick="envoyerCadeauVirtuel('glace')"><div class="cadeau-choix-emoji">🍦</div><div class="cadeau-choix-nom">Glace</div></div>
             <div class="cadeau-choix" onclick="envoyerCadeauVirtuel('calin')"><div class="cadeau-choix-emoji">🤗</div><div class="cadeau-choix-nom">Câlin</div></div>
+            <!-- NOUVEAUX CADEAUX -->
+            <div class="cadeau-choix" onclick="envoyerCadeauVirtuel('coccinelle')"><div class="cadeau-choix-emoji">🐞</div><div class="cadeau-choix-nom">Coccinelle</div></div>
+            <div class="cadeau-choix" onclick="envoyerCadeauVirtuel('rose')"><div class="cadeau-choix-emoji">🌹</div><div class="cadeau-choix-nom">Rose</div></div>
+            <div class="cadeau-choix" onclick="envoyerCadeauVirtuel('marteau')"><div class="cadeau-choix-emoji">🔨</div><div class="cadeau-choix-nom">Marteau</div></div>
         </div>
         <button class="jeux-modal-close" onclick="fermerMenuCadeauVirtuel()">Fermer</button>
     </div>
 </div>
 
-<!-- ========== LETTRE PROGRAMMÉE ========== -->
+<!-- ========== LETTRE POGRAMMÉE ========== -->
+<!-- ========== LETTRE ========== -->
 <div class="jeux-modal-overlay" id="lettre-modal">
     <div class="jeux-modal-box">
-        <h3>💌 Lettre programmée</h3>
-        <textarea id="lettre-texte-input" placeholder="Écris ta lettre..." style="width:100%; min-height:100px; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:0.85rem; margin-bottom:8px; font-family:'Inter',sans-serif;"></textarea>
-        <input type="date" id="lettre-date-input" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); margin-bottom:10px;">
-        <p style="color:var(--text-muted); font-size:0.7rem; margin-bottom:10px;">Sera livrée automatiquement dans le chat dès que l'autre ouvre l'app à cette date ou après.</p>
-        <button class="watch-btn-primary" onclick="programmerLettre()">💌 Programmer</button>
+        <h3>💌 Écrire une lettre</h3>
+        <p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:10px;">Écris ....</p>
+        <textarea id="lettre-texte-input" placeholder="Écris ta lettre ici..." style="width:100%; min-height:150px; padding:12px 14px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:0.9rem; margin-bottom:10px; font-family:'Inter',sans-serif; resize:vertical;"></textarea>
+        <button class="watch-btn-primary" onclick="programmerLettre()" style="width:100%;">💌 Envoyer la lettre</button>
         <button class="jeux-modal-close" onclick="fermerLettreProgrammee()">Fermer</button>
     </div>
 </div>
@@ -21284,8 +21508,7 @@ function chargerIAConfig() {
 }
 let iaConfig = chargerIAConfig();
 
-// La config (réglages + clé API) vit dans Firestore : chats/{CHAT_ID}/meta/ia_config
-// → partagée en temps réel entre les deux comptes. localStorage ne sert que de cache
+ // → partagée en temps réel entre les deux comptes. localStorage ne sert que de cache
 // local pour un affichage instantané avant que Firestore ait répondu.
 function refIAConfigFirestore() {
     return db.collection('chats').doc(CHAT_ID).collection('meta').doc('ia_config');
