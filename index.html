@@ -21176,6 +21176,10 @@ async function loginWithPassword() {
                 <span class="info-label">Mode Jeux & Quiz (/game, /quiz)</span>
                 <div class="ios-toggle-switch" id="ia-toggle-gameMode" onclick="toggleIAOption('gameMode')"></div>
             </div>
+            <div class="info-row">
+                <span class="info-label">Autoriser l'IA à lancer des actions (dessin, roue, jeux...)</span>
+                <div class="ios-toggle-switch" id="ia-toggle-canExecuteActions" onclick="toggleIAOption('canExecuteActions')"></div>
+            </div>
         </div>
 
         <div class="settings-section" style="animation-delay:0.03s;">
@@ -21189,9 +21193,9 @@ async function loginWithPassword() {
         </div>
 
         <div class="settings-section" style="animation-delay:0.04s;">
-            <h4><i class="fa-solid fa-key"></i> Clé API Groq (optionnel)</h4>
+            <h4><i class="fa-solid fa-key"></i> Clé API Groq (partagée entre vous deux)</h4>
             <p style="color:var(--text-muted); font-size:0.75rem; margin-bottom:10px;">
-                Laisse vide pour utiliser la clé par défaut de l'app. Ta clé n'est stockée que sur cet appareil (localStorage).
+                Enregistrée dans Firebase (chats/{'{'}chat{'}'}/meta/ia_config) — les deux comptes utilisent automatiquement la même clé, pas besoin de la ressaisir sur chaque téléphone. Toute personne ayant accès à ce chat peut la voir : ne mets ici qu'une clé dédiée à cette app.
             </p>
             <input type="password" id="ia-custom-key-input" placeholder="gsk_..." autocomplete="off" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:0.85rem; margin-bottom:10px;">
             <button class="watch-btn-primary" onclick="sauvegarderCleIA()" style="width:100%;">Enregistrer la clé</button>
@@ -21225,6 +21229,7 @@ const IA_CONFIG_DEFAUT = {
     botMention: true,
     reminderDetect: true,
     gameMode: true,
+    canExecuteActions: false,
     tone: 'complice',
     customApiKey: ''
 };
@@ -21242,7 +21247,7 @@ const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
 function chargerIAConfig() {
     try {
-        const sauvegarde = JSON.parse(localStorage.getItem('ia_config') || '{}');
+        const sauvegarde = JSON.parse(localStorage.getItem('ia_config_cache') || '{}');
         return Object.assign({}, IA_CONFIG_DEFAUT, sauvegarde);
     } catch (e) {
         return Object.assign({}, IA_CONFIG_DEFAUT);
@@ -21250,8 +21255,37 @@ function chargerIAConfig() {
 }
 let iaConfig = chargerIAConfig();
 
+// La config (réglages + clé API) vit dans Firestore : chats/{CHAT_ID}/meta/ia_config
+// → partagée en temps réel entre les deux comptes. localStorage ne sert que de cache
+// local pour un affichage instantané avant que Firestore ait répondu.
+function refIAConfigFirestore() {
+    return db.collection('chats').doc(CHAT_ID).collection('meta').doc('ia_config');
+}
+
+function initIAConfigListener() {
+    refIAConfigFirestore().onSnapshot((doc) => {
+        if (doc.exists) {
+            iaConfig = Object.assign({}, IA_CONFIG_DEFAUT, doc.data());
+        } else {
+            iaConfig = Object.assign({}, IA_CONFIG_DEFAUT);
+            refIAConfigFirestore().set(iaConfig, { merge: true }).catch(() => {});
+        }
+        localStorage.setItem('ia_config_cache', JSON.stringify(iaConfig));
+        rafraichirUIParametresIA();
+    }, (err) => {
+        console.warn("IA : lecture config Firestore impossible, config locale utilisée.", err);
+    });
+}
+initIAConfigListener();
+
 function sauvegarderIAConfig() {
-    localStorage.setItem('ia_config', JSON.stringify(iaConfig));
+    localStorage.setItem('ia_config_cache', JSON.stringify(iaConfig));
+    refIAConfigFirestore().set(iaConfig, { merge: true }).catch((e) => {
+        console.error("IA : échec de sauvegarde Firestore", e);
+        if (typeof showTempNotification === 'function') {
+            showTempNotification("⚠️ Sauvegarde IA impossible (hors-ligne ?)");
+        }
+    });
 }
 
 function getGroqApiKey() {
@@ -21342,10 +21376,61 @@ async function envoyerMessageIA(texte) {
 }
 
 // ==================================================================
+// ======  RÔLE "AGENT" : l'IA peut déclencher des actions du site  ==
+// ==================================================================
+// Registre blanc-listé : seules ces fonctions déjà existantes dans l'app
+// peuvent être déclenchées par l'IA, et uniquement si l'utilisateur a
+// activé "Autoriser l'IA à lancer des actions" dans Paramètres > IA.
+const IA_ACTIONS = {
+    "dessin":            { desc: "Ouvrir le tableau de dessin en direct",           fn: () => creerTableauBlanc() },
+    "roue_de_la_chance": { desc: "Lancer la roue de la chance",                     fn: () => ouvrirRoueChance() },
+    "morpion":           { desc: "Démarrer une partie de morpion",                  fn: () => lancerMorpionDepuisMenu() },
+    "menu_jeux":         { desc: "Ouvrir le menu des jeux",                         fn: () => ouvrirJeux() },
+    "8ball":             { desc: "Ouvrir la boule magique 8 ball",                  fn: () => ouvrir8Ball() },
+    "vrai_ou_faux":      { desc: "Ouvrir le jeu Vrai ou Faux sur le couple",        fn: () => ouvrirVraiFaux() },
+    "regarder_ensemble":  { desc: "Ouvrir le lecteur pour regarder une vidéo ensemble", fn: () => ouvrirRegarderEnsemble() },
+    "bucket_list":       { desc: "Ouvrir la bucket list du couple",                 fn: () => ouvrirBucketList() },
+    "favoris":           { desc: "Ouvrir les messages favoris",                     fn: () => ouvrirFavorisPage() },
+    "notes_partagees":   { desc: "Ouvrir les notes partagées",                      fn: () => ouvrirNotesPartagees() },
+    "calendrier":        { desc: "Ouvrir le calendrier à deux",                     fn: () => ouvrirCalendrierPage() },
+    "cadeau_virtuel":    { desc: "Ouvrir le menu des cadeaux virtuels",             fn: () => ouvrirMenuCadeauVirtuel() },
+    "lettre_programmee": { desc: "Ouvrir l'écran pour programmer une lettre",       fn: () => ouvrirLettreProgrammee() },
+    "tresor_cache":      { desc: "Ouvrir l'écran pour cacher un trésor",            fn: () => ouvrirTresorCache() },
+    "recettes":          { desc: "Ouvrir les recettes à deux",                      fn: () => ouvrirRecettesADeux() },
+    "partage_ecran":     { desc: "Proposer un partage d'écran",                     fn: () => proposerPartageEcran() }
+};
+
+async function interpreterCommandeAction(texte) {
+    if (!iaConfig.canExecuteActions) return false;
+    const liste = Object.entries(IA_ACTIONS).map(([id, a]) => `- ${id} : ${a.desc}`).join("\n");
+    const system = `Tu analyses un message pour savoir si l'utilisateur demande de déclencher une action précise de l'application. Actions possibles :\n${liste}\nRéponds UNIQUEMENT avec un objet JSON strict, sans texte autour, au format {"action": "<id>"} si une action correspond clairement, sinon {"action": null}.`;
+    const reponse = await appellerGroqIA(system, texte, 60);
+    if (!reponse) return false;
+    try {
+        const nettoye = reponse.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(nettoye);
+        const action = parsed && parsed.action;
+        if (action && IA_ACTIONS[action]) {
+            IA_ACTIONS[action].fn();
+            await envoyerMessageIA(`✅ ${IA_ACTIONS[action].desc} — lancé !`);
+            return true;
+        }
+    } catch (e) {
+        // La réponse n'était pas un JSON exploitable → on considère qu'il n'y a pas d'action
+    }
+    return false;
+}
+
+// ==================================================================
 // ================  RÔLE 1 : @bot / @ia (complice)  ================
 // ==================================================================
 async function repondreEnTantQueBot(texteDeclencheur) {
     afficherFrappeIA();
+
+    // On tente d'abord une action concrète (dessin, roue, etc.) si autorisé
+    const actionDeclenchee = await interpreterCommandeAction(texteDeclencheur);
+    if (actionDeclenchee) { masquerFrappeIA(); return; }
+
     const question = texteDeclencheur.replace(/@bot|@ia/gi, '').trim() || texteDeclencheur;
     const nomA = (currentUser && currentUser.name) || 'Un des deux';
     const nomB = (targetUser && targetUser.name) || "L'autre";
@@ -21480,7 +21565,7 @@ function handleIAApresEnvoi(texte) {
         demarrerJeuIA(texte);
         return;
     }
-    if (iaConfig.botMention && /@bot|@ia\b/i.test(texte)) {
+    if (iaConfig.botMention && /@|\bia\b/i.test(texte)) {
         repondreEnTantQueBot(texte);
         return;
     }
@@ -21500,6 +21585,7 @@ function rafraichirUIParametresIA() {
     majAffichageToggle('ia-toggle-botMention', iaConfig.botMention);
     majAffichageToggle('ia-toggle-reminderDetect', iaConfig.reminderDetect);
     majAffichageToggle('ia-toggle-gameMode', iaConfig.gameMode);
+    majAffichageToggle('ia-toggle-canExecuteActions', iaConfig.canExecuteActions);
     const select = document.getElementById('ia-tone-select');
     if (select) select.value = iaConfig.tone;
     const keyInput = document.getElementById('ia-custom-key-input');
@@ -21522,7 +21608,7 @@ function sauvegarderCleIA() {
     iaConfig.customApiKey = input ? input.value.trim() : '';
     sauvegarderIAConfig();
     if (typeof showTempNotification === 'function') {
-        showTempNotification("🔑 Clé API enregistrée sur cet appareil");
+        showTempNotification("🔑 Clé API enregistrée et synchronisée pour vous deux");
     }
 }
 
