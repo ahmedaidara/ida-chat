@@ -4676,6 +4676,174 @@ input, textarea {
     padding: 0 4px !important;
     background: transparent !important;
 }
+      
+      /* ===== LETTRE STYLE PDF / FEUILLE BLANCHE ===== */
+.lettre-pdf {
+    position: relative;
+    max-width: 420px;
+    width: 92%;
+    margin: 0 auto;
+    animation: lettrePapierIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes lettrePapierIn {
+    0% { transform: scale(0.7) rotate(-3deg) translateY(40px); opacity: 0; }
+    60% { transform: scale(1.02) rotate(1deg) translateY(-4px); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg) translateY(0); opacity: 1; }
+}
+
+.lettre-papier {
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 40px 45px 35px;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.15),
+        0 1px 4px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    position: relative;
+    min-height: 250px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* Effet de grain de papier */
+.lettre-papier::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+        radial-gradient(ellipse at 20% 50%, rgba(200, 180, 160, 0.03) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(200, 180, 160, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+.lettre-papier::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 27px,
+        rgba(200, 200, 210, 0.06) 27px,
+        rgba(200, 200, 210, 0.06) 28px
+    );
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+.lettre-en-tete {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.75rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 2px solid #f0ece6;
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+    font-weight: 600;
+}
+
+.lettre-en-tete span:first-child {
+    font-size: 1.1rem;
+}
+
+.lettre-contenu {
+    font-size: 1.05rem;
+    line-height: 1.9;
+    color: #1a1a1a;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'Inter', 'Georgia', serif;
+    padding: 4px 0;
+    min-height: 100px;
+    text-align: left;
+}
+
+.lettre-signature {
+    margin-top: 30px;
+    padding-top: 14px;
+    border-top: 1px solid #f0ece6;
+    font-size: 0.9rem;
+    color: #555;
+    font-style: italic;
+    text-align: right;
+    font-family: 'Caveat', cursive;
+}
+
+/* Mode sombre - la lettre reste blanche */
+[data-theme="dark"] .lettre-papier {
+    background: #fcf9f5;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .lettre-contenu {
+    color: #1a1a1a;
+}
+
+[data-theme="dark"] .lettre-en-tete {
+    border-bottom-color: #e8e0d6;
+}
+
+[data-theme="dark"] .lettre-signature {
+    border-top-color: #e8e0d6;
+    color: #555;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .lettre-papier {
+        padding: 28px 22px 25px;
+        max-height: 75vh;
+    }
+    
+    .lettre-contenu {
+        font-size: 0.95rem;
+        line-height: 1.8;
+    }
+    
+    .lettre-en-tete {
+        font-size: 0.65rem;
+        padding-bottom: 10px;
+        margin-bottom: 16px;
+    }
+    
+    .lettre-signature {
+        font-size: 0.85rem;
+        margin-top: 22px;
+    }
+}
+      /* ===== FORCER LA LETTRE À RESTER BLANCHE QUEL QUE SOIT LE MODE ===== */
+.lettre-papier,
+.lettre-papier *,
+.lettre-conteudo,
+.lettre-en-tete,
+.lettre-en-tete *,
+.lettre-signature,
+.lettre-signature * {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+}
+
+.lettre-en-tete {
+    color: #999 !important;
+    border-bottom-color: #f0ece6 !important;
+}
+
+.lettre-signature {
+    color: #555 !important;
+    border-top-color: #f0ece6 !important;
+}
+
+/* Le bouton fermer reste blanc/transparent */
+.lettre-pdf .carte-speciale-close {
+    color: #666 !important;
+    background: rgba(0,0,0,0.05) !important;
+}
     </style>
 </head>
 <body>
@@ -18578,7 +18746,6 @@ function lancerConfettiCarteSpeciale(centreX, centreY, emojis) {
     }
 }
 
-// typeCarte: 'cadeau' | 'sos_calin' | 'lettre'
 function ouvrirAnimationCarteSpeciale(typeCarte, options) {
     options = options || {};
     let overlay = document.getElementById('carte-speciale-overlay');
@@ -18602,27 +18769,43 @@ function ouvrirAnimationCarteSpeciale(typeCarte, options) {
         texte = `${options.senderName || ''} `;
         emojisConfetti = ['❤️', '🤗', '💕', '✨'];
     } else if (typeCarte === 'lettre') {
-        icone = '💌';
-        titre = `Lettre de ${options.senderName || ''}`;
-        texte = options.texte || '';
-        emojisConfetti = ['💌', '💕', '✨'];
+        // ✅ NOUVEAU RENDU POUR LA LETTRE - FEUILLE BLANCHE STYLE PDF
+        overlay.innerHTML = `
+            <div class="carte-speciale-box lettre-pdf">
+                <div class="carte-speciale-close" onclick="fermerCarteSpeciale()" style="color: #666 !important; background: rgba(0,0,0,0.05) !important; position: fixed !important; top: calc(env(safe-area-inset-top, 16px) + 20px) !important; right: 20px !important; width: 40px !important; height: 40px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; font-size: 1.5rem !important; z-index: 10 !important; transition: all 0.2s ease !important; border-radius: 50% !important;">
+                    <i class="fa-solid fa-xmark"></i>
+                </div>
+                <div class="lettre-papier">
+                    <div class="lettre-en-tete">
+                        <span>📄</span>
+                        <span>Lettre</span>
+                    </div>
+                    <div class="lettre-contenu">${escapeHtmlTexte(options.texte || '')}</div>
+                    <div class="lettre-signature">
+                        — ${escapeHtmlTexte(options.senderName || '')}
+                    </div>
+                </div>
+            </div>
+        `;
+        overlay.classList.add('active');
+        if (navigator.vibrate) navigator.vibrate(150);
+        return;
     }
 
-  overlay.innerHTML = `
-    <div class="carte-speciale-box" style="background: transparent !important; backdrop-filter: none !important; box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 90% !important; width: auto !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; min-height: 60vh !important;">
-        <div class="carte-speciale-close" onclick="fermerCarteSpeciale()" style="color: #fff !important; background: transparent !important; position: fixed !important; top: calc(env(safe-area-inset-top, 16px) + 20px) !important; right: 20px !important; width: 40px !important; height: 40px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; font-size: 1.5rem !important; z-index: 10 !important; transition: all 0.2s ease !important; text-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;">
-            <i class="fa-solid fa-xmark"></i>
+    // Rendu normal pour cadeau et SOS câlin
+    overlay.innerHTML = `
+        <div class="carte-speciale-box" style="background: transparent !important; backdrop-filter: none !important; box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 90% !important; width: auto !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; min-height: 60vh !important;">
+            <div class="carte-speciale-close" onclick="fermerCarteSpeciale()" style="color: #fff !important; background: transparent !important; position: fixed !important; top: calc(env(safe-area-inset-top, 16px) + 20px) !important; right: 20px !important; width: 40px !important; height: 40px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; font-size: 1.5rem !important; z-index: 10 !important; transition: all 0.2s ease !important; text-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;">
+                <i class="fa-solid fa-xmark"></i>
+            </div>
+            <div class="carte-speciale-icone" style="font-size: 12rem !important; margin-bottom: 20px !important; line-height: 1 !important; text-shadow: 0 0 80px rgba(255,255,255,0.15), 0 0 160px rgba(255,255,255,0.05); animation: emojiBounce 0.7s ease;">${icone}</div>
+            <div class="carte-speciale-titre" style="color: #fff !important; font-weight: 700; font-size: 1.4rem; margin-bottom: 10px; text-shadow: 0 2px 24px rgba(0,0,0,0.8); letter-spacing: 0.5px;">${escapeHtmlTexte(titre)}</div>
+            <div class="carte-speciale-texte" style="color: #fff !important; font-size: 1rem; line-height: 1.6; text-shadow: 0 2px 20px rgba(0,0,0,0.7); white-space: pre-wrap; max-width: 90%; opacity: 0.95;">${escapeHtmlTexte(texte)}</div>
         </div>
-        <div class="carte-speciale-icone" style="font-size: 12rem !important; margin-bottom: 20px !important; line-height: 1 !important; text-shadow: 0 0 80px rgba(255,255,255,0.15), 0 0 160px rgba(255,255,255,0.05); animation: emojiBounce 0.7s ease;">${icone}</div>
-        <div class="carte-speciale-titre" style="color: #fff !important; font-weight: 700; font-size: 1.4rem; margin-bottom: 10px; text-shadow: 0 2px 24px rgba(0,0,0,0.8); letter-spacing: 0.5px;">${escapeHtmlTexte(titre)}</div>
-        <div class="carte-speciale-texte" style="color: #fff !important; font-size: 1rem; line-height: 1.6; text-shadow: 0 2px 20px rgba(0,0,0,0.7); white-space: pre-wrap; max-width: 90%; opacity: 0.95;">${escapeHtmlTexte(texte)}</div>
-    </div>
-`;
+    `;
     overlay.classList.add('active');
     if (navigator.vibrate) navigator.vibrate(typeCarte === 'sos_calin' ? [300, 100, 300, 100, 300] : 150);
 
-    // L'explosion de confettis se déclenche juste au moment où la carte se stabilise
-    // (fin de l'animation spring, ~0.55s), puis focus clavier auto si c'est une lettre.
     setTimeout(() => {
         const box = overlay.querySelector('.carte-speciale-box');
         if (box) {
