@@ -9,6 +9,7 @@
   <meta name="msapplication-tap-highlight" content="no">
     <title>CHAT-IDA</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.min.js"></script>
   <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -5287,7 +5288,7 @@ input, textarea {
                        <!-- ========== NOUVEAU : TIROIR GIPHY ========== -->
         <div id="giphy-drawer" style="display: none; position: absolute; bottom: 75px; left: 10px; right: 10px; background: var(--bg-main); border-radius: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); padding: 12px; z-index: 4000; max-height: 350px; flex-direction: column; border: 1px solid var(--border-color);">
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <input type="text" id="giphy-search" placeholder="🔍 Rechercher GIF ou sticker..." style="flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 0.9rem;">
+                <input type="text" id="giphy-search" placeholder="🔍 Rechercher GIF, sticker ou emoji..." style="flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 0.9rem;">
                 <button id="btn-toggle-type" style="background: #f0f2f5; border: none; padding: 0 20px; border-radius: 25px; font-weight: bold; font-size: 0.8rem; cursor: pointer; color: #000;">🎨 GIFS</button>
             </div>
             <div id="giphy-results" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; max-height: 260px; padding: 5px;"></div>
@@ -13113,7 +13114,16 @@ styleVocauxPurifie.innerHTML = `
 document.head.appendChild(styleVocauxPurifie);
 
 // Contextes audio pour l'analyse des fréquences réelles
-const audioCtxContainer = new (window.AudioContext || window.webkitAudioContext)();
+// (créé dans un try/catch : si l'API Web Audio n'est pas disponible dans le
+// navigateur/webview de l'utilisateur, ça ne doit pas faire planter tout le
+// script — ce qui empêchait par exemple le bouton GIF, initialisé plus loin
+// dans ce même script, de recevoir son écouteur de clic)
+let audioCtxContainer = null;
+try {
+    audioCtxContainer = new (window.AudioContext || window.webkitAudioContext)();
+} catch (e) {
+    console.warn("AudioContext indisponible :", e);
+}
 
 // 2. Moteur d'injection et de rendu des fréquences réelles
 function initialiserLecteurFrequenceVocal(audioEl, conteneur) {
@@ -13148,7 +13158,7 @@ function initialiserLecteurFrequenceVocal(audioEl, conteneur) {
         e.stopPropagation();
         
         // Activer le contexte audio si suspendu (sécurité navigateur)
-        if (audioCtxContainer.state === 'suspended') {
+        if (audioCtxContainer && audioCtxContainer.state === 'suspended') {
             audioCtxContainer.resume();
         }
         
@@ -14001,6 +14011,27 @@ if (typeof db !== 'undefined' && typeof CHAT_ID !== 'undefined') {
 
 function initialiserTiroirGiphy() {
     const drawer = document.getElementById('giphy-drawer');
+
+    // ⚠️ CORRECTIF : le tiroir était un enfant de .chat-input-bar, qui a un
+    // "overflow: hidden !important" — comme le tiroir remonte au-dessus de la
+    // barre via "bottom: 75px" en position absolute, il se faisait couper/
+    // masquer par cet overflow du parent (il s'ouvrait bien en display:flex,
+    // mais restait invisible). On le déplace donc directement dans <body> en
+    // position fixed, et on recalcule sa position à chaque ouverture à partir
+    // de l'emplacement réel de la barre de saisie (fonctionne aussi bien en
+    // plein écran mobile que sur la carte centrée desktop).
+    if (drawer && drawer.parentElement !== document.body) {
+        document.body.appendChild(drawer);
+        drawer.style.position = 'fixed';
+    }
+    function positionnerTiroirGiphy() {
+        const barre = document.querySelector('.chat-input-bar');
+        if (!drawer || !barre) return;
+        const rect = barre.getBoundingClientRect();
+        drawer.style.left = (rect.left + 10) + 'px';
+        drawer.style.right = (window.innerWidth - rect.right + 10) + 'px';
+        drawer.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+    }
     const resultsContainer = document.getElementById('giphy-results');
     const searchInput = document.getElementById('giphy-search');
     const toggleBtn = document.getElementById('btn-toggle-type');
@@ -14129,113 +14160,361 @@ function initialiserTiroirGiphy() {
         "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f308.png"    // 🌈 Arc-en-ciel
     ];
     
-    let currentType = "gifs"; // "gifs" ou "stickers"
-    
+    let currentType = "gifs"; // "gifs", "stickers" ou "emoji"
+    let jetonChargement = 0; // pour ignorer une réponse réseau devenue périmée (recherche tapée vite)
+    let minuteurRecherche = null;
+
     if (!triggerBtn) return;
-    
+
     // Ouvrir/fermer le tiroir
     triggerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (drawer.style.display === 'none' || drawer.style.display === '') {
+            positionnerTiroirGiphy();
             drawer.style.display = 'flex';
             afficherContenu();
         } else {
             drawer.style.display = 'none';
         }
     });
-    
-    // Basculer entre GIFs et Stickers
+
+    // Basculer entre GIFs, Stickers et Emoji (3 modes)
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
-            currentType = currentType === "gifs" ? "stickers" : "gifs";
-            toggleBtn.innerHTML = currentType === "gifs" ? "🎨 GIFS" : "🔵 STICKERS";
-            toggleBtn.style.background = currentType === "stickers" ? "#25D366" : "#f0f2f5";
-            toggleBtn.style.color = currentType === "stickers" ? "#fff" : "#000";
+            currentType = currentType === "gifs" ? "stickers" : (currentType === "stickers" ? "emoji" : "gifs");
+            const libelles = { gifs: "🎨 GIFS", stickers: "🎪 STICKERS", emoji: "😀 EMOJI" };
+            const couleurs = { gifs: "#f0f2f5", stickers: "#25D366", emoji: "#a855f7" };
+            toggleBtn.innerHTML = libelles[currentType];
+            toggleBtn.style.background = couleurs[currentType];
+            toggleBtn.style.color = currentType === "gifs" ? "#000" : "#fff";
+            if (searchInput) searchInput.value = "";
             afficherContenu();
         });
     }
-    
-    // Recherche (fonctionne pour les deux)
+
+    // Recherche (fonctionne pour les 3 modes, avec un léger délai pour ne pas
+    // spammer l'API Giphy à chaque frappe)
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.trim().toLowerCase();
-            if (query.length > 1) {
-                filtrerContenu(query);
-            } else if (query.length === 0) {
-                afficherContenu();
-            }
+            clearTimeout(minuteurRecherche);
+            minuteurRecherche = setTimeout(() => afficherContenu(query), 350);
         });
     }
-    
-    function afficherContenu() {
-        if (currentType === "gifs") {
-            afficherGifs(gifsPopulaires);
-        } else {
-            afficherStickers(stickersCollection);
-        }
+
+    // ========== CLÉ PUBLIQUE GIPHY (démo officielle Giphy pour petits projets) ==========
+    // Permet de piocher en direct dans TOUT le catalogue Giphy (tendances + recherche),
+    // au lieu de se limiter aux quelques GIFs/stickers préchargés ci-dessus, qui ne
+    // servent plus que de secours si le réseau ou l'API sont indisponibles.
+    const GIPHY_KEY = "dc6zaTOxFJmzC";
+
+    async function chargerDepuisGiphy(type, query) {
+        const base = type === "gifs" ? "https://api.giphy.com/v1/gifs" : "https://api.giphy.com/v1/stickers";
+        const url = query
+            ? `${base}/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(query)}&limit=36&rating=pg-13&lang=fr`
+            : `${base}/trending?api_key=${GIPHY_KEY}&limit=36&rating=pg-13`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Giphy indisponible");
+        const json = await res.json();
+        return (json.data || []).map(item => ({
+            url: (item.images.original || item.images.fixed_height).url,
+            preview: (item.images.fixed_width_small || item.images.fixed_width || item.images.original).url,
+            tags: (item.title || "").toLowerCase()
+        }));
     }
-    
-    function filtrerContenu(query) {
-        if (currentType === "gifs") {
-            // Filtrer les GIFs par mot-clé (via le champ tags, pas l'URL)
-            const filtres = gifsPopulaires.filter(gif =>
-                gif.tags.toLowerCase().includes(query)
-            );
-            afficherGifs(filtres.length > 0 ? filtres : gifsPopulaires);
-        } else {
-            // Filtrer les stickers (garder tous, la recherche est basique)
-            afficherStickers(stickersCollection);
-        }
-    }
-    
-    function afficherGifs(gifs) {
-        if (!resultsContainer) return;
-        resultsContainer.innerHTML = "";
-        
-        if (gifs.length === 0) {
-            resultsContainer.innerHTML = '<div style="grid-column: span 3; text-align: center; padding: 20px; color: var(--text-muted);">😕 Aucun GIF trouvé</div>';
+
+    async function afficherContenu(query) {
+        if (currentType === "emoji") {
+            afficherEmoji(query);
             return;
         }
-        
-        gifs.forEach(gif => {
-            const gifUrl = gif.url;
-            const img = document.createElement('img');
-            img.src = gifUrl;
-            img.loading = 'lazy';
-            img.style.cssText = "width: 100%; height: 90px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color); background: var(--input-bg);";
-            img.onmouseover = () => img.style.transform = "scale(1.05)";
-            img.onmouseout = () => img.style.transform = "scale(1)";
-            img.onerror = () => { img.style.display = 'none'; };
-            
-            img.onclick = () => {
-                envoyerMedia(currentType === "gifs" ? "gif" : "sticker", gifUrl);
-                drawer.style.display = 'none';
-            };
-            
-            resultsContainer.appendChild(img);
-        });
+
+        const monJeton = ++jetonChargement;
+        resultsContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
+        resultsContainer.innerHTML = '<div style="grid-column: span 3; text-align: center; padding: 20px; color: var(--text-muted);">⏳ Chargement...</div>';
+
+        let contenu = [];
+        try {
+            contenu = await chargerDepuisGiphy(currentType, query);
+            if (!contenu.length) throw new Error("Aucun résultat Giphy");
+        } catch (err) {
+            // Repli hors-ligne : on utilise la petite collection préchargée si l'API
+            // Giphy est injoignable (pas de réseau, clé bloquée, etc.)
+            const locale = currentType === "gifs" ? gifsPopulaires : stickersCollection;
+            const source = locale.map(item => typeof item === "string" ? { url: item, preview: item, tags: "" } : item);
+            contenu = query ? source.filter(g => (g.tags || "").includes(query)) : source;
+            if (query && contenu.length === 0) contenu = source;
+        }
+
+        if (monJeton !== jetonChargement) return; // une recherche plus récente a été lancée entre-temps
+        afficherMedias(contenu, currentType);
     }
-    
-    function afficherStickers(stickers) {
+
+    function afficherMedias(liste, type) {
         if (!resultsContainer) return;
         resultsContainer.innerHTML = "";
-        
-        stickers.forEach(stickerUrl => {
+
+        if (!liste.length) {
+            resultsContainer.innerHTML = `<div style="grid-column: span 3; text-align: center; padding: 20px; color: var(--text-muted);">😕 Aucun ${type === "gifs" ? "GIF" : "sticker"} trouvé</div>`;
+            return;
+        }
+
+        liste.forEach(raw => {
+            const item = typeof raw === "string" ? { url: raw, preview: raw } : raw;
             const img = document.createElement('img');
-            img.src = stickerUrl;
-            img.style.cssText = "width: 80px; height: 80px; object-fit: contain; border-radius: 16px; cursor: pointer; transition: transform 0.2s; background: transparent; margin: auto;";
-            img.onmouseover = () => img.style.transform = "scale(1.1)";
+            img.src = item.preview || item.url;
+            img.loading = 'lazy';
+            img.style.cssText = type === "stickers"
+                ? "width: 80px; height: 80px; object-fit: contain; border-radius: 16px; cursor: pointer; transition: transform 0.2s; background: transparent; margin: auto;"
+                : "width: 100%; height: 90px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color); background: var(--input-bg);";
+            img.onmouseover = () => img.style.transform = type === "stickers" ? "scale(1.1)" : "scale(1.05)";
             img.onmouseout = () => img.style.transform = "scale(1)";
-            
+            img.onerror = () => { img.style.display = 'none'; };
+
             img.onclick = () => {
-                envoyerMedia("sticker", stickerUrl);
+                envoyerMedia(type === "gifs" ? "gif" : "sticker", item.url || item.preview);
                 drawer.style.display = 'none';
             };
-            
+
             resultsContainer.appendChild(img);
         });
     }
-    
+
+    // ========== EMOJI ANIMÉS (façon Telegram, via Noto Animated Emoji + Lottie) ==========
+    // Grande sélection d'emoji "modernes" à un seul point de code (donc sans variante à
+    // sélecteur FE0F, ni drapeaux, ni séquences ZWJ) pour que le calcul du code utilisé
+    // par Google Fonts reste fiable. Un emoji s'affiche d'abord en texte simple ; son
+    // animation Lottie se charge en douceur seulement quand il devient visible, et si
+    // jamais elle n'existe pas pour un emoji donné, on garde tout simplement l'emoji
+    // statique (aucune rupture visuelle possible).
+    const emojisPopulaires = [
+        // Smileys
+        { char: "😀", tags: "content heureux smiley sourire" }, { char: "😃", tags: "content heureux joie" },
+        { char: "😄", tags: "content heureux rire" }, { char: "😁", tags: "content heureux dents" },
+        { char: "😆", tags: "rire mdr eclat de rire" }, { char: "😅", tags: "rire gene sueur" },
+        { char: "🤣", tags: "mort de rire mdr ptdr" }, { char: "😂", tags: "pleure de rire mdr larmes" },
+        { char: "🙂", tags: "sourire leger content" }, { char: "🙃", tags: "sourire envers ironie" },
+        { char: "😉", tags: "clin oeil complicite" }, { char: "😊", tags: "content timide sourire" },
+        { char: "😇", tags: "ange innocent" }, { char: "🥰", tags: "amour adorable coeurs" },
+        { char: "😍", tags: "amoureux yeux coeur" }, { char: "🤩", tags: "etoiles impressionne wow" },
+        { char: "😘", tags: "bisou love kiss" }, { char: "😗", tags: "bisou calme" },
+        { char: "😚", tags: "bisou ferme" }, { char: "😙", tags: "bisou sourire" },
+        { char: "😋", tags: "gourmand miam delicieux" }, { char: "😛", tags: "langue tiree taquin" },
+        { char: "😜", tags: "clin oeil langue fou" }, { char: "🤪", tags: "fou dingue delire" },
+        { char: "😝", tags: "langue yeux fermes" }, { char: "🤑", tags: "argent dollar cupide" },
+        { char: "🤗", tags: "calin cale reconfort" }, { char: "🤭", tags: "surprise rire cache" },
+        { char: "🤫", tags: "silence chut secret" }, { char: "🤔", tags: "reflechis pense hmm" },
+        { char: "🤐", tags: "bouche cousue silence" }, { char: "🤨", tags: "sourcil doute suspicion" },
+        { char: "😐", tags: "neutre indifferent" }, { char: "😑", tags: "blase ennui" },
+        { char: "😶", tags: "sans mot silence" }, { char: "😏", tags: "sourire en coin malicieux" },
+        { char: "😒", tags: "blase agace" }, { char: "🙄", tags: "yeux au ciel exaspere" },
+        { char: "😬", tags: "grimace gene malaise" }, { char: "🤥", tags: "menteur nez pinocchio" },
+        { char: "😌", tags: "soulage apaise" }, { char: "😔", tags: "triste pensif deçu" },
+        { char: "😪", tags: "fatigue somnole" }, { char: "🤤", tags: "bave envie" },
+        { char: "😴", tags: "dort sommeil zzz" }, { char: "😷", tags: "malade masque" },
+        { char: "🤒", tags: "fievre malade thermometre" }, { char: "🤕", tags: "blesse bandage" },
+        { char: "🤢", tags: "degoute nausee" }, { char: "🤮", tags: "vomit malade" },
+        { char: "🤧", tags: "eternue rhume" }, { char: "🥵", tags: "chaud transpire" },
+        { char: "🥶", tags: "froid gele" }, { char: "🥴", tags: "etourdi ivre" },
+        { char: "😵", tags: "assomme sonne" }, { char: "🤯", tags: "explose tete choc" },
+        { char: "🤠", tags: "cowboy chapeau" }, { char: "🥳", tags: "fete anniversaire celebration" },
+        { char: "😎", tags: "cool lunettes de soleil" }, { char: "🤓", tags: "intello lunettes nerd" },
+        { char: "🧐", tags: "monocle intrigue" }, { char: "😕", tags: "confus perplexe" },
+        { char: "😟", tags: "inquiet soucieux" }, { char: "😮", tags: "surpris bouche ouverte" },
+        { char: "😯", tags: "etonne surprise" }, { char: "😲", tags: "choque stupefait" },
+        { char: "😳", tags: "gene rougit" }, { char: "🥺", tags: "supplie yeux tristes" },
+        { char: "😦", tags: "surpris triste" }, { char: "😧", tags: "angoisse" },
+        { char: "😨", tags: "peur effraye" }, { char: "😰", tags: "anxieux stress sueur froide" },
+        { char: "😥", tags: "triste soulage sueur" }, { char: "😢", tags: "pleure triste larme" },
+        { char: "😭", tags: "pleure fort sanglot" }, { char: "😱", tags: "cri terreur panique" },
+        { char: "😖", tags: "confus contrarie" }, { char: "😣", tags: "persevere effort" },
+        { char: "😞", tags: "deçu triste" }, { char: "😓", tags: "sueur epuise" },
+        { char: "😩", tags: "epuise gemit" }, { char: "😫", tags: "fatigue exaspere" },
+        { char: "🥱", tags: "baille fatigue ennui" }, { char: "😤", tags: "enerve souffle triomphe" },
+        { char: "😡", tags: "colere furieux rouge" }, { char: "😠", tags: "fache mecontent" },
+        { char: "🤬", tags: "jure insulte colere" }, { char: "😈", tags: "diable malicieux" },
+        { char: "👿", tags: "diable colere demon" }, { char: "🤡", tags: "clown" },
+        { char: "👹", tags: "ogre monstre" }, { char: "👺", tags: "goblin masque" },
+        { char: "👻", tags: "fantome halloween" }, { char: "👽", tags: "alien extraterrestre" },
+        { char: "👾", tags: "jeu video monstre" }, { char: "🤖", tags: "robot" },
+        { char: "😺", tags: "chat content" }, { char: "😸", tags: "chat sourire" },
+        { char: "😹", tags: "chat rire larmes" }, { char: "😻", tags: "chat amoureux" },
+        { char: "😼", tags: "chat malicieux" }, { char: "😽", tags: "chat bisou" },
+        { char: "🙀", tags: "chat peur" }, { char: "😿", tags: "chat triste" }, { char: "😾", tags: "chat fache" },
+        // Coeurs et gestes
+        { char: "💛", tags: "coeur jaune amitie" }, { char: "💚", tags: "coeur vert nature" },
+        { char: "💙", tags: "coeur bleu" }, { char: "💜", tags: "coeur violet" },
+        { char: "🖤", tags: "coeur noir" }, { char: "🤍", tags: "coeur blanc" },
+        { char: "🤎", tags: "coeur marron" }, { char: "🧡", tags: "coeur orange" },
+        { char: "💔", tags: "coeur brise triste rupture" }, { char: "💕", tags: "deux coeurs amour" },
+        { char: "💞", tags: "coeurs tournants amour" }, { char: "💓", tags: "coeur battant amour" },
+        { char: "💗", tags: "coeur grandissant tendresse" }, { char: "💖", tags: "coeur scintillant amour" },
+        { char: "💘", tags: "coeur fleche cupidon" }, { char: "💝", tags: "coeur cadeau amour" },
+        { char: "💟", tags: "coeur decoration" }, { char: "👍", tags: "pouce leve bravo ok" },
+        { char: "👎", tags: "pouce baisse non" }, { char: "👊", tags: "poing check" },
+        { char: "✊", tags: "poing leve solidarite" }, { char: "🤛", tags: "poing gauche check" },
+        { char: "🤜", tags: "poing droit check" }, { char: "👏", tags: "applaudir bravo" },
+        { char: "🙌", tags: "mains levees celebration" }, { char: "👐", tags: "mains ouvertes calin" },
+        { char: "🤲", tags: "mains offrant priere" }, { char: "🙏", tags: "priere merci svp" },
+        { char: "🤝", tags: "poignee de main accord" }, { char: "👋", tags: "salut coucou au revoir" },
+        { char: "🤚", tags: "main levee stop" }, { char: "👌", tags: "ok parfait" },
+        { char: "🤏", tags: "petit pincement" }, { char: "🤞", tags: "doigts croises chance" },
+        { char: "🤟", tags: "je taime signe" }, { char: "🤘", tags: "rock signe" },
+        { char: "🤙", tags: "appelle moi cool" }, { char: "👈", tags: "pointe gauche" },
+        { char: "👉", tags: "pointe droite" }, { char: "👆", tags: "pointe haut" },
+        { char: "👇", tags: "pointe bas" }, { char: "💪", tags: "muscle force fier" },
+        { char: "🦾", tags: "bras mecanique force" },
+        // Animaux
+        { char: "🐶", tags: "chien animal mignon" }, { char: "🐱", tags: "chat animal mignon" },
+        { char: "🐭", tags: "souris animal" }, { char: "🐹", tags: "hamster animal mignon" },
+        { char: "🐰", tags: "lapin animal mignon" }, { char: "🦊", tags: "renard animal" },
+        { char: "🐻", tags: "ours animal" }, { char: "🐼", tags: "panda animal mignon" },
+        { char: "🐨", tags: "koala animal" }, { char: "🐯", tags: "tigre animal" },
+        { char: "🦁", tags: "lion animal roi" }, { char: "🐮", tags: "vache animal" },
+        { char: "🐷", tags: "cochon animal" }, { char: "🐸", tags: "grenouille animal" },
+        { char: "🐵", tags: "singe animal" }, { char: "🐔", tags: "poule animal" },
+        { char: "🐧", tags: "pingouin animal" }, { char: "🐦", tags: "oiseau animal" },
+        { char: "🦆", tags: "canard animal" }, { char: "🦉", tags: "hibou animal" },
+        { char: "🐺", tags: "loup animal" }, { char: "🐴", tags: "cheval animal" },
+        { char: "🦄", tags: "licorne fantaisie" }, { char: "🐝", tags: "abeille insecte" },
+        { char: "🐛", tags: "chenille insecte" }, { char: "🦋", tags: "papillon insecte joli" },
+        { char: "🐢", tags: "tortue animal lent" }, { char: "🐍", tags: "serpent animal" },
+        { char: "🐙", tags: "pieuvre animal marin" }, { char: "🦀", tags: "crabe animal marin" },
+        { char: "🐬", tags: "dauphin animal marin" }, { char: "🐳", tags: "baleine animal marin" },
+        { char: "🐠", tags: "poisson animal marin" },
+        // Nourriture
+        { char: "🍏", tags: "pomme fruit vert" }, { char: "🍎", tags: "pomme fruit rouge" },
+        { char: "🍊", tags: "orange fruit" }, { char: "🍋", tags: "citron fruit" },
+        { char: "🍌", tags: "banane fruit" }, { char: "🍉", tags: "pasteque fruit" },
+        { char: "🍇", tags: "raisin fruit" }, { char: "🍓", tags: "fraise fruit" },
+        { char: "🍒", tags: "cerise fruit" }, { char: "🍑", tags: "peche fruit" },
+        { char: "🍍", tags: "ananas fruit" }, { char: "🥭", tags: "mangue fruit" },
+        { char: "🥑", tags: "avocat" }, { char: "🍕", tags: "pizza repas" },
+        { char: "🍔", tags: "burger repas" }, { char: "🍟", tags: "frites repas" },
+        { char: "🌭", tags: "hot dog repas" }, { char: "🥪", tags: "sandwich repas" },
+        { char: "🌮", tags: "taco repas" }, { char: "🍝", tags: "pates repas" },
+        { char: "🍜", tags: "nouilles soupe repas" }, { char: "🍣", tags: "sushi repas" },
+        { char: "🍦", tags: "glace dessert" }, { char: "🍩", tags: "donut dessert" },
+        { char: "🍪", tags: "cookie dessert" }, { char: "🎂", tags: "gateau anniversaire" },
+        { char: "🍰", tags: "part de gateau dessert" }, { char: "🍫", tags: "chocolat" },
+        { char: "🍿", tags: "popcorn cinema" }, { char: "☕", tags: "cafe boisson chaude" },
+        { char: "🍵", tags: "the boisson chaude" }, { char: "🥤", tags: "boisson gobelet" },
+        { char: "🍺", tags: "biere boisson" }, { char: "🍷", tags: "vin boisson" },
+        { char: "🥂", tags: "champagne trinquer fete" },
+        // Activités et objets
+        { char: "⚽", tags: "football sport ballon" }, { char: "🏀", tags: "basket sport" },
+        { char: "🎾", tags: "tennis sport" }, { char: "🎮", tags: "jeu video manette" },
+        { char: "🎲", tags: "de jeu hasard" }, { char: "🎸", tags: "guitare musique" },
+        { char: "🎹", tags: "piano musique" }, { char: "🎤", tags: "micro chant" },
+        { char: "🎧", tags: "casque musique ecoute" }, { char: "🎨", tags: "peinture art creatif" },
+        { char: "🎬", tags: "cinema film clap" }, { char: "📚", tags: "livres lecture etude" },
+        { char: "📝", tags: "note ecrire etudier memo" }, { char: "💻", tags: "ordinateur travail" },
+        { char: "📱", tags: "telephone smartphone" }, { char: "📷", tags: "photo appareil" },
+        { char: "🎁", tags: "cadeau surprise" }, { char: "🎉", tags: "fete confettis celebration" },
+        { char: "🎈", tags: "ballon fete anniversaire" }, { char: "🔥", tags: "feu chaud top" },
+        { char: "⭐", tags: "etoile top" }, { char: "✨", tags: "brillant magie" },
+        { char: "🌈", tags: "arc en ciel" }, { char: "🌞", tags: "soleil beau temps chaud" },
+        { char: "🌙", tags: "lune nuit" }, { char: "⚡", tags: "eclair energie rapide" },
+        { char: "🌨", tags: "neige froid hiver" }, { char: "🌸", tags: "fleur printemps" },
+        { char: "🌹", tags: "rose fleur amour" }, { char: "🌻", tags: "tournesol fleur" },
+        { char: "🍀", tags: "trefle chance" }, { char: "🚗", tags: "voiture transport" },
+        { char: "🛫", tags: "avion voyage decollage" }, { char: "🚀", tags: "fusee espace" },
+        { char: "⏰", tags: "reveil heure alarme" }, { char: "💰", tags: "argent richesse" },
+        { char: "💯", tags: "cent pour cent parfait" }, { char: "✅", tags: "coche valide" },
+        { char: "❌", tags: "croix refuse annule" }
+    ];
+
+    function afficherEmoji(query) {
+        if (!resultsContainer) return;
+        resultsContainer.style.gridTemplateColumns = "repeat(6, 1fr)";
+        resultsContainer.innerHTML = "";
+
+        const q = (query || "").toLowerCase();
+        const liste = q ? emojisPopulaires.filter(e => e.tags.includes(q)) : emojisPopulaires;
+
+        if (!liste.length) {
+            resultsContainer.innerHTML = '<div style="grid-column: span 6; text-align: center; padding: 20px; color: var(--text-muted);">😕 Aucun emoji trouvé</div>';
+            return;
+        }
+
+        const observer = obtenirObserverEmoji();
+        liste.forEach(item => {
+            const tile = document.createElement('div');
+            tile.style.cssText = "width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:12px; font-size:1.8rem; line-height:1; transition:transform 0.15s; user-select:none;";
+            tile.textContent = item.char;
+            tile.title = item.char;
+            tile.__emojiItem = item;
+            tile.onmouseenter = () => { tile.style.transform = "scale(1.2)"; };
+            tile.onmouseleave = () => { tile.style.transform = "scale(1)"; };
+            tile.onclick = () => {
+                insererEmojiDansMessage(item.char);
+                drawer.style.display = 'none';
+            };
+            resultsContainer.appendChild(tile);
+            observer.observe(tile);
+        });
+    }
+
+    function obtenirObserverEmoji() {
+        if (!window.__emojiObserver) {
+            if (typeof IntersectionObserver === "undefined") {
+                // Repli pour les très vieux navigateurs : pas de chargement paresseux,
+                // on charge l'animation directement (pas grave, ça reste progressif).
+                window.__emojiObserver = { observe: (tile) => chargerAnimationEmoji(tile) };
+            } else {
+                window.__emojiObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entree => {
+                        const tile = entree.target;
+                        if (entree.isIntersecting) {
+                            chargerAnimationEmoji(tile);
+                            if (tile.__anim) { try { tile.__anim.play(); } catch (e) {} }
+                        } else if (tile.__anim) {
+                            try { tile.__anim.pause(); } catch (e) {}
+                        }
+                    });
+                }, { root: resultsContainer, threshold: 0.15 });
+            }
+        }
+        return window.__emojiObserver;
+    }
+
+    function chargerAnimationEmoji(tile) {
+        if (tile.dataset.chargee === "1") return;
+        tile.dataset.chargee = "1";
+        // Progressive enhancement : si la lib Lottie n'est pas encore chargée, ou que
+        // l'animation n'existe pas pour cet emoji précis, on garde simplement l'emoji
+        // statique déjà affiché — jamais de case vide ou cassée.
+        if (typeof lottie === "undefined") return;
+        const item = tile.__emojiItem;
+        if (!item) return;
+        try {
+            const point = Array.from(item.char)[0].codePointAt(0).toString(16);
+            const anim = lottie.loadAnimation({
+                container: tile,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                path: `https://fonts.gstatic.com/s/e/notoemoji/latest/${point}/lottie.json`
+            });
+            tile.__anim = anim;
+            anim.addEventListener('data_ready', () => { tile.textContent = ""; });
+            anim.addEventListener('data_failed', () => {
+                try { anim.destroy(); } catch (e) {}
+                tile.__anim = null;
+            });
+        } catch (e) {
+            // silencieux : la tuile garde son emoji texte, ce n'est pas bloquant
+        }
+    }
+
+    function insererEmojiDansMessage(emojiChar) {
+        const input = document.getElementById('chat-in');
+        if (!input) return;
+        input.value += emojiChar;
+        input.dispatchEvent(new Event('input', { bubbles: true })); // réutilise handleTyping()/autoResizeTextarea() déjà branchés
+        input.focus();
+    }
+
     function envoyerMedia(type, url) {
         if (currentUser && CHAT_ID) {
             db.collection('chats').doc(CHAT_ID).collection('messages').add({
