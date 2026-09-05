@@ -5278,7 +5278,7 @@ input, textarea {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message...1" oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
@@ -7868,15 +7868,15 @@ function listenToMessages() {
                     // lui-même (voir startCall). Les inclure ici consommait la clé anti-doublon
                     // "expéditeur + minute" de sendTelegramNotification et empêchait silencieusement
                     // la vraie notif du prochain message texte envoyé dans la même minute.
-                    const estMessageSysteme = data.type === 'call_log' || data.type === 'screenshare_log';
-                    if (data.senderId !== currentUser?.id && !isFirstSnapshot && !estMessageSysteme) {
-                        const now = new Date();
-                        const msgTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(0);
-                        const diffSeconds = (now - msgTime) / 1000;
-                        if (diffSeconds < 5) {
-                            sendTelegramNotification(data.senderId, msgId);
-                        }
-                    }
+                   const estMessageSysteme = data.type === 'call_log' || data.type === 'screenshare_log';
+if (data.senderId === currentUser?.id && !isFirstSnapshot && !estMessageSysteme) {
+    const now = new Date();
+    const msgTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(0);
+    const diffSeconds = (now - msgTime) / 1000;
+    if (diffSeconds < 5) {
+        sendTelegramNotification(data.senderId, msgId);
+    }
+}
                     
                     // Marquer "delivered" si le message vient de l'autre personne et est encore "sent"
                     if (data.senderId === targetUser?.id && data.status === 'sent') {
@@ -22435,4 +22435,4 @@ function fermerParametresIA() {
 
 </body>   
   
-</html>
+</html>  
