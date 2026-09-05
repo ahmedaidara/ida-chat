@@ -488,6 +488,22 @@
         .falling-emoji { position: absolute; pointer-events: none; z-index: 1000; animation: fall linear forwards; }
         @keyframes fall { to { transform: translateY(105vh) rotate(360deg); } }
 
+      .coeur-flottant {
+    position: fixed;
+    left: 0;
+    pointer-events: none;
+    z-index: 10000;
+    animation-name: coeurFlottantMonte;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+}
+@keyframes coeurFlottantMonte {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg) scale(0.5); opacity: 0; }
+    12%  { opacity: 1; transform: translateY(-15vh) translateX(0) scale(1); }
+    100% { transform: translateY(-110vh) translateX(var(--drift, 0px)) rotate(var(--rot, 20deg)) scale(1); opacity: 0; }
+}
+      
         audio { max-width: 180px; height: 32px; margin-top: 5px; }
         .img-msg { max-width: 200px; border-radius: 12px; margin-top: 5px; cursor: pointer; }
       
@@ -1118,6 +1134,65 @@
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 14px;
+}
+      
+      .profile-duo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 14px;
+}
+.profile-duo-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    min-width: 0;
+}
+.profile-duo-side .profile-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.4rem;
+}
+.profile-duo-side .profile-name {
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.profile-duo-side .profile-username {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+.info-row-duo {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.info-row-duo:last-child { border-bottom: none; }
+.info-value-duo {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    word-break: break-word;
+}
+.info-label-duo {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    justify-content: center;
 }
 
 .profile-avatar {
@@ -4272,7 +4347,7 @@ input, textarea {
 .flash-notification span {
     display: none !important;
 }
-      .message-row.received .message-bubble:not(.media-no-bubble) {
+      .message-row.received .message-bubble:not(.media-no-bubble):not(.giant-emoji) {
     background: #e4e6eb !important;
     background-color: #e4e6eb !important;
     color: #050505 !important;
@@ -5440,30 +5515,41 @@ input, textarea {
     <div class="settings-content">
         <!-- Section Profil -->
         <div class="settings-section" style="animation-delay:0.02s;">
-            <h4><i class="fa-solid fa-user"></i> Profil</h4>
-            <div class="profile-info" id="profile-info">
-                <div class="profile-avatar" id="settings-avatar">--</div>
-                <div class="profile-details">
-                    <div class="profile-name" id="settings-name">Chargement...</div>
-                    <div class="profile-username" id="settings-username">@...</div>
-                </div>
-            </div>
-            <div class="info-row">
-                <span class="info-label"><i class="fa-regular fa-calendar"></i> Date de naissance</span>
-                <span class="info-value" id="birthdate">06/04/2006</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label"><i class="fa-regular fa-envelope"></i> Email</span>
-                <span class="info-value" id="email">non renseigné</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label"><i class="fa-solid fa-location-dot"></i> Localisation</span>
-                <span class="info-value" id="location">Dakar JDM - Wakhim Nimzat</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label"><i class="fa-regular fa-clock"></i> Date de rencontre</span>
-                <span class="info-value" id="member-since">13/07/2023</span>
-            </div>
+          <div class="settings-section" style="animation-delay:0.02s;">
+    <h4><i class="fa-solid fa-user"></i> Profils</h4>
+    <div class="profile-duo">
+        <div class="profile-duo-side">
+            <div class="profile-avatar" id="settings-avatar-moi">--</div>
+            <div class="profile-name" id="settings-name-moi">Chargement...</div>
+            <div class="profile-username" id="settings-username-moi">@...</div>
+        </div>
+        <div class="profile-duo-side">
+            <div class="profile-avatar" id="settings-avatar-autre">--</div>
+            <div class="profile-name" id="settings-name-autre">Chargement...</div>
+            <div class="profile-username" id="settings-username-autre">@...</div>
+        </div>
+    </div>
+
+    <div class="info-row-duo">
+        <span class="info-value-duo" id="birthdate-moi">—</span>
+        <span class="info-label-duo"><i class="fa-regular fa-calendar"></i> Naissance</span>
+        <span class="info-value-duo" id="birthdate-autre">—</span>
+    </div>
+    <div class="info-row-duo">
+        <span class="info-value-duo" id="email-moi">non renseigné</span>
+        <span class="info-label-duo"><i class="fa-regular fa-envelope"></i> Email</span>
+        <span class="info-value-duo" id="email-autre">non renseigné</span>
+    </div>
+    <div class="info-row-duo">
+        <span class="info-value-duo" id="location-moi">—</span>
+        <span class="info-label-duo"><i class="fa-solid fa-location-dot"></i> Localisation</span>
+        <span class="info-value-duo" id="location-autre">—</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label"><i class="fa-regular fa-clock"></i> Date de rencontre</span>
+        <span class="info-value" id="member-since">13/07/2023</span>
+    </div>
+</div>
         </div>
 
         <!-- Section Statistiques du couple -->
@@ -7317,22 +7403,29 @@ let lastReadUpdate = null;        // ← AJOUTE ICI
             return str;
         }
         
-        function isOnlyEmojis(str) {
-            if(!str) return false;
-            const emojiRegex = /^[\u{1F300}-\u{1F9FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]+$/u;
-            return emojiRegex.test(str.replace(/\s/g, '')) && str.replace(/\s/g, '').length <= 6;
-        }
-
+    function isOnlyEmojis(str) {
+    if (!str) return false;
+    const texte = str.trim();
+    if (!texte) return false;
+    const emojiRegex = /^[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1FA70}-\u{1FAFF}\u{200D}\u{FE0F}]+$/u;
+    if (!emojiRegex.test(texte)) { console.log('isOnlyEmojis: regex refusée pour', texte); return false; }
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        const segments = Array.from(new Intl.Segmenter('fr', { granularity: 'grapheme' }).segment(texte));
+        console.log('isOnlyEmojis: nb graphèmes =', segments.length, 'pour', texte);
+        return segments.length === 1;
+    }
+    return Array.from(texte).length <= 2;
+}       
+                                                                                                                          
         function formatText(text) {
             if(!text) return "";
             let formatted = text;
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');         
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');                          
             formatted = formatted.replace(/~~(.*?)~~/g, '<del>$1</del>');
-            // ✅ Liens cliquables : détecte les URL (http/https ou www.) et les transforme
-            // en liens ouvrant un nouvel onglet — sur mobile, cela redirige automatiquement
-            // vers l'application concernée (Maps, YouTube, Instagram...) si elle est installée.
-            formatted = formatted.replace(
+            // ✅ Liens cliquables : détecte les URL (http/https ou www.) et les transforme    
+            // en liens ouvrant un nouvel onglet — sur mobile, cela redirige automatiquement    
+             formatted = formatted.replace(
                 /((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)\]])/gi,
                 (match) => {
                     const href = /^https?:\/\//i.test(match) ? match : 'https://' + match;
@@ -7341,7 +7434,7 @@ let lastReadUpdate = null;        // ← AJOUTE ICI
             );
             return formatted;
         }
-
+        
         function showTempNotification(message) {
             const notif = document.createElement('div');
             notif.textContent = message;
@@ -7575,6 +7668,8 @@ async function enregistrerTokenPush() {
             getBatteryLevel();
             listenToOtherUserBattery();
             listenForFlashSignals();
+       listenForFlashSignals();
+listenForCoeursSignals();
             ecouterMessagesAutodestruction();
             verifierLettresProgrammees();
             initCallListener(); // 📞 démarre l'écoute des appels Agora
@@ -8168,6 +8263,28 @@ if (!isFirstSnapshot) {
         showTempNotification("🖼️ Code galerie envoyé !");
         return;
     }
+     
+     // 💗 CODE "520" : pluie de cœurs flottants pendant ~3s, chez toi ET chez l'autre,
+// chacun une seule fois. Jamais affiché comme message dans le chat.
+if (text === '520') {
+    input.value = '';
+    autoResizeTextarea();
+    cancelReply();
+    toggleSendBtn(false);
+    stopTypingNotify();
+    clearLiveTyping();
+
+    lancerPluieCoeurs();
+
+    if (targetUser) {
+        db.collection('coeurs_signals').add({
+            targetUserId: targetUser.id,
+            sourceUserId: currentUser.id,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => console.error('Erreur envoi signal coeurs:', err));
+    }
+    return;
+}
      
     let finalText = text;
     let isCoded = codeModeActive;
@@ -9844,6 +9961,48 @@ async function traduireEtRemplacerInput(code, nom) {
             });
         }
         
+      // ========== PLUIE DE CŒURS FLOTTANTS (code "520") ==========
+function lancerPluieCoeurs() {
+    const nbCoeurs = 34;
+    const emojisCoeurs = ['❤️', '💕', '💖', '💗', '💓', '💘'];
+    for (let i = 0; i < nbCoeurs; i++) {
+        setTimeout(() => {
+            const coeur = document.createElement('div');
+            coeur.className = 'coeur-flottant';
+            coeur.textContent = emojisCoeurs[Math.floor(Math.random() * emojisCoeurs.length)];
+            const startLeft = Math.random() * 100;
+            const drift = (Math.random() * 160 - 80) + 'px';
+            const rot = (Math.random() * 60 - 30) + 'deg';
+            const size = (1.4 + Math.random() * 1.8).toFixed(2) + 'rem';
+            const duree = (2.4 + Math.random() * 0.6).toFixed(2) + 's';
+            coeur.style.left = startLeft + 'vw';
+            coeur.style.bottom = '-40px';
+            coeur.style.fontSize = size;
+            coeur.style.setProperty('--drift', drift);
+            coeur.style.setProperty('--rot', rot);
+            coeur.style.animationDuration = duree;
+            document.body.appendChild(coeur);
+            setTimeout(() => coeur.remove(), 3200);
+        }, i * 45);  
+    }
+}
+
+ function listenForCoeursSignals() {
+    if (!currentUser) return;
+    db.collection('coeurs_signals')
+      .where('targetUserId', '==', currentUser.id)
+      .onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+                lancerPluieCoeurs();
+                setTimeout(() => change.doc.ref.delete().catch(() => {}), 5000);
+            }
+        });
+    }, (error) => {
+        console.error('Erreur écoute coeurs_signals:', error);
+    });
+}
+      
         // ========== BATTERIE ==========
         async function getBatteryLevel() {
             if ('getBattery' in navigator) {
@@ -10627,29 +10786,53 @@ function closeSettingsPage() {
     settingsPage.style.display = 'none';
 }
 
+let unsubProfilMoi = null;
+let unsubProfilAutre = null;
+
+function avatarGradientPour(id) {
+    return id === 'ida' ? 'linear-gradient(45deg, #0076ff, #00ffaa)' : 'linear-gradient(45deg, #ff007f, #ff7300)';
+}
+
 function updateSettingsInfo() {
-    if (targetUser) {
-        document.getElementById('settings-name').innerText = targetUser.name;
-        document.getElementById('settings-username').innerText = '@' + targetUser.full.toLowerCase();
-        document.getElementById('settings-avatar').innerText = targetUser.name.substring(0, 2);
+    if (currentUser) {
+        const avMoi = document.getElementById('settings-avatar-moi');
+        avMoi.innerText = currentUser.name.substring(0, 2);
+        avMoi.style.background = avatarGradientPour(currentUser.id);
+        document.getElementById('settings-name-moi').innerText = currentUser.name;
+        document.getElementById('settings-username-moi').innerText = '@' + currentUser.full.toLowerCase();
     }
-    
-    // Charger les infos depuis Firestore
     if (targetUser) {
-        db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
-            if (doc.exists && doc.data().profile) {
-                const profile = doc.data().profile;
-                if (profile.birthdate) document.getElementById('birthdate').innerText = profile.birthdate;
-                if (profile.email) document.getElementById('email').innerText = profile.email;
-                if (profile.location) document.getElementById('location').innerText = profile.location;
-                if (profile.memberSince) document.getElementById('member-since').innerText = profile.memberSince;
-            }
+        const avAutre = document.getElementById('settings-avatar-autre');
+        avAutre.innerText = targetUser.name.substring(0, 2);
+        avAutre.style.background = avatarGradientPour(targetUser.id);
+        document.getElementById('settings-name-autre').innerText = targetUser.name;
+        document.getElementById('settings-username-autre').innerText = '@' + targetUser.full.toLowerCase();
+    }
+
+    // Charger les infos de CHACUN depuis Firestore (users/{id}.profile)
+    if (unsubProfilMoi) { unsubProfilMoi(); unsubProfilMoi = null; }
+    if (unsubProfilAutre) { unsubProfilAutre(); unsubProfilAutre = null; }
+
+    if (currentUser) {
+        unsubProfilMoi = db.collection('users').doc(currentUser.id).onSnapshot((doc) => {
+            const profile = (doc.exists && doc.data().profile) ? doc.data().profile : {};
+            document.getElementById('birthdate-moi').innerText = profile.birthdate || '—';
+            document.getElementById('email-moi').innerText = profile.email || 'non renseigné';
+            document.getElementById('location-moi').innerText = profile.location || '—';
+        });
+    }
+    if (targetUser) {
+        unsubProfilAutre = db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+            const profile = (doc.exists && doc.data().profile) ? doc.data().profile : {};
+            document.getElementById('birthdate-autre').innerText = profile.birthdate || '—';
+            document.getElementById('email-autre').innerText = profile.email || 'non renseigné';
+            document.getElementById('location-autre').innerText = profile.location || '—';
+            if (profile.memberSince) document.getElementById('member-since').innerText = profile.memberSince;
         });
     }
 }
 
-// Initialiser les options de bulles dans la nouvelle page
-function initSettingsBubbles() {
+ function initSettingsBubbles() {
     const savedColor = localStorage.getItem('bubbleColor') || 'linear-gradient(45deg, #a800ff, #0076ff)';
     document.querySelectorAll('.color-option-bubble').forEach(opt => {
         if (opt.style.background === savedColor || opt.getAttribute('data-color') === savedColor) {
@@ -10672,8 +10855,7 @@ function initSettingsBubbles() {
     loadTailleTexte();
 }
 
-// ========== FOND D'ÉCRAN DU CHAT (avec persistance + upload d'image perso) ==========
-function appliquerFondEcran(bg) {
+ function appliquerFondEcran(bg) {
     const app = document.querySelector('.app-container');
     if (!app) return;
     
@@ -10852,17 +11034,28 @@ async function updateUserProfile(birthdate, email, location) {
     }, { merge: true });
 }
       // ========== CARNET SECRET ==========
-
+ async function initialiserProfilsParDefaut() {
+    const profilsParDefaut = {
+        ida: { birthdate: '06/04/2006', location: 'WAKHIM NIMZAT' },
+        aidara: { birthdate: '10/01/2005', location: 'SACRE COEUR 3' }
+    };
+    for (const [id, profil] of Object.entries(profilsParDefaut)) {
+        try {
+            const doc = await db.collection('users').doc(id).get();
+            const dejaProfil = doc.exists && doc.data().profile && doc.data().profile.birthdate;
+            if (!dejaProfil) {
+                await db.collection('users').doc(id).set({ profile: profil }, { merge: true });
+            }
+        } catch (e) {
+            console.error('Erreur initialisation profil par défaut:', id, e);
+        }
+    }
+}
 
 // ========== CARNET SECRET AVEC CODE PIN ==========
 let secretMessages = [];
 let currentSecretUser = null;
-
-// (Ancienne fonctionnalité "Carnet Secret" accessible via un bouton dans les paramètres,
-// supprimée : elle faisait doublon avec le code secret déjà géré directement dans le chat.)
-
-// Sauvegarder le style de bulle par défaut
-// Sauvegarder le style de bulle par défaut et appliquer immédiatement
+ 
 function saveDefaultBubbleStyle() {
     const select = document.getElementById('default-bubble-style');
     const selectedStyle = select.value;
@@ -10955,9 +11148,7 @@ function loadDefaultBubbleStyle() {
 // Appeler cette fonction au chargement   
 setTimeout(loadDefaultBubbleStyle, 200);
 
-// ============================================================
-// ✅ APPARENCE (Paramètres → Apparence) : Clair / Sombre / Auto
-// ============================================================
+ 
 function appliquerApparence(mode) {
     let themeReel = mode;
     if (mode === 'auto') {
@@ -11027,12 +11218,7 @@ function loadTailleTexte() {
 setTimeout(loadTailleTexte, 50);
 
 
-// ============================================================
-// ✅ ANIMATION D'ENVOI PAR DÉFAUT (Paramètres → Animation d'envoi)
-// Fonctionne exactement comme le style de bulle par défaut :
-// préférence 100% locale (localStorage), appliquée uniquement à
-// SES PROPRES messages envoyés (isSent) au moment du rendu.
-// ============================================================
+ 
 const SEND_ANIM_CLASSES = ['anim-fade-in-up', 'anim-scale-pop', 'anim-slide-right', 'anim-elastic-bounce', 'anim-blur-focus'];
 
 // Convertit la valeur du <select> (ex: "scale-pop") en nom de classe CSS (ex: "anim-scale-pop")
@@ -11057,14 +11243,7 @@ setTimeout(loadDefaultSendAnimation, 200);
       
       
      
-
-// Démarrer l'écoute quand l'utilisateur se connecte
  
-// Dans ta fonction selectUser(), ajoute cette ligne à la fin :
-// ecouterNotificationsNTFY();
-      // ========== BLOQUEUR DE NOTIFICATIONS DOUBLONS ==========
-// Ce code intercepte TOUTES les tentatives d'envoi Telegram et bloque les doublons
-
 // Sauvegarder les anciennes fonctions
 const ancienneFetch = window.fetch;
 const messagesEnvoyes = new Set();
@@ -11251,9 +11430,7 @@ function autoResizeTextarea() {
     sauvegarderBrouillonMessage(textarea.value);
 }
 
-// ========== BROUILLON DE MESSAGE (survit à un rafraîchissement/fermeture) ==========
-// Tant que le message n'est pas envoyé (ou effacé manuellement), il reste dans
-// la zone de saisie même si on quitte le site ou qu'on rafraîchit la page.
+ 
 function cleDuBrouillon() {
     return `chat_draft_${CHAT_ID}_${currentUser ? currentUser.id : 'anon'}`;
 }
@@ -11276,12 +11453,7 @@ function restaurerBrouillonMessage() {
     }
 }
 
-// ========== CORRIGE L'ÉCART ENTRE LE CLAVIER ET LA ZONE DE SAISIE ==========
-// Le viewport meta "interactive-widget=resizes-content" (ajouté plus haut) gère
-// maintenant ça nativement sur les navigateurs récents. Ce script ne sert que de
-// filet de sécurité pour les anciennes versions, et seulement PENDANT que le
-// clavier est réellement ouvert (jamais en dehors, pour ne pas interférer avec
-// le padding de la barre d'état tout en haut).
+ 
 (function corrigerHauteurClavier() {
     if (!window.visualViewport) return;
     const appContainer = document.querySelector('.app-container');
@@ -11420,10 +11592,7 @@ function annulerAppuiLong() {
     elementAppuye = null;
 }
 
-      // ========== SWIPE POUR RÉPONDRE (droite) / MODIFIER (gauche) ==========
-      // Réutilise les mêmes événements tactiles que l'appui long : un swipe
-      // horizontal annule l'appui long en cours et déclenche l'action associée,
-      // exactement comme sur WhatsApp.
+                                                                                             
 let swipeDepartX = null;
 let swipeDepartY = null;
 let swipeDeclenche = false;
@@ -16713,19 +16882,21 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         if (data.isSticker) row.setAttribute('data-issticker', 'true');
         if (data.fileName) row.setAttribute('data-filename', data.fileName);
         
-        const isGiant = isOnlyEmojis(data.text);
-        // ✅ Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs et stickers —
-        // ces derniers sont stockés avec type "image" (voir isGif/isSticker), donc ce test
-        // couvre bien tous les cas demandés.
-        const isMediaNoBubble = data.type === 'image' || data.type === 'video' || data.type === 'document' || data.type === 'media_group';
-        let customStyle = '';
-        let inlineStyle = '';
+  const isGiant = isOnlyEmojis(data.text);
+// ✅ Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs, stickers,
+// et pour un message qui n'est qu'un SEUL emoji (envoyé ou reçu) : ce dernier cas
+// doit toujours rester sans fond, même avec un style de bulle par défaut, une
+// couleur d'accent, ou une couleur/dégradé perso choisi sur ce message précis.
+const isMediaNoBubble = data.type === 'image' || data.type === 'video' || data.type === 'document' || data.type === 'media_group';
+let customStyle = '';
+let inlineStyle = '';
 // 🚨 PRIORITÉ : Si une couleur personnalisée existe, on désactive les styles de classe
-const hasCustomColor = !isMediaNoBubble && (data.customColor || data.customGradient);
+const hasCustomColor = !isMediaNoBubble && !isGiant && (data.customColor || data.customGradient);
 
-if (isMediaNoBubble) {
-    // Une photo/vidéo/document/envoi groupé n'a JAMAIS de fond de bulle coloré,
-    // même si une couleur d'accent ou un style de bulle par défaut est choisi.
+if (isMediaNoBubble || isGiant) {
+    // Une photo/vidéo/document/envoi groupé — ou un message qui n'est qu'un seul
+    // emoji — n'a JAMAIS de fond de bulle coloré, même si une couleur d'accent ou
+    // un style de bulle par défaut est choisi.
 } else if (hasCustomColor) {
     // ✅ Couleur/dégradé choisi pour CE message précis (prioritaire sur tout le reste)
     if (data.customColor) {
@@ -22227,11 +22398,11 @@ async function repondreEnTantQueBot(texteDeclencheur) {
         }
         await envoyerMessageIA(reponse);
     } else {
-        await envoyerMessageIA("Oups, je n'arrive pas à me connecter là tout de suite 😅 (vérifiez la clé API dans Paramètres > IA)");
+        await envoyerMessageIA("Oups, je n'arrive pas à me connecter là tout de suite 😅  ");
     }
 }
 
-// ==================================================================
+// ==================================================================         
 // ================  RÔLE 3 : Maître du jeu (/game, /quiz)  =========
 // ==================================================================
 let jeuIAEnCours = { actif: false, type: null };
