@@ -7279,10 +7279,24 @@ async function sendTelegramNotification(senderId, msgId) {
 
     try {
         const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&disable_notification=false`;
-        await fetch(url);
+        const reponse = await fetch(url);
+        const resultat = await reponse.json().catch(() => null);
+        if (!reponse.ok || (resultat && resultat.ok === false)) {
+            // Telegram renvoie souvent un statut HTTP 200 même en cas d'erreur (mauvais
+            // chat_id, bot bloqué, token révoqué...) : il faut lire le champ "ok" du
+            // corps de réponse pour ne pas croire à tort que ça a marché.
+            console.error("❌ Telegram a refusé l'envoi :", resultat);
+            if (typeof showTempNotification === 'function') {
+                showTempNotification("⚠️ Échec notif Telegram : " + (resultat?.description || reponse.status));
+            }
+            return;
+        }
         console.log(`✅ Notification Telegram envoyée à ${isFromIda ? 'Aidara' : 'Ida'}`);
     } catch (e) {
         console.error("Erreur Telegram:", e);
+        if (typeof showTempNotification === 'function') {
+            showTempNotification("⚠️ Erreur réseau Telegram (voir console)");
+        }
     }
 }
 // ========== CONFIGURATION TELEGRAM (UN SEUL BOT POUR CHAQUE PERSONNE) ==========
@@ -7305,30 +7319,10 @@ async function notifierDansApp(expediteurNom) {
     }
 }
 
-// ========== DEMANDER PERMISSION PUSH ==========
-async function demanderPermissionNotifications() {
-    if (!("Notification" in window)) {
-        alert("Votre navigateur ne supporte pas les notifications");
-        return;
-    }
-    
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-        console.log("✅ Notifications push autorisées");
-        new Notification("✅ Notifications activées", {
-            body: "Vous recevrez les nouveaux messages",
-            icon: "https://i.postimg.cc/J400K7Sd/new-Notification.png"
-        });
-    } else {
-        console.log("❌ Notifications refusées");
-    }
-}
- 
-
-// Notifier Aidara (toi) quand Ida envoie un message
- 
-
-// Fonction principale
+// ⚠️ SUPPRIMÉ : une seconde fonction demanderPermissionNotifications() était
+// redéfinie plus bas dans le fichier — en JavaScript, la dernière définition
+// écrase silencieusement celle-ci, qui n'était donc jamais exécutée. On garde
+// une seule version (voir plus bas, celle qui appelle enregistrerTokenPush()).
  
 
  
@@ -7679,7 +7673,15 @@ listenForCoeursSignals();
             // ✅ Correction : "activerLesNotifications" n'était définie nulle part (bug qui
             // interrompait ici toute la suite de selectUser). demanderPermissionNotifications()
             // juste en dessous fait déjà ce travail.
-          demanderPermissionNotifications();
+            // ⚠️ Amélioration : si la permission a déjà été accordée une fois, on ne
+            // redemande plus rien à chaque connexion (ça ne sert à rien) — on se contente
+            // de réenregistrer le token. Si elle n'a jamais été demandée, on la demande ici
+            // (dans le même geste utilisateur que le clic sur "Ida"/"Aidara").
+          if ("Notification" in window && Notification.permission === "granted") {
+              enregistrerTokenPush();
+          } else if ("Notification" in window && Notification.permission === "default") {
+              demanderPermissionNotifications();
+          }
               // ⚠️ DÉSACTIVÉ : ecouterChangementsCouleurs() (sans !important) écrasait
               // silencieusement la couleur correctement appliquée (avec !important) par
               // applyColorToMessage()/le rendu principal, ce qui faisait revenir la bulle
@@ -11261,135 +11263,19 @@ setTimeout(loadDefaultSendAnimation, 200);
       
      
  
-// Sauvegarder les anciennes fonctions
-const ancienneFetch = window.fetch;
-const messagesEnvoyes = new Set();
-let dernierMessageRecu = "";
-let compteurNotifications = 0;
-
-// Intercepter TOUS les appels fetch vers Telegram
-window.fetch = function(url, options) {
-    // Vérifier si c'est un appel vers Telegram
-    if (typeof url === 'string' && url.includes('api.telegram.org/bot')) {
-        
-        // Extraire le texte du message
-        let texteMessage = "";
-        if (url.includes('text=')) {
-            const match = url.match(/text=([^&]+)/);
-            if (match) {
-                texteMessage = decodeURIComponent(match[1]);
-            }
-        }
-        
-        // Créer une clé unique pour ce message (basée sur le texte et le temps)
-        const maintenant = Date.now();
-        const cleUnique = `${texteMessage.substring(0, 50)}_${Math.floor(maintenant / 5000)}`; // Regroupe par période de 5 secondes
-        
-        // BLOQUER les messages qui contiennent du CONTENU (anciens)
-        const contientContenu = texteMessage.includes('teste') || 
-                                texteMessage.includes('Message de') || 
-                                (texteMessage.length > 30 && !texteMessage.includes('Ouvrez l\'application'));
-        
-        // BLOQUER les messages qui sont des DOUBLONS
-        if (messagesEnvoyes.has(cleUnique) || contientContenu) {
-            console.log("🚫 BLOQUÉ (doublon ou contenu):", texteMessage.substring(0, 50));
-            
-            // Retourner une fausse promesse pour ne pas bloquer l'app
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({ ok: true, description: "Bloqué par anti-doublon" })
-            });
-        }
-        
-        // Autoriser le premier message et l'enregistrer
-        messagesEnvoyes.add(cleUnique);
-        console.log("✅ AUTORISÉ (unique):", texteMessage.substring(0, 50));
-        
-        // Nettoyer le cache toutes les 10 secondes
-        setTimeout(() => {
-            messagesEnvoyes.delete(cleUnique);
-        }, 10000);
-    }
-    
-    // Appeler la fonction fetch originale
-    return ancienneFetch.apply(this, arguments);
-};
-
-// Supprimer spécifiquement les listeners/intervalle qui envoient des notifications
-(function nettoyerAnciennesNotifications() {
-    console.log("🧹 Nettoyage des anciennes notifications...");
-    
-    // Désactiver les anciens setInterval
-    const highestId = setInterval(() => {}, 0);
-    for (let i = 0; i < highestId; i++) {
-        clearInterval(i);
-    }
-    
-    // Remettre uniquement les intervals nécessaires (batterie, etc.)
-    if (typeof getBatteryLevel === 'function') {
-        setTimeout(() => getBatteryLevel(), 1000);
-    }
-    
-    console.log("✅ Nettoyage terminé - " + highestId + " intervalles supprimés");
-})();
-
-// Bloquer spécifiquement les fonctions qui envoient les anciens messages
-if (typeof gererNotification === 'function') {
-    window.gererNotification = function() {
-        console.log("🚫 Bloqué: gererNotification");
-        return Promise.resolve();
-    };
-}
-
-if (typeof notifierAidara === 'function') {
-    window.notifierAidara = function() {
-        console.log("🚫 Bloqué: notifierAidara");
-        return Promise.resolve();
-    };
-}
-
-if (typeof notifierIda === 'function') {
-    window.notifierIda = function() {
-        console.log("🚫 Bloqué: notifierIda");
-        return Promise.resolve();
-    };
-}
-
-if (typeof verifierNouveauxMessages === 'function') {
-    // Remplacer la fonction par une version vide
-    window.verifierNouveauxMessages = function() {
-        console.log("🚫 Bloqué: verifierNouveauxMessages");
-        return Promise.resolve();
-    };
-}
-
-// Désactiver l'ancien listener Firestore qui envoyait les notifications
-// (sans casser l'affichage des messages)
-const originalOnSnapshot = firebase.firestore.Query.prototype.onSnapshot;
-firebase.firestore.Query.prototype.onSnapshot = function(...args) {
-    // Créer une version modifiée du callback pour filtrer les notifications
-    if (args[0] && typeof args[0] === 'function') {
-        const originalCallback = args[0];
-        let premierAppel = true;
-        
-        const nouveauCallback = (snapshot) => {
-            // Appeler le callback original pour l'affichage
-            originalCallback(snapshot);
-            
-            // Bloquer les notifications multiples
-            if (premierAppel) {
-                premierAppel = false;
-                setTimeout(() => { premierAppel = true; }, 2000);
-            }
-        };
-        
-        return originalOnSnapshot.call(this, nouveauCallback, args[1]);
-    }
-    
-    return originalOnSnapshot.apply(this, args);
-};
-
-console.log("🔥 ANTI-DOUBLON ACTIF - Seul le premier message Telegram passe !");
+// ⚠️ SUPPRIMÉ (bug grave) : un ancien "correctif anti-doublon" ici :
+//   1) remplaçait window.fetch pour BLOQUER en silence tout appel Telegram dont le
+//      texte dépassait 30 caractères sans contenir exactement "Ouvrez l'application"
+//      — en renvoyant une fausse réponse "ok:true" sans jamais réellement contacter
+//      Telegram. Un simple changement de formulation du message suffisait à faire
+//      disparaître les notifs SANS AUCUNE ERREUR VISIBLE.
+//   2) faisait `for (let i = 0; i < highestId; i++) clearInterval(i)` — ce qui tue
+//      TOUS les setInterval actifs sur la page entière (batterie, présence en ligne,
+//      etc.), pas seulement ceux des notifications.
+//   3) surchargeait firebase.firestore.Query.prototype.onSnapshot pour rien (le flag
+//      qu'il posait n'était jamais lu).
+// L'anti-doublon correct et déjà en place se trouve dans sendTelegramNotification()
+// (Set "notifiedMessages" basé sur l'ID réel du message, pas sur le texte).
       
       // ========== EMPÊCHER LE MENU CONTEXTUEL NATIF SUR MOBILE ==========
 document.addEventListener('contextmenu', function(e) {
@@ -12777,23 +12663,31 @@ async function envoyerNotificationTelegram(titre, message) {
         return;
     }
 
-    // Configuration des tokens Telegram selon le destinataire
-    const BOT_TOKEN = "7963364955:AAFi6jCqP0j1wXp7eQYv6v1G5u5u_xyz"; // Mets ton token ici
+    // ⚠️ CORRECTION : cette fonction utilisait un bot_token bidon ("...xyz") et des
+    // chat_id placeholders ("123456789" / "987654321") qui n'existent pas — donc
+    // TOUTES les notifs "Pense à toi / SOS Câlin / Cadeau / Trésor" échouaient
+    // silencieusement depuis le début (l'erreur était avalée par le catch ci-dessous).
+    // On réutilise les VRAIS identifiants déjà configurés en haut du fichier.
+    let botToken = "";
     let chatIdDestinataire = "";
 
     if (currentUser && currentUser.id === 'ida') {
-        chatIdDestinataire = "123456789"; // ID de AIDARA pour qu'il reçoive le message d'Ida
+        // Ida envoie -> on notifie Aidara, avec le bot d'Aidara
+        botToken = TELEGRAM_BOT_TOKEN_AIDARA;
+        chatIdDestinataire = TELEGRAM_CHAT_ID_AIDARA;
     } else if (currentUser && currentUser.id === 'aidara') {
-        chatIdDestinataire = "987654321"; // ID de IDA pour qu'elle reçoive le message d'Aidara
+        // Aidara envoie -> on notifie Ida, avec le bot d'Ida
+        botToken = TELEGRAM_BOT_TOKEN_IDA;
+        chatIdDestinataire = TELEGRAM_CHAT_ID_IDA;
     }
 
-    if (!chatIdDestinataire) return;
+    if (!chatIdDestinataire || !botToken) return;
 
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
     const text = `💬 *${titre}* :\n${message}`;
 
     try {
-        await fetch(url, {
+        const reponse = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -12802,61 +12696,29 @@ async function envoyerNotificationTelegram(titre, message) {
                 parse_mode: 'Markdown'
             })
         });
+        const resultat = await reponse.json().catch(() => null);
+        if (!reponse.ok || (resultat && resultat.ok === false)) {
+            // Telegram répond souvent 200 même en cas d'erreur de format ; on vérifie
+            // aussi le champ "ok" du corps de réponse pour ne rien avaler en silence.
+            console.error("❌ Telegram a refusé l'envoi :", resultat);
+            if (typeof showTempNotification === 'function') {
+                showTempNotification("⚠️ Échec notif Telegram : " + (resultat?.description || reponse.status));
+            }
+            return;
+        }
         console.log("✅ Notification Telegram envoyée proprement.");
     } catch (error) {
         console.error("❌ Erreur envoi Telegram :", error);
+        if (typeof showTempNotification === 'function') {
+            showTempNotification("⚠️ Erreur réseau Telegram (voir console)");
+        }
     }
 }
 
-/**
- * Remplace ou écoute le snapshot Firebase de manière sécurisée
- */
-function initialiserEcouteurMessages() {
-    db.collection('chats').doc(CHAT_ID).collection('messages')
-        .orderBy('timestamp', 'asc')
-        .onSnapshot((snapshot) => {
-            
-            // Étape 1 : Si c'est le snapshot du démarrage, on traite les données puis on bascule le marqueur
-            if (isInitialLoad) {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added") {
-                        // On affiche juste l'historique à l'écran sans notifier personne
-                        afficherMessageEcran(change.doc.data(), change.doc.id);
-                    }
-                });
-                // L'historique est chargé, on ouvre les vannes uniquement pour le futur
-                isInitialLoad = false;
-                console.log("🚀 Historique chargé. Écouteur Telegram activé pour les prochains messages !");
-                if (typeof verifierRappelsCalendrierAuChargement === 'function') verifierRappelsCalendrierAuChargement();
-                return; 
-            }
-
-            // Étape 2 : Pour tous les messages qui arrivent APRÈS le chargement initial
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const msgData = change.doc.data();
-                    
-                    // On affiche le message
-                    afficherMessageEcran(msgData, change.doc.id);
-
-                    // On envoie la notification unique SEULEMENT si l'expéditeur n'est pas l'utilisateur connecté
-                    if (msgData.sender !== currentUser.id) {
-                        const nomExpediteur = currentUser.id === 'ida' ? 'Ahmed Said Aidara' : 'IDA SEUL';
-                        envoyerNotificationTelegram(`Nouveau message de ${nomExpediteur}`, msgData.text || "📷 Média reçu");
-                    }
-                }
-                
-                // Suppression automatique instantanée si le message est marqué pour destruction
-                if (change.type === "removed") {
-                    const element = document.getElementById(`msg-${change.doc.id}`);
-                    if (element) {
-                        element.style.transform = "scale(0)";
-                        setTimeout(() => element.remove(), 200); // Animation de sortie fluide
-                    }
-                }
-            });
-        });
-}
+// ⚠️ SUPPRIMÉ : "initialiserEcouteurMessages()" — cette fonction n'était jamais
+// appelée nulle part dans le fichier (écouteur mort) et appelait en plus
+// "afficherMessageEcran(...)" qui n'existe pas du tout dans cette app.
+// L'écouteur RÉELLEMENT actif pour les messages est listenToMessages() plus haut.
 
 /**
  * Fonction pour supprimer proprement et instantanément un message de l'écran et de Firebase
