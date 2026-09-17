@@ -7980,6 +7980,23 @@ if (data.senderId === currentUser?.id && !isFirstSnapshot && !estMessageSysteme)
                             deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
                         }).catch(err => console.error("Erreur mise à jour delivered:", err));
                     }
+
+                    // ========== NOTIFICATION DANS L'APP (en plus de Telegram) ==========
+                    // Message reçu de l'autre personne (jamais au 1er chargement, jamais pour
+                    // un message système). Si l'app est au premier plan, un simple toast suffit ;
+                    // sinon (onglet en arrière-plan, autre appli au-dessus...) on déclenche la
+                    // vraie notification navigateur (nécessite d'avoir cliqué "Activer les
+                    // notifications" une fois — voir demanderPermissionNotifications()).
+                    if (data.senderId === targetUser?.id && !isFirstSnapshot && !estMessageSysteme) {
+                        const nomExpediteur = data.senderName || targetUser?.name || 'Message';
+                        if (document.visibilityState === 'visible') {
+                            if (typeof showTempNotification === 'function') {
+                                showTempNotification(`📩 ${nomExpediteur} : nouveau message`);
+                            }
+                        } else {
+                            notifierDansApp(nomExpediteur);
+                        }
+                    }
                 }
                 else if (change.type === 'modified') {
                     // ✅ Synchronisation FIABLE de la couleur/dégradé personnalisé d'un message.
@@ -22606,4 +22623,4 @@ function fermerParametresIA() {
 
 </body>   
   
-</html>  
+</html>
