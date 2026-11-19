@@ -9,6 +9,7 @@
   <meta name="msapplication-tap-highlight" content="no">
     <title>CHAT-IDA</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.min.js"></script>
   <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -487,6 +488,22 @@
         .falling-emoji { position: absolute; pointer-events: none; z-index: 1000; animation: fall linear forwards; }
         @keyframes fall { to { transform: translateY(105vh) rotate(360deg); } }
 
+      .coeur-flottant {
+    position: fixed;
+    left: 0;
+    pointer-events: none;
+    z-index: 10000;
+    animation-name: coeurFlottantMonte;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+}
+@keyframes coeurFlottantMonte {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg) scale(0.5); opacity: 0; }
+    12%  { opacity: 1; transform: translateY(-15vh) translateX(0) scale(1); }
+    100% { transform: translateY(-110vh) translateX(var(--drift, 0px)) rotate(var(--rot, 20deg)) scale(1); opacity: 0; }
+}
+      
         audio { max-width: 180px; height: 32px; margin-top: 5px; }
         .img-msg { max-width: 200px; border-radius: 12px; margin-top: 5px; cursor: pointer; }
       
@@ -1117,6 +1134,65 @@
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 14px;
+}
+      
+      .profile-duo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 14px;
+}
+.profile-duo-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    min-width: 0;
+}
+.profile-duo-side .profile-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.4rem;
+}
+.profile-duo-side .profile-name {
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.profile-duo-side .profile-username {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+.info-row-duo {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.info-row-duo:last-child { border-bottom: none; }
+.info-value-duo {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    word-break: break-word;
+}
+.info-label-duo {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    justify-content: center;
 }
 
 .profile-avatar {
@@ -4271,7 +4347,7 @@ input, textarea {
 .flash-notification span {
     display: none !important;
 }
-      .message-row.received .message-bubble:not(.media-no-bubble) {
+      .message-row.received .message-bubble:not(.media-no-bubble):not(.giant-emoji) {
     background: #e4e6eb !important;
     background-color: #e4e6eb !important;
     color: #050505 !important;
@@ -5277,7 +5353,7 @@ input, textarea {
         <div class="chat-input-bar">
             <div class="input-box-container">
                 <i class="fa-solid fa-ellipsis-vertical" style="cursor:pointer; margin-right:8px; font-size:1.2rem;" onclick="toggleToolsMenu()" id="tools-menu-btn"></i>
-                <textarea class="chat-input" id="chat-in" placeholder="Message...1" oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+                <textarea class="chat-input" id="chat-in" placeholder="Message..." oninput="handleTyping(); autoResizeTextarea()" rows="1" form="aucun-formulaire-chat-in" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
              <div class="input-actions" id="in-actions" style="display: flex; gap: 12px;">
     <i class="fa-solid fa-language" id="translate-btn" style="display: none;"></i>
     <i class="fa-solid fa-lock" id="code-mode-btn" style="display: none;"></i>
@@ -5287,7 +5363,7 @@ input, textarea {
                        <!-- ========== NOUVEAU : TIROIR GIPHY ========== -->
         <div id="giphy-drawer" style="display: none; position: absolute; bottom: 75px; left: 10px; right: 10px; background: var(--bg-main); border-radius: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); padding: 12px; z-index: 4000; max-height: 350px; flex-direction: column; border: 1px solid var(--border-color);">
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <input type="text" id="giphy-search" placeholder="🔍 Rechercher GIF ou sticker..." style="flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 0.9rem;">
+                <input type="text" id="giphy-search" placeholder="🔍 Rechercher GIF, sticker ou emoji..." style="flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 0.9rem;">
                 <button id="btn-toggle-type" style="background: #f0f2f5; border: none; padding: 0 20px; border-radius: 25px; font-weight: bold; font-size: 0.8rem; cursor: pointer; color: #000;">🎨 GIFS</button>
             </div>
             <div id="giphy-results" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; max-height: 260px; padding: 5px;"></div>
@@ -5439,30 +5515,41 @@ input, textarea {
     <div class="settings-content">
         <!-- Section Profil -->
         <div class="settings-section" style="animation-delay:0.02s;">
-            <h4><i class="fa-solid fa-user"></i> Profil</h4>
-            <div class="profile-info" id="profile-info">
-                <div class="profile-avatar" id="settings-avatar">--</div>
-                <div class="profile-details">
-                    <div class="profile-name" id="settings-name">Chargement...</div>
-                    <div class="profile-username" id="settings-username">@...</div>
-                </div>
-            </div>
-            <div class="info-row">
-                <span class="info-label"><i class="fa-regular fa-calendar"></i> Date de naissance</span>
-                <span class="info-value" id="birthdate">06/04/2006</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label"><i class="fa-regular fa-envelope"></i> Email</span>
-                <span class="info-value" id="email">non renseigné</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label"><i class="fa-solid fa-location-dot"></i> Localisation</span>
-                <span class="info-value" id="location">Dakar JDM - Wakhim Nimzat</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label"><i class="fa-regular fa-clock"></i> Date de rencontre</span>
-                <span class="info-value" id="member-since">13/07/2023</span>
-            </div>
+          <div class="settings-section" style="animation-delay:0.02s;">
+    <h4><i class="fa-solid fa-user"></i> Profils</h4>
+    <div class="profile-duo">
+        <div class="profile-duo-side">
+            <div class="profile-avatar" id="settings-avatar-moi">--</div>
+            <div class="profile-name" id="settings-name-moi">Chargement...</div>
+            <div class="profile-username" id="settings-username-moi">@...</div>
+        </div>
+        <div class="profile-duo-side">
+            <div class="profile-avatar" id="settings-avatar-autre">--</div>
+            <div class="profile-name" id="settings-name-autre">Chargement...</div>
+            <div class="profile-username" id="settings-username-autre">@...</div>
+        </div>
+    </div>
+
+    <div class="info-row-duo">
+        <span class="info-value-duo" id="birthdate-moi">—</span>
+        <span class="info-label-duo"><i class="fa-regular fa-calendar"></i> Naissance</span>
+        <span class="info-value-duo" id="birthdate-autre">—</span>
+    </div>
+    <div class="info-row-duo">
+        <span class="info-value-duo" id="email-moi">non renseigné</span>
+        <span class="info-label-duo"><i class="fa-regular fa-envelope"></i> Email</span>
+        <span class="info-value-duo" id="email-autre">non renseigné</span>
+    </div>
+    <div class="info-row-duo">
+        <span class="info-value-duo" id="location-moi">—</span>
+        <span class="info-label-duo"><i class="fa-solid fa-location-dot"></i> Localisation</span>
+        <span class="info-value-duo" id="location-autre">—</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label"><i class="fa-regular fa-clock"></i> Date de rencontre</span>
+        <span class="info-value" id="member-since">13/07/2023</span>
+    </div>
+</div>
         </div>
 
         <!-- Section Statistiques du couple -->
@@ -5993,6 +6080,37 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ========== UPLOAD DE FICHIER VERS SUPRABASE ==========
+// ========== COMPRESSION IMAGE AVANT ENVOI ==========
+// Redimensionne et compresse une image côté client avant upload : évite d'envoyer
+// des photos brutes de 5-15 MB directement depuis l'appareil photo, ce qui est la
+// principale cause de lenteur à l'envoi (l'envoi photo "classique" via l'éditeur
+// le fait déjà ; cette fonction permet d'appliquer le même traitement à la Flamme).
+function compresserImageAvantEnvoi(file, maxDim = 1600, quality = 0.85) {
+    return new Promise((resolve) => {
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+                const ratio = Math.min(maxDim / width, maxDim / height);
+                width = Math.round(width * ratio);
+                height = Math.round(height * ratio);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            URL.revokeObjectURL(objectUrl);
+            canvas.toBlob((blob) => {
+                if (!blob) { resolve(file); return; } // échec : on retombe sur le fichier original
+                resolve(new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' }));
+            }, 'image/jpeg', quality);
+        };
+        img.onerror = () => resolve(file); // échec de lecture : on retombe sur le fichier original
+        img.src = objectUrl;
+    });
+}
+
 async function uploadVersSupabase(file, type) {
     if (!currentUser) {
         showTempNotification("❌ Connecte-toi d'abord");
@@ -6032,18 +6150,6 @@ async function uploadVersSupabase(file, type) {
             .getPublicUrl(filePath);
         
         console.log("📷 URL publique:", urlData.publicUrl);
-        
-        // Bonus : essayer d'ouvrir l'URL pour vérifier
-        try {
-            const test = await fetch(urlData.publicUrl, { method: 'HEAD' });
-            if (test.ok) {
-                console.log("✅ URL accessible !");
-            } else {
-                console.log("⚠️ URL retourne:", test.status);
-            }
-        } catch(e) {
-            console.log("⚠️ Impossible de tester l'URL:", e);
-        }
         
         return urlData.publicUrl;
         
@@ -7173,10 +7279,24 @@ async function sendTelegramNotification(senderId, msgId) {
 
     try {
         const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&disable_notification=false`;
-        await fetch(url);
+        const reponse = await fetch(url);
+        const resultat = await reponse.json().catch(() => null);
+        if (!reponse.ok || (resultat && resultat.ok === false)) {
+            // Telegram renvoie souvent un statut HTTP 200 même en cas d'erreur (mauvais
+            // chat_id, bot bloqué, token révoqué...) : il faut lire le champ "ok" du
+            // corps de réponse pour ne pas croire à tort que ça a marché.
+            console.error("❌ Telegram a refusé l'envoi :", resultat);
+            if (typeof showTempNotification === 'function') {
+                showTempNotification("⚠️ Échec notif Telegram : " + (resultat?.description || reponse.status));
+            }
+            return;
+        }
         console.log(`✅ Notification Telegram envoyée à ${isFromIda ? 'Aidara' : 'Ida'}`);
     } catch (e) {
         console.error("Erreur Telegram:", e);
+        if (typeof showTempNotification === 'function') {
+            showTempNotification("⚠️ Erreur réseau Telegram (voir console)");
+        }
     }
 }
 // ========== CONFIGURATION TELEGRAM (UN SEUL BOT POUR CHAQUE PERSONNE) ==========
@@ -7199,30 +7319,10 @@ async function notifierDansApp(expediteurNom) {
     }
 }
 
-// ========== DEMANDER PERMISSION PUSH ==========
-async function demanderPermissionNotifications() {
-    if (!("Notification" in window)) {
-        alert("Votre navigateur ne supporte pas les notifications");
-        return;
-    }
-    
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-        console.log("✅ Notifications push autorisées");
-        new Notification("✅ Notifications activées", {
-            body: "Vous recevrez les nouveaux messages",
-            icon: "https://i.postimg.cc/J400K7Sd/new-Notification.png"
-        });
-    } else {
-        console.log("❌ Notifications refusées");
-    }
-}
- 
-
-// Notifier Aidara (toi) quand Ida envoie un message
- 
-
-// Fonction principale
+// ⚠️ SUPPRIMÉ : une seconde fonction demanderPermissionNotifications() était
+// redéfinie plus bas dans le fichier — en JavaScript, la dernière définition
+// écrase silencieusement celle-ci, qui n'était donc jamais exécutée. On garde
+// une seule version (voir plus bas, celle qui appelle enregistrerTokenPush()).
  
 
  
@@ -7242,6 +7342,11 @@ async function demanderPermissionNotifications() {
         // Mémorise les messages déjà affichés au moins une fois, pour que l'animation
         // d'envoi ne rejoue jamais sur les anciens messages lors d'un nouveau rendu.
         const idsMessagesDejaAnimes = new Set();
+        // Cache local (id -> data) des messages déjà reçus via l'écoute en direct.
+        // Sert à ouvrir une vue unique / flamme instantanément, sans re-télécharger
+        // le document depuis Firestore (ce ré-appel réseau était la cause du délai
+        // ressenti avant même que l'image/vidéo ne commence à charger).
+        const messagesEnMemoire = {};
         let typingTimeout = null;
         let selectedMessageId = null;
         let replyToId = null;
@@ -7292,22 +7397,29 @@ let lastReadUpdate = null;        // ← AJOUTE ICI
             return str;
         }
         
-        function isOnlyEmojis(str) {
-            if(!str) return false;
-            const emojiRegex = /^[\u{1F300}-\u{1F9FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]+$/u;
-            return emojiRegex.test(str.replace(/\s/g, '')) && str.replace(/\s/g, '').length <= 6;
-        }
-
+    function isOnlyEmojis(str) {
+    if (!str) return false;
+    const texte = str.trim();
+    if (!texte) return false;
+    const emojiRegex = /^[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1FA70}-\u{1FAFF}\u{200D}\u{FE0F}]+$/u;
+    if (!emojiRegex.test(texte)) { console.log('isOnlyEmojis: regex refusée pour', texte); return false; }
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        const segments = Array.from(new Intl.Segmenter('fr', { granularity: 'grapheme' }).segment(texte));
+        console.log('isOnlyEmojis: nb graphèmes =', segments.length, 'pour', texte);
+        return segments.length === 1;
+    }
+    return Array.from(texte).length <= 2;
+}       
+                                                                                                                          
         function formatText(text) {
             if(!text) return "";
             let formatted = text;
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');         
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');                          
             formatted = formatted.replace(/~~(.*?)~~/g, '<del>$1</del>');
-            // ✅ Liens cliquables : détecte les URL (http/https ou www.) et les transforme
-            // en liens ouvrant un nouvel onglet — sur mobile, cela redirige automatiquement
-            // vers l'application concernée (Maps, YouTube, Instagram...) si elle est installée.
-            formatted = formatted.replace(
+            // ✅ Liens cliquables : détecte les URL (http/https ou www.) et les transforme    
+            // en liens ouvrant un nouvel onglet — sur mobile, cela redirige automatiquement    
+             formatted = formatted.replace(
                 /((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)\]])/gi,
                 (match) => {
                     const href = /^https?:\/\//i.test(match) ? match : 'https://' + match;
@@ -7316,7 +7428,7 @@ let lastReadUpdate = null;        // ← AJOUTE ICI
             );
             return formatted;
         }
-
+        
         function showTempNotification(message) {
             const notif = document.createElement('div');
             notif.textContent = message;
@@ -7550,6 +7662,8 @@ async function enregistrerTokenPush() {
             getBatteryLevel();
             listenToOtherUserBattery();
             listenForFlashSignals();
+       listenForFlashSignals();
+listenForCoeursSignals();
             ecouterMessagesAutodestruction();
             verifierLettresProgrammees();
             initCallListener(); // 📞 démarre l'écoute des appels Agora
@@ -7559,7 +7673,15 @@ async function enregistrerTokenPush() {
             // ✅ Correction : "activerLesNotifications" n'était définie nulle part (bug qui
             // interrompait ici toute la suite de selectUser). demanderPermissionNotifications()
             // juste en dessous fait déjà ce travail.
-          demanderPermissionNotifications();
+            // ⚠️ Amélioration : si la permission a déjà été accordée une fois, on ne
+            // redemande plus rien à chaque connexion (ça ne sert à rien) — on se contente
+            // de réenregistrer le token. Si elle n'a jamais été demandée, on la demande ici
+            // (dans le même geste utilisateur que le clic sur "Ida"/"Aidara").
+          if ("Notification" in window && Notification.permission === "granted") {
+              enregistrerTokenPush();
+          } else if ("Notification" in window && Notification.permission === "default") {
+              demanderPermissionNotifications();
+          }
               // ⚠️ DÉSACTIVÉ : ecouterChangementsCouleurs() (sans !important) écrasait
               // silencieusement la couleur correctement appliquée (avec !important) par
               // applyColorToMessage()/le rendu principal, ce qui faisait revenir la bulle
@@ -7843,15 +7965,15 @@ function listenToMessages() {
                     // lui-même (voir startCall). Les inclure ici consommait la clé anti-doublon
                     // "expéditeur + minute" de sendTelegramNotification et empêchait silencieusement
                     // la vraie notif du prochain message texte envoyé dans la même minute.
-                    const estMessageSysteme = data.type === 'call_log' || data.type === 'screenshare_log';
-                    if (data.senderId !== currentUser?.id && !isFirstSnapshot && !estMessageSysteme) {
-                        const now = new Date();
-                        const msgTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(0);
-                        const diffSeconds = (now - msgTime) / 1000;
-                        if (diffSeconds < 5) {
-                            sendTelegramNotification(data.senderId, msgId);
-                        }
-                    }
+                   const estMessageSysteme = data.type === 'call_log' || data.type === 'screenshare_log';
+if (data.senderId === currentUser?.id && !isFirstSnapshot && !estMessageSysteme) {
+    const now = new Date();
+    const msgTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(0);
+    const diffSeconds = (now - msgTime) / 1000;
+    if (diffSeconds < 5) {
+        sendTelegramNotification(data.senderId, msgId);
+    }
+}
                     
                     // Marquer "delivered" si le message vient de l'autre personne et est encore "sent"
                     if (data.senderId === targetUser?.id && data.status === 'sent') {
@@ -7859,6 +7981,23 @@ function listenToMessages() {
                             status: 'delivered',
                             deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
                         }).catch(err => console.error("Erreur mise à jour delivered:", err));
+                    }
+
+                    // ========== NOTIFICATION DANS L'APP (en plus de Telegram) ==========
+                    // Message reçu de l'autre personne (jamais au 1er chargement, jamais pour
+                    // un message système). Si l'app est au premier plan, un simple toast suffit ;
+                    // sinon (onglet en arrière-plan, autre appli au-dessus...) on déclenche la
+                    // vraie notification navigateur (nécessite d'avoir cliqué "Activer les
+                    // notifications" une fois — voir demanderPermissionNotifications()).
+                    if (data.senderId === targetUser?.id && !isFirstSnapshot && !estMessageSysteme) {
+                        const nomExpediteur = data.senderName || targetUser?.name || 'Message';
+                        if (document.visibilityState === 'visible') {
+                            if (typeof showTempNotification === 'function') {
+                                showTempNotification(`📩 ${nomExpediteur} : nouveau message`);
+                            }
+                        } else {
+                            notifierDansApp(nomExpediteur);
+                        }
                     }
                 }
                 else if (change.type === 'modified') {
@@ -8143,6 +8282,28 @@ if (!isFirstSnapshot) {
         showTempNotification("🖼️ Code galerie envoyé !");
         return;
     }
+     
+     // 💗 CODE "520" : pluie de cœurs flottants pendant ~3s, chez toi ET chez l'autre,
+// chacun une seule fois. Jamais affiché comme message dans le chat.
+if (text === '520') {
+    input.value = '';
+    autoResizeTextarea();
+    cancelReply();
+    toggleSendBtn(false);
+    stopTypingNotify();
+    clearLiveTyping();
+
+    lancerPluieCoeurs();
+
+    if (targetUser) {
+        db.collection('coeurs_signals').add({
+            targetUserId: targetUser.id,
+            sourceUserId: currentUser.id,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => console.error('Erreur envoi signal coeurs:', err));
+    }
+    return;
+}
      
     let finalText = text;
     let isCoded = codeModeActive;
@@ -9819,6 +9980,60 @@ async function traduireEtRemplacerInput(code, nom) {
             });
         }
         
+      // ========== PLUIE DE CŒURS FLOTTANTS (code "520") ==========
+function lancerPluieCoeurs() {
+    const nbCoeurs = 34;
+    const emojisCoeurs = ['❤️', '💕', '💖', '💗', '💓', '💘'];
+    for (let i = 0; i < nbCoeurs; i++) {
+        setTimeout(() => {
+            const coeur = document.createElement('div');
+            coeur.className = 'coeur-flottant';
+            coeur.textContent = emojisCoeurs[Math.floor(Math.random() * emojisCoeurs.length)];
+            const startLeft = Math.random() * 100;
+            const drift = (Math.random() * 160 - 80) + 'px';
+            const rot = (Math.random() * 60 - 30) + 'deg';
+            const size = (1.4 + Math.random() * 1.8).toFixed(2) + 'rem';
+            const duree = (2.4 + Math.random() * 0.6).toFixed(2) + 's';
+            coeur.style.left = startLeft + 'vw';
+            coeur.style.bottom = '-40px';
+            coeur.style.fontSize = size;
+            coeur.style.setProperty('--drift', drift);
+            coeur.style.setProperty('--rot', rot);
+            coeur.style.animationDuration = duree;
+            document.body.appendChild(coeur);
+            setTimeout(() => coeur.remove(), 3200);
+        }, i * 45);  
+    }
+}
+
+ function listenForCoeursSignals() {
+    if (!currentUser) return;
+    let isFirstSnapshot = true;
+
+    db.collection('coeurs_signals')
+      .where('targetUserId', '==', currentUser.id)
+      .onSnapshot((snapshot) => {
+        // Premier snapshot = documents déjà existants → on les nettoie sans jouer l'animation
+        if (isFirstSnapshot) {
+            isFirstSnapshot = false;
+            snapshot.docs.forEach(doc => {
+                doc.ref.delete().catch(() => {});
+            });
+            return;
+        }
+
+        // Seulement les vrais nouveaux signaux (en temps réel ou arrivés pendant qu'on était hors ligne)
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+                lancerPluieCoeurs();
+                change.doc.ref.delete().catch(() => {});
+            }
+        });
+    }, (error) => {
+        console.error('Erreur écoute coeurs_signals:', error);
+    });
+}
+      
         // ========== BATTERIE ==========
         async function getBatteryLevel() {
             if ('getBattery' in navigator) {
@@ -10602,29 +10817,53 @@ function closeSettingsPage() {
     settingsPage.style.display = 'none';
 }
 
+let unsubProfilMoi = null;
+let unsubProfilAutre = null;
+
+function avatarGradientPour(id) {
+    return id === 'ida' ? 'linear-gradient(45deg, #0076ff, #00ffaa)' : 'linear-gradient(45deg, #ff007f, #ff7300)';
+}
+
 function updateSettingsInfo() {
-    if (targetUser) {
-        document.getElementById('settings-name').innerText = targetUser.name;
-        document.getElementById('settings-username').innerText = '@' + targetUser.full.toLowerCase();
-        document.getElementById('settings-avatar').innerText = targetUser.name.substring(0, 2);
+    if (currentUser) {
+        const avMoi = document.getElementById('settings-avatar-moi');
+        avMoi.innerText = currentUser.name.substring(0, 2);
+        avMoi.style.background = avatarGradientPour(currentUser.id);
+        document.getElementById('settings-name-moi').innerText = currentUser.name;
+        document.getElementById('settings-username-moi').innerText = '@' + currentUser.full.toLowerCase();
     }
-    
-    // Charger les infos depuis Firestore
     if (targetUser) {
-        db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
-            if (doc.exists && doc.data().profile) {
-                const profile = doc.data().profile;
-                if (profile.birthdate) document.getElementById('birthdate').innerText = profile.birthdate;
-                if (profile.email) document.getElementById('email').innerText = profile.email;
-                if (profile.location) document.getElementById('location').innerText = profile.location;
-                if (profile.memberSince) document.getElementById('member-since').innerText = profile.memberSince;
-            }
+        const avAutre = document.getElementById('settings-avatar-autre');
+        avAutre.innerText = targetUser.name.substring(0, 2);
+        avAutre.style.background = avatarGradientPour(targetUser.id);
+        document.getElementById('settings-name-autre').innerText = targetUser.name;
+        document.getElementById('settings-username-autre').innerText = '@' + targetUser.full.toLowerCase();
+    }
+
+    // Charger les infos de CHACUN depuis Firestore (users/{id}.profile)
+    if (unsubProfilMoi) { unsubProfilMoi(); unsubProfilMoi = null; }
+    if (unsubProfilAutre) { unsubProfilAutre(); unsubProfilAutre = null; }
+
+    if (currentUser) {
+        unsubProfilMoi = db.collection('users').doc(currentUser.id).onSnapshot((doc) => {
+            const profile = (doc.exists && doc.data().profile) ? doc.data().profile : {};
+            document.getElementById('birthdate-moi').innerText = profile.birthdate || '—';
+            document.getElementById('email-moi').innerText = profile.email || 'non renseigné';
+            document.getElementById('location-moi').innerText = profile.location || '—';
+        });
+    }
+    if (targetUser) {
+        unsubProfilAutre = db.collection('users').doc(targetUser.id).onSnapshot((doc) => {
+            const profile = (doc.exists && doc.data().profile) ? doc.data().profile : {};
+            document.getElementById('birthdate-autre').innerText = profile.birthdate || '—';
+            document.getElementById('email-autre').innerText = profile.email || 'non renseigné';
+            document.getElementById('location-autre').innerText = profile.location || '—';
+            if (profile.memberSince) document.getElementById('member-since').innerText = profile.memberSince;
         });
     }
 }
 
-// Initialiser les options de bulles dans la nouvelle page
-function initSettingsBubbles() {
+ function initSettingsBubbles() {
     const savedColor = localStorage.getItem('bubbleColor') || 'linear-gradient(45deg, #a800ff, #0076ff)';
     document.querySelectorAll('.color-option-bubble').forEach(opt => {
         if (opt.style.background === savedColor || opt.getAttribute('data-color') === savedColor) {
@@ -10647,8 +10886,7 @@ function initSettingsBubbles() {
     loadTailleTexte();
 }
 
-// ========== FOND D'ÉCRAN DU CHAT (avec persistance + upload d'image perso) ==========
-function appliquerFondEcran(bg) {
+ function appliquerFondEcran(bg) {
     const app = document.querySelector('.app-container');
     if (!app) return;
     
@@ -10827,17 +11065,28 @@ async function updateUserProfile(birthdate, email, location) {
     }, { merge: true });
 }
       // ========== CARNET SECRET ==========
-
+ async function initialiserProfilsParDefaut() {
+    const profilsParDefaut = {
+        ida: { birthdate: '06/04/2006', location: 'WAKHIM NIMZAT' },
+        aidara: { birthdate: '10/01/2005', location: 'SACRE COEUR 3' }
+    };
+    for (const [id, profil] of Object.entries(profilsParDefaut)) {
+        try {
+            const doc = await db.collection('users').doc(id).get();
+            const dejaProfil = doc.exists && doc.data().profile && doc.data().profile.birthdate;
+            if (!dejaProfil) {
+                await db.collection('users').doc(id).set({ profile: profil }, { merge: true });
+            }
+        } catch (e) {
+            console.error('Erreur initialisation profil par défaut:', id, e);
+        }
+    }
+}
 
 // ========== CARNET SECRET AVEC CODE PIN ==========
 let secretMessages = [];
 let currentSecretUser = null;
-
-// (Ancienne fonctionnalité "Carnet Secret" accessible via un bouton dans les paramètres,
-// supprimée : elle faisait doublon avec le code secret déjà géré directement dans le chat.)
-
-// Sauvegarder le style de bulle par défaut
-// Sauvegarder le style de bulle par défaut et appliquer immédiatement
+ 
 function saveDefaultBubbleStyle() {
     const select = document.getElementById('default-bubble-style');
     const selectedStyle = select.value;
@@ -10930,9 +11179,7 @@ function loadDefaultBubbleStyle() {
 // Appeler cette fonction au chargement   
 setTimeout(loadDefaultBubbleStyle, 200);
 
-// ============================================================
-// ✅ APPARENCE (Paramètres → Apparence) : Clair / Sombre / Auto
-// ============================================================
+ 
 function appliquerApparence(mode) {
     let themeReel = mode;
     if (mode === 'auto') {
@@ -11002,12 +11249,7 @@ function loadTailleTexte() {
 setTimeout(loadTailleTexte, 50);
 
 
-// ============================================================
-// ✅ ANIMATION D'ENVOI PAR DÉFAUT (Paramètres → Animation d'envoi)
-// Fonctionne exactement comme le style de bulle par défaut :
-// préférence 100% locale (localStorage), appliquée uniquement à
-// SES PROPRES messages envoyés (isSent) au moment du rendu.
-// ============================================================
+ 
 const SEND_ANIM_CLASSES = ['anim-fade-in-up', 'anim-scale-pop', 'anim-slide-right', 'anim-elastic-bounce', 'anim-blur-focus'];
 
 // Convertit la valeur du <select> (ex: "scale-pop") en nom de classe CSS (ex: "anim-scale-pop")
@@ -11032,143 +11274,20 @@ setTimeout(loadDefaultSendAnimation, 200);
       
       
      
-
-// Démarrer l'écoute quand l'utilisateur se connecte
  
-// Dans ta fonction selectUser(), ajoute cette ligne à la fin :
-// ecouterNotificationsNTFY();
-      // ========== BLOQUEUR DE NOTIFICATIONS DOUBLONS ==========
-// Ce code intercepte TOUTES les tentatives d'envoi Telegram et bloque les doublons
-
-// Sauvegarder les anciennes fonctions
-const ancienneFetch = window.fetch;
-const messagesEnvoyes = new Set();
-let dernierMessageRecu = "";
-let compteurNotifications = 0;
-
-// Intercepter TOUS les appels fetch vers Telegram
-window.fetch = function(url, options) {
-    // Vérifier si c'est un appel vers Telegram
-    if (typeof url === 'string' && url.includes('api.telegram.org/bot')) {
-        
-        // Extraire le texte du message
-        let texteMessage = "";
-        if (url.includes('text=')) {
-            const match = url.match(/text=([^&]+)/);
-            if (match) {
-                texteMessage = decodeURIComponent(match[1]);
-            }
-        }
-        
-        // Créer une clé unique pour ce message (basée sur le texte et le temps)
-        const maintenant = Date.now();
-        const cleUnique = `${texteMessage.substring(0, 50)}_${Math.floor(maintenant / 5000)}`; // Regroupe par période de 5 secondes
-        
-        // BLOQUER les messages qui contiennent du CONTENU (anciens)
-        const contientContenu = texteMessage.includes('teste') || 
-                                texteMessage.includes('Message de') || 
-                                (texteMessage.length > 30 && !texteMessage.includes('Ouvrez l\'application'));
-        
-        // BLOQUER les messages qui sont des DOUBLONS
-        if (messagesEnvoyes.has(cleUnique) || contientContenu) {
-            console.log("🚫 BLOQUÉ (doublon ou contenu):", texteMessage.substring(0, 50));
-            
-            // Retourner une fausse promesse pour ne pas bloquer l'app
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({ ok: true, description: "Bloqué par anti-doublon" })
-            });
-        }
-        
-        // Autoriser le premier message et l'enregistrer
-        messagesEnvoyes.add(cleUnique);
-        console.log("✅ AUTORISÉ (unique):", texteMessage.substring(0, 50));
-        
-        // Nettoyer le cache toutes les 10 secondes
-        setTimeout(() => {
-            messagesEnvoyes.delete(cleUnique);
-        }, 10000);
-    }
-    
-    // Appeler la fonction fetch originale
-    return ancienneFetch.apply(this, arguments);
-};
-
-// Supprimer spécifiquement les listeners/intervalle qui envoient des notifications
-(function nettoyerAnciennesNotifications() {
-    console.log("🧹 Nettoyage des anciennes notifications...");
-    
-    // Désactiver les anciens setInterval
-    const highestId = setInterval(() => {}, 0);
-    for (let i = 0; i < highestId; i++) {
-        clearInterval(i);
-    }
-    
-    // Remettre uniquement les intervals nécessaires (batterie, etc.)
-    if (typeof getBatteryLevel === 'function') {
-        setTimeout(() => getBatteryLevel(), 1000);
-    }
-    
-    console.log("✅ Nettoyage terminé - " + highestId + " intervalles supprimés");
-})();
-
-// Bloquer spécifiquement les fonctions qui envoient les anciens messages
-if (typeof gererNotification === 'function') {
-    window.gererNotification = function() {
-        console.log("🚫 Bloqué: gererNotification");
-        return Promise.resolve();
-    };
-}
-
-if (typeof notifierAidara === 'function') {
-    window.notifierAidara = function() {
-        console.log("🚫 Bloqué: notifierAidara");
-        return Promise.resolve();
-    };
-}
-
-if (typeof notifierIda === 'function') {
-    window.notifierIda = function() {
-        console.log("🚫 Bloqué: notifierIda");
-        return Promise.resolve();
-    };
-}
-
-if (typeof verifierNouveauxMessages === 'function') {
-    // Remplacer la fonction par une version vide
-    window.verifierNouveauxMessages = function() {
-        console.log("🚫 Bloqué: verifierNouveauxMessages");
-        return Promise.resolve();
-    };
-}
-
-// Désactiver l'ancien listener Firestore qui envoyait les notifications
-// (sans casser l'affichage des messages)
-const originalOnSnapshot = firebase.firestore.Query.prototype.onSnapshot;
-firebase.firestore.Query.prototype.onSnapshot = function(...args) {
-    // Créer une version modifiée du callback pour filtrer les notifications
-    if (args[0] && typeof args[0] === 'function') {
-        const originalCallback = args[0];
-        let premierAppel = true;
-        
-        const nouveauCallback = (snapshot) => {
-            // Appeler le callback original pour l'affichage
-            originalCallback(snapshot);
-            
-            // Bloquer les notifications multiples
-            if (premierAppel) {
-                premierAppel = false;
-                setTimeout(() => { premierAppel = true; }, 2000);
-            }
-        };
-        
-        return originalOnSnapshot.call(this, nouveauCallback, args[1]);
-    }
-    
-    return originalOnSnapshot.apply(this, args);
-};
-
-console.log("🔥 ANTI-DOUBLON ACTIF - Seul le premier message Telegram passe !");
+// ⚠️ SUPPRIMÉ (bug grave) : un ancien "correctif anti-doublon" ici :
+//   1) remplaçait window.fetch pour BLOQUER en silence tout appel Telegram dont le
+//      texte dépassait 30 caractères sans contenir exactement "Ouvrez l'application"
+//      — en renvoyant une fausse réponse "ok:true" sans jamais réellement contacter
+//      Telegram. Un simple changement de formulation du message suffisait à faire
+//      disparaître les notifs SANS AUCUNE ERREUR VISIBLE.
+//   2) faisait `for (let i = 0; i < highestId; i++) clearInterval(i)` — ce qui tue
+//      TOUS les setInterval actifs sur la page entière (batterie, présence en ligne,
+//      etc.), pas seulement ceux des notifications.
+//   3) surchargeait firebase.firestore.Query.prototype.onSnapshot pour rien (le flag
+//      qu'il posait n'était jamais lu).
+// L'anti-doublon correct et déjà en place se trouve dans sendTelegramNotification()
+// (Set "notifiedMessages" basé sur l'ID réel du message, pas sur le texte).
       
       // ========== EMPÊCHER LE MENU CONTEXTUEL NATIF SUR MOBILE ==========
 document.addEventListener('contextmenu', function(e) {
@@ -11226,9 +11345,7 @@ function autoResizeTextarea() {
     sauvegarderBrouillonMessage(textarea.value);
 }
 
-// ========== BROUILLON DE MESSAGE (survit à un rafraîchissement/fermeture) ==========
-// Tant que le message n'est pas envoyé (ou effacé manuellement), il reste dans
-// la zone de saisie même si on quitte le site ou qu'on rafraîchit la page.
+ 
 function cleDuBrouillon() {
     return `chat_draft_${CHAT_ID}_${currentUser ? currentUser.id : 'anon'}`;
 }
@@ -11251,12 +11368,7 @@ function restaurerBrouillonMessage() {
     }
 }
 
-// ========== CORRIGE L'ÉCART ENTRE LE CLAVIER ET LA ZONE DE SAISIE ==========
-// Le viewport meta "interactive-widget=resizes-content" (ajouté plus haut) gère
-// maintenant ça nativement sur les navigateurs récents. Ce script ne sert que de
-// filet de sécurité pour les anciennes versions, et seulement PENDANT que le
-// clavier est réellement ouvert (jamais en dehors, pour ne pas interférer avec
-// le padding de la barre d'état tout en haut).
+ 
 (function corrigerHauteurClavier() {
     if (!window.visualViewport) return;
     const appContainer = document.querySelector('.app-container');
@@ -11395,10 +11507,7 @@ function annulerAppuiLong() {
     elementAppuye = null;
 }
 
-      // ========== SWIPE POUR RÉPONDRE (droite) / MODIFIER (gauche) ==========
-      // Réutilise les mêmes événements tactiles que l'appui long : un swipe
-      // horizontal annule l'appui long en cours et déclenche l'action associée,
-      // exactement comme sur WhatsApp.
+                                                                                             
 let swipeDepartX = null;
 let swipeDepartY = null;
 let swipeDeclenche = false;
@@ -11653,9 +11762,18 @@ function ouvrirFlamme() {
                 showTempNotification(type === 'video' ? "❌ Vidéo trop grande (max 50 MB)" : "❌ Photo trop grande (max 15 MB)");
             } else {
                 const couleur = FLAMME_COULEURS[Math.floor(Math.random() * FLAMME_COULEURS.length)];
-                // ⚠️ On passe l'objet File réel (pas une dataURL) : uploadVersSupabase()
-                // lit file.name/file.size/file.type, une chaîne base64 s'y casserait.
-                sendMediaMessage(type, fichier, null, true, couleur);
+                showTempNotification(type === 'video' ? "📤 Envoi de la vidéo flamme..." : "📤 Envoi de la photo flamme...");
+                (async () => {
+                    // ⚠️ Les photos brutes de l'appareil peuvent peser plusieurs Mo : on les
+                    // redimensionne/compresse avant envoi (comme le fait déjà l'envoi photo
+                    // classique via l'éditeur), sinon l'upload est inutilement long.
+                    // Les vidéos ne sont pas compressées ici (traitement trop lourd côté
+                    // navigateur) : leur temps d'envoi reste proportionnel à leur poids réel.
+                    const fichierAEnvoyer = type === 'image'
+                        ? await compresserImageAvantEnvoi(fichier)
+                        : fichier;
+                    sendMediaMessage(type, fichierAEnvoyer, null, true, couleur);
+                })();
             }
         }
         input.remove();
@@ -12557,23 +12675,31 @@ async function envoyerNotificationTelegram(titre, message) {
         return;
     }
 
-    // Configuration des tokens Telegram selon le destinataire
-    const BOT_TOKEN = "7963364955:AAFi6jCqP0j1wXp7eQYv6v1G5u5u_xyz"; // Mets ton token ici
+    // ⚠️ CORRECTION : cette fonction utilisait un bot_token bidon ("...xyz") et des
+    // chat_id placeholders ("123456789" / "987654321") qui n'existent pas — donc
+    // TOUTES les notifs "Pense à toi / SOS Câlin / Cadeau / Trésor" échouaient
+    // silencieusement depuis le début (l'erreur était avalée par le catch ci-dessous).
+    // On réutilise les VRAIS identifiants déjà configurés en haut du fichier.
+    let botToken = "";
     let chatIdDestinataire = "";
 
     if (currentUser && currentUser.id === 'ida') {
-        chatIdDestinataire = "123456789"; // ID de AIDARA pour qu'il reçoive le message d'Ida
+        // Ida envoie -> on notifie Aidara, avec le bot d'Aidara
+        botToken = TELEGRAM_BOT_TOKEN_AIDARA;
+        chatIdDestinataire = TELEGRAM_CHAT_ID_AIDARA;
     } else if (currentUser && currentUser.id === 'aidara') {
-        chatIdDestinataire = "987654321"; // ID de IDA pour qu'elle reçoive le message d'Aidara
+        // Aidara envoie -> on notifie Ida, avec le bot d'Ida
+        botToken = TELEGRAM_BOT_TOKEN_IDA;
+        chatIdDestinataire = TELEGRAM_CHAT_ID_IDA;
     }
 
-    if (!chatIdDestinataire) return;
+    if (!chatIdDestinataire || !botToken) return;
 
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
     const text = `💬 *${titre}* :\n${message}`;
 
     try {
-        await fetch(url, {
+        const reponse = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -12582,61 +12708,29 @@ async function envoyerNotificationTelegram(titre, message) {
                 parse_mode: 'Markdown'
             })
         });
+        const resultat = await reponse.json().catch(() => null);
+        if (!reponse.ok || (resultat && resultat.ok === false)) {
+            // Telegram répond souvent 200 même en cas d'erreur de format ; on vérifie
+            // aussi le champ "ok" du corps de réponse pour ne rien avaler en silence.
+            console.error("❌ Telegram a refusé l'envoi :", resultat);
+            if (typeof showTempNotification === 'function') {
+                showTempNotification("⚠️ Échec notif Telegram : " + (resultat?.description || reponse.status));
+            }
+            return;
+        }
         console.log("✅ Notification Telegram envoyée proprement.");
     } catch (error) {
         console.error("❌ Erreur envoi Telegram :", error);
+        if (typeof showTempNotification === 'function') {
+            showTempNotification("⚠️ Erreur réseau Telegram (voir console)");
+        }
     }
 }
 
-/**
- * Remplace ou écoute le snapshot Firebase de manière sécurisée
- */
-function initialiserEcouteurMessages() {
-    db.collection('chats').doc(CHAT_ID).collection('messages')
-        .orderBy('timestamp', 'asc')
-        .onSnapshot((snapshot) => {
-            
-            // Étape 1 : Si c'est le snapshot du démarrage, on traite les données puis on bascule le marqueur
-            if (isInitialLoad) {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added") {
-                        // On affiche juste l'historique à l'écran sans notifier personne
-                        afficherMessageEcran(change.doc.data(), change.doc.id);
-                    }
-                });
-                // L'historique est chargé, on ouvre les vannes uniquement pour le futur
-                isInitialLoad = false;
-                console.log("🚀 Historique chargé. Écouteur Telegram activé pour les prochains messages !");
-                if (typeof verifierRappelsCalendrierAuChargement === 'function') verifierRappelsCalendrierAuChargement();
-                return; 
-            }
-
-            // Étape 2 : Pour tous les messages qui arrivent APRÈS le chargement initial
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const msgData = change.doc.data();
-                    
-                    // On affiche le message
-                    afficherMessageEcran(msgData, change.doc.id);
-
-                    // On envoie la notification unique SEULEMENT si l'expéditeur n'est pas l'utilisateur connecté
-                    if (msgData.sender !== currentUser.id) {
-                        const nomExpediteur = currentUser.id === 'ida' ? 'Ahmed Said Aidara' : 'IDA SEUL';
-                        envoyerNotificationTelegram(`Nouveau message de ${nomExpediteur}`, msgData.text || "📷 Média reçu");
-                    }
-                }
-                
-                // Suppression automatique instantanée si le message est marqué pour destruction
-                if (change.type === "removed") {
-                    const element = document.getElementById(`msg-${change.doc.id}`);
-                    if (element) {
-                        element.style.transform = "scale(0)";
-                        setTimeout(() => element.remove(), 200); // Animation de sortie fluide
-                    }
-                }
-            });
-        });
-}
+// ⚠️ SUPPRIMÉ : "initialiserEcouteurMessages()" — cette fonction n'était jamais
+// appelée nulle part dans le fichier (écouteur mort) et appelait en plus
+// "afficherMessageEcran(...)" qui n'existe pas du tout dans cette app.
+// L'écouteur RÉELLEMENT actif pour les messages est listenToMessages() plus haut.
 
 /**
  * Fonction pour supprimer proprement et instantanément un message de l'écran et de Firebase
@@ -13113,7 +13207,16 @@ styleVocauxPurifie.innerHTML = `
 document.head.appendChild(styleVocauxPurifie);
 
 // Contextes audio pour l'analyse des fréquences réelles
-const audioCtxContainer = new (window.AudioContext || window.webkitAudioContext)();
+// (créé dans un try/catch : si l'API Web Audio n'est pas disponible dans le
+// navigateur/webview de l'utilisateur, ça ne doit pas faire planter tout le
+// script — ce qui empêchait par exemple le bouton GIF, initialisé plus loin
+// dans ce même script, de recevoir son écouteur de clic)
+let audioCtxContainer = null;
+try {
+    audioCtxContainer = new (window.AudioContext || window.webkitAudioContext)();
+} catch (e) {
+    console.warn("AudioContext indisponible :", e);
+}
 
 // 2. Moteur d'injection et de rendu des fréquences réelles
 function initialiserLecteurFrequenceVocal(audioEl, conteneur) {
@@ -13148,7 +13251,7 @@ function initialiserLecteurFrequenceVocal(audioEl, conteneur) {
         e.stopPropagation();
         
         // Activer le contexte audio si suspendu (sécurité navigateur)
-        if (audioCtxContainer.state === 'suspended') {
+        if (audioCtxContainer && audioCtxContainer.state === 'suspended') {
             audioCtxContainer.resume();
         }
         
@@ -14001,6 +14104,27 @@ if (typeof db !== 'undefined' && typeof CHAT_ID !== 'undefined') {
 
 function initialiserTiroirGiphy() {
     const drawer = document.getElementById('giphy-drawer');
+
+    // ⚠️ CORRECTIF : le tiroir était un enfant de .chat-input-bar, qui a un
+    // "overflow: hidden !important" — comme le tiroir remonte au-dessus de la
+    // barre via "bottom: 75px" en position absolute, il se faisait couper/
+    // masquer par cet overflow du parent (il s'ouvrait bien en display:flex,
+    // mais restait invisible). On le déplace donc directement dans <body> en
+    // position fixed, et on recalcule sa position à chaque ouverture à partir
+    // de l'emplacement réel de la barre de saisie (fonctionne aussi bien en
+    // plein écran mobile que sur la carte centrée desktop).
+    if (drawer && drawer.parentElement !== document.body) {
+        document.body.appendChild(drawer);
+        drawer.style.position = 'fixed';
+    }
+    function positionnerTiroirGiphy() {
+        const barre = document.querySelector('.chat-input-bar');
+        if (!drawer || !barre) return;
+        const rect = barre.getBoundingClientRect();
+        drawer.style.left = (rect.left + 10) + 'px';
+        drawer.style.right = (window.innerWidth - rect.right + 10) + 'px';
+        drawer.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+    }
     const resultsContainer = document.getElementById('giphy-results');
     const searchInput = document.getElementById('giphy-search');
     const toggleBtn = document.getElementById('btn-toggle-type');
@@ -14129,113 +14253,361 @@ function initialiserTiroirGiphy() {
         "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f308.png"    // 🌈 Arc-en-ciel
     ];
     
-    let currentType = "gifs"; // "gifs" ou "stickers"
-    
+    let currentType = "gifs"; // "gifs", "stickers" ou "emoji"
+    let jetonChargement = 0; // pour ignorer une réponse réseau devenue périmée (recherche tapée vite)
+    let minuteurRecherche = null;
+
     if (!triggerBtn) return;
-    
+
     // Ouvrir/fermer le tiroir
     triggerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (drawer.style.display === 'none' || drawer.style.display === '') {
+            positionnerTiroirGiphy();
             drawer.style.display = 'flex';
             afficherContenu();
         } else {
             drawer.style.display = 'none';
         }
     });
-    
-    // Basculer entre GIFs et Stickers
+
+    // Basculer entre GIFs, Stickers et Emoji (3 modes)
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
-            currentType = currentType === "gifs" ? "stickers" : "gifs";
-            toggleBtn.innerHTML = currentType === "gifs" ? "🎨 GIFS" : "🔵 STICKERS";
-            toggleBtn.style.background = currentType === "stickers" ? "#25D366" : "#f0f2f5";
-            toggleBtn.style.color = currentType === "stickers" ? "#fff" : "#000";
+            currentType = currentType === "gifs" ? "stickers" : (currentType === "stickers" ? "emoji" : "gifs");
+            const libelles = { gifs: "🎨 GIFS", stickers: "🎪 STICKERS", emoji: "😀 EMOJI" };
+            const couleurs = { gifs: "#f0f2f5", stickers: "#25D366", emoji: "#a855f7" };
+            toggleBtn.innerHTML = libelles[currentType];
+            toggleBtn.style.background = couleurs[currentType];
+            toggleBtn.style.color = currentType === "gifs" ? "#000" : "#fff";
+            if (searchInput) searchInput.value = "";
             afficherContenu();
         });
     }
-    
-    // Recherche (fonctionne pour les deux)
+
+    // Recherche (fonctionne pour les 3 modes, avec un léger délai pour ne pas
+    // spammer l'API Giphy à chaque frappe)
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.trim().toLowerCase();
-            if (query.length > 1) {
-                filtrerContenu(query);
-            } else if (query.length === 0) {
-                afficherContenu();
-            }
+            clearTimeout(minuteurRecherche);
+            minuteurRecherche = setTimeout(() => afficherContenu(query), 350);
         });
     }
-    
-    function afficherContenu() {
-        if (currentType === "gifs") {
-            afficherGifs(gifsPopulaires);
-        } else {
-            afficherStickers(stickersCollection);
-        }
+
+    // ========== CLÉ PUBLIQUE GIPHY (démo officielle Giphy pour petits projets) ==========
+    // Permet de piocher en direct dans TOUT le catalogue Giphy (tendances + recherche),
+    // au lieu de se limiter aux quelques GIFs/stickers préchargés ci-dessus, qui ne
+    // servent plus que de secours si le réseau ou l'API sont indisponibles.
+    const GIPHY_KEY = "dc6zaTOxFJmzC";
+
+    async function chargerDepuisGiphy(type, query) {
+        const base = type === "gifs" ? "https://api.giphy.com/v1/gifs" : "https://api.giphy.com/v1/stickers";
+        const url = query
+            ? `${base}/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(query)}&limit=36&rating=pg-13&lang=fr`
+            : `${base}/trending?api_key=${GIPHY_KEY}&limit=36&rating=pg-13`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Giphy indisponible");
+        const json = await res.json();
+        return (json.data || []).map(item => ({
+            url: (item.images.original || item.images.fixed_height).url,
+            preview: (item.images.fixed_width_small || item.images.fixed_width || item.images.original).url,
+            tags: (item.title || "").toLowerCase()
+        }));
     }
-    
-    function filtrerContenu(query) {
-        if (currentType === "gifs") {
-            // Filtrer les GIFs par mot-clé (via le champ tags, pas l'URL)
-            const filtres = gifsPopulaires.filter(gif =>
-                gif.tags.toLowerCase().includes(query)
-            );
-            afficherGifs(filtres.length > 0 ? filtres : gifsPopulaires);
-        } else {
-            // Filtrer les stickers (garder tous, la recherche est basique)
-            afficherStickers(stickersCollection);
-        }
-    }
-    
-    function afficherGifs(gifs) {
-        if (!resultsContainer) return;
-        resultsContainer.innerHTML = "";
-        
-        if (gifs.length === 0) {
-            resultsContainer.innerHTML = '<div style="grid-column: span 3; text-align: center; padding: 20px; color: var(--text-muted);">😕 Aucun GIF trouvé</div>';
+
+    async function afficherContenu(query) {
+        if (currentType === "emoji") {
+            afficherEmoji(query);
             return;
         }
-        
-        gifs.forEach(gif => {
-            const gifUrl = gif.url;
-            const img = document.createElement('img');
-            img.src = gifUrl;
-            img.loading = 'lazy';
-            img.style.cssText = "width: 100%; height: 90px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color); background: var(--input-bg);";
-            img.onmouseover = () => img.style.transform = "scale(1.05)";
-            img.onmouseout = () => img.style.transform = "scale(1)";
-            img.onerror = () => { img.style.display = 'none'; };
-            
-            img.onclick = () => {
-                envoyerMedia(currentType === "gifs" ? "gif" : "sticker", gifUrl);
-                drawer.style.display = 'none';
-            };
-            
-            resultsContainer.appendChild(img);
-        });
+
+        const monJeton = ++jetonChargement;
+        resultsContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
+        resultsContainer.innerHTML = '<div style="grid-column: span 3; text-align: center; padding: 20px; color: var(--text-muted);">⏳ Chargement...</div>';
+
+        let contenu = [];
+        try {
+            contenu = await chargerDepuisGiphy(currentType, query);
+            if (!contenu.length) throw new Error("Aucun résultat Giphy");
+        } catch (err) {
+            // Repli hors-ligne : on utilise la petite collection préchargée si l'API
+            // Giphy est injoignable (pas de réseau, clé bloquée, etc.)
+            const locale = currentType === "gifs" ? gifsPopulaires : stickersCollection;
+            const source = locale.map(item => typeof item === "string" ? { url: item, preview: item, tags: "" } : item);
+            contenu = query ? source.filter(g => (g.tags || "").includes(query)) : source;
+            if (query && contenu.length === 0) contenu = source;
+        }
+
+        if (monJeton !== jetonChargement) return; // une recherche plus récente a été lancée entre-temps
+        afficherMedias(contenu, currentType);
     }
-    
-    function afficherStickers(stickers) {
+
+    function afficherMedias(liste, type) {
         if (!resultsContainer) return;
         resultsContainer.innerHTML = "";
-        
-        stickers.forEach(stickerUrl => {
+
+        if (!liste.length) {
+            resultsContainer.innerHTML = `<div style="grid-column: span 3; text-align: center; padding: 20px; color: var(--text-muted);">😕 Aucun ${type === "gifs" ? "GIF" : "sticker"} trouvé</div>`;
+            return;
+        }
+
+        liste.forEach(raw => {
+            const item = typeof raw === "string" ? { url: raw, preview: raw } : raw;
             const img = document.createElement('img');
-            img.src = stickerUrl;
-            img.style.cssText = "width: 80px; height: 80px; object-fit: contain; border-radius: 16px; cursor: pointer; transition: transform 0.2s; background: transparent; margin: auto;";
-            img.onmouseover = () => img.style.transform = "scale(1.1)";
+            img.src = item.preview || item.url;
+            img.loading = 'lazy';
+            img.style.cssText = type === "stickers"
+                ? "width: 80px; height: 80px; object-fit: contain; border-radius: 16px; cursor: pointer; transition: transform 0.2s; background: transparent; margin: auto;"
+                : "width: 100%; height: 90px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color); background: var(--input-bg);";
+            img.onmouseover = () => img.style.transform = type === "stickers" ? "scale(1.1)" : "scale(1.05)";
             img.onmouseout = () => img.style.transform = "scale(1)";
-            
+            img.onerror = () => { img.style.display = 'none'; };
+
             img.onclick = () => {
-                envoyerMedia("sticker", stickerUrl);
+                envoyerMedia(type === "gifs" ? "gif" : "sticker", item.url || item.preview);
                 drawer.style.display = 'none';
             };
-            
+
             resultsContainer.appendChild(img);
         });
     }
-    
+
+    // ========== EMOJI ANIMÉS (façon Telegram, via Noto Animated Emoji + Lottie) ==========
+    // Grande sélection d'emoji "modernes" à un seul point de code (donc sans variante à
+    // sélecteur FE0F, ni drapeaux, ni séquences ZWJ) pour que le calcul du code utilisé
+    // par Google Fonts reste fiable. Un emoji s'affiche d'abord en texte simple ; son
+    // animation Lottie se charge en douceur seulement quand il devient visible, et si
+    // jamais elle n'existe pas pour un emoji donné, on garde tout simplement l'emoji
+    // statique (aucune rupture visuelle possible).
+    const emojisPopulaires = [
+        // Smileys
+        { char: "😀", tags: "content heureux smiley sourire" }, { char: "😃", tags: "content heureux joie" },
+        { char: "😄", tags: "content heureux rire" }, { char: "😁", tags: "content heureux dents" },
+        { char: "😆", tags: "rire mdr eclat de rire" }, { char: "😅", tags: "rire gene sueur" },
+        { char: "🤣", tags: "mort de rire mdr ptdr" }, { char: "😂", tags: "pleure de rire mdr larmes" },
+        { char: "🙂", tags: "sourire leger content" }, { char: "🙃", tags: "sourire envers ironie" },
+        { char: "😉", tags: "clin oeil complicite" }, { char: "😊", tags: "content timide sourire" },
+        { char: "😇", tags: "ange innocent" }, { char: "🥰", tags: "amour adorable coeurs" },
+        { char: "😍", tags: "amoureux yeux coeur" }, { char: "🤩", tags: "etoiles impressionne wow" },
+        { char: "😘", tags: "bisou love kiss" }, { char: "😗", tags: "bisou calme" },
+        { char: "😚", tags: "bisou ferme" }, { char: "😙", tags: "bisou sourire" },
+        { char: "😋", tags: "gourmand miam delicieux" }, { char: "😛", tags: "langue tiree taquin" },
+        { char: "😜", tags: "clin oeil langue fou" }, { char: "🤪", tags: "fou dingue delire" },
+        { char: "😝", tags: "langue yeux fermes" }, { char: "🤑", tags: "argent dollar cupide" },
+        { char: "🤗", tags: "calin cale reconfort" }, { char: "🤭", tags: "surprise rire cache" },
+        { char: "🤫", tags: "silence chut secret" }, { char: "🤔", tags: "reflechis pense hmm" },
+        { char: "🤐", tags: "bouche cousue silence" }, { char: "🤨", tags: "sourcil doute suspicion" },
+        { char: "😐", tags: "neutre indifferent" }, { char: "😑", tags: "blase ennui" },
+        { char: "😶", tags: "sans mot silence" }, { char: "😏", tags: "sourire en coin malicieux" },
+        { char: "😒", tags: "blase agace" }, { char: "🙄", tags: "yeux au ciel exaspere" },
+        { char: "😬", tags: "grimace gene malaise" }, { char: "🤥", tags: "menteur nez pinocchio" },
+        { char: "😌", tags: "soulage apaise" }, { char: "😔", tags: "triste pensif deçu" },
+        { char: "😪", tags: "fatigue somnole" }, { char: "🤤", tags: "bave envie" },
+        { char: "😴", tags: "dort sommeil zzz" }, { char: "😷", tags: "malade masque" },
+        { char: "🤒", tags: "fievre malade thermometre" }, { char: "🤕", tags: "blesse bandage" },
+        { char: "🤢", tags: "degoute nausee" }, { char: "🤮", tags: "vomit malade" },
+        { char: "🤧", tags: "eternue rhume" }, { char: "🥵", tags: "chaud transpire" },
+        { char: "🥶", tags: "froid gele" }, { char: "🥴", tags: "etourdi ivre" },
+        { char: "😵", tags: "assomme sonne" }, { char: "🤯", tags: "explose tete choc" },
+        { char: "🤠", tags: "cowboy chapeau" }, { char: "🥳", tags: "fete anniversaire celebration" },
+        { char: "😎", tags: "cool lunettes de soleil" }, { char: "🤓", tags: "intello lunettes nerd" },
+        { char: "🧐", tags: "monocle intrigue" }, { char: "😕", tags: "confus perplexe" },
+        { char: "😟", tags: "inquiet soucieux" }, { char: "😮", tags: "surpris bouche ouverte" },
+        { char: "😯", tags: "etonne surprise" }, { char: "😲", tags: "choque stupefait" },
+        { char: "😳", tags: "gene rougit" }, { char: "🥺", tags: "supplie yeux tristes" },
+        { char: "😦", tags: "surpris triste" }, { char: "😧", tags: "angoisse" },
+        { char: "😨", tags: "peur effraye" }, { char: "😰", tags: "anxieux stress sueur froide" },
+        { char: "😥", tags: "triste soulage sueur" }, { char: "😢", tags: "pleure triste larme" },
+        { char: "😭", tags: "pleure fort sanglot" }, { char: "😱", tags: "cri terreur panique" },
+        { char: "😖", tags: "confus contrarie" }, { char: "😣", tags: "persevere effort" },
+        { char: "😞", tags: "deçu triste" }, { char: "😓", tags: "sueur epuise" },
+        { char: "😩", tags: "epuise gemit" }, { char: "😫", tags: "fatigue exaspere" },
+        { char: "🥱", tags: "baille fatigue ennui" }, { char: "😤", tags: "enerve souffle triomphe" },
+        { char: "😡", tags: "colere furieux rouge" }, { char: "😠", tags: "fache mecontent" },
+        { char: "🤬", tags: "jure insulte colere" }, { char: "😈", tags: "diable malicieux" },
+        { char: "👿", tags: "diable colere demon" }, { char: "🤡", tags: "clown" },
+        { char: "👹", tags: "ogre monstre" }, { char: "👺", tags: "goblin masque" },
+        { char: "👻", tags: "fantome halloween" }, { char: "👽", tags: "alien extraterrestre" },
+        { char: "👾", tags: "jeu video monstre" }, { char: "🤖", tags: "robot" },
+        { char: "😺", tags: "chat content" }, { char: "😸", tags: "chat sourire" },
+        { char: "😹", tags: "chat rire larmes" }, { char: "😻", tags: "chat amoureux" },
+        { char: "😼", tags: "chat malicieux" }, { char: "😽", tags: "chat bisou" },
+        { char: "🙀", tags: "chat peur" }, { char: "😿", tags: "chat triste" }, { char: "😾", tags: "chat fache" },
+        // Coeurs et gestes
+        { char: "💛", tags: "coeur jaune amitie" }, { char: "💚", tags: "coeur vert nature" },
+        { char: "💙", tags: "coeur bleu" }, { char: "💜", tags: "coeur violet" },
+        { char: "🖤", tags: "coeur noir" }, { char: "🤍", tags: "coeur blanc" },
+        { char: "🤎", tags: "coeur marron" }, { char: "🧡", tags: "coeur orange" },
+        { char: "💔", tags: "coeur brise triste rupture" }, { char: "💕", tags: "deux coeurs amour" },
+        { char: "💞", tags: "coeurs tournants amour" }, { char: "💓", tags: "coeur battant amour" },
+        { char: "💗", tags: "coeur grandissant tendresse" }, { char: "💖", tags: "coeur scintillant amour" },
+        { char: "💘", tags: "coeur fleche cupidon" }, { char: "💝", tags: "coeur cadeau amour" },
+        { char: "💟", tags: "coeur decoration" }, { char: "👍", tags: "pouce leve bravo ok" },
+        { char: "👎", tags: "pouce baisse non" }, { char: "👊", tags: "poing check" },
+        { char: "✊", tags: "poing leve solidarite" }, { char: "🤛", tags: "poing gauche check" },
+        { char: "🤜", tags: "poing droit check" }, { char: "👏", tags: "applaudir bravo" },
+        { char: "🙌", tags: "mains levees celebration" }, { char: "👐", tags: "mains ouvertes calin" },
+        { char: "🤲", tags: "mains offrant priere" }, { char: "🙏", tags: "priere merci svp" },
+        { char: "🤝", tags: "poignee de main accord" }, { char: "👋", tags: "salut coucou au revoir" },
+        { char: "🤚", tags: "main levee stop" }, { char: "👌", tags: "ok parfait" },
+        { char: "🤏", tags: "petit pincement" }, { char: "🤞", tags: "doigts croises chance" },
+        { char: "🤟", tags: "je taime signe" }, { char: "🤘", tags: "rock signe" },
+        { char: "🤙", tags: "appelle moi cool" }, { char: "👈", tags: "pointe gauche" },
+        { char: "👉", tags: "pointe droite" }, { char: "👆", tags: "pointe haut" },
+        { char: "👇", tags: "pointe bas" }, { char: "💪", tags: "muscle force fier" },
+        { char: "🦾", tags: "bras mecanique force" },
+        // Animaux
+        { char: "🐶", tags: "chien animal mignon" }, { char: "🐱", tags: "chat animal mignon" },
+        { char: "🐭", tags: "souris animal" }, { char: "🐹", tags: "hamster animal mignon" },
+        { char: "🐰", tags: "lapin animal mignon" }, { char: "🦊", tags: "renard animal" },
+        { char: "🐻", tags: "ours animal" }, { char: "🐼", tags: "panda animal mignon" },
+        { char: "🐨", tags: "koala animal" }, { char: "🐯", tags: "tigre animal" },
+        { char: "🦁", tags: "lion animal roi" }, { char: "🐮", tags: "vache animal" },
+        { char: "🐷", tags: "cochon animal" }, { char: "🐸", tags: "grenouille animal" },
+        { char: "🐵", tags: "singe animal" }, { char: "🐔", tags: "poule animal" },
+        { char: "🐧", tags: "pingouin animal" }, { char: "🐦", tags: "oiseau animal" },
+        { char: "🦆", tags: "canard animal" }, { char: "🦉", tags: "hibou animal" },
+        { char: "🐺", tags: "loup animal" }, { char: "🐴", tags: "cheval animal" },
+        { char: "🦄", tags: "licorne fantaisie" }, { char: "🐝", tags: "abeille insecte" },
+        { char: "🐛", tags: "chenille insecte" }, { char: "🦋", tags: "papillon insecte joli" },
+        { char: "🐢", tags: "tortue animal lent" }, { char: "🐍", tags: "serpent animal" },
+        { char: "🐙", tags: "pieuvre animal marin" }, { char: "🦀", tags: "crabe animal marin" },
+        { char: "🐬", tags: "dauphin animal marin" }, { char: "🐳", tags: "baleine animal marin" },
+        { char: "🐠", tags: "poisson animal marin" },
+        // Nourriture
+        { char: "🍏", tags: "pomme fruit vert" }, { char: "🍎", tags: "pomme fruit rouge" },
+        { char: "🍊", tags: "orange fruit" }, { char: "🍋", tags: "citron fruit" },
+        { char: "🍌", tags: "banane fruit" }, { char: "🍉", tags: "pasteque fruit" },
+        { char: "🍇", tags: "raisin fruit" }, { char: "🍓", tags: "fraise fruit" },
+        { char: "🍒", tags: "cerise fruit" }, { char: "🍑", tags: "peche fruit" },
+        { char: "🍍", tags: "ananas fruit" }, { char: "🥭", tags: "mangue fruit" },
+        { char: "🥑", tags: "avocat" }, { char: "🍕", tags: "pizza repas" },
+        { char: "🍔", tags: "burger repas" }, { char: "🍟", tags: "frites repas" },
+        { char: "🌭", tags: "hot dog repas" }, { char: "🥪", tags: "sandwich repas" },
+        { char: "🌮", tags: "taco repas" }, { char: "🍝", tags: "pates repas" },
+        { char: "🍜", tags: "nouilles soupe repas" }, { char: "🍣", tags: "sushi repas" },
+        { char: "🍦", tags: "glace dessert" }, { char: "🍩", tags: "donut dessert" },
+        { char: "🍪", tags: "cookie dessert" }, { char: "🎂", tags: "gateau anniversaire" },
+        { char: "🍰", tags: "part de gateau dessert" }, { char: "🍫", tags: "chocolat" },
+        { char: "🍿", tags: "popcorn cinema" }, { char: "☕", tags: "cafe boisson chaude" },
+        { char: "🍵", tags: "the boisson chaude" }, { char: "🥤", tags: "boisson gobelet" },
+        { char: "🍺", tags: "biere boisson" }, { char: "🍷", tags: "vin boisson" },
+        { char: "🥂", tags: "champagne trinquer fete" },
+        // Activités et objets
+        { char: "⚽", tags: "football sport ballon" }, { char: "🏀", tags: "basket sport" },
+        { char: "🎾", tags: "tennis sport" }, { char: "🎮", tags: "jeu video manette" },
+        { char: "🎲", tags: "de jeu hasard" }, { char: "🎸", tags: "guitare musique" },
+        { char: "🎹", tags: "piano musique" }, { char: "🎤", tags: "micro chant" },
+        { char: "🎧", tags: "casque musique ecoute" }, { char: "🎨", tags: "peinture art creatif" },
+        { char: "🎬", tags: "cinema film clap" }, { char: "📚", tags: "livres lecture etude" },
+        { char: "📝", tags: "note ecrire etudier memo" }, { char: "💻", tags: "ordinateur travail" },
+        { char: "📱", tags: "telephone smartphone" }, { char: "📷", tags: "photo appareil" },
+        { char: "🎁", tags: "cadeau surprise" }, { char: "🎉", tags: "fete confettis celebration" },
+        { char: "🎈", tags: "ballon fete anniversaire" }, { char: "🔥", tags: "feu chaud top" },
+        { char: "⭐", tags: "etoile top" }, { char: "✨", tags: "brillant magie" },
+        { char: "🌈", tags: "arc en ciel" }, { char: "🌞", tags: "soleil beau temps chaud" },
+        { char: "🌙", tags: "lune nuit" }, { char: "⚡", tags: "eclair energie rapide" },
+        { char: "🌨", tags: "neige froid hiver" }, { char: "🌸", tags: "fleur printemps" },
+        { char: "🌹", tags: "rose fleur amour" }, { char: "🌻", tags: "tournesol fleur" },
+        { char: "🍀", tags: "trefle chance" }, { char: "🚗", tags: "voiture transport" },
+        { char: "🛫", tags: "avion voyage decollage" }, { char: "🚀", tags: "fusee espace" },
+        { char: "⏰", tags: "reveil heure alarme" }, { char: "💰", tags: "argent richesse" },
+        { char: "💯", tags: "cent pour cent parfait" }, { char: "✅", tags: "coche valide" },
+        { char: "❌", tags: "croix refuse annule" }
+    ];
+
+    function afficherEmoji(query) {
+        if (!resultsContainer) return;
+        resultsContainer.style.gridTemplateColumns = "repeat(6, 1fr)";
+        resultsContainer.innerHTML = "";
+
+        const q = (query || "").toLowerCase();
+        const liste = q ? emojisPopulaires.filter(e => e.tags.includes(q)) : emojisPopulaires;
+
+        if (!liste.length) {
+            resultsContainer.innerHTML = '<div style="grid-column: span 6; text-align: center; padding: 20px; color: var(--text-muted);">😕 Aucun emoji trouvé</div>';
+            return;
+        }
+
+        const observer = obtenirObserverEmoji();
+        liste.forEach(item => {
+            const tile = document.createElement('div');
+            tile.style.cssText = "width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:12px; font-size:1.8rem; line-height:1; transition:transform 0.15s; user-select:none;";
+            tile.textContent = item.char;
+            tile.title = item.char;
+            tile.__emojiItem = item;
+            tile.onmouseenter = () => { tile.style.transform = "scale(1.2)"; };
+            tile.onmouseleave = () => { tile.style.transform = "scale(1)"; };
+            tile.onclick = () => {
+                insererEmojiDansMessage(item.char);
+                drawer.style.display = 'none';
+            };
+            resultsContainer.appendChild(tile);
+            observer.observe(tile);
+        });
+    }
+
+    function obtenirObserverEmoji() {
+        if (!window.__emojiObserver) {
+            if (typeof IntersectionObserver === "undefined") {
+                // Repli pour les très vieux navigateurs : pas de chargement paresseux,
+                // on charge l'animation directement (pas grave, ça reste progressif).
+                window.__emojiObserver = { observe: (tile) => chargerAnimationEmoji(tile) };
+            } else {
+                window.__emojiObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entree => {
+                        const tile = entree.target;
+                        if (entree.isIntersecting) {
+                            chargerAnimationEmoji(tile);
+                            if (tile.__anim) { try { tile.__anim.play(); } catch (e) {} }
+                        } else if (tile.__anim) {
+                            try { tile.__anim.pause(); } catch (e) {}
+                        }
+                    });
+                }, { root: resultsContainer, threshold: 0.15 });
+            }
+        }
+        return window.__emojiObserver;
+    }
+
+    function chargerAnimationEmoji(tile) {
+        if (tile.dataset.chargee === "1") return;
+        tile.dataset.chargee = "1";
+        // Progressive enhancement : si la lib Lottie n'est pas encore chargée, ou que
+        // l'animation n'existe pas pour cet emoji précis, on garde simplement l'emoji
+        // statique déjà affiché — jamais de case vide ou cassée.
+        if (typeof lottie === "undefined") return;
+        const item = tile.__emojiItem;
+        if (!item) return;
+        try {
+            const point = Array.from(item.char)[0].codePointAt(0).toString(16);
+            const anim = lottie.loadAnimation({
+                container: tile,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                path: `https://fonts.gstatic.com/s/e/notoemoji/latest/${point}/lottie.json`
+            });
+            tile.__anim = anim;
+            anim.addEventListener('data_ready', () => { tile.textContent = ""; });
+            anim.addEventListener('data_failed', () => {
+                try { anim.destroy(); } catch (e) {}
+                tile.__anim = null;
+            });
+        } catch (e) {
+            // silencieux : la tuile garde son emoji texte, ce n'est pas bloquant
+        }
+    }
+
+    function insererEmojiDansMessage(emojiChar) {
+        const input = document.getElementById('chat-in');
+        if (!input) return;
+        input.value += emojiChar;
+        input.dispatchEvent(new Event('input', { bubbles: true })); // réutilise handleTyping()/autoResizeTextarea() déjà branchés
+        input.focus();
+    }
+
     function envoyerMedia(type, url) {
         if (currentUser && CHAT_ID) {
             db.collection('chats').doc(CHAT_ID).collection('messages').add({
@@ -16222,9 +16594,17 @@ function rendreCarteVueUnique(msgId, data, type) {
 let vueUniqueMsgIdActif = null;
 async function ouvrirVueUnique(msgId) {
     try {
-        const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).get();
-        if (!doc.exists) return;
-        const data = doc.data();
+        // ✅ On utilise d'abord la donnée déjà en mémoire (reçue via l'écoute en
+        // direct) au lieu de systématiquement re-télécharger le document depuis
+        // Firestore : ça évite un aller-retour réseau avant même que le média ne
+        // commence à charger, ce qui rendait l'ouverture d'une flamme/vue unique
+        // sensiblement plus lente qu'une photo/vidéo classique.
+        let data = messagesEnMemoire[msgId];
+        if (!data) {
+            const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).get();
+            if (!doc.exists) return;
+            data = doc.data();
+        }
         const dejaVuParMoi = Array.isArray(data.viewOnceOpenedBy) && data.viewOnceOpenedBy.includes(currentUser.id);
         if (dejaVuParMoi) {
              return;
@@ -16288,9 +16668,12 @@ let vocalVueUniqueLecteurActif = null;
 async function ouvrirVocalVueUnique(msgId) {
     const carte = document.getElementById(`carte-vocal-${msgId}`);
     try {
-        const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).get();
-        if (!doc.exists) return;
-        const data = doc.data();
+        let data = messagesEnMemoire[msgId];
+        if (!data) {
+            const doc = await db.collection('chats').doc(CHAT_ID).collection('messages').doc(msgId).get();
+            if (!doc.exists) return;
+            data = doc.data();
+        }
         const dejaEcouteParMoi = Array.isArray(data.viewOnceOpenedBy) && data.viewOnceOpenedBy.includes(currentUser.id);
         if (dejaEcouteParMoi) return;
 
@@ -16359,6 +16742,7 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
     docsTries.forEach(doc => {
         const data = doc.data();
         const msgId = doc.id;
+        messagesEnMemoire[msgId] = data;
 
         // ✅ L'animation d'envoi ne doit jouer qu'UNE SEULE FOIS, sur le message qui vient
         // literalement d'apparaître — jamais sur les anciens messages ré-affichés lors d'un
@@ -16389,19 +16773,21 @@ function afficherTousLesMessages(snapshot, isInitialLoad) {
         if (data.isSticker) row.setAttribute('data-issticker', 'true');
         if (data.fileName) row.setAttribute('data-filename', data.fileName);
         
-        const isGiant = isOnlyEmojis(data.text);
-        // ✅ Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs et stickers —
-        // ces derniers sont stockés avec type "image" (voir isGif/isSticker), donc ce test
-        // couvre bien tous les cas demandés.
-        const isMediaNoBubble = data.type === 'image' || data.type === 'video' || data.type === 'document' || data.type === 'media_group';
-        let customStyle = '';
-        let inlineStyle = '';
+  const isGiant = isOnlyEmojis(data.text);
+// ✅ Pas de bulle (fond/ombre/padding) pour les photos, vidéos, GIFs, stickers,
+// et pour un message qui n'est qu'un SEUL emoji (envoyé ou reçu) : ce dernier cas
+// doit toujours rester sans fond, même avec un style de bulle par défaut, une
+// couleur d'accent, ou une couleur/dégradé perso choisi sur ce message précis.
+const isMediaNoBubble = data.type === 'image' || data.type === 'video' || data.type === 'document' || data.type === 'media_group';
+let customStyle = '';
+let inlineStyle = '';
 // 🚨 PRIORITÉ : Si une couleur personnalisée existe, on désactive les styles de classe
-const hasCustomColor = !isMediaNoBubble && (data.customColor || data.customGradient);
+const hasCustomColor = !isMediaNoBubble && !isGiant && (data.customColor || data.customGradient);
 
-if (isMediaNoBubble) {
-    // Une photo/vidéo/document/envoi groupé n'a JAMAIS de fond de bulle coloré,
-    // même si une couleur d'accent ou un style de bulle par défaut est choisi.
+if (isMediaNoBubble || isGiant) {
+    // Une photo/vidéo/document/envoi groupé — ou un message qui n'est qu'un seul
+    // emoji — n'a JAMAIS de fond de bulle coloré, même si une couleur d'accent ou
+    // un style de bulle par défaut est choisi.
 } else if (hasCustomColor) {
     // ✅ Couleur/dégradé choisi pour CE message précis (prioritaire sur tout le reste)
     if (data.customColor) {
@@ -21903,11 +22289,11 @@ async function repondreEnTantQueBot(texteDeclencheur) {
         }
         await envoyerMessageIA(reponse);
     } else {
-        await envoyerMessageIA("Oups, je n'arrive pas à me connecter là tout de suite 😅 (vérifiez la clé API dans Paramètres > IA)");
+        await envoyerMessageIA("Oups, je n'arrive pas à me connecter là tout de suite 😅  ");
     }
 }
 
-// ==================================================================
+// ==================================================================         
 // ================  RÔLE 3 : Maître du jeu (/game, /quiz)  =========
 // ==================================================================
 let jeuIAEnCours = { actif: false, type: null };
@@ -22108,7 +22494,129 @@ function fermerParametresIA() {
     if (page) page.style.display = 'none';
 }
 </script>
+<script>
+(function () {
+  'use strict';
 
+  // ============================================================
+  //  NETTOYAGE DES BULLES VIDES (fantômes)
+  //  Ne supprime QUE les rows dont la bulle n'a ni texte ni média
+  //  ET aucun composant riche légitime (morpion, whiteboard, etc.)
+  // ============================================================
+
+  // Sélecteurs de "contenu riche légitime" → si présent, on NE supprime PAS
+  var RICH_CONTENT_SELECTORS = [
+    'img', 'video', 'audio', 'canvas', 'iframe',
+    '.document-card',
+    '.viewonce-card',
+    '.morpion-card',
+    '.whiteboard-card',
+    '.media-fan',
+    '.media-fan-card',
+    '.coded-mask',
+    '.locked-badge',
+    '.ephemeral-badge',
+    '.ephemeral-audio',
+    '.audio-wave-bar',
+    '.giant-emoji',
+    '.reply-citation',
+    '.applied-reactions',
+    '.sticker',
+    '.gif',
+    'a.message-link'
+  ].join(',');
+
+  // Sélecteurs de "méta" → à ignorer quand on teste s'il reste du texte
+  var META_SELECTORS = [
+    '.msg-meta',
+    '.applied-reactions',
+    '.vrai-badge-modif',
+    '.locked-badge',
+    '.ephemeral-badge',
+    '.mood-status',
+    '.translate-menu-btn'
+  ].join(',');
+
+  function rowIsEmpty(row) {
+    var bubble = row.querySelector('.message-bubble');
+    if (!bubble) return false;
+
+    // 1) Contenu riche légitime présent ? → on garde
+    if (bubble.querySelector(RICH_CONTENT_SELECTORS)) return false;
+
+    // 2) On clone pour retirer les métas et tester le texte restant
+    var clone = bubble.cloneNode(true);
+    clone.querySelectorAll(META_SELECTORS).forEach(function (el) { el.remove(); });
+
+    var text = (clone.textContent || '').replace(/\u200B|\uFEFF/g, '').trim();
+    if (text.length > 0) return false;
+
+    // 3) Vraiment vide → on considère fantôme
+    return true;
+  }
+
+  function cleanEmptyBubbles(root) {
+    var scope = root || document;
+    var rows = scope.querySelectorAll('.message-row');
+    var removed = 0;
+    rows.forEach(function (row) {
+      if (rowIsEmpty(row)) {
+        row.remove();
+        removed++;
+      }
+    });
+    if (removed > 0) {
+      console.log('[cleanEmptyBubbles] ' + removed + ' bulle(s) fantôme(s) supprimée(s)');
+    }
+  }
+
+  // --- 1er passage au chargement ---
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { cleanEmptyBubbles(); });
+  } else {
+    cleanEmptyBubbles();
+  }
+
+  // --- Passages suivants quand de nouveaux messages arrivent (temps réel) ---
+  var scheduled = false;
+  var observer = new MutationObserver(function (mutations) {
+    // On ne réagit qu'aux ajouts de rows (pas aux modifs internes pour éviter les boucles)
+    var hasNewRows = mutations.some(function (m) {
+      return Array.from(m.addedNodes).some(function (n) {
+        return n.nodeType === 1 && (n.classList?.contains('message-row') || n.querySelector?.('.message-row'));
+      });
+    });
+    if (!hasNewRows || scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(function () {
+      scheduled = false;
+      cleanEmptyBubbles();
+    });
+  });
+
+  var messagesArea = document.querySelector('.messages-area');
+  if (messagesArea) {
+    observer.observe(messagesArea, { childList: true, subtree: true });
+  }
+
+  // --- Expose une fonction globale pour forcer un nettoyage manuel si besoin ---
+  window.cleanEmptyBubbles = cleanEmptyBubbles;
+
+  // --- Sécurité supplémentaire : re-nettoyage après chaque envoi connu ---
+  // (si ton code appelle déjà des fonctions comme sendMessage, displayMessage, etc.,
+  //  ce hook les enveloppe SANS les modifier)
+  ['sendMessage', 'displayMessage', 'renderMessage', 'appendMessage', 'addMessage'].forEach(function (fnName) {
+    if (typeof window[fnName] === 'function') {
+      var original = window[fnName];
+      window[fnName] = function () {
+        var result = original.apply(this, arguments);
+        setTimeout(function () { cleanEmptyBubbles(); }, 60);
+        return result;
+      };
+    }
+  });
+})();
+</script> 
 </body>   
   
 </html>
