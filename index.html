@@ -19,14 +19,35 @@
     <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+ <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "8600549d-6bc4-4a88-a729-070758622d2f",
+      serviceWorkerPath: "/OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "/" },
+      notifyButton: { enable: false }
+    });
+
+    // Ne pas afficher de notif système si l'app est déjà ouverte à l'écran
+    OneSignal.Notifications.addEventListener("foregroundWillDisplay", (e) => {
+      if (document.visibilityState === "visible") e.preventDefault();
     });
   });
+
+  // Petit utilitaire pour parler au SDK en toute sécurité
+  function avecOneSignal(fn) {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(fn);
+  }
+
+  // Vrai seulement si l'app tourne depuis l'icône de l'écran d'accueil
+  function appEstInstallee() {
+    return window.navigator.standalone === true ||
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches;
+  }
 </script>
   
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -6682,7 +6703,9 @@ async function sendMediaMessage(type, file, caption, viewOnce, flammeCouleur) {
     }
     const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
     await messageRef.set(msgData);
+    await messageRef.set(msgData);
     setTimeout(() => checkMessageDelivery(messageRef.id), 3000);
+    envoyerPush(targetUser.id, type === 'video' ? "🎥 Vidéo" : "📷 Photo");
     showTempNotification(type === 'video' ? "🎥 Vidéo envoyée !" : "📷 Photo envoyée !");
     return true;
 }
@@ -7306,18 +7329,8 @@ async function sendTelegramNotification(senderId, msgId) {
 
 // ========== NOTIFICATION PUSH DANS L'APP ==========
 async function notifierDansApp(expediteurNom) {
-    if (!("Notification" in window)) return;
-    
-    if (Notification.permission === "granted") {
-        let corps = `${expediteurNom} vous a envoyé un message. Ouvrez l'application pour le lire.`;
-        new Notification(`📩 Nouveau message de ${expediteurNom}`, {
-            body: corps,
-            icon: "https://i.postimg.cc/J400K7Sd/new-Notification.png",
-            vibrate: [200, 100, 200],
-            silent: false
-        });
-        console.log("✅ Notification push affichée");
-    }
+    // Les notifications arrivent désormais par OneSignal (voir envoyerPush).
+    // Cette fonction est conservée vide pour ne pas casser les appels existants.
 }
 
 // ⚠️ SUPPRIMÉ : une seconde fonction demanderPermissionNotifications() était
@@ -7334,6 +7347,33 @@ async function notifierDansApp(expediteurNom) {
 // Pour tester immédiatement (optionnel) :
 // activerLesNotifications();
         const CHAT_ID = "chat_ida_aidara";
+      // ===== PUSH ONESIGNAL =====
+const ONESIGNAL_APP_ID = "8600549d-6bc4-4a88-a729-070758622d2f";
+const ONESIGNAL_REST_KEY = "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg3y4ssik2runoxnk4jmtisctoyp6gxhyckudbr5qs4imu275qxpkcfz2hub7ta"; // ← remplace par ta clé de l'étape 1
+
+async function envoyerPush(destinataireId, texte) {
+    if (!destinataireId || !ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg3y4ssik2runoxnk4jmtisctoyp6gxhyckudbr5qs4imu275qxpkcfz2hub7ta") return;
+    const corps = (texte || "Nouveau message").slice(0, 120);
+    try {
+        const rep = await fetch("https://api.onesignal.com/notifications", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Key " + ONESIGNAL_REST_KEY
+            },
+            body: JSON.stringify({
+                app_id: ONESIGNAL_APP_ID,
+                include_aliases: { external_id: [destinataireId] },
+                target_channel: "push",
+                headings: { fr: "💜 Nouveau message", en: "💜 New message" },
+                contents: { fr: corps, en: corps },
+                url: "/",
+                chrome_web_icon: "/icon-192.png"
+            })
+        });
+        if (!rep.ok) console.error("Push refusé:", rep.status, await rep.text());
+    } catch (e) { console.error("Erreur push:", e); }
+}
 
         // ========== ÉTAT DE L'APPLICATION ==========
         let currentUser = null; 
@@ -7576,70 +7616,47 @@ async function checkMessageDelivery(messageId) {
 }
 // ========== FONCTION POUR DEMANDER LES NOTIFICATIONS ==========
 async function demanderPermissionNotifications() {
-    console.log("🔔 Tentative d'activation des notifications...");
-    
-    // Vérifier si le navigateur supporte les notifications
-    if (!("Notification" in window)) {
-        console.log("Ce navigateur ne supporte pas les notifications");
-        alert("⚠️ Votre navigateur ne supporte pas les notifications");
+    if (!appEstInstallee()) {
+        alert("Sur iPhone : ouvre d'abord l'app depuis l'icône de l'écran d'accueil, puis appuie ici.");
         return;
     }
-    
-    // Demander la permission DIRECTEMENT (sans vérifier l'état actuel)
-    console.log("📢 Demande de permission en cours...");
-    const permission = await Notification.requestPermission();
-    
-    console.log("🔔 Résultat:", permission);
-    
-    if (permission === "granted") {
-        console.log("✅ Permission accordée !");
-        // Afficher une notification test
-        
-        enregistrerTokenPush();
-    } else if (permission === "denied") {
-        console.log("❌ Permission refusée par l'utilisateur");
-     } else {
-        console.log("⏸️ Permission:", permission);
-    }
+    await new Promise((resolve) => avecOneSignal(async (OneSignal) => {
+        try {
+            if (!OneSignal.Notifications.permission) {
+                await OneSignal.Notifications.requestPermission();
+            }
+            if (OneSignal.Notifications.permission) {
+                await associerAbonnementPush(currentUser ? currentUser.id : null);
+                sauvegarderStatutPermission('notif', 'granted');
+                majStatutPermission('notif', 'granted');
+                showTempNotification("🔔 Notifications activées");
+            } else {
+                sauvegarderStatutPermission('notif', 'denied');
+                majStatutPermission('notif', 'denied');
+                showTempNotification("❌ Notifications refusées — supprime puis ré-ajoute l'icône pour redemander");
+            }
+        } catch (e) { console.error("Erreur permission push:", e); }
+        resolve();
+    }));
 }
 
 // Fonction pour enregistrer le token push
-async function enregistrerTokenPush() {
-    try {
-        // Vérifier si le service worker est supporté
-        if (!('serviceWorker' in navigator)) {
-            console.log("Service Worker non supporté");
-            return;
-        }
-        
-        // Enregistrer le service worker
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        console.log("Service Worker enregistré");
-        
-        // Récupérer le token FCM
-        const vapidKey = 'BPwxUfJfIr_sR5sMxa6ZAFr0XWxsf3Vin904KaB1CXj6THncXEDqwIfbceN8DxGhyUTPVY1d5khXbxMUtV29Fog';
-        const token = await messaging.getToken({
-            serviceWorkerRegistration: registration,
-            vapidKey: vapidKey
-        });
-        
-        if (token) {
-            console.log("🎯 Token FCM:", token);
-            
-            // Sauvegarder dans Firestor
-            if (currentUser) {
-                await db.collection('users').doc(currentUser.id).set({
-                    fcmToken: token,
-                    lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp()
+async function associerAbonnementPush(userId) {
+    if (!userId) return;
+    await new Promise((resolve) => avecOneSignal(async (OneSignal) => {
+        try {
+            if (!OneSignal.Notifications.permission) { resolve(); return; }
+            await OneSignal.login(userId);
+            const subId = OneSignal.User.PushSubscription.id;
+            if (subId) {
+                await db.collection('users').doc(userId).set({
+                    onesignalId: subId,
+                    pushActif: true
                 }, { merge: true });
-                console.log("💾 Token sauvegardé pour", currentUser.name);
             }
-        } else {
-            console.log("⚠️ Aucun token reçu");
-        }
-    } catch(error) {
-        console.error("❌ Erreur token:", error);
-    }
+        } catch (e) { console.error("Erreur abonnement push:", e); }
+        resolve();
+    }));
 }
         // ========== SÉLECTION UTILISATEUR======= ===
      function selectUser(userKey) {
@@ -7678,11 +7695,20 @@ listenForCoeursSignals();
             // redemande plus rien à chaque connexion (ça ne sert à rien) — on se contente
             // de réenregistrer le token. Si elle n'a jamais été demandée, on la demande ici
             // (dans le même geste utilisateur que le clic sur "Ida"/"Aidara").
-          if ("Notification" in window && Notification.permission === "granted") {
-              enregistrerTokenPush();
-          } else if ("Notification" in window && Notification.permission === "default") {
-              demanderPermissionNotifications();
-          }
+         // On rattache l'abonnement push au compte, et on rappelle la marche à suivre
+          // si les notifications ne sont pas encore activées.
+          associerAbonnementPush(userKey);
+          setTimeout(() => {
+              if (!appEstInstallee()) {
+                  showTempNotification("💡 Installe l'app sur l'écran d'accueil pour recevoir les notifications");
+              } else {
+                  avecOneSignal((OneSignal) => {
+                      if (!OneSignal.Notifications.permission) {
+                          showTempNotification("💡 Paramètres → Notifications → Activer");
+                      }
+                  });
+              }
+          }, 2500);
               // ⚠️ DÉSACTIVÉ : ecouterChangementsCouleurs() (sans !important) écrasait
               // silencieusement la couleur correctement appliquée (avec !important) par
               // applyColorToMessage()/le rendu principal, ce qui faisait revenir la bulle
@@ -8242,7 +8268,11 @@ if (!isFirstSnapshot) {
         
         const messageRef = db.collection('chats').doc(CHAT_ID).collection('messages').doc();
         await messageRef.set(msgData);
-        setTimeout(() => checkMessageDelivery(messageRef.id), 3000);
+    setTimeout(() => checkMessageDelivery(messageRef.id), 3000);
+
+    envoyerPush(targetUser.id, text);
+
+    // 🤖 Hook IA
          return;
     }
   if (text === '2345') {
