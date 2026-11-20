@@ -8484,6 +8484,8 @@ if (text === '520') {
     await messageRef.set(msgData);
     setTimeout(() => checkMessageDelivery(messageRef.id), 3000);
 
+         envoyerPush(targetUser.id, finalText);
+
     // 🤖 Hook IA : @bot, /game, /quiz, détection rappel/résumé (silencieux si IA désactivée)
     if (!isCoded && !msgData.isSecretMessage) {
         handleIAApresEnvoi(finalText);
