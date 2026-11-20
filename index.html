@@ -4944,23 +4944,36 @@ input, textarea {
     background: rgba(0,0,0,0.05) !important;
 }
       /* ===== AVATAR 3D DÉCORATIF (derrière la barre de saisie) ===== */
-#avatar-deco {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 130px;
-  height: 220px;
-  z-index: 1;              /* au-dessus des messages (0), sous les barres (2) */
-  pointer-events: none;    /* ne bloque pas les taps sur les messages */
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+ /* ===== AVATARS ENVOYÉS DANS LE FIL ===== */
+.msg-avatar-holder { display: block; line-height: 0; }
+.msg-avatar-holder model-viewer {
+  width: 220px; max-width: 100%; height: 290px;
+  background: transparent; --poster-color: transparent;
+  cursor: pointer;
 }
-#avatar-deco model-viewer {
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  --poster-color: transparent;
+.bubble-transparent {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-width: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ===== GALERIE ===== */
+#scene-nous .galerie {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  overflow-y: auto; padding: 12px 14px calc(20px + env(safe-area-inset-bottom));
+  flex: 1; -webkit-overflow-scrolling: touch;
+}
+#scene-nous .carte {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 16px; padding: 8px; text-align: center;
+}
+#scene-nous .carte model-viewer {
+  width: 100%; height: 170px; background: transparent; --poster-color: transparent;
 }
     </style>
 </head>
@@ -5116,21 +5129,7 @@ input, textarea {
             <i class="fa-solid fa-xmark" onclick="cancelReply()"></i>
         </div>
       <!-- Avatar 3D qui dépasse de derrière la barre de saisie -->
-<div id="avatar-deco" aria-hidden="true">
-  <model-viewer
-    id="avatar-deco-viewer"
-    src="avataraidara.glb"
-    alt=""
-    loading="lazy"
-    reveal="auto"
-    shadow-intensity="0.7"
-    exposure="1"
-    environment-image="neutral"
-    interaction-prompt="none"
-    disable-zoom
-    crossorigin="anonymous">
-  </model-viewer>
-</div>
+ 
 <!-- ========== BARRE D'OUTILS ÉTUDE (juste au-dessus de la zone de saisie) ========== -->
 <div id="etude-toolbar" style="
     display: flex;
@@ -22758,67 +22757,143 @@ function fermerParametresIA() {
   });
 })();
 </script> 
-  <script>
-    // Choisit l'avatar du partenaire selon qui est connecté
-  function avatarDuPartenaire() {
-    const moi = (localStorage.getItem('lastUser') || 'aidara').toLowerCase();
-    return moi === 'ida' ? 'avataraidara.glb' : 'avataraida.glb';
-  }
-
-  function majAvatarDeco() {
-    const v = document.getElementById('avatar-deco-viewer');
-    if (!v) return;
-    const src = avatarDuPartenaire();
-    if (v.getAttribute('src') !== src) v.setAttribute('src', src);
-  }
-
-  majAvatarDeco();
+ <script>
 (function () {
-  const av = document.getElementById('avatar-deco-viewer');
-  if (!av) return;
-
-  let idleName = null;
-
-  av.addEventListener('load', () => {
-    const anims = av.availableAnimations || [];
-    if (!anims.length) return;
-    idleName = anims.find(n => /idle|breath|stand|loop/i.test(n)) || anims[0];
-    av.animationName = idleName;
-    av.play();
-  });
-
-  // Petite animation (salut) quand un message est envoyé
-  window.jouerAnimAvatar = function (pattern) {
-    const anims = av.availableAnimations || [];
-    const found = anims.find(n => pattern.test(n));
-    if (!found) return;
-    av.animationName = found;
-    av.play();
-    setTimeout(() => {
-      if (idleName) { av.animationName = idleName; av.play(); }
-    }, 2200);
+  /* ===== TENUES ===== */
+  const TENUES = {
+    aidara: ['avataraidara.glb', 'avataraidara-2.glb'],
+    ida:    ['avataraida.glb',   'avataraida-2.glb']
   };
 
-  // Hook sur l'envoi de message
-  const origSend = window.sendTextMessage;
-  if (typeof origSend === 'function') {
-    window.sendTextMessage = function () {
-      window.jouerAnimAvatar(/wave|salut|hello|hi|greet/i);
-      return origSend.apply(this, arguments);
-    }; 
+  function srcAvatar(personne) {
+    const liste = TENUES[personne];
+    const i = parseInt(localStorage.getItem('tenue_' + personne) || 0, 10);
+    return liste[Math.min(i, liste.length - 1)];
   }
-})();
-    function injecterAvatarsParametres() {
+
+  function tenueSuivante(personne) {
+    const liste = TENUES[personne];
+    const i = (parseInt(localStorage.getItem('tenue_' + personne) || 0, 10) + 1) % liste.length;
+    localStorage.setItem('tenue_' + personne, i);
+    rafraichir();
+  }
+  window.tenueSuivante = tenueSuivante;
+
+  function moi() {
+    return (localStorage.getItem('lastUser') || 'aidara').toLowerCase();
+  }
+
+  function rafraichir() {
+    const a = document.getElementById('param-aidara');
+    const b = document.getElementById('param-ida');
+    if (a) a.src = srcAvatar('aidara');
+    if (b) b.src = srcAvatar('ida');
+  }
+
+  /* ===== GALERIE ===== */
+  window.ouvrirScene = function () {
+    const g = document.getElementById('galerie-avatars');
+    if (!g.dataset.rempli) {
+      Object.keys(TENUES).forEach(personne => {
+        TENUES[personne].forEach(fichier => {
+          const carte = document.createElement('div');
+          carte.className = 'carte';
+          carte.innerHTML = `
+            <model-viewer src="${fichier}" loading="lazy" interaction-prompt="none" disable-zoom
+              shadow-intensity="0.5" environment-image="neutral"
+              style="width:100%;height:170px;background:transparent;--poster-color:transparent;"></model-viewer>
+            <div style="font-size:0.7rem;opacity:0.75;margin:6px 0;">@${personne}</div>
+            <button style="width:100%;padding:8px;border-radius:20px;border:1px solid rgba(255,255,255,.22);
+              background:rgba(255,255,255,.12);color:#fff;font-size:0.72rem;cursor:pointer;">Envoyer</button>`;
+          carte.querySelector('button').onclick = () => envoyerAvatar(personne, fichier);
+          carte.querySelector('model-viewer').addEventListener('click', () => ouvrirPleinEcran(fichier));
+          g.appendChild(carte);
+        });
+      });
+      g.dataset.rempli = '1';
+    }
+    document.getElementById('scene-nous').style.display = 'flex';
+  };
+
+  window.fermerScene = function () {
+    document.getElementById('scene-nous').style.display = 'none';
+  };
+
+  /* ===== ENVOI DANS LE CHAT ===== */
+  function envoyerAvatar(personne, fichier) {
+    const inp = document.getElementById('chat-in');
+    if (!inp || typeof window.sendTextMessage !== 'function') return;
+    inp.value = `[[AVATAR|${personne}|${fichier}]]`;
+    window.sendTextMessage();
+    inp.value = '';
+    fermerScene();
+  }
+
+  /* ===== PLEIN ÉCRAN ===== */
+  window.ouvrirPleinEcran = function (fichier) {
+    const v = document.getElementById('pe-viewer');
+    const bar = document.getElementById('pe-anims');
+    bar.innerHTML = '';
+    v.src = fichier;
+    v.addEventListener('load', () => {
+      (v.availableAnimations || []).forEach(nom => {
+        const b = document.createElement('button');
+        b.textContent = nom;
+        b.style.cssText = 'flex-shrink:0;padding:9px 15px;border-radius:50px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:.75rem;cursor:pointer;';
+        b.onclick = () => { v.animationName = nom; v.play(); };
+        bar.appendChild(b);
+      });
+    }, { once: true });
+    document.getElementById('plein-ecran').style.display = 'flex';
+  };
+
+  window.fermerPleinEcran = function () {
+    const v = document.getElementById('pe-viewer');
+    v.pause();
+    v.removeAttribute('src');
+    document.getElementById('plein-ecran').style.display = 'none';
+  };
+
+  /* ===== RENDU DES AVATARS DANS LE FIL ===== */
+  const TOKEN = /\[\[AVATAR\|([a-z]+)\|([a-z0-9\-.]+)\]\]/i;
+
+  function traiterAvatars() {
+    const zone = document.getElementById('msg-area');
+    if (!zone) return;
+    const walker = document.createTreeWalker(zone, NodeFilter.SHOW_TEXT);
+    const cibles = [];
+    let n;
+    while ((n = walker.nextNode())) {
+      if (n.nodeValue && TOKEN.test(n.nodeValue) && !n.parentElement.closest('[data-avatar-traite]')) {
+        cibles.push(n);
+      }
+    }
+    cibles.forEach(noeud => {
+      const m = noeud.nodeValue.match(TOKEN);
+      if (!m) return;
+      const personne = m[1], fichier = m[2];
+      const holder = document.createElement('div');
+      holder.className = 'msg-avatar-holder';
+      holder.dataset.avatarTraite = '1';
+      holder.innerHTML = `<model-viewer src="${fichier}" alt="Avatar de ${personne}" loading="lazy"
+          interaction-prompt="none" disable-zoom shadow-intensity="0.6" environment-image="neutral"
+          style="width:220px;max-width:100%;height:290px;background:transparent;--poster-color:transparent;"></model-viewer>`;
+      holder.querySelector('model-viewer').addEventListener('click', () => ouvrirPleinEcran(fichier));
+      noeud.parentNode.insertBefore(holder, noeud);
+      noeud.nodeValue = noeud.nodeValue.replace(TOKEN, '').trim();
+      const bulle = holder.closest('[class*="bubble"]');
+      if (bulle) bulle.classList.add('bubble-transparent');
+    });
+  }
+
+  /* ===== AVATARS DANS LES PARAMÈTRES ===== */
+  function injecterAvatarsParametres() {
     const page = document.querySelector('#settings-page, [id*="setting"], [id*="parametre"]');
     if (!page || page.querySelector('#avatars-param')) return;
 
-    // On cherche le texte exact "@aidara"
     let cible = null;
     for (const el of page.querySelectorAll('*')) {
-      if (!el.children.length && el.textContent.trim().toLowerCase() === '@aidara') {
-        cible = el;
-        break;
-      }
+      if (!el.children.length && el.textContent.trim().toLowerCase() === '@aidara') { cible = el; break; }
     }
     if (!cible) return;
 
@@ -22827,117 +22902,66 @@ function fermerParametresIA() {
     bloc.style.cssText = 'display:flex;gap:14px;justify-content:center;margin:14px 0 6px;';
     bloc.innerHTML = `
       <div style="text-align:center;">
-        <model-viewer src="avataraidara.glb" alt="Avatar de Aidara" loading="lazy"
-          shadow-intensity="0.6" environment-image="neutral" interaction-prompt="none"
-          disable-zoom style="width:96px;height:120px;background:transparent;"></model-viewer>
+        <model-viewer id="param-aidara" src="${srcAvatar('aidara')}" alt="Avatar de Aidara" loading="lazy"
+          shadow-intensity="0.6" environment-image="neutral" interaction-prompt="none" disable-zoom
+          style="width:96px;height:120px;background:transparent;"></model-viewer>
         <div style="font-size:0.72rem;opacity:0.7;margin-top:4px;">@aidara</div>
+        <button onclick="tenueSuivante('aidara')" style="margin-top:6px;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:inherit;font-size:.62rem;cursor:pointer;">Tenue ⟳</button>
       </div>
       <div style="text-align:center;">
-        <model-viewer src="avataraida.glb" alt="Avatar de Ida" loading="lazy"
-          shadow-intensity="0.6" environment-image="neutral" interaction-prompt="none"
-          disable-zoom style="width:96px;height:120px;background:transparent;"></model-viewer>
+        <model-viewer id="param-ida" src="${srcAvatar('ida')}" alt="Avatar de Ida" loading="lazy"
+          shadow-intensity="0.6" environment-image="neutral" interaction-prompt="none" disable-zoom
+          style="width:96px;height:120px;background:transparent;"></model-viewer>
         <div style="font-size:0.72rem;opacity:0.7;margin-top:4px;">@ida</div>
+        <button onclick="tenueSuivante('ida')" style="margin-top:6px;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:inherit;font-size:.62rem;cursor:pointer;">Tenue ⟳</button>
       </div>`;
 
     (cible.closest('div') || cible).after(bloc);
   }
 
-  // Réinjection à chaque ouverture de page
+  /* ===== SURVEILLANCE ===== */
   let t = null;
   new MutationObserver(() => {
     clearTimeout(t);
     t = setTimeout(() => {
+      traiterAvatars();
       injecterAvatarsParametres();
-      majAvatarDeco();
-    }, 250);
+    }, 200);
   }).observe(document.body, { childList: true, subtree: true });
-    
-    // ---- Catalogue : adapte les noms aux listes de l'étape A ----
-const ANIMS = {
-  calin: { label: '🫂 Câlin',  a: 'Hug_A',   b: 'Hug_B',   d: 4500 },
-  bisou: { label: '😘 Bisou',  a: 'Kiss_A',  b: 'Kiss_B',  d: 3000 },
-  danse: { label: '💃 Danse',  a: 'Dance_A', b: 'Dance_B', d: 7000 },
-  salut: { label: '👋 Salut',  a: 'Wave',    b: 'Wave',    d: 2000 },
-};
 
-let idleA = null, idleB = null;
-
-function ouvrirScene() {
-  const s = document.getElementById('scene-nous');
-  s.style.display = 'flex';
-  const va = document.getElementById('scene-a'), vb = document.getElementById('scene-b');
-  const moi = (localStorage.getItem('lastUser') || 'aidara').toLowerCase();
-  // On montre toujours le partenaire à gauche
-  va.src = moi === 'ida' ? srcAvatar('aidara') : srcAvatar('ida');
-  vb.src = moi === 'ida' ? srcAvatar('ida')     : srcAvatar('aidara');
-
-  const bar = document.getElementById('scene-boutons');
-  if (!bar.dataset.rempli) {
-    Object.entries(ANIMS).forEach(([k, v]) => {
-      const b = document.createElement('button');
-      b.textContent = v.label;
-      b.style.cssText = 'flex-shrink:0;padding:10px 16px;border-radius:50px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-size:.8rem;cursor:pointer;';
-      b.onclick = () => jouerEnsemble(k);
-      bar.appendChild(b);
-    });
-    bar.dataset.rempli = '1';
-  }
-
-  const prets = () => {
-    [va, vb].forEach((v, i) => {
-      const list = v.availableAnimations || [];
-      const idle = list.find(n => /idle|breath|stand/i.test(n)) || list[0];
-      if (i === 0) idleA = idle; else idleB = idle;
-      if (idle) { v.animationName = idle; v.play(); }
-    });
-  };
-  va.addEventListener('load', prets, { once: true });
-  vb.addEventListener('load', prets, { once: true });
-}
-
-function fermerScene() {
-  document.getElementById('scene-nous').style.display = 'none';
-  ['scene-a','scene-b'].forEach(id => { const v = document.getElementById(id); v.pause(); v.removeAttribute('src'); });
-}
-
-function jouerEnsemble(cle) {
-  const cfg = ANIMS[cle];
-  const va = document.getElementById('scene-a'), vb = document.getElementById('scene-b');
-  const appliquer = (v, clip, idle) => {
-    const list = v.availableAnimations || [];
-    const c = list.find(n => n === clip) || list.find(n => n.toLowerCase().includes(clip.toLowerCase()));
-    if (!c) return;
-    v.animationName = c;
-    v.play();
-    setTimeout(() => { if (idle) { v.animationName = idle; v.play(); } }, cfg.d);
-  };
-  appliquer(va, cfg.a, idleA);
-  appliquer(vb, cfg.b, idleB);
-}
+  traiterAvatars();
+})();
 </script>
 <div id="scene-nous" style="display:none;position:fixed;inset:0;z-index:9999;
-  background:rgba(18,12,32,0.25);
+  background:rgba(18,12,32,0.28);
   backdrop-filter:blur(28px) saturate(150%);
   -webkit-backdrop-filter:blur(28px) saturate(150%);
   color:#fff;flex-direction:column;text-shadow:0 1px 4px rgba(0,0,0,0.45);">
 
   <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));">
-    <strong style="font-size:0.95rem;">Nous</strong>
+    <strong style="font-size:0.95rem;">Nos avatars</strong>
     <button onclick="fermerScene()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
   </div>
 
-  <div style="flex:1;position:relative;overflow:hidden;">
-    <model-viewer id="scene-a" loading="lazy" shadow-intensity="0.7" environment-image="neutral"
-      interaction-prompt="none" disable-zoom camera-orbit="25deg 78deg 2.2m"
-      style="position:absolute;left:0;top:0;width:55%;height:100%;background:transparent;"></model-viewer>
-    <model-viewer id="scene-b" loading="lazy" shadow-intensity="0.7" environment-image="neutral"
-      interaction-prompt="none" disable-zoom camera-orbit="-25deg 78deg 2.2m"
-      style="position:absolute;right:0;top:0;width:55%;height:100%;background:transparent;"></model-viewer>
+  <div class="galerie" id="galerie-avatars"></div>
+</div>
+
+<!-- Plein écran -->
+<div id="plein-ecran" style="display:none;position:fixed;inset:0;z-index:10000;
+  background:transparent;color:#fff;flex-direction:column;text-shadow:0 1px 4px rgba(0,0,0,0.5);">
+
+  <div style="display:flex;justify-content:flex-end;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));">
+    <button onclick="fermerPleinEcran()" style="background:rgba(0,0,0,0.35);border:none;color:#fff;font-size:1.3rem;
+      width:38px;height:38px;border-radius:50%;cursor:pointer;">✕</button>
   </div>
 
-  <div id="scene-boutons" style="display:flex;gap:8px;overflow-x:auto;padding:12px 14px calc(16px + env(safe-area-inset-bottom));
-    background:rgba(255,255,255,0.06);border-top:1px solid rgba(255,255,255,0.12);"></div>
+  <model-viewer id="pe-viewer" camera-controls auto-rotate auto-rotate-delay="0"
+    shadow-intensity="0.8" environment-image="neutral" interaction-prompt="none"
+    style="flex:1;width:100%;background:transparent;--poster-color:transparent;"></model-viewer>
+
+  <div id="pe-anims" style="display:flex;gap:8px;overflow-x:auto;padding:12px 14px calc(18px + env(safe-area-inset-bottom));"></div>
 </div>
+ 
 </body>   
   
 </html>
