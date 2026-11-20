@@ -26,8 +26,8 @@
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "8600549d-6bc4-4a88-a729-070758622d2f",
-      serviceWorkerPath: "/OneSignalSDKWorker.js",
-      serviceWorkerParam: { scope: "/" },
+serviceWorkerPath: location.pathname.replace(/\/[^/]*$/, "/") + "OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: location.pathname.replace(/\/[^/]*$/, "/") },
       notifyButton: { enable: false }
     });
 
@@ -7418,33 +7418,26 @@ const ONESIGNAL_REST_KEY = "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg
 }
       
       
+const PUSH_ENDPOINT = "https://rvgbiasvnnisfccxyrdj.supabase.co/functions/v1/send-push";
+
 async function envoyerPush(destinataireId, texte) {
   if (!destinataireId) return;
-  if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg3y4ssik2runoxnk4jmtisctoyp6gxhyckudbr5qs4imu275qxpkcfz2hub7ta") {
-    console.warn("Push: clé REST non renseignée");
-    return;
-  }
-  const corps = (texte || "Nouveau message").slice(0, 120);
   try {
     const doc = await db.collection('users').doc(destinataireId).get();
     const subId = doc.exists ? doc.data().onesignalId : null;
-    if (!subId) {
-      console.warn("Push: aucun onesignalId pour", destinataireId);
-      return;
-    }
-    const rep = await fetch("https://api.onesignal.com/notifications", {
+    if (!subId) { console.warn("Push: aucun onesignalId pour", destinataireId); return; }
+
+    const rep = await fetch(PUSH_ENDPOINT, {
       method: "POST",
+      keepalive: true,
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Key " + ONESIGNAL_REST_KEY
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY
       },
       body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_subscription_ids: [subId],
-        headings: { fr: "💜 Nouveau message", en: "💜 New message" },
-        contents: { fr: corps, en: corps },
-        url: "/",
-        chrome_web_icon: "/icon-192.png"
+        subscriptionId: subId,
+        corps: (texte || "Nouveau message").slice(0, 120),
+        url: location.origin + location.pathname
       })
     });
     const txt = await rep.text();
@@ -7745,21 +7738,35 @@ async function demanderPermissionNotifications() {
 
 // Fonction pour enregistrer le token push
 async function associerAbonnementPush(userId) {
-    if (!userId) return;
-    await new Promise((resolve) => avecOneSignal(async (OneSignal) => {
-        try {
-            if (!OneSignal.Notifications.permission) { resolve(); return; }
-            await OneSignal.login(userId);
-            const subId = OneSignal.User.PushSubscription.id;
-            if (subId) {
-                await db.collection('users').doc(userId).set({
-                    onesignalId: subId,
-                    pushActif: true
-                }, { merge: true });
-            }
-        } catch (e) { console.error("Erreur abonnement push:", e); }
-        resolve();
-    }));
+  if (!userId) return;
+  await new Promise((resolve) => avecOneSignal(async (OneSignal) => {
+    try {
+      if (!OneSignal.Notifications.permission) { resolve(); return; }
+      await OneSignal.login(userId);
+
+      const enregistrer = async () => {
+        const subId = OneSignal.User.PushSubscription.id;
+        if (!subId) return false;
+        await db.collection('users').doc(userId).set(
+          { onesignalId: subId, pushActif: true }, { merge: true });
+        console.log("Abonnement enregistré:", subId);
+        return true;
+      };
+
+      if (await enregistrer()) { resolve(); return; }
+
+      OneSignal.User.PushSubscription.addEventListener('change', async (e) => {
+        if (e.current && e.current.id) await enregistrer();
+      });
+
+      let essais = 0;
+      const minuteur = setInterval(async () => {
+        essais++;
+        if (await enregistrer() || essais > 20) clearInterval(minuteur);
+      }, 1000);
+    } catch (e) { console.error("Erreur abonnement push:", e); }
+    resolve();
+  }));
 }
         // ========== SÉLECTION UTILISATEUR======= ===
      function selectUser(userKey) {
@@ -20013,7 +20020,7 @@ async function removeCustomColorFromMessage() {
 const AGORA_APP_ID = "ecab018bb0114d7fa6e65390df6aeebc";
 // ⚠️ Projet Supabase DÉDIÉ à Agora (différent de celui du stockage audio/photos).
 // C'est volontaire : la fonction agora-token est déployée sur mxzupngxmnfnldbyooqf.
-const AGORA_FUNCTIONS_URL = "https://mxzupngxmnfnldbyooqf.supabase.co/functions/v1/agora-token";
+const AGORA_FUNCTIONS_URL = "https://rvgbiasvnnisfccxyrdj.supabase.co/functions/v1/send-push";
 // Le certificat NE DOIT JAMAIS être ici : il vit uniquement côté serveur
 // (Supabase Edge Function), voir supabase/functions/agora-token/index.ts
 const AGORA_UID_MAP = { ida: 1, aidara: 2 };
