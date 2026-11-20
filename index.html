@@ -5119,7 +5119,7 @@ input, textarea {
 <div id="avatar-deco" aria-hidden="true">
   <model-viewer
     id="avatar-deco-viewer"
-    src="https://ahmedaidara.github.io/avatar-3d-site/ton-avatar.glb"
+    src="avataraidara.glb"
     alt=""
     loading="lazy"
     reveal="auto"
@@ -22752,6 +22752,20 @@ function fermerParametresIA() {
 })();
 </script> 
   <script>
+    // Choisit l'avatar du partenaire selon qui est connecté
+  function avatarDuPartenaire() {
+    const moi = (localStorage.getItem('lastUser') || 'aidara').toLowerCase();
+    return moi === 'ida' ? 'avataraidara.glb' : 'avataraida.glb';
+  }
+
+  function majAvatarDeco() {
+    const v = document.getElementById('avatar-deco-viewer');
+    if (!v) return;
+    const src = avatarDuPartenaire();
+    if (v.getAttribute('src') !== src) v.setAttribute('src', src);
+  }
+
+  majAvatarDeco();
 (function () {
   const av = document.getElementById('avatar-deco-viewer');
   if (!av) return;
@@ -22784,9 +22798,52 @@ function fermerParametresIA() {
     window.sendTextMessage = function () {
       window.jouerAnimAvatar(/wave|salut|hello|hi|greet/i);
       return origSend.apply(this, arguments);
-    };
+    }; 
   }
 })();
+    function injecterAvatarsParametres() {
+    const page = document.querySelector('#settings-page, [id*="setting"], [id*="parametre"]');
+    if (!page || page.querySelector('#avatars-param')) return;
+
+    // On cherche le texte exact "@aidara"
+    let cible = null;
+    for (const el of page.querySelectorAll('*')) {
+      if (!el.children.length && el.textContent.trim().toLowerCase() === '@aidara') {
+        cible = el;
+        break;
+      }
+    }
+    if (!cible) return;
+
+    const bloc = document.createElement('div');
+    bloc.id = 'avatars-param';
+    bloc.style.cssText = 'display:flex;gap:14px;justify-content:center;margin:14px 0 6px;';
+    bloc.innerHTML = `
+      <div style="text-align:center;">
+        <model-viewer src="avataraidara.glb" alt="Avatar de Aidara" loading="lazy"
+          shadow-intensity="0.6" environment-image="neutral" interaction-prompt="none"
+          disable-zoom style="width:96px;height:120px;background:transparent;"></model-viewer>
+        <div style="font-size:0.72rem;opacity:0.7;margin-top:4px;">@aidara</div>
+      </div>
+      <div style="text-align:center;">
+        <model-viewer src="avataraida.glb" alt="Avatar de Ida" loading="lazy"
+          shadow-intensity="0.6" environment-image="neutral" interaction-prompt="none"
+          disable-zoom style="width:96px;height:120px;background:transparent;"></model-viewer>
+        <div style="font-size:0.72rem;opacity:0.7;margin-top:4px;">@ida</div>
+      </div>`;
+
+    (cible.closest('div') || cible).after(bloc);
+  }
+
+  // Réinjection à chaque ouverture de page
+  let t = null;
+  new MutationObserver(() => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      injecterAvatarsParametres();
+      majAvatarDeco();
+    }, 250);
+  }).observe(document.body, { childList: true, subtree: true });
 </script>
 </body>   
   
