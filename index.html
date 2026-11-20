@@ -5239,6 +5239,13 @@ input, textarea {
         <i class="fa-solid fa-fire"></i>
         <span>Flamme</span>
     </button>
+        <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
+
+  
+  <button onclick="ouvrirScene()" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 10px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:inherit;font-size:.62rem;cursor:pointer;flex-shrink:0;">
+  <i class="fa-solid fa-heart" style="font-size:.8rem;"></i>
+  <span></span>
+</button>
       <span style="width: 1px; height: 24px; background: var(--border-color); flex-shrink: 0;"></span>
 
       <button class="toolbar-btn" onclick="creerTableauBlanc()" style="
@@ -22844,7 +22851,87 @@ function fermerParametresIA() {
       majAvatarDeco();
     }, 250);
   }).observe(document.body, { childList: true, subtree: true });
+    
+    // ---- Catalogue : adapte les noms aux listes de l'étape A ----
+const ANIMS = {
+  calin: { label: '🫂 Câlin',  a: 'Hug_A',   b: 'Hug_B',   d: 4500 },
+  bisou: { label: '😘 Bisou',  a: 'Kiss_A',  b: 'Kiss_B',  d: 3000 },
+  danse: { label: '💃 Danse',  a: 'Dance_A', b: 'Dance_B', d: 7000 },
+  salut: { label: '👋 Salut',  a: 'Wave',    b: 'Wave',    d: 2000 },
+};
+
+let idleA = null, idleB = null;
+
+function ouvrirScene() {
+  const s = document.getElementById('scene-nous');
+  s.style.display = 'flex';
+  const va = document.getElementById('scene-a'), vb = document.getElementById('scene-b');
+  const moi = (localStorage.getItem('lastUser') || 'aidara').toLowerCase();
+  // On montre toujours le partenaire à gauche
+  va.src = moi === 'ida' ? srcAvatar('aidara') : srcAvatar('ida');
+  vb.src = moi === 'ida' ? srcAvatar('ida')     : srcAvatar('aidara');
+
+  const bar = document.getElementById('scene-boutons');
+  if (!bar.dataset.rempli) {
+    Object.entries(ANIMS).forEach(([k, v]) => {
+      const b = document.createElement('button');
+      b.textContent = v.label;
+      b.style.cssText = 'flex-shrink:0;padding:10px 16px;border-radius:50px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-size:.8rem;cursor:pointer;';
+      b.onclick = () => jouerEnsemble(k);
+      bar.appendChild(b);
+    });
+    bar.dataset.rempli = '1';
+  }
+
+  const prets = () => {
+    [va, vb].forEach((v, i) => {
+      const list = v.availableAnimations || [];
+      const idle = list.find(n => /idle|breath|stand/i.test(n)) || list[0];
+      if (i === 0) idleA = idle; else idleB = idle;
+      if (idle) { v.animationName = idle; v.play(); }
+    });
+  };
+  va.addEventListener('load', prets, { once: true });
+  vb.addEventListener('load', prets, { once: true });
+}
+
+function fermerScene() {
+  document.getElementById('scene-nous').style.display = 'none';
+  ['scene-a','scene-b'].forEach(id => { const v = document.getElementById(id); v.pause(); v.removeAttribute('src'); });
+}
+
+function jouerEnsemble(cle) {
+  const cfg = ANIMS[cle];
+  const va = document.getElementById('scene-a'), vb = document.getElementById('scene-b');
+  const appliquer = (v, clip, idle) => {
+    const list = v.availableAnimations || [];
+    const c = list.find(n => n === clip) || list.find(n => n.toLowerCase().includes(clip.toLowerCase()));
+    if (!c) return;
+    v.animationName = c;
+    v.play();
+    setTimeout(() => { if (idle) { v.animationName = idle; v.play(); } }, cfg.d);
+  };
+  appliquer(va, cfg.a, idleA);
+  appliquer(vb, cfg.b, idleB);
+}
 </script>
+  <div id="scene-nous" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#1a0b2e,#0d1b3a 60%,#000);color:#fff;flex-direction:column;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));">
+    <strong style="font-size:.95rem;">Nous</strong>
+    <button onclick="fermerScene()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
+  </div>
+
+  <div style="flex:1;position:relative;overflow:hidden;">
+    <model-viewer id="scene-a" loading="lazy" shadow-intensity="0.7" environment-image="neutral"
+      interaction-prompt="none" disable-zoom camera-orbit="25deg 78deg 2.2m"
+      style="position:absolute;left:0;top:0;width:55%;height:100%;background:transparent;"></model-viewer>
+    <model-viewer id="scene-b" loading="lazy" shadow-intensity="0.7" environment-image="neutral"
+      interaction-prompt="none" disable-zoom camera-orbit="-25deg 78deg 2.2m"
+      style="position:absolute;right:0;top:0;width:55%;height:100%;background:transparent;"></model-viewer>
+  </div>
+
+  <div id="scene-boutons" style="display:flex;gap:8px;overflow-x:auto;padding:12px 14px calc(16px + env(safe-area-inset-bottom));"></div>
+</div>
 </body>   
   
 </html>
