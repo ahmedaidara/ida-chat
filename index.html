@@ -7353,6 +7353,35 @@ async function notifierDansApp(expediteurNom) {
 const ONESIGNAL_APP_ID = "8600549d-6bc4-4a88-a729-070758622d2f";
 const ONESIGNAL_REST_KEY = "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg3y4ssik2runoxnk4jmtisctoyp6gxhyckudbr5qs4imu275qxpkcfz2hub7ta"; // ← remplace par ta clé de l'étape 1
 
+      
+      async function associerAbonnement() {
+  if (!currentUser) {
+    console.warn("Pas d'utilisateur connecté, impossible d'associer l'abonnement.");
+    return;
+  }
+  try {
+    // On lie l'utilisateur Firebase à OneSignal
+    await OneSignal.login(currentUser.id);
+    
+    // On récupère l'identifiant d'abonnement généré par OneSignal
+    const subId = OneSignal.User.PushSubscription.id;
+    
+    if (subId) {
+      // On sauvegarde cet identifiant dans le document de l'utilisateur dans Firestore
+      await db.collection("users").doc(currentUser.id).set({
+        onesignalId: subId,
+        pushActif: true
+      }, { merge: true });
+      console.log("Abonnement OneSignal enregistré dans Firestore :", subId);
+    } else {
+      console.warn("OneSignal n'a pas encore généré d'identifiant d'abonnement.");
+    }
+  } catch (e) {
+    console.error("Erreur lors de l'association de l'abonnement :", e);
+  }
+}
+      
+      
 async function envoyerPush(destinataireId, texte) {
   if (!destinataireId) return;
   if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg3y4ssik2runoxnk4jmtisctoyp6gxhyckudbr5qs4imu275qxpkcfz2hub7ta") {
