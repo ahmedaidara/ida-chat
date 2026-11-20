@@ -22915,9 +22915,14 @@ function jouerEnsemble(cle) {
   appliquer(vb, cfg.b, idleB);
 }
 </script>
-  <div id="scene-nous" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#1a0b2e,#0d1b3a 60%,#000);color:#fff;flex-direction:column;">
+<div id="scene-nous" style="display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(18,12,32,0.25);
+  backdrop-filter:blur(28px) saturate(150%);
+  -webkit-backdrop-filter:blur(28px) saturate(150%);
+  color:#fff;flex-direction:column;text-shadow:0 1px 4px rgba(0,0,0,0.45);">
+
   <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));">
-    <strong style="font-size:.95rem;">Nous</strong>
+    <strong style="font-size:0.95rem;">Nous</strong>
     <button onclick="fermerScene()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
   </div>
 
@@ -22930,7 +22935,8 @@ function jouerEnsemble(cle) {
       style="position:absolute;right:0;top:0;width:55%;height:100%;background:transparent;"></model-viewer>
   </div>
 
-  <div id="scene-boutons" style="display:flex;gap:8px;overflow-x:auto;padding:12px 14px calc(16px + env(safe-area-inset-bottom));"></div>
+  <div id="scene-boutons" style="display:flex;gap:8px;overflow-x:auto;padding:12px 14px calc(16px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,0.06);border-top:1px solid rgba(255,255,255,0.12);"></div>
 </div>
 </body>   
   
