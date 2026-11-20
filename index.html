@@ -5626,6 +5626,8 @@ input, textarea {
             <h4><i class="fa-solid fa-bell"></i> Notifications</h4>
             <p class="settings-section-desc">Active les notifications pour ne rater aucun message.</p>
             <button class="settings-btn-secondary" onclick="demanderPermissionNotifications()"><i class="fa-solid fa-bell"></i> Activer les notifications</button>
+          
+          <button class="settings-btn-secondary" style="margin-top:8px;" onclick="testerEnvoiPush()">🧪 Tester l'envoi</button>
         </div>
 
         <!-- Section Apparence -->
@@ -7352,29 +7354,65 @@ const ONESIGNAL_APP_ID = "8600549d-6bc4-4a88-a729-070758622d2f";
 const ONESIGNAL_REST_KEY = "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg3y4ssik2runoxnk4jmtisctoyp6gxhyckudbr5qs4imu275qxpkcfz2hub7ta"; // ← remplace par ta clé de l'étape 1
 
 async function envoyerPush(destinataireId, texte) {
-    if (!destinataireId || !ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg3y4ssik2runoxnk4jmtisctoyp6gxhyckudbr5qs4imu275qxpkcfz2hub7ta") return;
-    const corps = (texte || "Nouveau message").slice(0, 120);
-    try {
-        const rep = await fetch("https://api.onesignal.com/notifications", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Key " + ONESIGNAL_REST_KEY
-            },
-            body: JSON.stringify({
-                app_id: ONESIGNAL_APP_ID,
-                include_aliases: { external_id: [destinataireId] },
-                target_channel: "push",
-                headings: { fr: "💜 Nouveau message", en: "💜 New message" },
-                contents: { fr: corps, en: corps },
-                url: "/",
-                chrome_web_icon: "/icon-192.png"
-            })
-        });
-        if (!rep.ok) console.error("Push refusé:", rep.status, await rep.text());
-    } catch (e) { console.error("Erreur push:", e); }
+  if (!destinataireId) return;
+  if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === "os_v2_app_qyafjhllyrfirjzja4dvqyrnf6ibg2edp42e75ngtg3y4ssik2runoxnk4jmtisctoyp6gxhyckudbr5qs4imu275qxpkcfz2hub7ta") {
+    console.warn("Push: clé REST non renseignée");
+    return;
+  }
+  const corps = (texte || "Nouveau message").slice(0, 120);
+  try {
+    const doc = await db.collection('users').doc(destinataireId).get();
+    const subId = doc.exists ? doc.data().onesignalId : null;
+    if (!subId) {
+      console.warn("Push: aucun onesignalId pour", destinataireId);
+      return;
+    }
+    const rep = await fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Key " + ONESIGNAL_REST_KEY
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        include_subscription_ids: [subId],
+        headings: { fr: "💜 Nouveau message", en: "💜 New message" },
+        contents: { fr: corps, en: corps },
+        url: "/",
+        chrome_web_icon: "/icon-192.png"
+      })
+    });
+    const txt = await rep.text();
+    if (!rep.ok) console.error("Push refusé:", rep.status, txt);
+    else console.log("Push envoyé:", txt);
+  } catch (e) { console.error("Erreur push:", e); }
 }
 
+      
+      async function testerEnvoiPush() {
+  if (!currentUser || !targetUser) { alert("Connecte-toi d'abord"); return; }
+  if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === "COLLE_TA_CLE_REST_ICI") {
+    alert("La clé REST n'est pas remplie (constante ONESIGNAL_REST_KEY)");
+    return;
+  }
+  const doc = await db.collection('users').doc(targetUser.id).get();
+  const subId = doc.exists ? doc.data().onesignalId : null;
+  if (!subId) {
+    alert("Aucun identifiant push enregistré pour " + targetUser.name + ".\n\n→ " + targetUser.name + " doit ouvrir l'app depuis SON icône, se connecter, puis Paramètres → Notifications → Activer.");
+    return;
+  }
+  const rep = await fetch("https://api.onesignal.com/notifications", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Key " + ONESIGNAL_REST_KEY },
+    body: JSON.stringify({
+      app_id: ONESIGNAL_APP_ID,
+      include_subscription_ids: [subId],
+      headings: { fr: "Test", en: "Test" },
+      contents: { fr: "Si tu lis ça, l'envoi fonctionne", en: "ok" }
+    })
+  });
+  alert("HTTP " + rep.status + "\n\n" + (await rep.text()).slice(0, 300));
+}
         // ========== ÉTAT DE L'APPLICATION ==========
         let currentUser = null; 
         let targetUser = null;  
