@@ -7432,7 +7432,8 @@ async function envoyerPush(destinataireId, texte) {
       keepalive: true,
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + SUPABASE_ANON_KEY
+        "Authorization": "Bearer sb_publishable_TYlpx89JKqB1iicGi_9Ngw_-CstsPWm",
+        "apikey": "sb_publishable_TYlpx89JKqB1iicGi_9Ngw_-CstsPWm",
       },
       body: JSON.stringify({
         subscriptionId: subId,
